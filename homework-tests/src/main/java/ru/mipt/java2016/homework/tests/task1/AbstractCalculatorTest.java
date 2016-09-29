@@ -17,7 +17,7 @@ public abstract class AbstractCalculatorTest {
     /**
      * Фабричный метод для создания объектов тестируемого класса
      *
-     * @return новый экземпляр объекта для тестирования
+     * @return экземпляр объекта для тестирования
      */
     protected abstract Calculator calc();
 
@@ -25,6 +25,10 @@ public abstract class AbstractCalculatorTest {
         String errorMessage = String.format("Bad result for expression '%s', %.2f expected", expression, expected);
         double actual = calc().calculate(expression);
         Assert.assertEquals(errorMessage, expected, actual, 1e-6);
+    }
+
+    protected void tryFail(String expression) throws ParsingException {
+        calc().calculate(expression);
     }
 
     @Test
@@ -74,51 +78,51 @@ public abstract class AbstractCalculatorTest {
 
     @Test(expected = ParsingException.class)
     public void testBadSymbolInDigitEnd() throws ParsingException {
-        test("6.0 - 4k * (0.0 + 5/2)", -4.0);
+        tryFail("6.0 - 4k * (0.0 + 5/2)");
     }
 
     @Test(expected = ParsingException.class)
     public void testBadSymbolInDigitStart() throws ParsingException {
-        test("6.0 - f4 * (0.0 + 5/2)", -4.0);
+        tryFail("6.0 - f4 * (0.0 + 5/2)");
     }
 
     @Test(expected = ParsingException.class)
     public void testBadSymbolAtStart() throws ParsingException {
-        test("{6.0 - 4 * (0.0 + 5/2)", -4.0);
+        tryFail("{6.0 - 4 * (0.0 + 5/2)");
     }
 
     @Test(expected = ParsingException.class)
     public void testBadString() throws ParsingException {
-        test("foo", -4.0);
+        tryFail("foo");
     }
 
     @Test(expected = ParsingException.class)
     public void testEmptyBraces() throws ParsingException {
-        test("()", -4.0);
+        tryFail("()");
     }
 
     @Test(expected = ParsingException.class)
     public void testEmptyString() throws ParsingException {
-        test("", -4.0);
+        tryFail("");
     }
 
     @Test(expected = ParsingException.class)
     public void testNull() throws ParsingException {
-        test(null, -4.0);
+        tryFail(null);
     }
 
     @Test(expected = ParsingException.class)
     public void testSpacesString() throws ParsingException {
-        test("  ", -4.0);
+        tryFail("  ");
     }
 
     @Test(expected = ParsingException.class)
     public void testTooMuchBraces() throws ParsingException {
-        test("6.0 + (-4) * ((0.0 + 5/2)", -4.0);
+        tryFail("6.0 + (-4) * ((0.0 + 5/2)");
     }
 
     @Test(expected = ParsingException.class)
     public void testTooFewBraces() throws ParsingException {
-        test("6.0 + (-4)) * (0.0 + 5/2)", -4.0);
+        tryFail("6.0 + (-4)) * (0.0 + 5/2)");
     }
 }
