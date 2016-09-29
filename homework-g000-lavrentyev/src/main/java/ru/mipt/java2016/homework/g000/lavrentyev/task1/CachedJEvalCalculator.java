@@ -13,6 +13,9 @@ import ru.mipt.java2016.homework.base.task1.Calculator;
 public class CachedJEvalCalculator extends JEvalCalculator {
     public static final Calculator INSTANCE = new CachedJEvalCalculator();
 
+    private CachedJEvalCalculator() {
+    }
+
     private final ThreadLocal<Evaluator> evaluator = new ThreadLocal<Evaluator>() {
         @Override
         protected Evaluator initialValue() {
