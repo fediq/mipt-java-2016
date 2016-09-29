@@ -16,6 +16,8 @@ public class FakeCalculator implements Calculator {
         if ("foo".equals(expression)) {
             throw new ParsingException("Nooooo");
         }
-        return 0;
+
+        double result = Double.parseDouble(expression);
+        return result;
     }
 }
