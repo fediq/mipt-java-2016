@@ -24,13 +24,11 @@ public interface KeyValueStorage<K, V> extends Closeable {
 
     /**
      * Записывает в хранилище пару ключ-значение.
-     * Не делает изменений на диске до команды commit.
      */
     void write(K key, V value);
 
     /**
      * Удаляет пару ключ-значение из хранилища.
-     * Не делает изменений на диске до команды commit.
      */
     void delete(K key);
 
