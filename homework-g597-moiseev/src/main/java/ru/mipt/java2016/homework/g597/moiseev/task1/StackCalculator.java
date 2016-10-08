@@ -16,33 +16,33 @@ public class StackCalculator implements Calculator {
         if(expression == null) {
             throw new ParsingException("Expression is null");
         }
-        String postfix_line = getPostfixLine(expression.replaceAll("\\s", ""));
-        return calculateValueOfPostfixLine(postfix_line);
+        String postfix_line = getPostfixLine(expression.replaceAll("\\s", "")); // Преобразуем инфикссную запись в постфиксную
+        return calculateValueOfPostfixLine(postfix_line); // Считаем результат для постфиксной записи
     }
 
-    protected String getPostfixLine(String expression) throws ParsingException {
-        boolean flag = true;
-        Stack<Character> stack = new Stack<>();
-        String result = "";
-        for(Character c : expression.toCharArray()) {
+    protected String getPostfixLine(String expression) throws ParsingException { // Перевод инфиксной записи в постфиксную
+        boolean flag = true; // Флажок на то, что следующий оператор - унарный
+        Stack<Character> stack = new Stack<>(); // Стек операторов
+        String result = ""; // Результирующая строка
+        for(Character c : expression.toCharArray()) { // Перебираем элементы строки
             if(c.equals(' ')) {}
-            else if(Arrays.asList(numbers_and_dot).contains(c)) {
+            else if(Arrays.asList(numbers_and_dot).contains(c)) { // Если символ - элемент числа
                 flag = false;
-                result += c.toString();
-            } else if(Arrays.asList(operators).contains(c)) {
-                if(flag) {
+                result += c.toString(); // то добавляем его к результату
+            } else if(Arrays.asList(operators).contains(c)) { // Если оператор
+                if(flag) { // Если он унарный
                     if(c.equals('+')) {
                         flag = false;
-                    } else if (c.equals('-')) {
+                    } else if (c.equals('-')) { // То дописываем его к результату
                         result += "-";
                     }
                     else {
                         throw new ParsingException("Invalid expression");
                     }
-                } else {
+                } else { // Иначе
                     flag = true;
                     result += " ";
-                    while (!stack.empty()) {
+                    while (!stack.empty()) { // выталкиваем из стека в строку все элементы с приоритетом, большим данного
                         Character current = stack.pop();
                         if (getPriority(c) <= getPriority(current)) {
                             result += (" " + current.toString() + " ");
@@ -51,25 +51,25 @@ public class StackCalculator implements Calculator {
                             break;
                         }
                     }
-                    stack.push(c);
+                    stack.push(c); // Помещаем оператор в стек
                 }
-            } else if(c.equals('(')) {
+            } else if(c.equals('(')) { // Если открывающая скобка
                 flag = true;
                 result += " ";
-                stack.push(c);
-            } else if(c.equals(')')) {
+                stack.push(c); // То помещаем ее в стек
+            } else if(c.equals(')')) { // Если закрывающая скобка
                 flag = false;
-                boolean isOpeningBracket = false;
-                while (!stack.empty()) {
+                boolean is_opening_bracket = false;
+                while (!stack.empty()) { // То выталкиваем элементы из стека
                     Character current = stack.pop();
-                    if (current.equals('(')) {
-                        isOpeningBracket = true;
+                    if (current.equals('(')) { // Пока не найдем закрывающую скобку
+                        is_opening_bracket = true;
                         break;
                     } else {
                         result += (" " + current.toString() + " ");
                     }
                 }
-                if (!isOpeningBracket) {
+                if (!is_opening_bracket) {
                     throw new ParsingException("Brackets can not be combined");
                 }
             } else {
@@ -77,7 +77,7 @@ public class StackCalculator implements Calculator {
             }
         }
 
-        while(!stack.empty()) {
+        while(!stack.empty()) { // Выталкиваем оставшиеся элементы из стека
             Character current = stack.pop();
             if (Arrays.asList(operators).contains(current)) {
                 result += (" " + current.toString() + " ");
@@ -88,7 +88,7 @@ public class StackCalculator implements Calculator {
         return result;
     }
 
-    protected int getPriority(char c) throws ParsingException {
+    protected int getPriority(char c) throws ParsingException { // Приоритет оператора
         int priority;
         switch (c) {
             case '+': priority = 1; break;
@@ -102,7 +102,8 @@ public class StackCalculator implements Calculator {
         return priority;
     }
 
-    protected double calculateSingleOperation(double v1, double v2, char oper) throws ArithmeticException, ParsingException {
+    protected double calculateSingleOperation(double v1, double v2, char oper)
+            throws ParsingException { // Подсчет результата действия одного оператора
         double res;
         switch (oper) {
             case '+':
@@ -120,33 +121,33 @@ public class StackCalculator implements Calculator {
         return res;
     }
 
-    protected double calculateValueOfPostfixLine(String expression) throws ParsingException {
+    protected double calculateValueOfPostfixLine(String expression) throws ParsingException { // Подсчет результата постфиксного выражения
         Scanner sc = new Scanner(expression);
-        Stack<Double> stack = new Stack<>();
-        while (sc.hasNext()) {
+        Stack<Double> stack = new Stack<>(); // Стек промежуточных результатов
+        while (sc.hasNext()) { // Перебираем все лексемы в выражении
             String s = sc.next();
-            if(s.length() == 1 && Arrays.asList(operators).contains(s.charAt(0))) {
-                if(stack.size() >= 2) {
+            if(s.length() == 1 && Arrays.asList(operators).contains(s.charAt(0))) { // Если это оператор
+                if(stack.size() >= 2) { // То применяем его к двум верхним элементам стека
                     double operand2 = stack.pop();
                     double operand1 = stack.pop();
                     double result = calculateSingleOperation(operand1, operand2, s.charAt(0));
-                    stack.push(result);
+                    stack.push(result); // И кладем в стек
                 } else {
                     throw new ParsingException("Invalid expression");
                 }
             } else {
-                double current = Double.parseDouble(s);
-                stack.push(current);
+                double current = Double.parseDouble(s); // Иначе это число
+                stack.push(current); // Кладем его в  стек
             }
         }
 
-        if(stack.size() == 1) {
-            return stack.pop();
+        if(stack.size() == 1) { // В коонце в стеке должен остаться один элемент
+            return stack.pop(); // И это результат
         } else {
             throw new ParsingException("Invalid expression");
         }
     }
 
-    protected Character[] operators = {'+', '-', '*', '/'};
-    protected Character[] numbers_and_dot = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.'};
+    protected Character[] operators = {'+', '-', '*', '/'}; // Опреаторы
+    protected Character[] numbers_and_dot = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.'}; // Элементы числа
 }
