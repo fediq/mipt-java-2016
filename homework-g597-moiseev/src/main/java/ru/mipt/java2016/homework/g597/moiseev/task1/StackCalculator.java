@@ -7,8 +7,8 @@ import java.util.*;
 /**
  * Стековый калькулятор.
  *
- * @author Fedor S. Lavrentyev
- * @since 28.09.16
+ * @author Fedor Moiseev
+ * @since 06.10.16
  */
 
 public class StackCalculator implements Calculator {
