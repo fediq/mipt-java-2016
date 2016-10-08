@@ -12,6 +12,8 @@ import java.util.*;
  */
 
 public class StackCalculator implements Calculator {
+
+    @Override
     public double calculate(String expression) throws ParsingException {
         if(expression == null) {
             throw new ParsingException("Expression is null");
