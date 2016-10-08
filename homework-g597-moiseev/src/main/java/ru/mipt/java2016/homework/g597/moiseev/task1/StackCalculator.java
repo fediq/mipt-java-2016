@@ -31,7 +31,7 @@ public class StackCalculator implements Calculator {
         String result = ""; // Результирующая строка
         for (Character c : expression.toCharArray()) { // Перебираем элементы строки
             if (c.equals(' ')) {
-            } else if (Arrays.asList(numbers_and_dot).contains(c)) { // Если символ - элемент числа
+            } else if (Arrays.asList(numbersAndDot).contains(c)) { // Если символ - элемент числа
                 flag = false;
                 result += c.toString(); // то добавляем его к результату
             } else if (Arrays.asList(operators).contains(c)) { // Если оператор
@@ -63,17 +63,17 @@ public class StackCalculator implements Calculator {
                 stack.push(c); // То помещаем ее в стек
             } else if (c.equals(')')) { // Если закрывающая скобка
                 flag = false;
-                boolean is_opening_bracket = false;
+                boolean openingBracketExists = false;
                 while (!stack.empty()) { // То выталкиваем элементы из стека
                     Character current = stack.pop();
                     if (current.equals('(')) { // Пока не найдем закрывающую скобку
-                        is_opening_bracket = true;
+                        openingBracketExists = true;
                         break;
                     } else {
                         result += (" " + current.toString() + " ");
                     }
                 }
-                if (!is_opening_bracket) {
+                if (!openingBracketExists) {
                     throw new ParsingException("Brackets can not be combined");
                 }
             } else {
@@ -168,6 +168,6 @@ public class StackCalculator implements Calculator {
         }
     }
 
-    protected Character[] operators = {'+', '-', '*', '/'}; // Опреаторы
-    protected Character[] numbers_and_dot = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.'}; // Элементы числа
+    protected Character[] operators = {'+', '-', '*', '/'}; // Операторы
+    protected Character[] numbersAndDot = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.'}; // Элементы числа
 }
