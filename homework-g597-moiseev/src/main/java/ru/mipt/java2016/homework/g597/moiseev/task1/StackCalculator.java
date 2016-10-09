@@ -45,6 +45,7 @@ public class StackCalculator implements Calculator {
                         flag = false;
                     } else if (c.equals('-')) { // То кладем в стек унарный минус
                         stack.push('&');
+                        flag = false;
                     } else {
                         throw new ParsingException("Invalid expression");
                     }
