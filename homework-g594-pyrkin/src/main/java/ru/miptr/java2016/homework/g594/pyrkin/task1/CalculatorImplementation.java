@@ -2,6 +2,7 @@ package ru.miptr.java2016.homework.g594.pyrkin.task1;
 
 import com.sun.org.apache.xerces.internal.impl.xpath.regex.Match;
 import com.sun.org.apache.xerces.internal.impl.xs.identity.Selector;
+import com.sun.org.apache.xml.internal.dtm.ref.dom2dtm.DOM2DTM;
 import com.sun.org.apache.xml.internal.serializer.utils.SystemIDResolver;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
@@ -43,24 +44,56 @@ public class CalculatorImplementation implements Calculator{
         return balance == 0;
     }
 
-    public void removeExtraOperands(String expression){
+    private String removeExtraOperands(String expression){
         Pattern pattern = Pattern.compile("([\\d)])\\+*-(\\+*-\\+*-)*\\+*([\\d(])");
         Matcher matcher = pattern.matcher(expression);
         expression = matcher.replaceAll("$1-$3");
 
-        pattern = Pattern.compile("([\\d)])(\\+*-\\+*-)*\\+*([\\d(])");
+        pattern = Pattern.compile("([\\d)])(\\+*-\\+*-)*\\+*--(\\+*-\\+*-)*\\+*([\\d(])");
         matcher = pattern.matcher(expression);
-        expression = matcher.replaceAll("$1+$3");
+        expression = matcher.replaceAll("$1+$4");
+
+        pattern = Pattern.compile("([\\d)])(\\+*-\\+*-)*\\+(\\+*-\\+*-)*\\+*([\\d(])");
+        matcher = pattern.matcher(expression);
+        expression = matcher.replaceAll("$1+$4");
+
+        pattern = Pattern.compile("\\(\\+*-(\\+*-\\+*-)*\\+*([\\d(])");
+        matcher = pattern.matcher(expression);
+        expression = matcher.replaceAll("(-$2");
+
+        pattern = Pattern.compile("\\((\\+*-\\+*-)*\\+*--(\\+*-\\+*-)*\\+*([\\d(])");
+        matcher = pattern.matcher(expression);
+        expression = matcher.replaceAll("($3");
+
+        pattern = Pattern.compile("\\((\\+*-\\+*-)*\\+(\\+*-\\+*-)*\\+*([\\d(])");
+        matcher = pattern.matcher(expression);
+        expression = matcher.replaceAll("($3");
 
         pattern = Pattern.compile("^\\+*-(\\+*-\\+*-)*\\+*([\\d(])");
         matcher = pattern.matcher(expression);
         expression = matcher.replaceAll("-$2");
 
-        pattern = Pattern.compile("^(\\+*-\\+*-)*\\+*([\\d(])");
+        pattern = Pattern.compile("^(\\+*-\\+*-)*\\+*--(\\+*-\\+*-)*\\+*([\\d(])");
         matcher = pattern.matcher(expression);
-        expression = matcher.replaceAll("+$2");
+        expression = matcher.replaceAll("$3");
 
-        System.out.print(expression);
+        pattern = Pattern.compile("^(\\+*-\\+*-)*\\+(\\+*-\\+*-)*\\+*([\\d(])");
+        matcher = pattern.matcher(expression);
+        expression = matcher.replaceAll("$3");
+
+        return expression;
+    }
+
+    private boolean checkBadOperands(String expression){
+        char [] expressionCharArray = expression.toCharArray();
+        if(expressionCharArray[0] == '*' || expressionCharArray[0] == '/')
+            return false;
+        for(int i = 1; i < expressionCharArray.length; ++i)
+            if(!Character.isDigit(expressionCharArray[i]) &&
+               expressionCharArray[i] != '(' && expressionCharArray[i] != ')' &&
+               expressionCharArray[i - 1] == expressionCharArray[i])
+                return false;
+        return true;
     }
 
     @Override
@@ -75,16 +108,16 @@ public class CalculatorImplementation implements Calculator{
             throw  new ParsingException("Invalid expression");
         if(!bracketsCheck(expression))
             throw  new ParsingException("Invalid expression");
-        removeExtraOperands(expression);
+        expression = removeExtraOperands(expression);
 
 
         return 0;
     }
 
-    public static void main(String[] args) {
-        String s = "11";
+    public static void main(String[] args) throws ParsingException{
+        String s = "-++-+-46-+-+++-(-+23----+4688---+-46-(--68-46)-5)-56-(--+-5)";
         CalculatorImplementation calc = new CalculatorImplementation();
-        calc.removeExtraOperands(s);
+        calc.calculate(s);
 
     }
 }
