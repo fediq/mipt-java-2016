@@ -76,6 +76,16 @@ public abstract class AbstractCalculatorTest {
         test("6.0 + (-4) * (0.0 + 5/2)", -4.0);
     }
 
+    @Test
+    public void testOver9k() throws ParsingException {
+        test("9000 + 1", 9001);
+    }
+
+    @Test
+    public void testDivisionAssociativity() throws ParsingException {
+        test("1/2/3/4/5", 1.0 / 2 / 3 / 4 / 5);
+    }
+
     @Test(expected = ParsingException.class)
     public void testBadSymbolInDigitEnd() throws ParsingException {
         tryFail("6.0 - 4k * (0.0 + 5/2)");
@@ -124,5 +134,25 @@ public abstract class AbstractCalculatorTest {
     @Test(expected = ParsingException.class)
     public void testTooFewBraces() throws ParsingException {
         tryFail("6.0 + (-4)) * (0.0 + 5/2)");
+    }
+
+    @Test(expected = ParsingException.class)
+    public void testManyUnaryMinuses() throws ParsingException {
+        tryFail("-----1");
+    }
+
+    @Test(expected = ParsingException.class)
+    public void testManyUnaryPluses() throws ParsingException {
+        tryFail("+(++1)");
+    }
+
+    @Test(expected = ParsingException.class)
+    public void testUnaryMultiply() throws ParsingException {
+        tryFail("(*10)");
+    }
+
+    @Test(expected = ParsingException.class)
+    public void testBadNumber() throws ParsingException {
+        tryFail("1.2.3");
     }
 }
