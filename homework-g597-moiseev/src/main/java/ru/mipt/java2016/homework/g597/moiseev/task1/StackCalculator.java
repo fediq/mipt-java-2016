@@ -43,8 +43,8 @@ public class StackCalculator implements Calculator {
                 if (flag) { // Если он унарный
                     if (c.equals('+')) {
                         flag = false;
-                    } else if (c.equals('-')) { // То дописываем его к результату
-                        result.append('-');
+                    } else if (c.equals('-')) { // То кладем в стек унарный минус
+                        stack.push('&');
                     } else {
                         throw new ParsingException("Invalid expression");
                     }
@@ -88,10 +88,10 @@ public class StackCalculator implements Calculator {
 
         while (!stack.empty()) { // Выталкиваем оставшиеся элементы из стека
             Character current = stack.pop();
-            if (OPERATORS.contains(current)) {
+            if (OPERATORS.contains(current) || current.equals('&')) {
                 result.append(' ').append(current).append(' ');
             } else {
-                throw new ParsingException("Invalid txpression");
+                throw new ParsingException("Invalid expression");
             }
         }
         return result.toString();
@@ -111,6 +111,8 @@ public class StackCalculator implements Calculator {
                 return 0;
             case ')':
                 return 0;
+            case '&':
+                return 3;
             default:
                 throw new ParsingException("Invalid symbol");
         }
@@ -137,7 +139,7 @@ public class StackCalculator implements Calculator {
             Stack<Double> stack = new Stack<>(); // Стек промежуточных результатов
             while (sc.hasNext()) { // Перебираем все лексемы в выражении
                 String s = sc.next();
-                if (s.length() == 1 && OPERATORS.contains(s.charAt(0))) { // Если это оператор
+                if (s.length() == 1 && OPERATORS.contains(s.charAt(0))) { // Если это бинарный оператор
                     if (stack.size() >= 2) { // То применяем его к двум верхним элементам стека
                         double operand2 = stack.pop();
                         double operand1 = stack.pop();
@@ -146,13 +148,14 @@ public class StackCalculator implements Calculator {
                     } else {
                         throw new ParsingException("Invalid expression");
                     }
+                } else if (s.length() == 1 && s.charAt(0) == '&') {
+                    double operand = stack.pop();
+                    stack.push(-1*operand);
+                } else if(Pattern.matches("[-+]?[0-9]*\\.?[0-9]", s)) {
+                    double current = Double.parseDouble(s); // Иначе это число
+                    stack.push(current); // Кладем его в  стек
                 } else {
-                    if(Pattern.matches("[-+]?[0-9]*\\.?[0-9]", s)) {
-                        double current = Double.parseDouble(s); // Иначе это число
-                        stack.push(current); // Кладем его в  стек
-                    } else {
-                        throw new ParsingException("Invalid expression");
-                    }
+                    throw new ParsingException("Invalid expression");
                 }
             }
 
