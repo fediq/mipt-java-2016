@@ -150,8 +150,12 @@ public class StackCalculator implements Calculator {
                         throw new ParsingException("Invalid expression");
                     }
                 } else if (s.length() == 1 && s.charAt(0) == '&') {
-                    double operand = stack.pop();
-                    stack.push(-1*operand);
+                    if(stack.size() >= 1) {
+                        double operand = stack.pop();
+                        stack.push(-1 * operand);
+                    } else {
+                        throw new ParsingException("Invalid expression");
+                    }
                 } else if(Pattern.matches("[-+]?[0-9]*\\.?[0-9]", s)) {
                     double current = Double.parseDouble(s); // Иначе это число
                     stack.push(current); // Кладем его в  стек
