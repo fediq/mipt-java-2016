@@ -86,6 +86,11 @@ public abstract class AbstractCalculatorTest {
         test("1/2/3/4/5", 1.0 / 2 / 3 / 4 / 5);
     }
 
+    @Test
+    public void testMinus() throws ParsingException {
+        test("-(-1)", 1);
+    }
+
     @Test(expected = ParsingException.class)
     public void testBadSymbolInDigitEnd() throws ParsingException {
         tryFail("6.0 - 4k * (0.0 + 5/2)");
