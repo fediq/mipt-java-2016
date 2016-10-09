@@ -91,6 +91,11 @@ public abstract class AbstractCalculatorTest {
         test("-(-1)", 1);
     }
 
+    @Test
+    public void testManyUnaryMinuses() throws ParsingException {
+        test("-----1", -1);
+    }
+
     @Test(expected = ParsingException.class)
     public void testBadSymbolInDigitEnd() throws ParsingException {
         tryFail("6.0 - 4k * (0.0 + 5/2)");
@@ -142,13 +147,8 @@ public abstract class AbstractCalculatorTest {
     }
 
     @Test(expected = ParsingException.class)
-    public void testManyUnaryMinuses() throws ParsingException {
-        tryFail("-----1");
-    }
-
-    @Test(expected = ParsingException.class)
-    public void testManyUnaryPluses() throws ParsingException {
-        tryFail("+(++1)");
+    public void testPlusPlus() throws ParsingException {
+        tryFail("++1");
     }
 
     @Test(expected = ParsingException.class)
