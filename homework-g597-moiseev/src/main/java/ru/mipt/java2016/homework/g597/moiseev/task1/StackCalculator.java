@@ -98,52 +98,38 @@ public class StackCalculator implements Calculator {
     }
 
     private int getPriority(char c) throws ParsingException { // Приоритет оператора
-        int priority;
         switch (c) {
             case '+':
-                priority = 1;
-                break;
+                return 1;
             case '-':
-                priority = 1;
-                break;
+                return 1;
             case '*':
-                priority = 2;
-                break;
+                return 2;
             case '/':
-                priority = 2;
-                break;
+                return 2;
             case '(':
-                priority = 0;
-                break;
+                return 0;
             case ')':
-                priority = 0;
-                break;
+                return 0;
             default:
                 throw new ParsingException("Invalid symbol");
         }
-        return priority;
     }
 
     private double calculateSingleOperation(double v1, double v2, char oper)
             throws ParsingException { // Подсчет результата действия одного оператора
-        double res;
         switch (oper) {
             case '+':
-                res = v1 + v2;
-                break;
+                return v1 + v2;
             case '-':
-                res = v1 - v2;
-                break;
+                return v1 - v2;
             case '*':
-                res = v1 * v2;
-                break;
+                return v1 * v2;
             case '/':
-                res = v1 / v2;
-                break;
+                return v1 / v2;
             default:
                 throw new ParsingException("Invalid symbol");
         }
-        return res;
     }
 
     private double calculateValueOfPostfixLine(String expression) throws ParsingException { // Подсчет результата постфиксного выражения
