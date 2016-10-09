@@ -13,6 +13,7 @@ import java.util.StringTokenizer;
  */
 public class CStackCalculator implements Calculator
 {
+<<<<<<< d60c7714696fc626e209b7044ed34c46d1fefb87
     private final String OPERATORS = "+-*/_";
     private final String BRACKETS = "()";
     private final String SYMBOLS = "0123456789.";
@@ -61,6 +62,16 @@ public class CStackCalculator implements Calculator
         }
         return calculationsStack.pop();
     }
+=======
+    private final String OPERATORS = "+-*/";
+    private final String BRACKETS = "()";
+    private final String SYMBOLS = "0123456789.";
+    public double calculate (String expression) throws ParsingException
+    {
+        return 0;
+    }
+
+>>>>>>> pasing ready
 
     private StringTokenizer prepareExpression(String expression)
     {
@@ -74,17 +85,26 @@ public class CStackCalculator implements Calculator
         return tokenList;
     }
 
+<<<<<<< d60c7714696fc626e209b7044ed34c46d1fefb87
     private void getPolishNotation(StringTokenizer tokenList) throws ParsingException
     {
 
         Stack< String > stackOperators = new Stack<>();
         String prevToken = "";
+=======
+    private ArrayDeque< String >
+        getPolishNotation(StringTokenizer tokenList) throws ParsingException
+    {
+        ArrayDeque< String > targetNotation = new ArrayDeque<>();
+        Stack< String > stackOperators = new Stack<>();
+>>>>>>> pasing ready
         while( tokenList.hasMoreTokens())
         {
             String token = tokenList.nextToken();
             if(isNumber(token))
             {
                 targetNotation.push(token);
+<<<<<<< d60c7714696fc626e209b7044ed34c46d1fefb87
                 targetValence.push(getValence(token));
             }
             if(isOperator(token))
@@ -99,10 +119,23 @@ public class CStackCalculator implements Calculator
                     targetNotation.push(stackOperators.pop());
                 }
                 stackOperators.push(token);
+=======
+                continue;
+            }
+            if(isOperator(token))
+            {
+                if(getPrecedence(stackOperators.peek()) >= getPrecedence(token))
+                {
+                    targetNotation.push(stackOperators.pop());
+                }
+                stackOperators.push(token);
+                continue;
+>>>>>>> pasing ready
             }
             if(isOpenBracket(token))
             {
                 stackOperators.push(token);
+<<<<<<< d60c7714696fc626e209b7044ed34c46d1fefb87
             }
             if(isCloseBracket(token))
             {
@@ -161,6 +194,32 @@ public class CStackCalculator implements Calculator
             {
                 return false;
             }
+=======
+                continue;
+            }
+            if(isCloseBracket(token))
+            {
+                while(!stackOperators.empty() && !isCloseBracket(stackOperators.peek()))
+                {
+                    targetNotation.push(stackOperators.pop());
+                }
+                if(stackOperators.empty())
+                    throw new ParsingException("Invalid Expression");
+            }
+        }
+        return targetNotation;
+    }
+
+
+    private boolean isNumber (String token)
+    {
+        try
+        {
+            Double.parseDouble(token);
+        } catch (Exception exception)
+        {
+            return false;
+>>>>>>> pasing ready
         }
         return true;
     }
@@ -180,17 +239,21 @@ public class CStackCalculator implements Calculator
         return OPERATORS.contains(token);
     }
 
+<<<<<<< d60c7714696fc626e209b7044ed34c46d1fefb87
     private boolean isOperatorMinus (String token)
     {
         return token.equals("-");
     }
 
+=======
+>>>>>>> pasing ready
     private byte getPrecedence(String token)
     {
         if (token.equals("+") || token.equals("-"))
         {
             return 1;
         }
+<<<<<<< d60c7714696fc626e209b7044ed34c46d1fefb87
         if(token.equals("_"))
         {
             return 3;
@@ -210,4 +273,8 @@ public class CStackCalculator implements Calculator
         return 2;
     }
 
+=======
+        return 2;
+    }
+>>>>>>> pasing ready
 }
