@@ -23,6 +23,8 @@
         <module>homework-g597-dmitrieva</module>
         <module>homework-g596-ivanova</module>
         <module>homework-g594-kozlov</module>
+        <module>homework-g597-vasilyev</module>
+        <module>homework-g597-moiseev</module>
     </modules>
 
     <build>
