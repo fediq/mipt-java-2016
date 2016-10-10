@@ -7,6 +7,7 @@ import ru.mipt.java2016.homework.base.task1.ParsingException;
  */
 public class Main {
     public static void main(String[] args) throws ParsingException {
-
+        MyCalculator calc = new MyCalculator();
+        System.out.print(calc.calculate("-3+(5-4)"));
     }
 }
