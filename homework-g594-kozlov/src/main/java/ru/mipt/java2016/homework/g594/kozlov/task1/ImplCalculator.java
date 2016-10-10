@@ -4,7 +4,6 @@ import ru.mipt.java2016.homework.base.task1.ParsingException;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 
 import static java.lang.Integer.max;
-import static java.lang.Integer.min;
 
 /**
  * Created by Anatoly on 09.10.2016.
