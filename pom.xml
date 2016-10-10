@@ -13,7 +13,6 @@
     <modules>
         <module>homework-base</module>
         <module>homework-tests</module>
-
         <module>homework-g595-rodin</module>
     </modules>
 
