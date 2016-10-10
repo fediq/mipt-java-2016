@@ -5,26 +5,24 @@ import ru.mipt.java2016.homework.base.task1.*;
 import java.security.InvalidParameterException;
 import java.util.*;
 
-class MyCalculator implements Calculator{
 
+class MyCalculator implements Calculator {
     static final Calculator INSTANCE = new MyCalculator();
-    private static final HashSet<String> OPERATORS = new HashSet<>(Arrays.asList(
-            "+", "-", "*", "/", "^"
-    ));
 
-    private enum ParsingCondition {WaitingToken, ReadingNumber}
+    private static final HashSet<String> OPERATORS = new HashSet<>(Arrays.asList("+", "-", "*", "/", "^"));
 
-    private boolean IsOperator(String s) {
-        return OPERATORS.contains(s);
+    private boolean IsOperator(String oper) {
+        return OPERATORS.contains(oper);
     }
 
+    private enum ParsingCondition{ReadingNumber, WaitingOperator, WaitingToken}
 
     @Override
-    public double calculate (String expression) throws ParsingException, ArithmeticException {
+    public double calculate(String expression) throws ParsingException, ArithmeticException {
         if (expression == null) {
             throw new ParsingException("Expression is null");
         }
-        return evaluatePostfix(infixToPostfix(expression.replaceAll("\\s", "")));
+        return evaluatePostfix(InfixToPostfix(expression));
     }
 
 
@@ -90,12 +88,12 @@ class MyCalculator implements Calculator{
                     }
 
                 } else if (token.equals("#")) {
-                  if (operands.size() < 1) {
-                      throw new ParsingException("Invalid expression: expected number near unary -");
-                  } else {
-                      double operand = operands.pop();
-                      operands.push(-1 * operand);
-                  }
+                    if (operands.size() < 1) {
+                        throw new ParsingException("Invalid expression: expected number near unary -");
+                    } else {
+                        double operand = operands.pop();
+                        operands.push(-1 * operand);
+                    }
                 } else {
                     try {
                         operand1 = Double.parseDouble(token);
@@ -105,6 +103,7 @@ class MyCalculator implements Calculator{
                     }
                 }
             }
+
             if (operands.size() != 1) { // we expect result to be only resulting number in stack
                 throw new ParsingException("Incorrect expression");
             } else {
@@ -113,38 +112,57 @@ class MyCalculator implements Calculator{
         }
     }
 
-    private String infixToPostfix(String expression) throws ParsingException {
+    private String InfixToPostfix(String expression) throws ParsingException {
         StringBuilder answer = new StringBuilder();
         Stack<String> operators = new Stack<>();
         Character c;
         String prevUnaryOperator = "";
         boolean unary = true; // true if next met operator is unary
+        boolean prevIsDot = false;
         ParsingCondition cond = ParsingCondition.WaitingToken;
         for (int i = 0; i < expression.length(); ++i) {
             c = expression.charAt(i);
             if (Character.isDigit(c)) {
+                if (cond == ParsingCondition.WaitingOperator) {
+                    throw new ParsingException("Invalid expression: unexpected digit");
+                }
                 unary = false;
                 answer.append(c);
                 cond = ParsingCondition.ReadingNumber;
-            } else if (c.equals('.')) {
-                if (cond == ParsingCondition.WaitingToken)
+                prevIsDot = false;
+            } else if (Character.isWhitespace(c)) {
+                if (prevIsDot) {
+                    throw new ParsingException("Invalid expression: unexpected space character after '.'");
+                }
+                if (cond == ParsingCondition.ReadingNumber) {
+                    cond = ParsingCondition.WaitingToken;
+                } else if (cond == ParsingCondition.WaitingToken) {
+                    cond = ParsingCondition.WaitingToken;
+                } else if (cond == ParsingCondition.WaitingOperator) {
+                    cond = ParsingCondition.WaitingOperator;
+                }
+
+                prevIsDot = false;
+                answer.append(' ');
+            }
+            else if (c.equals('.')) {
+                if (cond != ParsingCondition.ReadingNumber)
                     throw new ParsingException("Invalid expression: unexpected symbol '.'");
                 else {
                     answer.append('.');
-                    cond = ParsingCondition.ReadingNumber;
                 }
+                prevIsDot = true;
             } else if (c.equals('(')) {
-                if (cond == ParsingCondition.ReadingNumber)
+                if (cond != ParsingCondition.WaitingToken)
                     throw new ParsingException("Invalid expression: unexpected symbol '('");
                 else {
                     unary = true;
                     answer.append(' ');
                     operators.push("(");
-
-                    cond = ParsingCondition.WaitingToken;
                 }
+                prevIsDot = false;
             } else if (c.equals(')')) {
-                if (cond == ParsingCondition.WaitingToken)
+                if (cond == ParsingCondition.WaitingOperator)
                     throw new ParsingException("Invalid expression: unexpected ) after operator");
                 else {
                     boolean hasCorrespondingOpeningBracket = false;
@@ -162,6 +180,8 @@ class MyCalculator implements Calculator{
                     }
 
                 }
+                prevIsDot = false;
+                cond = ParsingCondition.WaitingToken;
             } else if (IsOperator(c.toString())) {
                 if (unary) {
                     switch (c.toString()) {
@@ -189,6 +209,7 @@ class MyCalculator implements Calculator{
                 }
 
                 cond = ParsingCondition.WaitingToken;
+                prevIsDot = false;
             } else {
                 throw new ParsingException(String.format("Invalid expression: unexpected %s", c.toString()));
             }
@@ -203,5 +224,4 @@ class MyCalculator implements Calculator{
         }
         return answer.toString();
     }
-
 }
