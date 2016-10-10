@@ -25,7 +25,7 @@ public class JEvalCalculator implements Calculator {
             Evaluator evaluator = buildEvaluator();
             String result = evaluator.evaluate(expression);
             return Double.parseDouble(result);
-        } catch (EvaluationException e) {
+        } catch (Exception e) {
             throw new ParsingException("Invalid expression", e.getCause());
         }
     }
