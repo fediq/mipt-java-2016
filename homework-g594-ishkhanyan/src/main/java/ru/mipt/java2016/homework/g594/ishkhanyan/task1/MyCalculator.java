@@ -7,20 +7,20 @@ import ru.mipt.java2016.homework.base.task1.ParsingException;
 import java.util.Stack;
 
 
-public class MyCalculator implements Calculator
+class MyCalculator implements Calculator
 {
-    public MyCalculator(){};
+    MyCalculator(){}
 
     private boolean isDelim(char c){
-        return c == ' '|| c=='\n' || c=='\t' ? true : false;
+        return c == ' ' || c == '\n' || c == '\t';
     }
 
     private boolean isOper(char c){
-        return c == '+' || c == '-' || c == '*' || c =='/' ? true : false;
+        return c == '+' || c == '-' || c == '*' || c == '/';
     }
 
     private boolean isDigit(char c){
-        return (c>='0' && c<='9' || c=='.') ? true : false;
+        return (c >= '0' && c <= '9' || c == '.');
     }
 
     private int priority(char op){
@@ -41,7 +41,7 @@ public class MyCalculator implements Calculator
         }
     }
 
-    public double getVal(String str) throws ParsingException
+    private double getVal(String str) throws ParsingException
     {
         double result = 0;
         int points = 0;
@@ -104,12 +104,12 @@ public class MyCalculator implements Calculator
 
     public double calculate(String exp) throws ParsingException {
         boolean unar_possib = true;//wait unary operation
-        int bracket = 0;
+        int numberAfterOp = 0; //how many numbers were after last operation
         int brackbalnce = 0;
         if(exp==null || exp.length()==0)
             throw new ParsingException("empty expression");
-        Stack<Double> numbers = new Stack<Double>();
-        Stack<Character> oper = new Stack<Character>();
+        Stack<Double> numbers = new Stack<>();
+        Stack<Character> oper = new Stack<>();
         for(int i = 0; i<exp.length(); ++i) {
             if (isDelim(exp.charAt(i))) {
                 continue;
@@ -117,15 +117,15 @@ public class MyCalculator implements Calculator
 
             if(exp.charAt(i)=='('){
                 oper.push(exp.charAt(i));
-                bracket=i;
+                numberAfterOp=0;
                 unar_possib = true;
                 ++brackbalnce;
                 continue;
             }
 
             if(exp.charAt(i)==')'){
-                if (bracket-i==1)
-                    throw new ParsingException("empty brackets");
+                if (numberAfterOp == 0)
+                    throw new ParsingException("illegal expression");
                 if (brackbalnce == 0)                       //checking bracket balance
                     throw new ParsingException("balance error");
                 while (oper.peek() != '('){
@@ -150,6 +150,9 @@ public class MyCalculator implements Calculator
                         default:
                             throw new ParsingException("Illegal sequence");
                     }
+                }else if(numberAfterOp == 0)
+                {
+                    throw new ParsingException("double operation");
                 }
                 while(!oper.empty() && !numbers.empty() && (priority(oper.peek())>=priority(currentOp)
                        ||  (currentOp=='m' || currentOp=='p') && priority(oper.peek())>priority(currentOp)))
@@ -157,25 +160,32 @@ public class MyCalculator implements Calculator
                     doOper(numbers, oper.pop());
                 }
                 oper.push(currentOp);
-                unar_possib = true;
-                /*switch (currentOp){
+                switch (currentOp){
                     case '+':
                         unar_possib = false;
                         break;
                     case '-':
                         unar_possib = false;
                         break;
+                    case 'p':
+                        unar_possib = false;
+                        break;
+                    case 'm':
+                        unar_possib = false;
+                        break;
+
                     case '*':
                         unar_possib = true;
                         break;
                     case '/':
                         unar_possib = true;
                         break;
-                }*/
+                }
+                numberAfterOp = 0;
                 continue;
             }
             if(isDigit(exp.charAt(i))){
-                String num = new String();
+                String num = "";
                 num += exp.charAt(i++);
                 while(i < exp.length() && isDigit(exp.charAt(i)))
                 {
@@ -184,6 +194,7 @@ public class MyCalculator implements Calculator
                 --i;
                 numbers.push(getVal(num));
                 unar_possib = false;
+                numberAfterOp = 1;
                 continue;
             }
             throw new ParsingException("Illegal symbol");
