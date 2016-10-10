@@ -1,23 +1,20 @@
 package ru.mipt.java2016.homework.g597.grishutin.task1;
 
 import ru.mipt.java2016.homework.base.task1.*;
-
 import java.security.InvalidParameterException;
 import java.util.*;
 
 class MyCalculator implements Calculator{
-
     static final Calculator INSTANCE = new MyCalculator();
+
+    private enum ParsingCondition {WaitingToken, ReadingNumber}
     private static final HashSet<String> OPERATORS = new HashSet<>(Arrays.asList(
             "+", "-", "*", "/", "^"
     ));
 
-    private enum ParsingCondition {WaitingToken, ReadingNumber}
-
     private boolean IsOperator(String s) {
         return OPERATORS.contains(s);
     }
-
 
     @Override
     public double calculate (String expression) throws ParsingException, ArithmeticException {
