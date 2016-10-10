@@ -63,34 +63,6 @@ public class CalculatorImplementation implements Calculator{
         point = false;
     }
 
-    private void addOperand(final char operand, final char previousSymbol){
-        if(symbols.empty() || getPriority(operand) != 1){
-            symbols.push(operand);
-            return;
-        }
-
-        if(previousSymbol == '+' || previousSymbol == '-' ||
-           previousSymbol == 'p' || previousSymbol =='n'){
-            if(operand == '-') {
-                symbols.pop();
-                switch (previousSymbol) {
-                    case '+':
-                        symbols.push('-');
-                        break;
-                    case '-':
-                        symbols.push('+');
-                        break;
-                    case 'p':
-                        symbols.push('n');
-                        break;
-                    case 'n':
-                        symbols.push('p');
-                }
-            }
-        }else
-            symbols.push(operand);
-    }
-
     private void makeOperation(final char operand) throws ParsingException{
         if(numbers.empty())
             throw new ParsingException("Invalid expression");
@@ -179,10 +151,8 @@ public class CalculatorImplementation implements Calculator{
                     expandBrackets();
                 else {
                     symbol = declSymbol(symbol, previousSymbol);
-                    if(previousSymbol != '+' && previousSymbol != '-' &&
-                       previousSymbol != 'p' && previousSymbol != 'n')
-                        expandStack(symbol);
-                    addOperand(symbol, previousSymbol);
+                    expandStack(symbol);
+                    symbols.push(symbol);
                 }
             }
             previousSymbol = symbol;
