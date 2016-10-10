@@ -202,5 +202,4 @@ public class CStackCalculator implements Calculator {
         }
         return 2;
     }
-    
 }
