@@ -7,6 +7,7 @@ import java.util.Stack;
 
 /**
  * Created by bobokvsky on 10.10.2016.
+ * Calculator is based on prefix notation.
  */
 
 
