@@ -13,14 +13,54 @@ import java.util.StringTokenizer;
  */
 public class CStackCalculator implements Calculator
 {
-    private final String OPERATORS = "+-*/";
+    private final String OPERATORS = "+-*/_";
     private final String BRACKETS = "()";
     private final String SYMBOLS = "0123456789.";
+
+    private ArrayDeque< String > targetNotation = new ArrayDeque<>();
+    private ArrayDeque< Integer > targetValence = new ArrayDeque<>();
+
     public double calculate (String expression) throws ParsingException
     {
-        return 0;
+        return calculations(expression);
     }
 
+    private double calculations(String expression) throws ParsingException
+    {
+        getPolishNotation(prepareExpression(expression));
+        Stack< Double > calculationsStack = new Stack<>();
+        while(!targetNotation.isEmpty())
+        {
+            String token = targetNotation.remove();
+            Integer tokenValence = targetValence.remove();
+            if(tokenValence == 0)
+            {
+                calculationsStack.push(Double.parseDouble(token));
+                continue;
+            }
+            if(tokenValence == 1)
+            {
+                Double item = calculationsStack.pop();
+                calculationsStack.push(-1*item);
+            }
+            if(tokenValence == 2)
+            {
+                if(calculationsStack.size() < 2)
+                {
+                    throw new ParsingException("Invalid Expression");
+                }
+                Double rightOperand = calculationsStack.pop();
+                Double leftOperand = calculationsStack.pop();
+                calculationsStack.push(Operate(leftOperand,rightOperand,token));
+            }
+
+        }
+        if(calculationsStack.size() != 1)
+        {
+            throw new ParsingException("Invalid Expression");
+        }
+        return calculationsStack.pop();
+    }
 
     private StringTokenizer prepareExpression(String expression)
     {
@@ -34,46 +74,84 @@ public class CStackCalculator implements Calculator
         return tokenList;
     }
 
-    private ArrayDeque< String >
-        getPolishNotation(StringTokenizer tokenList) throws ParsingException
+    private void getPolishNotation(StringTokenizer tokenList) throws ParsingException
     {
-        ArrayDeque< String > targetNotation = new ArrayDeque<>();
+
         Stack< String > stackOperators = new Stack<>();
+        String prevToken = "";
         while( tokenList.hasMoreTokens())
         {
             String token = tokenList.nextToken();
             if(isNumber(token))
             {
                 targetNotation.push(token);
-                continue;
+                targetValence.push(getValence(token));
             }
             if(isOperator(token))
             {
+                if(isOperator(prevToken) && isOperatorMinus(token))
+                {
+                    token = "_";
+                }
                 if(getPrecedence(stackOperators.peek()) >= getPrecedence(token))
                 {
+                    targetValence.push(getValence(stackOperators.peek()));
                     targetNotation.push(stackOperators.pop());
                 }
                 stackOperators.push(token);
-                continue;
             }
             if(isOpenBracket(token))
             {
                 stackOperators.push(token);
-                continue;
             }
             if(isCloseBracket(token))
             {
-                while(!stackOperators.empty() && !isCloseBracket(stackOperators.peek()))
+                while(!stackOperators.empty() && !isOpenBracket(stackOperators.peek()))
                 {
+                    targetValence.push(getValence(stackOperators.peek()));
                     targetNotation.push(stackOperators.pop());
                 }
                 if(stackOperators.empty())
+                {
                     throw new ParsingException("Invalid Expression");
+                } else
+                {
+                    stackOperators.pop();
+                }
             }
+            prevToken = token;
         }
-        return targetNotation;
+        while(!stackOperators.empty())
+        {
+            if(isOpenBracket(stackOperators.peek()))
+            {
+                throw new ParsingException("Invalid Expression");
+            }
+            targetValence.push(getValence(stackOperators.peek()));
+            targetNotation.push(stackOperators.peek());
+        }
     }
 
+    private Double Operate(Double leftOperand,Double rightOperand,String Operator)
+    {
+        if(Operator.equals("+"))
+        {
+            leftOperand = leftOperand + rightOperand;
+        }
+        if(Operator.equals("-"))
+        {
+            leftOperand =  leftOperand - rightOperand;
+        }
+        if(Operator.equals("*"))
+        {
+            leftOperand = leftOperand * rightOperand;
+        }
+        if(Operator.equals("/"))
+        {
+            leftOperand =  leftOperand / rightOperand;
+        }
+        return leftOperand;
+    }
 
     private boolean isNumber (String token)
     {
@@ -102,12 +180,34 @@ public class CStackCalculator implements Calculator
         return OPERATORS.contains(token);
     }
 
+    private boolean isOperatorMinus (String token)
+    {
+        return token.equals("-");
+    }
+
     private byte getPrecedence(String token)
     {
         if (token.equals("+") || token.equals("-"))
         {
             return 1;
         }
+        if(token.equals("_"))
+        {
+            return 3;
+        }
         return 2;
     }
+    private int getValence(String token)
+    {
+        if(isNumber(token))
+        {
+            return 0;
+        }
+        if(token.equals("_"))
+        {
+            return 1;
+        }
+        return 2;
+    }
+
 }
