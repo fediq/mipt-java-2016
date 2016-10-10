@@ -2,6 +2,8 @@ package ru.mipt.java2016.homework.g595.topilskiy.task1;
 
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 import ru.mipt.java2016.homework.base.task1.Calculator;
+
+import java.text.ParseException;
 import java.util.Stack;
 
 /**
@@ -13,6 +15,8 @@ import java.util.Stack;
 class SimpleCalculator implements Calculator {
     private final static String ILLEGAL_POSITION_IN_EXPRESSION =
                                 "Expression contains Illegal Symbol Position(s)";
+
+    private int expression_iterator = 0;
 
     /**
      * Check that expression contains only recognised symbols
@@ -86,7 +90,7 @@ class SimpleCalculator implements Calculator {
      */
     private Double complete_operation(Double first, Double second, Character operation)
                                                                 throws ParsingException {
-        if (first == null || second == null || operation == null) {
+        if (operation == null || second == null || (first == null && operation != '-')) {
             throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION);
         }
 
@@ -97,7 +101,12 @@ class SimpleCalculator implements Calculator {
                 result = first + second;
                 break;
             case '-':
-                result = first - second;
+                if (first == null) {
+                    result = -second;
+                }
+                else {
+                    result = first - second;
+                }
                 break;
             case '*':
                 result = first * second;
@@ -108,6 +117,57 @@ class SimpleCalculator implements Calculator {
         }
 
         return result;
+    }
+
+    /**
+     * Convert a Character to its Double equivalent
+     *
+     * @param c - character to convert to Double
+     * @return Double version value of c
+     */
+    private Double get_double_digit(Character c) {
+        return (double)((int)c - '0');
+    }
+
+    /**
+     * Read a double number from the expression_iterator position in expression
+     *
+     * @param expression - the expression String
+     * @return value of the read double number
+     * @throws ParsingException - expression is illegal and cannot be calculated
+     */
+    private Double read_double_number_from_expression(String expression) throws ParsingException {
+        Character c = expression.charAt(expression_iterator);
+        Double number = get_double_digit(c);
+
+        for(; expression_iterator < expression.length() && Character.isDigit(c); ++expression_iterator) {
+            c = expression.charAt(expression_iterator);
+            number *= 10;
+            number += get_double_digit(c);
+        }
+        if (c == '.') {
+            if (++expression_iterator == expression.length()) {
+                throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION);
+            }
+
+            double place_factor = 1;
+
+            c = expression.charAt(expression_iterator);
+            place_factor *= 10;
+            number += get_double_digit(c) / place_factor;
+
+            if (!Character.isDigit(c)) {
+                throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION);
+            }
+
+            for(; expression_iterator < expression.length() && Character.isDigit(c); ++expression_iterator) {
+                c = expression.charAt(expression_iterator);
+                place_factor *= 10;
+                number += get_double_digit(c) / place_factor;
+            }
+        }
+
+        return number;
     }
 
     /**
@@ -124,9 +184,19 @@ class SimpleCalculator implements Calculator {
 
         Character operation = null;
         Double calculation = null;
+        Double number = null;
 
-        for (int i = 0; i < expression.length(); ++i) {
-            Character c = expression.charAt(i);
+        for (expression_iterator = 0; expression_iterator < expression.length();
+                                            ++expression_iterator, number = null) {
+            Character c = expression.charAt(expression_iterator);
+
+            if (c == ' ' || c == '\n' || c == '\t') {
+                continue;
+            }
+
+            if (c == '.' || (calculation != null && operation == null && Character.isDigit(c))) {
+                throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION + " 1 ");
+            }
 
             if (c == '(') {
                 calculation_stack.push(new CalculationSnapshot(calculation, operation));
@@ -139,30 +209,33 @@ class SimpleCalculator implements Calculator {
                 operation = last_snapshot.operation;
             }
 
-            if (operation != null) {
-                switch (c) {
-                    case '\n':
-                    case '\t':
-                    case ' ':
-                        break;
-                    default:
-                        throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION);
+            if (Character.isDigit(c)) {
+                number = read_double_number_from_expression(expression);
+            }
+
+            if (number == null) { /* c == '+' '-' '*' '/' */
+                if (operation != null) {
+                    throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION + " 2");
+                } else {
+                    operation = c;
                 }
             }
             else {
-                switch (c) {
-                    case '\n':
-                    case '\t':
-                    case ' ':
-                        break;
-                    default:
-                        operation = c;
+                if (operation == null) {
+                    if (calculation == null) {
+                        calculation = number;
+                    } else {
+                        throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION + " 3");
+                    }
+                } else {
+                    calculation = complete_operation(calculation, number, operation);
+                    operation = null;
                 }
             }
         }
 
         if (calculation == null) {
-            throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION);
+            throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION + " 4");
         }
         return calculation;
     }
