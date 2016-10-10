@@ -171,7 +171,7 @@ class KrokhalevsCalculator implements Calculator {
         if (operands.size() < element.cntParams) throw new ParsingException("Incorrect expression");
 
         ArrayList<Operand> params = new ArrayList<>();
-        for (int i = element.cntParams - 1; i >= 0; --i) {
+        for (int i = 0; i < element.cntParams; ++i) {
             params.add(operands.peek());
             operands.pop();
         }
