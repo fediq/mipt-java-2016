@@ -155,12 +155,12 @@ public class CStackCalculator implements Calculator
 
     private boolean isNumber (String token)
     {
-        try
+        for(int i = 0;i<token.length();++i)
         {
-            Double.parseDouble(token);
-        } catch (Exception exception)
-        {
-            return false;
+            if(!SYMBOLS.contains(String.valueOf(token.charAt(i))))
+            {
+                return false;
+            }
         }
         return true;
     }
