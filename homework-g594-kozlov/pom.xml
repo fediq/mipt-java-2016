@@ -10,6 +10,19 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>homework-g594-kozlov</artifactId>
+    <dependencies>
+        <dependency>
+            <groupId>ru.mipt.java2016</groupId>
+            <artifactId>homework-tests</artifactId>
+            <version>1.0.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>ru.mipt.java2016</groupId>
+            <artifactId>homework-base</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+    </dependencies>
 
 
 </project>
