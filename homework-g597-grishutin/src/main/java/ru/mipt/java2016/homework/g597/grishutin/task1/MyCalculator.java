@@ -200,5 +200,4 @@ class MyCalculator implements Calculator{
         }
         return answer.toString();
     }
-
 }
