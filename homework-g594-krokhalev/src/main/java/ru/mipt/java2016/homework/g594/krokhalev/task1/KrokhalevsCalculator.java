@@ -130,14 +130,18 @@ class KrokhalevsCalculator implements Calculator {
             throw new ParsingException("Unknown symbol");
         }
     }
-    private Operand readOperand() {
+    private Operand readOperand() throws ParsingException {
         String ans = "";
         do {
             ans += readNextChar();
         }
         while (isInExpression() && isOperand());
-
-        return new Operand(Double.valueOf(ans));
+        try {
+            Double dAns = Double.valueOf(ans);
+            return new Operand(dAns);
+        } catch (Exception e) {
+            throw new ParsingException("Incorrect double");
+        }
     }
     private Element readElement(Block prev) {
         if (prev.blockType == BlockType.ELEMENT && ((Element)prev).figure != ')' && (expression_.charAt(pos_) == '-' || expression_.charAt(pos_) == '+')) {
