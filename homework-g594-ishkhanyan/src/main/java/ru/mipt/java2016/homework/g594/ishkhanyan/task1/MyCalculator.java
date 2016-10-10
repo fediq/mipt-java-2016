@@ -11,19 +11,19 @@ class MyCalculator implements Calculator
 {
     MyCalculator(){}
 
-    private boolean isDelim(char c){
+    private boolean isDelim(char c){ //check that the symbol is delimiter
         return c == ' ' || c == '\n' || c == '\t';
     }
 
-    private boolean isOper(char c){
+    private boolean isOper(char c){ // check that the symbol is operator
         return c == '+' || c == '-' || c == '*' || c == '/';
     }
 
-    private boolean isDigit(char c){
+    private boolean isDigit(char c){ //check that the symbol is digit or point
         return (c >= '0' && c <= '9' || c == '.');
     }
 
-    private int priority(char op){
+    private int priority(char op){ // return priority of operation
         switch(op){
             case '+':
                 return 1;
@@ -41,7 +41,7 @@ class MyCalculator implements Calculator
         }
     }
 
-    private double getVal(String str) throws ParsingException
+    private double getVal(String str) throws ParsingException // convert string >> double
     {
         double result = 0;
         int points = 0;
@@ -70,7 +70,7 @@ class MyCalculator implements Calculator
         return result;
     }
 
-    private void doOper(Stack<Double> numbers, char op){
+    private void doOper(Stack<Double> numbers, char op){ //do 1 operation from stack
         if(op=='m' || op == 'p') {
             double l = numbers.pop();
             switch (op) {
@@ -124,7 +124,7 @@ class MyCalculator implements Calculator
             }
 
             if(exp.charAt(i)==')'){
-                if (numberAfterOp == 0)
+                if (numberAfterOp == 0) // check that operation is not last meaning symbol in brackets
                     throw new ParsingException("illegal expression");
                 if (brackbalnce == 0)                       //checking bracket balance
                     throw new ParsingException("balance error");
@@ -150,7 +150,7 @@ class MyCalculator implements Calculator
                         default:
                             throw new ParsingException("Illegal sequence");
                     }
-                }else if(numberAfterOp == 0)
+                }else if(numberAfterOp == 0) //check that we have not two unary operations
                 {
                     throw new ParsingException("double operation");
                 }
@@ -197,11 +197,11 @@ class MyCalculator implements Calculator
                 numberAfterOp = 1;
                 continue;
             }
-            throw new ParsingException("Illegal symbol");
+            throw new ParsingException("Illegal symbol");// if we did not meet familiar symbol
         }
 
         if(brackbalnce!=0) throw new ParsingException("balance error");//checking bracket balance
-        if(numbers.empty()) throw new ParsingException("empty expression");//example:"     "
+        if(numbers.empty()) throw new ParsingException("empty expression");//example:"     " - no numbers
         while (!oper.empty()){
             doOper(numbers,oper.pop());
         }
