@@ -1,4 +1,4 @@
-package ru.mipt.java2016.homework.g000.lavrentyev.task1;
+package ru.mipt.java2016.homework.g594.borodin.task1;
 
 import net.sourceforge.jeval.EvaluationConstants;
 import net.sourceforge.jeval.EvaluationException;
