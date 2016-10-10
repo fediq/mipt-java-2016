@@ -15,7 +15,12 @@
         <module>homework-tests</module>
 
         <module>homework-g000-lavrentyev</module>
+<<<<<<< HEAD
         <module>homework-g594-krokhalev</module>
+=======
+        <module>homework-g597-vasilyev</module>
+        <module>homework-g597-moiseev</module>
+>>>>>>> fediq/master
     </modules>
 
     <build>
