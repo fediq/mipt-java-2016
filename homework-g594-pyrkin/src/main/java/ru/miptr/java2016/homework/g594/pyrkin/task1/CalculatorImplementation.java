@@ -9,14 +9,14 @@ import java.util.Stack;
  * Created by randan on 10/9/16.
  */
 public class CalculatorImplementation implements Calculator{
-    private Stack<Double> numbers = new Stack<>();
-    private Stack<Character> symbols = new Stack<>();
-    private double currentInteger;
-    private double currentDecimal;
-    private boolean point;
-    private boolean number;
+    private Stack<Double> numbers = new Stack<>(); // стек для чисел
+    private Stack<Character> symbols = new Stack<>(); // стек для скобок и операций
+    private double currentInteger; // текущая целя часть числа
+    private double currentDecimal; // текущая дробная часть числа
+    private boolean point; // была ли встречена точка во время обработки числа
+    private boolean number; // обрабатывается ли число
 
-    private boolean badSymbolsCheck(String expression){
+    private boolean badSymbolsCheck(final String expression){
         for(char symbol : expression.toCharArray())
             if(!Character.isDigit(symbol) && symbol != '.' && symbol != '(' && symbol != ')'
                 && symbol != '+' && symbol != '-' && symbol != '*' && symbol !='/')
@@ -24,9 +24,10 @@ public class CalculatorImplementation implements Calculator{
         return false;
     }
 
-    private boolean bracketsCheck(String expression){
+    private boolean bracketsCheck(final String expression){
         int balance = 0;
         char previousSymbol = '#';
+
         for(char symbol : expression.toCharArray()){
             if(symbol == '(')
                 ++balance;
@@ -44,12 +45,12 @@ public class CalculatorImplementation implements Calculator{
         return balance != 0;
     }
 
-    private int getPriority(char operand){
+    private int getPriority(final char operand){
         if(operand == '+' || operand == '-')
             return 1;
         if(operand == '*' || operand == '/')
             return 2;
-        if(operand == 'p' || operand == 'n')
+        if(operand == 'p' || operand == 'n') // унарные + и -
             return 3;
         return 0;
     }
@@ -62,7 +63,7 @@ public class CalculatorImplementation implements Calculator{
         point = false;
     }
 
-    private void addOperand(char operand, char previousSymbol){
+    private void addOperand(final char operand, final char previousSymbol){
         if(symbols.empty() || getPriority(operand) != 1){
             symbols.push(operand);
             return;
@@ -90,12 +91,18 @@ public class CalculatorImplementation implements Calculator{
             symbols.push(operand);
     }
 
-
-    private void makeOperation(char operand){
+    private void makeOperation(final char operand) throws ParsingException{
+        if(numbers.empty())
+            throw new ParsingException("Invalid expression");
         double lastNumber = numbers.pop();
+
         double previousNumber = 0;
-        if(getPriority(operand) < 3)
+        if(getPriority(operand) < 3) {
+            if(numbers.empty())
+                throw new ParsingException("Invalid expression");
             previousNumber = numbers.pop();
+        }
+
         switch (operand) {
             case '+':
                 numbers.push(previousNumber + lastNumber);
@@ -117,21 +124,22 @@ public class CalculatorImplementation implements Calculator{
         }
     }
 
-    private void expandBrackets(){
+    private void expandBrackets() throws ParsingException{
         while (symbols.peek() != '(')
             makeOperation(symbols.pop());
         symbols.pop();
     }
 
-    private void expandStack(char operand){
+    private void expandStack(final char operand) throws ParsingException{
         while(!symbols.empty() &&
               getPriority(symbols.peek()) >= getPriority(operand))
             makeOperation(symbols.pop());
     }
 
-    private char declSymbol(char symbol, char previousSymbol){
+    private char declSymbol(final char symbol, final char previousSymbol){
         if(symbol != '+' && symbol != '-')
             return symbol;
+
         if(!Character.isDigit(previousSymbol) && previousSymbol != ')'){
             if(symbol == '+')
                 return 'p';
@@ -140,12 +148,13 @@ public class CalculatorImplementation implements Calculator{
         return symbol;
     }
 
-    private double getResult(String expression) throws ParsingException{
+    private double getResult(final String expression) throws ParsingException{
         currentInteger = 0;
         currentDecimal = 0;
         point = false;
         number = false;
         char previousSymbol = 'x';
+
         for(char symbol : expression.toCharArray()){
             if(Character.isDigit(symbol)) {
                 number = true;
@@ -158,15 +167,21 @@ public class CalculatorImplementation implements Calculator{
                     throw new ParsingException("Invalid expression");
                 point = true;
             }else {
-                if(number)
+                if(number) {
+                    if(previousSymbol == '.')
+                        throw new ParsingException("Invalid expression");
                     addNumber();
+                }
+
                 if(symbol == '(')
                     symbols.push(symbol);
                 else if (symbol == ')')
                     expandBrackets();
                 else {
                     symbol = declSymbol(symbol, previousSymbol);
-                    expandStack(symbol);
+                    if(previousSymbol != '+' && previousSymbol != '-' &&
+                       previousSymbol != 'p' && previousSymbol != 'n')
+                        expandStack(symbol);
                     addOperand(symbol, previousSymbol);
                 }
             }
@@ -175,6 +190,9 @@ public class CalculatorImplementation implements Calculator{
         if(number)
             numbers.push(currentInteger + currentDecimal);
         expandStack('#');
+
+        if(numbers.size() > 1)
+            throw new ParsingException("Invalid expression");
         return numbers.peek();
     }
 
@@ -182,22 +200,18 @@ public class CalculatorImplementation implements Calculator{
     public double calculate (String expression) throws ParsingException{
         if(expression == null)
             throw  new ParsingException("Null expression");
+
         expression = expression.replaceAll("[\\s]", "");
+
         if(expression.isEmpty())
             throw new ParsingException("Invalid expression");
         if(badSymbolsCheck(expression))
             throw  new ParsingException("Invalid expression");
         if(bracketsCheck(expression))
             throw  new ParsingException("Invalid expression");
-      //  System.out.print(expression + "\n");
+
         return getResult(expression);
     }
-
-//    public static void main(String[] args) throws ParsingException{
-//        String s = " (6.0  ) + \t( - 4) * (  0.0 +\n 5/2)";
-//        CalculatorImplementation calc = new CalculatorImplementation();
-//        System.out.print(calc.calculate(s));
-//    }
 }
 
 
