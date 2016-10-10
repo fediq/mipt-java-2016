@@ -140,8 +140,11 @@ class SimpleCalculator implements Calculator {
         Character c = expression.charAt(expression_iterator);
         Double number = get_double_digit(c);
 
-        for(; expression_iterator < expression.length() && Character.isDigit(c); ++expression_iterator) {
+        while(++expression_iterator < expression.length()) {
             c = expression.charAt(expression_iterator);
+            if (!Character.isDigit(c))
+                break;
+
             number *= 10;
             number += get_double_digit(c);
         }
@@ -160,8 +163,11 @@ class SimpleCalculator implements Calculator {
                 throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION);
             }
 
-            for(; expression_iterator < expression.length() && Character.isDigit(c); ++expression_iterator) {
+            while(++expression_iterator < expression.length()) {
                 c = expression.charAt(expression_iterator);
+                if (!Character.isDigit(c))
+                    break;
+
                 place_factor *= 10;
                 number += get_double_digit(c) / place_factor;
             }
