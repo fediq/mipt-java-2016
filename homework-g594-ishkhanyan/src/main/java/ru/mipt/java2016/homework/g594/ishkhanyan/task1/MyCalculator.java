@@ -1,13 +1,9 @@
 package ru.mipt.java2016.homework.g594.ishkhanyan.task1;
 
 
-import com.sun.javafx.fxml.expression.Expression;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
-import java.lang.reflect.Parameter;
-import java.text.ParseException;
-import java.util.Vector;
 import java.util.Stack;
 
 
@@ -16,7 +12,7 @@ public class MyCalculator implements Calculator
     public MyCalculator(){};
 
     private boolean isDelim(char c){
-        return c != ' ' ? false : true;
+        return c == ' '|| c=='\n' || c=='\t' ? true : false;
     }
 
     private boolean isOper(char c){
@@ -45,31 +41,36 @@ public class MyCalculator implements Calculator
         }
     }
 
-    private double getVal(String str) throws ParsingException
+    public double getVal(String str) throws ParsingException
     {
         double result = 0;
-        int noDigit = 0;
+        int points = 0;
         int pos = str.length();
         if(str.charAt(0)=='.' || str.charAt(str.length() - 1)=='.') {
             throw new ParsingException("Number error");
         }
         for(int i = 0; i < str.length(); ++i){
             if (str.charAt(i)=='.'){
-                noDigit += 0;
+                ++points;
                 pos = i;
             }
         }
-        if (noDigit > 1)
+        if (points > 1)
         {
             throw new ParsingException("Number error");
         }
         for(int i =0 ;i<str.length();++i){
-            result+= Math.pow((str.charAt(i)-'0'),(pos-i));
+            if(pos > i){
+                result+= (str.charAt(i)-'0')*Math.pow(10,(pos-i-1));
+            }
+            if(pos < i){
+                result+= (str.charAt(i)-'0')*Math.pow(10,(pos-i));
+            }
         }
         return result;
     }
 
-    private void do_oper(Stack<Double> numbers, char op){
+    private void doOper(Stack<Double> numbers, char op){
         if(op=='m' || op == 'p') {
             double l = numbers.pop();
             switch (op) {
@@ -102,7 +103,11 @@ public class MyCalculator implements Calculator
     }
 
     public double calculate(String exp) throws ParsingException {
-        boolean unar_possib = true;
+        boolean unar_possib = true;//wait unary operation
+        int bracket = 0;
+        int brackbalnce = 0;
+        if(exp==null || exp.length()==0)
+            throw new ParsingException("empty expression");
         Stack<Double> numbers = new Stack<Double>();
         Stack<Character> oper = new Stack<Character>();
         for(int i = 0; i<exp.length(); ++i) {
@@ -112,16 +117,23 @@ public class MyCalculator implements Calculator
 
             if(exp.charAt(i)=='('){
                 oper.push(exp.charAt(i));
+                bracket=i;
                 unar_possib = true;
+                ++brackbalnce;
                 continue;
             }
 
             if(exp.charAt(i)==')'){
+                if (bracket-i==1)
+                    throw new ParsingException("empty brackets");
+                if (brackbalnce == 0)                       //checking bracket balance
+                    throw new ParsingException("balance error");
                 while (oper.peek() != '('){
-                    do_oper(numbers, oper.pop());
+                    doOper(numbers, oper.pop());
                 }
                 oper.pop();
                 unar_possib = false;
+                --brackbalnce;
                 continue;
             }
 
@@ -139,13 +151,27 @@ public class MyCalculator implements Calculator
                             throw new ParsingException("Illegal sequence");
                     }
                 }
-                while(!oper.empty() && (priority(oper.peek())>=priority(currentOp)
+                while(!oper.empty() && !numbers.empty() && (priority(oper.peek())>=priority(currentOp)
                        ||  (currentOp=='m' || currentOp=='p') && priority(oper.peek())>priority(currentOp)))
                 {
-                    do_oper(numbers, oper.pop());
+                    doOper(numbers, oper.pop());
                 }
                 oper.push(currentOp);
-                unar_possib = false;
+                unar_possib = true;
+                /*switch (currentOp){
+                    case '+':
+                        unar_possib = false;
+                        break;
+                    case '-':
+                        unar_possib = false;
+                        break;
+                    case '*':
+                        unar_possib = true;
+                        break;
+                    case '/':
+                        unar_possib = true;
+                        break;
+                }*/
                 continue;
             }
             if(isDigit(exp.charAt(i))){
@@ -158,10 +184,15 @@ public class MyCalculator implements Calculator
                 --i;
                 numbers.push(getVal(num));
                 unar_possib = false;
+                continue;
             }
+            throw new ParsingException("Illegal symbol");
         }
+
+        if(brackbalnce!=0) throw new ParsingException("balance error");//checking bracket balance
+        if(numbers.empty()) throw new ParsingException("empty expression");//example:"     "
         while (!oper.empty()){
-            do_oper(numbers,oper.pop());
+            doOper(numbers,oper.pop());
         }
         return numbers.peek();
     }
