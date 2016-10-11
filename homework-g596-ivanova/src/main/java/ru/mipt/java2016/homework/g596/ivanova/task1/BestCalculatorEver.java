@@ -17,136 +17,6 @@ public class BestCalculatorEver implements Calculator {
     }
 
     /**
-     * This class enables us to store different tokens in one collection.
-     */
-    private abstract class Token {
-    }
-
-    /**
-     * Class for storage numerical tokens.
-     */
-    private class Numeric extends Token {
-
-        /**
-         * Value of numeric.
-         */
-        private final double value;
-
-        /**
-         * @param v Value we want to assign to Numeric.value
-         */
-        Numeric(final double v) {
-            value = v;
-        }
-
-        /**
-         * @return Value of Numeric
-         */
-        public double getValue() {
-            return value;
-        }
-    }
-
-    /**
-     * Class for storage operators.
-     */
-    private class Operator extends Token {
-
-        /**
-         * Type of Operator.
-         */
-        private final char type;
-
-        /**
-         * Priority of the Operator +,- < *,/ < unary minus.
-         */
-        private int priority;
-
-        /**
-         * Priority of +,-.
-         */
-        static final int LOWEST_PRIORITY = 1;
-
-        /**
-         * Priority of *,/.
-         */
-        static final int MEDIUM_PRIORITY = 2;
-
-        /**
-         * Priority of unary minus.
-         */
-        static final int HIGHEST_PRIORITY = 3;
-
-        /**
-         * @param symbol Symbol of Operator. All obvious, except unary minus - '!'
-         */
-        Operator(final char symbol) {
-            type = symbol;
-            switch (type) {
-                case '+':
-                    priority = LOWEST_PRIORITY;
-                    break;
-                case '-':
-                    priority = LOWEST_PRIORITY;
-                    break;
-                case '*':
-                    priority = MEDIUM_PRIORITY;
-                    break;
-                case '/':
-                    priority = MEDIUM_PRIORITY;
-                    break;
-                case '!': // unary minus
-                    priority = HIGHEST_PRIORITY;
-                    break;
-                default:
-                    break;
-            }
-
-        }
-
-        /**
-         * @return Symbol denoting Operator. Ex: '+'
-         */
-        public char getType() {
-            return type;
-        }
-
-        /**
-         * @return Priority of Operator. +,- < *,/ < unary minus
-         */
-        public int getPriority() {
-            return priority;
-        }
-    }
-
-    /**
-     * Class for storage Braces.
-     */
-    private class Brace extends Token {
-
-        /**
-         * Whether brace is opening.
-         */
-        private boolean isOpening;
-
-        /**
-         * @param brace Symbol of opening or closing brace
-         */
-        Brace(final char brace) {
-            if (brace == '(') {
-                isOpening = true;
-            }
-        }
-
-        /**
-         * @return true if the brace is opening
-         */
-        boolean isOpening() {
-            return isOpening;
-        }
-    }
-
-    /**
      * @param expression The expression we got from the input
      * @return Tokenized expression
      * @throws ParsingException If the expression is invalid
@@ -355,5 +225,131 @@ public class BestCalculatorEver implements Calculator {
             throw new ParsingException("No more operators are available.");
         }
         return stack.peek();
+    }
+
+    /**
+     * This class enables us to store different tokens in one collection.
+     */
+    private abstract class Token {
+    }
+
+    /**
+     * Class for storage numerical tokens.
+     */
+    private class Numeric extends Token {
+
+        /**
+         * Value of numeric.
+         */
+        private final double value;
+
+        /**
+         * @param v Value we want to assign to Numeric.value
+         */
+        Numeric(final double v) {
+            value = v;
+        }
+
+        /**
+         * @return Value of Numeric
+         */
+        public double getValue() {
+            return value;
+        }
+    }
+
+    /**
+     * Class for storage operators.
+     */
+    private class Operator extends Token {
+
+        /**
+         * Priority of +,-.
+         */
+        static final int LOWEST_PRIORITY = 1;
+        /**
+         * Priority of *,/.
+         */
+        static final int MEDIUM_PRIORITY = 2;
+        /**
+         * Priority of unary minus.
+         */
+        static final int HIGHEST_PRIORITY = 3;
+        /**
+         * Type of Operator.
+         */
+        private final char type;
+        /**
+         * Priority of the Operator +,- < *,/ < unary minus.
+         */
+        private int priority;
+
+        /**
+         * @param symbol Symbol of Operator. All obvious, except unary minus - '!'
+         */
+        Operator(final char symbol) {
+            type = symbol;
+            switch (type) {
+                case '+':
+                    priority = LOWEST_PRIORITY;
+                    break;
+                case '-':
+                    priority = LOWEST_PRIORITY;
+                    break;
+                case '*':
+                    priority = MEDIUM_PRIORITY;
+                    break;
+                case '/':
+                    priority = MEDIUM_PRIORITY;
+                    break;
+                case '!': // unary minus
+                    priority = HIGHEST_PRIORITY;
+                    break;
+                default:
+                    break;
+            }
+
+        }
+
+        /**
+         * @return Symbol denoting Operator. Ex: '+'
+         */
+        public char getType() {
+            return type;
+        }
+
+        /**
+         * @return Priority of Operator. +,- < *,/ < unary minus
+         */
+        public int getPriority() {
+            return priority;
+        }
+    }
+
+    /**
+     * Class for storage Braces.
+     */
+    private class Brace extends Token {
+
+        /**
+         * Whether brace is opening.
+         */
+        private boolean isOpening;
+
+        /**
+         * @param brace Symbol of opening or closing brace
+         */
+        Brace(final char brace) {
+            if (brace == '(') {
+                isOpening = true;
+            }
+        }
+
+        /**
+         * @return true if the brace is opening
+         */
+        boolean isOpening() {
+            return isOpening;
+        }
     }
 }
