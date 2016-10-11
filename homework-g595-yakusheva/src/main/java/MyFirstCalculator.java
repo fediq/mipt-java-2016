@@ -11,6 +11,7 @@ public class MyFirstCalculator implements ru.mipt.java2016.homework.base.task1.C
         public int type = 0;
         public double value = 0;
         public char symbol = ' ';
+        public boolean isUnary = false;
 
         Element(int t, double v, char c) {
             type = t;
@@ -164,17 +165,16 @@ public class MyFirstCalculator implements ru.mipt.java2016.homework.base.task1.C
     private void pushNextElement() throws ParsingException {
         Element nextElement = getNextStackElement();
         if (nextElement.type == 2) {
-            if (prevMinus) {
-                nextElement.value = -nextElement.value;
-            }
             eQ.push(nextElement);
-            prevMinus = false;
             prevOper = false;
+            prevSkob = false;
         } else {
             if (nextElement.type == 1) {
                 if (prevOper && (nextElement.symbol == '-')) {
-                    prevMinus = true;
-                } else {
+                    nextElement.isUnary = true;
+                    iQ.push(nextElement);
+                }
+                else {
                     if ((prevOper) && (!prevSkob) && (nextElement.symbol == ')'))
                         throw new ParsingException("incorrect operations order");
                     if ((prevOper) && (!prevSkob) && (nextElement.symbol != '('))
@@ -199,14 +199,12 @@ public class MyFirstCalculator implements ru.mipt.java2016.homework.base.task1.C
                             }
                             if (!iQ.empty())
                                 iQ.pop();
-
                         }
-
                     }
-
-                    prevOper = true;
                 }
-            } else {
+                prevOper = true;
+            }
+            else {
                 if (nextElement.type == 0) {
                     while (!iQ.empty()) {
                         Element newElement = iQ.lastElement();
@@ -226,6 +224,7 @@ public class MyFirstCalculator implements ru.mipt.java2016.homework.base.task1.C
 
     public double calculate(String expression) throws ParsingException {
         equation = expression;
+        prevOper = true;
         if (equation == null)
             throw new ParsingException("null string");
         if (equation.length() == 0)
@@ -253,11 +252,30 @@ public class MyFirstCalculator implements ru.mipt.java2016.homework.base.task1.C
             if (A.type == 2) {
                 myAnswer.push(A.value);
             } else {
-                double s = myAnswer.lastElement();
-                myAnswer.pop();
-                double t = myAnswer.lastElement();
-                myAnswer.pop();
-                myAnswer.push(getResult(t, s, A.symbol));
+                if (myAnswer.size() == 0) {
+                    throw new ParsingException("incorrect operation order");
+                }
+                else {
+                    if(myAnswer.size() == 1){
+                        if(A.symbol != '-'){
+                            throw new ParsingException("incorrect operation order");
+                        }
+                    }
+                    if(A.isUnary){
+                        double tmp = myAnswer.lastElement();
+                        myAnswer.pop();
+                        tmp = -tmp;
+                        myAnswer.push(tmp);
+                    }
+                    else{
+                        double first = myAnswer.lastElement();
+                        myAnswer.pop();
+                        double second = myAnswer.lastElement();
+                        myAnswer.pop();
+                        myAnswer.push(getResult(second, first, A.symbol));
+                    }
+
+                }
             }
         }
         return myAnswer.firstElement();
