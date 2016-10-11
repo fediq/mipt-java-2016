@@ -2,9 +2,12 @@ package ru.mipt.java2016.homework.g595.novikov.task1;
 
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
+import java.util.Vector;
 
 public class MyCalculator implements Calculator
 {
+    Tokenizer tokens;
+    
     static class Tokenizer
     {
         String expr, current;
@@ -70,14 +73,18 @@ public class MyCalculator implements Calculator
         }
     }
     
-    static double brackets(Tokenizer tokens) throws ParsingException
+    double brackets() throws ParsingException
     {
         if (tokens.hasNext() && tokens.getCurrent().equals("-"))
-            return -brackets(tokens.next());
+        {
+            tokens.next();
+            return -brackets();
+        }
         
         if (tokens.hasNext() && tokens.getCurrent().equals("("))
         {
-            double res = expr(tokens.next());
+            tokens.next();
+            double res = expr();
             if (tokens.hasNext() && tokens.getCurrent().equals(")"))
             {
                 tokens.next();
@@ -100,47 +107,75 @@ public class MyCalculator implements Calculator
         throw new ParsingException("Error during brackets() : cannot find '(' or number");
     }
     
-    static double mul(Tokenizer tokens) throws ParsingException
+    double mul() throws ParsingException
     {
-        double a = brackets(tokens);
+        double a = brackets();
         while (tokens.hasNext() && (tokens.getCurrent().equals("*")
                 || tokens.getCurrent().equals("/")))
         {
             if (tokens.getCurrent().equals("*"))
-                a = a * brackets(tokens.next());
+            {
+                tokens.next();
+                a = a * brackets();
+            }
             else
-                a = a / brackets(tokens.next());
+            {
+                tokens.next();
+                a = a / brackets();
+            }
         }
         return a;
     }
     
-    static double add(Tokenizer tokens) throws ParsingException
+    double add() throws ParsingException
     {
-        double a = mul(tokens);
+        double a = mul();
         while (tokens.hasNext() && (tokens.getCurrent().equals("-")
                 || tokens.getCurrent().equals("+")))
         {
             if (tokens.getCurrent().equals("+"))
-                a += mul(tokens.next());
+            {
+                tokens.next();
+                a += mul();
+            }
             else
-                a -= mul(tokens.next());
+            {
+                tokens.next();
+                a -= mul();
+            }
         }
         return a;
     }
     
-    static double expr(Tokenizer tokens) throws ParsingException
+    double expr() throws ParsingException
     {
-        return add(tokens);
+        return add();
     }
     
+    void printTokenizer()
+    {
+        Tokenizer tk = new Tokenizer(tokens);
+        Vector<String> vec = new Vector<String>();
+        while (tk.hasNext())
+        {
+            vec.add(tk.getCurrent());
+            tk.next();
+        }
+        for (String str : vec)
+            System.out.print(str + '_');
+        System.out.println();
+    }
+    
+    @Override
     public double calculate(String expression) throws ParsingException
     {
         if (expression == null)
             throw new ParsingException("expression is null");
-        Tokenizer tokens = new Tokenizer(expression);
-        double res = expr(tokens);
+        tokens = new Tokenizer(expression);
+        double res = expr();
         if (tokens.hasNext())
             throw new ParsingException("Error during calculate: there are more tokens");
+        tokens = null;
         return res;
     }
 }
