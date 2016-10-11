@@ -3,7 +3,6 @@ package ru.mipt.java2016.homework.g595.topilskiy.task1;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 
-import java.text.ParseException;
 import java.util.Stack;
 
 /**
@@ -153,10 +152,8 @@ class SimpleCalculator implements Calculator {
                 throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION);
             }
 
-            double place_factor = 1;
-
             c = expression.charAt(expression_iterator);
-            place_factor *= 10;
+            double place_factor = 10;
             number += get_double_digit(c) / place_factor;
 
             if (!Character.isDigit(c)) {
@@ -173,6 +170,7 @@ class SimpleCalculator implements Calculator {
             }
         }
 
+        --expression_iterator;
         return number;
     }
 
@@ -208,11 +206,13 @@ class SimpleCalculator implements Calculator {
                 calculation_stack.push(new CalculationSnapshot(calculation, operation));
                 calculation = null;
                 operation = null;
+                continue;
             } else if (c == ')') {
                 CalculationSnapshot last_snapshot = calculation_stack.pop();
-                calculation = complete_operation(calculation, last_snapshot.calculation,
+                calculation = complete_operation(last_snapshot.calculation, calculation,
                                                               last_snapshot.operation);
-                operation = last_snapshot.operation;
+                operation = null;
+                continue;
             }
 
             if (Character.isDigit(c)) {
