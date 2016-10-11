@@ -34,7 +34,7 @@ public interface KeyValueStorage<K, V> extends Closeable {
 
     /**
      * Читает все ключи в хранилище.
-     *
+     * <p>
      * Итератор должен бросать {@link java.util.ConcurrentModificationException},
      * если данные в хранилище были изменены в процессе итерирования.
      */
