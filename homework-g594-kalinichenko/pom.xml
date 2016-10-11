@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>homework-g597-vasilyev</artifactId>
+    <artifactId>homework-g594-kalinichenko</artifactId>
     <dependencies>
         <dependency>
             <groupId>ru.mipt.java2016</groupId>
