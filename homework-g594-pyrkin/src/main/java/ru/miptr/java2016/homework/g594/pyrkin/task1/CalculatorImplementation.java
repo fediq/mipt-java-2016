@@ -167,6 +167,8 @@ public class CalculatorImplementation implements Calculator {
           expandBrackets();
         } else {
           symbol = declSymbol(symbol, previousSymbol);
+          if(getPriority(symbol) == 3 && getPriority(previousSymbol) == 3)
+            throw new ParsingException("Invalid expression");
           expandStack(symbol);
           symbols.push(symbol);
         }
