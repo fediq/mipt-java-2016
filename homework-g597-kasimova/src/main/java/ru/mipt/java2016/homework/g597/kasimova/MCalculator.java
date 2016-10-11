@@ -61,11 +61,7 @@ public class MCalculator implements Calculator {
 
         ArrayList<String> stack = new ArrayList<>();
 
-<<<<<<< HEAD
-        String temp;
-=======
         String temp = "";
->>>>>>> First task. Kasimova N. 597
         Map<String, Integer> get_prior = new HashMap<String, Integer>() {{
             put("(", 1);
             put(")", 1);
@@ -126,10 +122,7 @@ public class MCalculator implements Calculator {
             if (brackets_balance < 0) {
                 throw new ParsingException("Wrong balance of the brackets.\n");
             }
-<<<<<<< HEAD
-=======
             temp = "";
->>>>>>> First task. Kasimova N. 597
             i += 1;
         }
         if (brackets_balance != 0) {
