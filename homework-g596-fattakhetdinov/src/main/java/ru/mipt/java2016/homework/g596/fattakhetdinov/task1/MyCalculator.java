@@ -9,7 +9,8 @@ import java.util.Stack;
 
 public class MyCalculator implements Calculator {
 
-    public MyCalculator(){}
+    public MyCalculator() {
+    }
 
     private String expression = "";
     private Stack<Double> nums = new Stack<>();
@@ -35,7 +36,7 @@ public class MyCalculator implements Calculator {
             }
 
             //Пропускаем пробелы, /t и /r
-            while (i < expression.length() && isSpaceSymbol( expression.charAt(i)) ) i++;
+            while (i < expression.length() && isSpaceSymbol(expression.charAt(i))) i++;
 
             if (i == expression.length()) break; //В конце строки могли быть пробелы
 
@@ -44,47 +45,46 @@ public class MyCalculator implements Calculator {
             }
 
             //Перевод в обратную польскую запись с произведением вычислений
-             char op = expression.charAt(i);
+            char op = expression.charAt(i);
 
-             if (op == '(') { //Скобки просто добавляем в стек операций
-                 ops.push(op);
-                 waitUnary = true;
-                 continue;
-             }
+            if (op == '(') { //Скобки просто добавляем в стек операций
+                ops.push(op);
+                waitUnary = true;
+                continue;
+            }
 
-             if (op == ')') { //Вычисляем все что было внутри данной скобки
-                 while (ops.peek() != '(') {
-                     doOperation( ops.pop() );
-                 }
-                 ops.pop();
-                 waitUnary = false;
-                 continue;
-             }
+            if (op == ')') { //Вычисляем все что было внутри данной скобки
+                while (ops.peek() != '(') {
+                    doOperation(ops.pop());
+                }
+                ops.pop();
+                waitUnary = false;
+                continue;
+            }
 
-             if (waitUnary && isUnary((op))) {
-                 if(op == '+') op = 'p';//Унарный плюс
-                 if(op == '-') op = 'm';//Унарный минус
-             }
-             int nowPriority = priority(op);// Приоритет операции
-             while (!ops.empty() && !nums.empty() && nowPriority <= priority(ops.peek())) {
-                 doOperation( ops.pop() );
-             }
-             ops.push(op);
-             waitUnary = true;
+            if (waitUnary && isUnary((op))) {
+                if (op == '+') op = 'p';//Унарный плюс
+                if (op == '-') op = 'm';//Унарный минус
+            }
+            int nowPriority = priority(op);// Приоритет операции
+            while (!ops.empty() && !nums.empty() && nowPriority <= priority(ops.peek())) {
+                doOperation(ops.pop());
+            }
+            ops.push(op);
+            waitUnary = true;
         }
 
         while (!ops.empty()) { //У нас могли остаться невыполненные операции
-            doOperation( ops.pop() );
+            doOperation(ops.pop());
         }
         if (nums.size() == 1) { //Должно остаться одно число
             return nums.peek();
-        }
-        else {
+        } else {
             throw new ParsingException("Invalid Expression");
         }
     }
 
-    private void checkExpression() throws  ParsingException{ //Проверка исходного выражения на корректность
+    private void checkExpression() throws ParsingException { //Проверка исходного выражения на корректность
         if (expression == null) { //Проверка на null
             throw new ParsingException("Expression == null!");
         }
@@ -153,38 +153,38 @@ public class MyCalculator implements Calculator {
         //Проверка последнего символа
     }
 
-    private boolean isOp(char value){
+    private boolean isOp(char value) {
         String a = "-+/*()";
-        for (int i = 0; i < a.length(); i++){
+        for (int i = 0; i < a.length(); i++) {
             if (a.charAt(i) == value)
                 return true;
         }
         return false;
     }
 
-    private boolean isNum(char value){
+    private boolean isNum(char value) {
         String a = "0123456789.";
-        for (int i = 0; i < a.length(); i++){
+        for (int i = 0; i < a.length(); i++) {
             if (a.charAt(i) == value)
                 return true;
         }
         return false;
     }
 
-    private boolean isUnary(char value){
+    private boolean isUnary(char value) {
         return value == '+' || value == '-';
     }
 
-    private boolean isSpaceSymbol(char value){
+    private boolean isSpaceSymbol(char value) {
         String a = "\n\t ";
-        for (int i = 0; i < a.length(); i++){
+        for (int i = 0; i < a.length(); i++) {
             if (a.charAt(i) == value)
                 return true;
         }
         return false;
     }
 
-    private boolean isCorrectSymbol(char value){
+    private boolean isCorrectSymbol(char value) {
         return (isOp(value) || isNum(value) || isSpaceSymbol(value));
     }
 
@@ -227,39 +227,48 @@ public class MyCalculator implements Calculator {
 
         for (int i = 0; i < str.length(); i++) {
             if (pos > i) {
-                result += (str.charAt(i) - '0')*Math.pow(10, (pos - i - 1));
+                result += (str.charAt(i) - '0') * Math.pow(10, (pos - i - 1));
             }
             if (pos < i) {
-                result += (str.charAt(i) - '0')*Math.pow(10, (pos - i));
+                result += (str.charAt(i) - '0') * Math.pow(10, (pos - i));
             }
         }
         return result;
     }
 
-    private void doOperation(char op) throws ParsingException{
-       double val = nums.peek();
-       switch (op) { //Обработка унарных операций
-           case 'p':
-               nums.pop();
-               nums.push(val);
-               return;
-           case 'm':
-               nums.pop();
-               nums.push(-val);
-               return;
-       }
+    private void doOperation(char op) throws ParsingException {
+        double val = nums.peek();
+        switch (op) { //Обработка унарных операций
+            case 'p':
+                nums.pop();
+                nums.push(val);
+                return;
+            case 'm':
+                nums.pop();
+                nums.push(-val);
+                return;
+        }
 
         double first, second;
         first = nums.pop();
         second = nums.pop();
         double result;
 
-        switch (op){ // Обработка бинарных операций
-            case '+': result = second + first; break;
-            case '-': result = second - first; break;
-            case '*': result = second * first; break;
-            case '/': result = second / first; break;
-            default: return;
+        switch (op) { // Обработка бинарных операций
+            case '+':
+                result = second + first;
+                break;
+            case '-':
+                result = second - first;
+                break;
+            case '*':
+                result = second * first;
+                break;
+            case '/':
+                result = second / first;
+                break;
+            default:
+                return;
         }
         nums.push(result);
     }
