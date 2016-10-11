@@ -166,15 +166,17 @@ public class MCalculator implements Calculator {
                         result.set(position - 1, result.get(position - 1) + result.get(position));
                         result.remove(result.size() - 1);
                         position--;
+                    } else {
+                        throw new ParsingException("Incorrect expression.\n");
                     }
                 }
                 if (aPolish_notation.compareTo("-") == 0) {
-                    if (result.size() == 1) {
-                        result.set(0, result.get(0) * (-1));
-                    } else {
+                    if (result.size() > 1) {
                         result.set(position - 1, result.get(position - 1) - result.get(position));
                         result.remove(result.size() - 1);
                         position--;
+                    } else {
+                        throw new ParsingException("Incorrect expression.\n");
                     }
                 }
             }
