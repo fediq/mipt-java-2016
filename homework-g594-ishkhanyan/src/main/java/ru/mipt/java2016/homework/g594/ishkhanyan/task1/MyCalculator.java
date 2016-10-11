@@ -201,10 +201,10 @@ class MyCalculator implements Calculator
         }
 
         if(brackbalnce!=0) throw new ParsingException("balance error");//checking bracket balance
-        if(numbers.size()!=1) throw new ParsingException("illegal expression");//check illegal expression
         while (!oper.empty()){
             doOper(numbers,oper.pop());
         }
+        if(numbers.size()!=1) throw new ParsingException("illegal expression");//check illegal expression
         return numbers.peek();
     }
 }
