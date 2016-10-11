@@ -66,10 +66,12 @@ public class BestCalculatorEver implements Calculator {
          * Priority of +,-.
          */
         static final int LOWEST_PRIORITY = 1;
+
         /**
          * Priority of *,/.
          */
         static final int MEDIUM_PRIORITY = 2;
+
         /**
          * Priority of unary minus.
          */
@@ -161,9 +163,9 @@ public class BestCalculatorEver implements Calculator {
         for (int step = 0; step < expression.length(); ++step) {
             Character symbol = expression.charAt(step);
             if (Character.isDigit(symbol)) {
-                String number = new String();
+                StringBuilder number = new StringBuilder();
                 boolean isPresentDot = false;
-                number += symbol;
+                number.append(symbol);
 
                 Character next;
                 while (step != expression.length() - 1) {
@@ -174,11 +176,10 @@ public class BestCalculatorEver implements Calculator {
                         break;
                     }
                     ++step;
-                    number += next;
+                    number.append(next);
                 }
-
-                tokenizedExpression.add(new Numeric(Double.parseDouble(number)));
-                number = "";
+                tokenizedExpression.add(new Numeric(Double.parseDouble(number.toString())));
+                number = new StringBuilder();
             } else if (Character.isWhitespace(symbol)) {
                 continue;
             } else if (isOperator(symbol)) {
@@ -356,5 +357,3 @@ public class BestCalculatorEver implements Calculator {
         return stack.peek();
     }
 }
-
-
