@@ -3,7 +3,6 @@ package ru.mipt.java2016.homework.g596.ivanova.task1;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
-import javax.management.OperationsException;
 import java.util.LinkedList;
 import java.util.Stack;
 
@@ -169,10 +168,9 @@ public class BestCalculatorEver implements Calculator {
                 Character next;
                 while (step != expression.length() - 1) {
                     next = expression.charAt(step + 1);
-                    if (Character.isDigit(next)) {
-                    } else if (next == '.' && !isPresentDot) {
+                    if (next == '.' && !isPresentDot) {
                         isPresentDot = true;
-                    } else {
+                    } else if (!Character.isDigit(next)) {
                         break;
                     }
                     ++step;
