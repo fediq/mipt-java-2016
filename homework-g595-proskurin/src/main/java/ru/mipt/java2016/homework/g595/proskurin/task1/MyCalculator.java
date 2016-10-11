@@ -46,7 +46,7 @@ public class MyCalculator implements Calculator {
             throw new ParsingException("Incorrect expression!");
     }
 
-    double mult() throws ParsingException {
+    double mult(int flag) throws ParsingException {
         double tans = 0;
         tans = expression();
         if (pos == expr.length())
@@ -56,11 +56,17 @@ public class MyCalculator implements Calculator {
         }
         if (expr.charAt(pos) == '*') {
             pos++;
-            return tans * mult();
+            if (flag == 0)
+                return tans * mult(flag);
+            else if (flag == 1)
+                return tans / mult(flag);
         }
         else if (expr.charAt(pos) == '/') {
             pos++;
-            return tans / mult();
+            if (flag == 0)
+                return tans / mult(flag ^ 1);
+            else
+                return tans * mult(flag);
         }
         else if (expr.charAt(pos) == '+' || expr.charAt(pos) == '-') {
             return tans;
@@ -70,7 +76,7 @@ public class MyCalculator implements Calculator {
 
     double sum(int flag) throws ParsingException {
         double tans = 0;
-        tans = mult();
+        tans = mult(0);
         if (pos == expr.length())
             return tans;
         if (expr.charAt(pos) == ')') {
