@@ -161,13 +161,13 @@ public class BestCalculatorEver implements Calculator {
         }
         int braceBalance = 0;
         for (int step = 0; step < expression.length(); ++step) {
-            Character symbol = expression.charAt(step);
+            char symbol = expression.charAt(step);
             if (Character.isDigit(symbol)) {
                 StringBuilder number = new StringBuilder();
                 boolean isPresentDot = false;
                 number.append(symbol);
 
-                Character next;
+                char next;
                 while (step != expression.length() - 1) {
                     next = expression.charAt(step + 1);
                     if (next == '.' && !isPresentDot) {
@@ -238,7 +238,7 @@ public class BestCalculatorEver implements Calculator {
      * @param symbol Symbol we want to check
      * @return true if the symbol is operator
      */
-    private boolean isOperator(final Character symbol) {
+    private boolean isOperator(final char symbol) {
         return symbol == '+' || symbol == '-' || symbol == '/' || symbol == '*';
     }
 
