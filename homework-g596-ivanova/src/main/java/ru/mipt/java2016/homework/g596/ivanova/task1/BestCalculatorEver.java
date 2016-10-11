@@ -1,175 +1,223 @@
 package ru.mipt.java2016.homework.g596.ivanova.task1;
 
-import com.sun.xml.internal.messaging.saaj.packaging.mime.internet.HeaderTokenizer;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.Stack;
-import java.util.Timer;
 
 /**
  * Created by julia on 10.10.16.
  */
 public class BestCalculatorEver implements Calculator {
  @Override
-    public double calculate(String expression) throws ParsingException {
+    public final double calculate(final String expression)
+         throws ParsingException {
         return stackCalculator(convertToPostfixNotation(tokenize(expression)));
     }
 
-    private class Token {
-    }
+    /** This class enables us to store different tokens in one collection.*/
+    private abstract class Token { }
 
+    /** Class for storage numerical tokens.*/
     private class Numeric extends Token {
-        public Numeric(double value) {
-            value_ = value;
+        /** Value of numeric.*/
+        private final double value;
+
+        /** @param v Value we want to assign to Numeric.value */
+        Numeric(final double v) {
+            value = v;
         }
 
+        /** @return Value of Numeric */
         public double getValue() {
-            return value_;
+            return value;
         }
-
-        private double value_;
     }
 
+    /** Class for storage operators.*/
     private class Operator extends Token {
-        public Operator(char type) {
-            type_ = type;
-            switch (type_) {
+
+        /** Type of Operator.*/
+        private final char type;
+
+        /** Priority of the Operator +,- < *,/ < unary minus.*/
+        private int priority;
+
+        /** Priority of +,-.*/
+        static final int LOWEST_PRIORITY = 1;
+        /** Priority of *,/.*/
+        static final int MEDIUM_PRIORITY = 2;
+        /** Priority of unary minus.*/
+        static final int HIGHEST_PRIORITY = 3;
+
+        /** @param symbol Symbol of Operator. All obvious, except unary minus - '!' */
+        Operator(final char symbol) {
+            type = symbol;
+            switch (type) {
                 case '+':
-                    priority_ = 1;
+                    priority = LOWEST_PRIORITY;
                     break;
                 case '-':
-                    priority_ = 1;
+                    priority = LOWEST_PRIORITY;
                     break;
                 case '*':
-                    priority_ = 2;
+                    priority = MEDIUM_PRIORITY;
                     break;
                 case '/':
-                    priority_ = 2;
+                    priority = MEDIUM_PRIORITY;
                     break;
                 case '!': // unary minus
-                    priority_ = 3;
+                    priority = HIGHEST_PRIORITY;
+                    break;
+                default:
                     break;
             }
 
         }
 
+        /** @return Symbol denoting Operator. Ex: '+' */
         public char getType() {
-            return type_;
+            return type;
         }
 
+        /** @return Priority of Operator. +,- < *,/ < unary minus*/
         public int getPriority() {
-            return priority_;
+            return priority;
         }
-
-        private char type_;
-        private int priority_;
     }
 
+    /**  */
     private class Brace extends Token {
-        public Brace(char brace) {
-            if (brace == '(') is_opening_ = true;
+
+        /** Whether brace is opening.*/
+        private boolean isOpening;
+
+        /** @param brace Symbol of opening or closing brace */
+        Brace(final char brace) {
+            if (brace == '(') {
+                isOpening = true;
+            }
         }
 
-        public boolean isOpening() {
-            return is_opening_;
+        /** @return true if the brace is opening*/
+        boolean isOpening() {
+            return isOpening;
         }
-
-        private boolean is_opening_;
     }
 
-    private ArrayList<Token> tokenize(String expression) throws ParsingException {
-        ArrayList<Token> tokenized_expr = new ArrayList<Token>();
-        if (expression == null)
+    /** @param expression The expression we got from the input
+     *  @throws ParsingException If the expression is invalid
+     *  @return Tokenized expression
+     */
+    private LinkedList<Token> tokenize(final String expression) throws ParsingException {
+        LinkedList<Token> tokenizedExpression = new LinkedList<Token>();
+        if (expression == null) {
             throw new ParsingException("Expression == null.");
-        if (expression.length() == 0)
+        }
+        if (expression.length() == 0) {
             throw new ParsingException("Empty expression.");
+        }
         String number = new String();
-        int brace_balance = 0;
+        int braceBalance = 0;
         for (int i = 0; i < expression.length(); ++i) {
             Character symbol = expression.charAt(i);
             if (Character.isDigit(symbol)) {
                 number += symbol;
             } else if (symbol == '.') {
                 for (int j = 0; j < number.length(); ++j) {
-                    if (number.charAt(j) == '.')
+                    if (number.charAt(j) == '.') {
                         throw new ParsingException("Too many dots in expression.");
+                    }
                 }
                 number += symbol;
             } else if (Character.isWhitespace(symbol)) {
                 continue;
             } else if (isOperator(symbol)) {
                 if (!number.isEmpty()) {
-                    tokenized_expr.add(new Numeric(Double.parseDouble(number)));
+                    tokenizedExpression.add(new Numeric(Double.parseDouble(number)));
                     number = "";
                 }
-                if (!tokenized_expr.isEmpty()) {
-                    Token previous = tokenized_expr.get(tokenized_expr.size() - 1);
-                    if (previous instanceof Operator &&
-                            !( (((Operator) previous).getType() == '*' || ((Operator) previous).getType() == '/') &&
-                            (symbol == '-')))
+                if (!tokenizedExpression.isEmpty()) {
+                    Token previous = tokenizedExpression.getLast();
+                    if (previous instanceof Operator
+                            && !((((Operator) previous).getType() == '*' || ((Operator) previous).getType() == '/')
+                            && (symbol == '-'))) {
                         throw new ParsingException("Two operators in the same place.");
-                    if (symbol == '-' && ((previous instanceof Brace && ((Brace) previous).isOpening())) ||
-                            (previous instanceof Operator &&
-                            (((Operator) previous).getType() == '/' || ((Operator) previous).getType() == '*')))
+                    }
+                    if (symbol == '-' && ((previous instanceof Brace && ((Brace) previous).isOpening()))
+                            || (previous instanceof Operator
+                            && (((Operator) previous).getType() == '/' || ((Operator) previous).getType() == '*'))) {
                         symbol = '!';
+                    }
                 } else {
-                    if (symbol == '-')
+                    if (symbol == '-') {
                         symbol = '!';
+                    }
                 }
-                Operator operator_token = new Operator(symbol);
-                tokenized_expr.add(operator_token);
+                Operator operatorToken = new Operator(symbol);
+                tokenizedExpression.add(operatorToken);
             } else if (symbol == '(') {
                 Brace brace = new Brace(symbol);
-                tokenized_expr.add(brace);
-                ++brace_balance;
+                tokenizedExpression.add(brace);
+                ++braceBalance;
             } else if (symbol == ')') {
                 if (!number.isEmpty()) {
-                    tokenized_expr.add(new Numeric(Double.parseDouble(number)));
+                    tokenizedExpression.add(new Numeric(Double.parseDouble(number)));
                     number = "";
                 }
-                if (tokenized_expr.isEmpty())
+                if (tokenizedExpression.isEmpty()) {
                     throw new ParsingException("Closing brace can't be the first symbol in the expression.");
-                Token previous = tokenized_expr.get(tokenized_expr.size() - 1);
-                if (previous instanceof Operator && ((Operator) previous).getType() == '(')
+                }
+                Token previous = tokenizedExpression.getLast();
+                if (previous instanceof Operator && ((Operator) previous).getType() == '(') {
                     throw new ParsingException("Empty braces.");
+                }
                 Brace brace = new Brace(symbol);
-                tokenized_expr.add(brace);
-                --brace_balance;
-                if (brace_balance < 0)
+                tokenizedExpression.add(brace);
+                --braceBalance;
+                if (braceBalance < 0) {
                     throw new ParsingException("Wrong brace balance.");
+                }
             } else {
                 throw new ParsingException("Unknown symbol.");
             }
         }
-        if (brace_balance != 0)
+        if (braceBalance != 0) {
             throw new ParsingException("Wrong brace balance.");
-        if (!number.isEmpty()) {
-            tokenized_expr.add(new Numeric(Double.parseDouble(number)));
         }
-        for (Token token : tokenized_expr) {
-            if (token instanceof Numeric)
-                return tokenized_expr;
+        if (!number.isEmpty()) {
+            tokenizedExpression.add(new Numeric(Double.parseDouble(number)));
+        }
+        for (Token token : tokenizedExpression) {
+            if (token instanceof Numeric) {
+                return tokenizedExpression;
+            }
         }
         throw new ParsingException("Invalid expression.");
     }
 
-    private boolean isOperator(char symbol) {
+    /** @param symbol Symbol we want to check
+     *  @return true if the symbol is operator
+     */
+    private boolean isOperator(final Character symbol) {
         return symbol == '+' || symbol == '-' || symbol == '/' || symbol == '*';
     }
 
-    private ArrayList<Token> convertToPostfixNotation(ArrayList<Token> expression) {
-        ArrayList<Token> output = new ArrayList<Token>();
+    /** @param expression Tokenized expression
+     *  @return Converted to postfix notation expression
+     */
+    private LinkedList<Token> convertToPostfixNotation(final LinkedList<Token> expression) {
+        LinkedList<Token> output = new LinkedList<Token>();
         Stack<Token> stack = new Stack<Token>();
         while (!expression.isEmpty()) {
-            Token token = expression.get(0);
-            expression.remove(0);
+            Token token = expression.removeFirst();
             if (token instanceof Numeric) {
                 output.add(token);
             } else if (token instanceof Operator) {
                 Operator operator = (Operator) token;
-                while (!stack.isEmpty() && stack.peek() instanceof Operator && ((Operator) stack.peek()).getPriority() >= operator.getPriority()) {
+                while (!stack.isEmpty() && stack.peek() instanceof Operator
+                        && ((Operator) stack.peek()).getPriority() >= operator.getPriority()) {
                     output.add(stack.pop());
                 }
                 stack.push(operator);
@@ -190,35 +238,39 @@ public class BestCalculatorEver implements Calculator {
         }
         return output;
     }
-    private double stackCalculator(ArrayList<Token> input) throws ParsingException {
+
+    /** @param input Tokenized and converted to postfix notation expression
+     *  @throws ParsingException If expression is invalid
+     *  @return The result of calculations in double
+     */
+    private double stackCalculator(final LinkedList<Token> input) throws ParsingException {
         Stack<Double> stack = new Stack<Double>();
         while (!input.isEmpty()) {
-            Token curent_token = input.get(0);
-            input.remove(0);
-            if (curent_token instanceof Numeric) {
-                stack.push(((Numeric) curent_token).getValue());
+            Token currentToken = input.removeFirst();
+            if (currentToken instanceof Numeric) {
+                stack.push(((Numeric) currentToken).getValue());
             } else {
-                Operator operator = (Operator) curent_token;
-                if (operator.getType() == '!'){
-                    if (stack.isEmpty())
+                Operator operator = (Operator) currentToken;
+                if (operator.getType() == '!') {
+                    if (stack.isEmpty()) {
                         throw new ParsingException("No operands for unary minus.");
+                    }
 
-                    double number = stack.peek();
-                    number *= -1;
-                    stack.pop();
+                    double number = stack.pop() * -1;
                     stack.push(number);
                 } else {
-                    if (stack.isEmpty())
+                    if (stack.isEmpty()) {
                         throw new ParsingException("No operands for binary operator.");
+                    }
 
                     double b = stack.peek();
                     stack.pop();
 
-                    if (stack.isEmpty())
+                    if (stack.isEmpty()) {
                         throw new ParsingException("Only one argument for binary operator.");
+                    }
 
-                    double a = stack.peek();
-                    stack.pop();
+                    double a = stack.pop();
                     double result = 0;
                     switch (operator.getType()) {
                         case '+':
@@ -233,13 +285,16 @@ public class BestCalculatorEver implements Calculator {
                         case '/':
                             result = a / b;
                             break;
+                        default:
+                            break;
                     }
                     stack.push(result);
                 }
             }
         }
-        if (stack.size() != 1)
+        if (stack.size() != 1) {
             throw new ParsingException("No more operators are available.");
+        }
         return stack.peek();
     }
 }
