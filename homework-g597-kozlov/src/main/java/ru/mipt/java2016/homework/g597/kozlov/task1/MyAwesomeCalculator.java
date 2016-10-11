@@ -12,7 +12,7 @@ import java.util.Stack;
 
 
 public class MyAwesomeCalculator implements Calculator {
-    private boolean isCorrectCharacter(char chr) throws ParsingException {
+    private static boolean isCorrectCharacter(char chr) throws ParsingException {
         if (chr == ' ' || chr == '.' || chr == '\n' || chr == '\t' ||
                 chr == '0' || chr == '1' ||
                 chr == '2' || chr == '3' ||
@@ -27,15 +27,15 @@ public class MyAwesomeCalculator implements Calculator {
         return false;
     }
 
-    private boolean isNumeric(char chr) throws ParsingException {
+    private static boolean isNumeric(char chr) throws ParsingException {
         return ((chr >= '0' && chr <= '9') || chr == '.');
     }
 
-    private boolean isOperator(char chr) throws ParsingException {  // $ - унарный минус
+    private static boolean isOperator(char chr) throws ParsingException {  // $ - унарный минус
         return (chr == '+' || chr == '-' || chr == '*' || chr == '/' || chr == '$');
     }
 
-    private int getPriority(char chr) throws ParsingException { // Приоритет оператора
+    private static int getPriority(char chr) throws ParsingException { // Приоритет оператора
         switch (chr) {
             case ('+'):
               return 1;
@@ -45,17 +45,17 @@ public class MyAwesomeCalculator implements Calculator {
               return 2;
             case ('/'):
               return 2;
-            case ('%'):
+            case ('$'):
               return 3;
             default:
         }
         return 0;
     }
 
-    private String ReversePolishNotation(String expression) throws ParsingException {
+    private static String ReversePolishNotation(String expression) throws ParsingException {
         Stack<Character> stack = new Stack<>();
-        String out = "";
-        boolean IsOpeningBraceOpenedBefore = false;  // для закрывающей скобки
+        StringBuilder out = new StringBuilder("");
+        boolean isOpeningBraceOpenedBefore = false;  // для закрывающей скобки
         boolean wasnumber = false;  // для вытаскивания целого числа по цифрам
         boolean unary = true;  // булеан на унарность; true когда нет числа перед оператором
         int badnumber = 0;  // для двойных точек
@@ -69,11 +69,11 @@ public class MyAwesomeCalculator implements Calculator {
             if (isNumeric(chr)) {  // если число - добавляем в итоговую строку
                 unary = false;
                 if (!wasnumber) {
-                    out = out + " " + chr;
+                    out.append(" ").append(chr); // out = out + " " + chr;
                     wasnumber = true;
                     badnumber = 0;
                 } else {
-                    out = out + chr;
+                    out.append(chr);  // out = out + chr;
                 }
                 if (chr == '.') {
                     badnumber++;
@@ -95,16 +95,16 @@ public class MyAwesomeCalculator implements Calculator {
                 while (!stack.empty()) { // то выталкиваем элементы из стека в итоговую строку
                     char chrnow = stack.pop();
                     if (chrnow == '(') { // пока не найдем открывающую скобку
-                        IsOpeningBraceOpenedBefore = true;
+                        isOpeningBraceOpenedBefore = true;
                         break;
                     } else {
-                        out = out + " " + chrnow;
+                        out.append(" ").append(chrnow);  // out = out + " " + chrnow;
                     }
                 }
-                if (!IsOpeningBraceOpenedBefore) {
+                if (!isOpeningBraceOpenedBefore) {
                     throw new ParsingException("Invalid expression.");
                 }
-                IsOpeningBraceOpenedBefore = false;
+                isOpeningBraceOpenedBefore = false;
             }
             if (isOperator(chr)) { // если оператор
                 if (unary) {  // так еще и унарный
@@ -121,7 +121,7 @@ public class MyAwesomeCalculator implements Calculator {
                     while (!stack.empty() && isOperator(stack.peek()) &&
                             getPriority(chr) <= getPriority(stack.peek())) {
                         char chrnow = stack.pop();
-                        out = out + " " + chrnow;
+                        out.append(" ").append(chrnow);  // out = out + " " + chrnow;
                     }
                     stack.push(chr);  // и добавим оператор в стек
                 }
@@ -132,12 +132,12 @@ public class MyAwesomeCalculator implements Calculator {
             if (!isOperator(chrnow)) {
                 throw new ParsingException("Invalid expression.");
             }
-            out = out + " " + chrnow;
+            out.append(" ").append(chrnow);  // out = out + " " + chrnow;
         }
-        return out;
+        return out.toString();
     }
 
-    public double calculating(double a, double b, char operator) {
+    private static double calculating(double a, double b, char operator) {
         double c = 0.;
         if (operator == '+') {
             c = b + a;
@@ -154,7 +154,7 @@ public class MyAwesomeCalculator implements Calculator {
         return c;
     }
 
-    public double calcutating(String expression) throws ParsingException {
+    private static double calculating(String expression) throws ParsingException {
         Stack<Double> stack = new Stack<>();
         String[] parts = expression.split(" ");  // на 0 позиции - пустая строка
         if (parts.length == 1) {
@@ -194,6 +194,6 @@ public class MyAwesomeCalculator implements Calculator {
         if (expression == null || expression.equals("")) {
             throw new ParsingException("Expression is empty.");
         }
-        return calcutating(ReversePolishNotation(expression));
+        return calculating(ReversePolishNotation(expression));
     }
 }
