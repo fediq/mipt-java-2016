@@ -16,7 +16,6 @@ public class MyCalculator implements Calculator {
     private boolean isFirstBrace = true;
     private boolean isFinalBrace = false;
 
-
     public double calculate(String exp) throws ParsingException {
         if (exp == null) {
             throw new ParsingException("Null expression");
@@ -44,6 +43,7 @@ public class MyCalculator implements Calculator {
                     }
                 }
                 if (Character.isDigit(ch)) {
+
                     prevCh = ch;
                     double num = scanOperand(expression.toString());
                     operands.push(num);
