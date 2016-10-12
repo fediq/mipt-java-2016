@@ -12,111 +12,12 @@ import java.util.Stack;
  * @since 10.10.16
  */
 class SimpleCalculator implements Calculator {
+    /* A ParsingException standard error string */
     private final static String ILLEGAL_POSITION_IN_EXPRESSION =
-                                "Expression contains Illegal Symbol Position(s)";
+                                "Expression contains Illegal Symbol Position(s): ";
 
+    /* An iterator for going through the string expression */
     private int expression_iterator = 0;
-
-    /**
-     * Check that expression contains only recognised symbols
-     * and the bracket sequence in expression is correct.
-     *
-     * @param expression - arithmetic-containing string which correctness is checked
-     * @throws ParsingException - expression is illegal and cannot be calculated
-     */
-    private void check_expression(String expression) throws ParsingException {
-        if (expression == null) {
-            throw new ParsingException("Expression is Null");
-        }
-
-        if (expression.isEmpty()) {
-            throw new ParsingException("Expression is Empty");
-        }
-
-        int bracket_sum = 0;
-        for (int i = 0; bracket_sum >= 0 && i < expression.length(); ++i) {
-            char c = expression.charAt(i);
-
-            if (!Character.isDigit(c)) {
-                switch (c) {
-                    case '(':
-                        ++bracket_sum;
-                        break;
-                    case ')':
-                        --bracket_sum;
-                        break;
-                    case '+':
-                    case '-':
-                    case '*':
-                    case '/':
-                    case '\n':
-                    case '\t':
-                    case '.':
-                    case ' ':
-                        break;
-                    default:
-                        throw new ParsingException("Expression contains Illegal Symbol(s)");
-                }
-            }
-        }
-
-        if (bracket_sum != 0) {
-            throw new ParsingException("Expression contains a Faulty Bracket Sequence");
-        }
-    }
-
-    /**
-     * Class for holding an intermediate calculation.
-     * Mostly for handling intermediate calculation of a bracket element
-     */
-    private class CalculationSnapshot {
-        Double calculation;
-        Character operation;
-
-        CalculationSnapshot(Double calculation_init, Character operation_init) {
-            calculation = calculation_init;
-            operation = operation_init;
-        }
-    }
-
-    /**
-     * A function returns the value of [first] [operation] [second]
-     *
-     * @param first - first operand
-     * @param second - second operand
-     * @param operation - the performed operation
-     * @return Result of [first] [operation] [second]
-     */
-    private Double complete_operation(Double first, Double second, Character operation)
-                                                                throws ParsingException {
-        if (operation == null || second == null || (first == null && operation != '-')) {
-            throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION);
-        }
-
-        Double result = 0.0;
-
-        switch(operation) {
-            case '+':
-                result = first + second;
-                break;
-            case '-':
-                if (first == null) {
-                    result = -second;
-                }
-                else {
-                    result = first - second;
-                }
-                break;
-            case '*':
-                result = first * second;
-                break;
-            case '/':
-                result = first / second;
-                break;
-        }
-
-        return result;
-    }
 
     /**
      * Convert a Character to its Double equivalent
@@ -149,7 +50,7 @@ class SimpleCalculator implements Calculator {
         }
         if (c == '.') {
             if (++expression_iterator == expression.length()) {
-                throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION);
+                throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION + c);
             }
 
             c = expression.charAt(expression_iterator);
@@ -157,7 +58,7 @@ class SimpleCalculator implements Calculator {
             number += get_double_digit(c) / place_factor;
 
             if (!Character.isDigit(c)) {
-                throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION);
+                throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION + c);
             }
 
             while(++expression_iterator < expression.length()) {
@@ -174,6 +75,159 @@ class SimpleCalculator implements Calculator {
         return number;
     }
 
+
+
+    /**
+     * Class for holding a calculation token
+     */
+    private class CalculationToken {}
+
+    /**
+     * Class for holding an operation and its priority as a token
+     */
+    private class OperationToken extends CalculationToken {
+        int priority;
+        Character operation;
+
+        OperationToken(Character operation_to_wrap) {
+            operation = operation_to_wrap;
+
+            if (operation == null) {
+                priority = -1;
+            }
+            else {
+                switch (operation) {
+                    case '+':
+                    case '-':
+                        priority = 1;
+                        break;
+                    case '*':
+                    case '/':
+                        priority = 2;
+                        break;
+                    case '(':
+                    case ')':
+                        priority = 3;
+                        break;
+                    default:
+                        priority = -1;
+                        break;
+                }
+            }
+        }
+    }
+
+    /**
+     * Class for holding a number as a token
+     */
+    private class DoubleToken extends CalculationToken {
+        Double number;
+
+        DoubleToken(Double number_to_wrap) {
+            number = number_to_wrap;
+        }
+    }
+
+
+    /**
+     * Tokenise expression into a stack of numbers and operations.
+     * Check that expression contains only recognised symbols in a readable sequence,
+     * and has a correct bracket sequence.
+     *
+     * @param expression - arithmetic-containing string which is converted to tokens
+     * @throws ParsingException - expression is illegal and cannot be calculated
+     */
+    private Stack<CalculationToken> tokenise(String expression) throws ParsingException {
+        if (expression == null) {
+            throw new ParsingException("Expression is Null");
+        }
+
+        if (expression.isEmpty()) {
+            throw new ParsingException("Expression is Empty");
+        }
+
+        Stack<CalculationToken> calculation_token_stack = new Stack<>();
+        boolean prev_token_is_a_number_token = false;
+        int bracket_sum = 0;
+
+        for (expression_iterator = 0; expression_iterator < expression.length(); ++expression_iterator) {
+            Character c = expression.charAt(expression_iterator);
+
+            switch (c) {
+                case ' ':
+                case '\n':
+                case '\t':
+                    continue;
+                case '.':
+                    throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION + " . ");
+            }
+
+            if (Character.isDigit(c) && prev_token_is_a_number_token) {
+                throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION +
+                        " Two numbers back to back ");
+            }
+            if (Character.isDigit(c)) {
+                Double number = read_double_number_from_expression(expression);
+                calculation_token_stack.push(new DoubleToken(number));
+                prev_token_is_a_number_token = true;
+                continue;
+            }
+
+            if (c == '(') {
+                ++bracket_sum;
+            } else {
+                --bracket_sum;
+            }
+
+            calculation_token_stack.push(new OperationToken(c));
+        }
+
+        if (bracket_sum != 0) {
+            throw new ParsingException("Expression contains a Faulty Bracket Sequence");
+        }
+
+        return calculation_token_stack;
+    }
+
+    /**
+     * A function returns the value of [first] [operation] [second]
+     *
+     * @param first - first operand
+     * @param second - second operand
+     * @param operation - the performed operation
+     * @return Result of [first] [operation] [second]
+     */
+    private Double complete_operation(Double first, Double second, Character operation)
+            throws ParsingException {
+        if (operation == null || second == null || (first == null && operation != '-')) {
+            throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION);
+        }
+
+        Double result = 0.0;
+
+        switch(operation) {
+            case '+':
+                result = first + second;
+                break;
+            case '-':
+                if (first == null) {
+                    result = -second;
+                }
+                else {
+                    result = first - second;
+                }
+                break;
+            case '*':
+                result = first * second;
+                break;
+            case '/':
+                result = first / second;
+                break;
+        }
+
+        return result;
+    }
+
     /**
      * Calculate the arithmetic-containing string expression.
      *
@@ -182,67 +236,87 @@ class SimpleCalculator implements Calculator {
      * @throws ParsingException - expression is illegal and cannot be calculated
      */
     public double calculate(String expression) throws ParsingException {
-        check_expression(expression);
+        Stack<CalculationToken> calculation_stack = tokenise(expression);
 
-        Stack<CalculationSnapshot> calculation_stack = new Stack<>();
+//        Character operation = null;
+//        OperationWrapper operation_wrap = new OperationWrapper('\0');
+//        Double calculation = null;
+//        Double number = null;
+//
+//        for (expression_iterator = 0; expression_iterator < expression.length(); ++expression_iterator) {
+//            Character c = expression.charAt(expression_iterator);
+//
+//            switch (c) {
+//                case ' ':
+//                case '\n':
+//                case '\t':
+//                    continue;
+//                case '.':
+//                    throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION + " . ");
+//            }
+//            if (Character.isDigit(c) && number != null) {
+//                throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION +
+//                        " Two numbers back to back ");
+//            }
+//
+//
+//            if (Character.isDigit(c) && number == null) {
+//                number = read_double_number_from_expression(expression);
+//                continue;
+//            } else {
+//                operation_wrap.setter(c);
+//            }
+//
+//
+//            if (operation_wrap.priority == 3) {
+//                if (operation_wrap.operation == '(') {
+//                    if (number != null) {
+//                        throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION + " Number( ");
+//                    }
+//
+//                    calculation_stack.push(new CalculationSnapshot(calculation, operation));
+//                    calculation = null;
+//                    operation_wrap.setter('\0');
+//                    continue;
+//                } else if (operation_wrap.operation == ')') {
+//                    if (calculation == null) {
+//                        throw new ParsingException("Empty Braces");
+//                    }
+//
+//
+//                    number = calculation;
+//                    operation_wrap.setter('\0');
+//                    continue;
+//                }
+//            }
+//
+//
+//            if (number == null) { /* c == '+' '-' '*' '/' */
+//                if (operation != null) {
+//                    throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION + " 2");
+//                } else {
+//                    operation = c;
+//                }
+//            } else {
+//                if (operation == null) {
+//                    if (calculation == null) {
+//                        calculation = number;
+//                    } else {
+//                        throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION + " 3");
+//                    }
+//                } else {
+//                    calculation = complete_operation(calculation, number, operation);
+//                    operation = null;
+//                }
+//            }
+//        }
+//
+//        if (calculation == null) {
+//            throw new ParsingException("Resulting calculation is empty");
+//        }
+//
+//        return calculation;
 
-        Character operation = null;
-        Double calculation = null;
-        Double number = null;
-
-        for (expression_iterator = 0; expression_iterator < expression.length();
-                                            ++expression_iterator, number = null) {
-            Character c = expression.charAt(expression_iterator);
-
-            if (c == ' ' || c == '\n' || c == '\t') {
-                continue;
-            }
-
-            if (c == '.' || (calculation != null && operation == null && Character.isDigit(c))) {
-                throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION + " 1 ");
-            }
-
-            if (c == '(') {
-                calculation_stack.push(new CalculationSnapshot(calculation, operation));
-                calculation = null;
-                operation = null;
-                continue;
-            } else if (c == ')') {
-                CalculationSnapshot last_snapshot = calculation_stack.pop();
-                calculation = complete_operation(last_snapshot.calculation, calculation,
-                                                              last_snapshot.operation);
-                operation = null;
-                continue;
-            }
-
-            if (Character.isDigit(c)) {
-                number = read_double_number_from_expression(expression);
-            }
-
-            if (number == null) { /* c == '+' '-' '*' '/' */
-                if (operation != null) {
-                    throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION + " 2");
-                } else {
-                    operation = c;
-                }
-            }
-            else {
-                if (operation == null) {
-                    if (calculation == null) {
-                        calculation = number;
-                    } else {
-                        throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION + " 3");
-                    }
-                } else {
-                    calculation = complete_operation(calculation, number, operation);
-                    operation = null;
-                }
-            }
-        }
-
-        if (calculation == null) {
-            throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION + " 4");
-        }
-        return calculation;
+        return 0.0;
     }
 }
