@@ -40,7 +40,7 @@ public class StackCalculator implements Calculator {
         if (operator == '*' || operator == '/') {
             return 2;
         }
-        if (operator == '±') {
+        if (operator == '&') {
             return 3;
         }
         throw new ParsingException("Invalid symbol");
@@ -78,7 +78,7 @@ public class StackCalculator implements Calculator {
                     // Если это унарный минус
                     if (isUnaryOperation) {
                         if (currentSymbol == '-') {
-                            stack.push('±');
+                            stack.push('&');
                             postfixLine.append(' ').append(' ');
                             isUnaryOperation = false;
                         } else {
@@ -169,7 +169,7 @@ public class StackCalculator implements Calculator {
                     }
                     oneNumber.delete(0, oneNumber.length());
                 } else {
-                    if (currentSymbol.equals('±')) {
+                    if (currentSymbol.equals('&')) {
                         Double a;
                         a = stack.pop();
                         stack.push(-1 * a);
