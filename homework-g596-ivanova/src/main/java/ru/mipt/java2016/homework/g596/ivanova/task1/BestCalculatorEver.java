@@ -37,9 +37,8 @@ public class BestCalculatorEver implements Calculator {
                 boolean isPresentDot = false;
                 number.append(symbol);
 
-                char next;
                 while (step != expression.length() - 1) {
-                    next = expression.charAt(step + 1);
+                    char next = expression.charAt(step + 1);
                     if (next == '.' && !isPresentDot) {
                         isPresentDot = true;
                     } else if (!Character.isDigit(next)) {
@@ -49,13 +48,13 @@ public class BestCalculatorEver implements Calculator {
                     number.append(next);
                 }
                 tokenizedExpression.add(new Numeric(Double.parseDouble(number.toString())));
-                number = new StringBuilder();
+                number.delete(0, number.length() - 1);
             } else if (Character.isWhitespace(symbol)) {
                 continue;
             } else if (isOperator(symbol)) {
                 if (step != 0) {
                     Token previous = tokenizedExpression.getLast();
-                    if (symbol == '-' && isUnaryMinus(previous, new Operator(symbol))) {
+                    if (symbol == '-' && isUnaryMinus(previous)) {
                         symbol = '!';
                     }
                     if ((previous instanceof Operator) && !(symbol == '!')) {
@@ -119,7 +118,7 @@ public class BestCalculatorEver implements Calculator {
      * @param minus    Operator minus that may be unary
      * @return true if minus is unary
      */
-    private boolean isUnaryMinus(final Token previous, final Operator minus) {
+    private boolean isUnaryMinus(final Token previous) {
         boolean isUnary = false;
         if ((previous instanceof Brace) && ((Brace) previous).isOpening()) {  // combination (-
             isUnary = true;
