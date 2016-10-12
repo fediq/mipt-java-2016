@@ -1,16 +1,19 @@
 package ru.mipt.java2016.homework.g597.grishutin.task1;
 
-import ru.mipt.java2016.homework.base.task1.*;
+import ru.mipt.java2016.homework.base.task1.Calculator;
+import ru.mipt.java2016.homework.base.task1.ParsingException;
+
 import java.security.InvalidParameterException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Scanner;
 import java.util.Stack;
 
-class MyCalculator implements Calculator{
+class MyCalculator implements Calculator {
     static final Calculator INSTANCE = new MyCalculator();
 
     private enum ParsingCondition {WaitingToken, ReadingNumber}
+
     private static final HashSet<String> OPERATORS = new HashSet<>(Arrays.asList(
             "+", "-", "*", "/", "^"
     ));
@@ -18,15 +21,6 @@ class MyCalculator implements Calculator{
     private boolean IsOperator(String s) {
         return OPERATORS.contains(s);
     }
-
-    @Override
-    public double calculate (String expression) throws ParsingException, ArithmeticException {
-        if (expression == null) {
-            throw new ParsingException("Expression is null");
-        }
-        return evaluatePostfix(infixToPostfix(expression.replaceAll("\\s", "")));
-    }
-
 
     private static double count(String operator, double op1, double op2) throws InvalidParameterException {
         switch (operator) {
@@ -43,7 +37,15 @@ class MyCalculator implements Calculator{
             default:
                 throw new InvalidParameterException(String.format("Invalid operator %s", operator));
         }
-    }
+        }
+
+    @Override
+    public double calculate(String expression) throws ParsingException, ArithmeticException {
+        if (expression == null) {
+            throw new ParsingException("Expression is null");
+        }
+        return evaluatePostfix(infixToPostfix(expression.replaceAll("\\s", "")));
+        }
 
     private static int getPriority(String operator) throws InvalidParameterException {
         switch (operator) {
@@ -96,22 +98,22 @@ class MyCalculator implements Calculator{
                         double operand = operands.pop();
                         operands.push(-1 * operand);
                     }
-                } else {
+                    } else {
                     try {
                         operand1 = Double.parseDouble(token);
                         operands.push(operand1);
                     } catch (NumberFormatException npe) {
                         throw new ParsingException(String.format("Invalid operand: %s", token));
                     }
-                }
+                    }
             }
             if (operands.size() != 1) { // we expect result to be only resulting number in stack
                 throw new ParsingException("Incorrect expression");
-            } else {
+                } else {
                 return operands.pop(); // and here it goes
+                }
             }
         }
-    }
 
     private String infixToPostfix(String expression) throws ParsingException {
         StringBuilder answer = new StringBuilder();
@@ -125,7 +127,7 @@ class MyCalculator implements Calculator{
             if (Character.isDigit(c)) {
                 unary = false;
                 answer.append(c);
-                cond = ParsingCondition.ReadingNumber;
+                    cond = ParsingCondition.ReadingNumber;
             } else if (c.equals('.')) {
                 if (cond == ParsingCondition.WaitingToken)
                     throw new ParsingException("Invalid expression: unexpected symbol '.'");
@@ -156,7 +158,7 @@ class MyCalculator implements Calculator{
                         } else {
                             answer.append(' ').append(curOperator).append(' ');
                         }
-                    }
+                        }
                     if (!hasCorrespondingOpeningBracket) {
                         throw new ParsingException("Invalid expression: invalid brackets");
                     }
@@ -186,21 +188,21 @@ class MyCalculator implements Calculator{
                         answer.append(' ').append(operators.pop()).append(' ');
                     }
                     operators.push(c.toString());
-                }
+                    }
 
                 cond = ParsingCondition.WaitingToken;
             } else {
                 throw new ParsingException(String.format("Invalid expression: unexpected %s", c.toString()));
-            }
+                }
         }
         while (!operators.empty()) {
             String curOperator = operators.pop();
             if (OPERATORS.contains(curOperator) || curOperator.equals("#")) {
                 answer.append(String.format(" %s ", curOperator));
-            } else {
+                } else {
                 throw new ParsingException(String.format("Invalid expression: unexpected %s", curOperator));
+                }
             }
-        }
         return answer.toString();
+        }
     }
-}
