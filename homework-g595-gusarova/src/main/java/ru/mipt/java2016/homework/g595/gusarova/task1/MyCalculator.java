@@ -7,40 +7,81 @@ import java.util.ArrayList;
 
 public class MyCalculator implements Calculator {
     //преобразует строку в массив элементов типа simple_struct
-    private ArrayList<simple_struct> parsing(String expression)
+    private ArrayList<simple_struct> parsing(String expression) throws ParsingException
     {
+        expression = expression.replaceAll("[ \n\t]", "");
         ArrayList<simple_struct> exp = new ArrayList<>();
-        Double number = 0.0;
-        Boolean read_number = false;
         for (int i = 0; i < expression.length(); i++)
         {
-            if (expression.charAt(i) < '0' || expression.charAt(i) > '9') {
-                if (read_number) {
-                    exp.add(new simple_struct(false, false, number));
-                    number = 0.0;
-                    read_number = false;
+            if (Character.isDigit(expression.charAt(i))) {
+                Boolean dot = false;
+                Integer pos = i;
+                while (i < expression.length() &&
+                        (Character.isDigit(expression.charAt(i)) ||
+                                expression.charAt(i) == '.' && !dot))
+                {
+                    if (expression.charAt(i) == '.')
+                        dot = true;
+                    i++;
                 }
+                exp.add(new simple_struct(false, false, Double.parseDouble(expression.substring(pos, i))));
+                i--;
+                continue;
             }
             switch (expression.charAt(i)) {
-                case '(': exp.add(new simple_struct(false, true, 1.0)); break;
-                case ')': exp.add(new simple_struct(false, true, -1.0)); break;
-                case '+': exp.add(new simple_struct(true, false, 1.0)); break;
-                case '-': exp.add(new simple_struct(true, false, 2.0)); break;
-                case '*': exp.add(new simple_struct(true, false, 3.0)); break;
-                case '/': exp.add(new simple_struct(true, false, 4.0)); break;
-                default: if (Character.isDigit(expression.charAt(i))) {
-                    read_number = true;
-                    number = number * 10 + (expression.charAt(i) - '0');
+                case '(':
+                    exp.add(new simple_struct(false, true, 1.0));
                     break;
-                }
+
+                case ')':
+                    exp.add(new simple_struct(false, true, -1.0));
+                    break;
+
+                case '+':
+                    exp.add(new simple_struct(true, false, 1.0));
+                    break;
+
+                case '-':
+                    exp.add(new simple_struct(true, false, 2.0));
+                    break;
+
+                case '*':
+                    exp.add(new simple_struct(true, false, 3.0));
+                    if (i + 1 < expression.length() && expression.charAt(i + 1) == '-')
+                    {
+                        exp.add(new simple_struct(false, true, 1.0));
+                        exp.add(new simple_struct(true, false, 2.0));
+                        exp.add(new simple_struct(false, false, 1.0));
+                        exp.add(new simple_struct(false, true, -1.0));
+                        exp.add(new simple_struct(true, false, 3.0));
+                        i++;
+                    }
+                    break;
+
+                case '/':
+                    exp.add(new simple_struct(true, false, 4.0));
+                    if (i + 1 < expression.length() && expression.charAt(i + 1) == '-')
+                    {
+                        exp.add(new simple_struct(false, true, 1.0));
+                        exp.add(new simple_struct(true, false, 2.0));
+                        exp.add(new simple_struct(false, false, 1.0));
+                        exp.add(new simple_struct(false, true, -1.0));
+                        exp.add(new simple_struct(true, false, 4.0));
+                        i++;
+                    }
+                    break;
+
+                default: throw new ParsingException("Unknown symbol");
             }
+
         }
         return exp;
     }
 
     //выделяет из строки открывающие скобки в массив brackets, заполняет pair_bracket позицией,
     //соответствующей открывающей скобке закрывающей скобки, и инициализирует массив result,
-    //массив результатов вычисления выражения в скобках
+    //массив результатов вычисления выражения в скобках, также проставляет массив step - сколько + 1
+    //открывающих скобок лежит между текущей открывающей и соответствующей ей закрывающей
     private void extraction_of_brackets(ArrayList<simple_struct> exp,
                                         ArrayList<Integer> brackets,
                                         ArrayList<Integer> pair_bracket,
@@ -54,18 +95,18 @@ public class MyCalculator implements Calculator {
                 if (exp.get(i).number == 1) {
                     brackets.add(i);
                     result.add(0.0);
-                    temp.add(i);
+                    temp.add(brackets.size() - 1);
                     pair_bracket.add(0);
                     counter++;
                     step.add(counter);
                 }
                 else {
+                    if (temp.isEmpty())
+                        throw new ParsingException("Problem with brackets");
                     pair_bracket.set(temp.get(temp.size() - 1), i);
-                    step.set(temp.get(temp.size() - 1), counter - step.get(temp.size() - 1) + 1);
+                    step.set(temp.get(temp.size() - 1), counter - step.get(temp.get(temp.size() - 1)) + 1);
                     temp.remove(temp.size() - 1);
                 }
-                if (temp.size() < 0)
-                    throw new ParsingException("Problem with brackets");
             }
         if (temp.size() != 0)
             throw new ParsingException("Problem with brackets");
@@ -73,12 +114,14 @@ public class MyCalculator implements Calculator {
 
     //проводит вычисления * и / в выражении, не содержащем скобки
     //pointer - указатель на начало блока из чисел, *, /
-    //res - результат вычисления блока из чисел, *, /, хранится только в начале блока
-    private void calculate_mul_div(ArrayList<simple_struct> loc, ArrayList<Integer> pointer, ArrayList<Double> result) throws ParsingException {
+    //result - результат вычисления блока из чисел, *, /, хранится только в начале блока
+    private void calculate_mul_div(ArrayList<simple_struct> loc,
+                                   ArrayList<Integer> pointer,
+                                   ArrayList<Double> result) throws ParsingException {
         for (int i = 0; i < loc.size(); i++)
         {
-            pointer.set(i, i);
-            result.set(i, loc.get(i).number);
+            pointer.add(i);
+            result.add(loc.get(i).number);
         }
         for (int i = 0; i < loc.size(); i++)
         {
@@ -97,9 +140,12 @@ public class MyCalculator implements Calculator {
     }
 
     //проводит вычисление + и - в выражении без скобок, с уже посчитаными связками *, /
-    private Double calculate_add_subtrac(ArrayList<simple_struct> loc, ArrayList<Double> result) throws  ParsingException
+    private Double calculate_add_subtrac(ArrayList<simple_struct> loc,
+                                         ArrayList<Double> result) throws  ParsingException
     {
         Double answer = 0.0;
+        if (loc.get(0).isNumber())
+            answer = result.get(0);
         for (int i = 0; i < loc.size(); i++)
             if (loc.get(i).operator && loc.get(i).number <= 2)
             {
@@ -109,7 +155,7 @@ public class MyCalculator implements Calculator {
                     if (loc.get(i).number == 1)
                         throw new ParsingException("Problem with operators");
                     else
-                        answer = (-1) * loc.get(i + 1).number;
+                        answer = (-1) * result.get(i + 1);
                 }
                 else {
                     if (!loc.get(i + 1).isNumber())
@@ -129,9 +175,12 @@ public class MyCalculator implements Calculator {
     @Override
     public double calculate(String expression) throws ParsingException
     {
+        if (expression == null)
+            throw new ParsingException("String is empty");
         ArrayList<simple_struct> exp;
         exp = parsing(expression);
-
+        if (exp.isEmpty())
+            throw new ParsingException("String is empty");
         ArrayList<Integer> brackets = new ArrayList<>();
         ArrayList<Integer> pair_bracket = new ArrayList<>();
         ArrayList<Integer> step = new ArrayList<>();
@@ -140,9 +189,11 @@ public class MyCalculator implements Calculator {
 
         Integer j;
         for (int i = brackets.size() - 1; i >= 0; i--) {
+            if (i + 1 == pair_bracket.get(i))
+                throw new ParsingException("String is empty");
             ArrayList<simple_struct> loc = new ArrayList<>();
             j = brackets.get(i) + 1;
-            Integer counter = 0;
+            Integer counter = 1;
             while (j < pair_bracket.get(i))
             {
                 if (!exp.get(j).bracket) {
@@ -157,12 +208,12 @@ public class MyCalculator implements Calculator {
             }
             ArrayList<Integer> pointer = new ArrayList<>();
             ArrayList<Double> res = new ArrayList<>();
-            calculate_mul_div(loc, pointer, result);
+            calculate_mul_div(loc, pointer, res);
             Double answer = calculate_add_subtrac(loc, res);
             result.set(i, answer);
         }
         ArrayList<simple_struct> loc = new ArrayList<>();
-        j = 1;
+        j = 0;
         Integer counter =0;
         while (j < exp.size())
         {
