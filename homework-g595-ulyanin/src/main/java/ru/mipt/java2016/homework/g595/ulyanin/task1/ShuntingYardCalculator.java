@@ -51,31 +51,31 @@ public class ShuntingYardCalculator implements Calculator {
                 }
                 operatorStack.push(currentOperator);
                 mayBeUnaryOperator = true;
-            }
-            else if (token.isOpenBraceToken()) {
+            } else if (token.isOpenBraceToken()) {
                 operatorStack.push(new TokenOperator(token.getData(), Token.TokenType.BRACE_OPEN));
                 mayBeUnaryOperator = true;
-            }
-            else if (token.isCloseBraceToken()) {
+            } else if (token.isCloseBraceToken()) {
                 // until '(' on stack, pop operators.
                 if (null != lastToken && lastToken.isOpenBraceToken()) {
                     throw new ParsingException("empty braces found");
                 }
-                while (!operatorStack.isEmpty() && !operatorStack.peek().isOpenBraceToken())
+                while (!operatorStack.isEmpty() && !operatorStack.peek().isOpenBraceToken()) {
                     postfix.add(operatorStack.pop());
-                if (operatorStack.isEmpty())
+                }
+                if (operatorStack.isEmpty()) {
                     throw new ParsingException("there are no '(' before ')'");
+                }
                 operatorStack.pop();
                 mayBeUnaryOperator = false;
-            }
-            else {
+            } else {
                 postfix.add(token);
                 mayBeUnaryOperator = false;
             }
             lastToken = token;
         }
-        while (!operatorStack.isEmpty())
+        while (!operatorStack.isEmpty()) {
             postfix.add(operatorStack.pop());
+        }
         if (postfix.size() == 0) {
             throw new ParsingException("empty input");
         }
@@ -83,10 +83,9 @@ public class ShuntingYardCalculator implements Calculator {
         return postfix;
     }
 
-
-    private static double calculatePostfix(ArrayList<Token> postifx) throws ParsingException {
-        Stack <Double> operands = new Stack<>();
-        for (Token token : postifx) {
+    private static double calculatePostfix(ArrayList<Token> postfix) throws ParsingException {
+        Stack<Double> operands = new Stack<>();
+        for (Token token : postfix) {
             if (token instanceof TokenOperator) {
                 if (!((TokenOperator) token).isUnary()) {
                     if (operands.size() < 2) {

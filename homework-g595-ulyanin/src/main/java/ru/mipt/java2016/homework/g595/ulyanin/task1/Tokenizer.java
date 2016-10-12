@@ -24,21 +24,22 @@ public class Tokenizer {
         }
         for (currentPosition = 0; characterExist(); readNextCharacter()) {
             char c = getCurrentChar();
-            if (Character.isWhitespace(c))
+            if (Character.isWhitespace(c)) {
                 continue;
-            Token current_token;
+            }
+            Token currentToken;
             if (isNumberCharacter(c)) {
-                current_token = new Token(readNumberToken(), Token.TokenType.NUMBER);
+                currentToken = new Token(readNumberToken(), Token.TokenType.NUMBER);
             } else if (isOpenBrace(c)) {
-                current_token = new Token(String.valueOf(c), Token.TokenType.BRACE_OPEN);
+                currentToken = new Token(String.valueOf(c), Token.TokenType.BRACE_OPEN);
             } else if (isCloseBrace(c)) {
-                current_token = new Token(String.valueOf(c), Token.TokenType.BRACE_CLOSE);
+                currentToken = new Token(String.valueOf(c), Token.TokenType.BRACE_CLOSE);
             } else if (isOperator(c)) {
-                current_token = new Token(String.valueOf(c), Token.TokenType.OPERATOR);
+                currentToken = new Token(String.valueOf(c), Token.TokenType.OPERATOR);
             } else {
                 throw new ParsingException("unknown symbol '" + c + "'");
             }
-            result.add(current_token);
+            result.add(currentToken);
         }
         return result;
     }

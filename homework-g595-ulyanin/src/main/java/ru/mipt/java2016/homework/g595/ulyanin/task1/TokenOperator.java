@@ -8,7 +8,7 @@ import ru.mipt.java2016.homework.base.task1.ParsingException;
 
 public class TokenOperator extends Token {
 
-    public enum associativity {LEFT, RIGHT}
+    public enum Associativity { LEFT, RIGHT }
 
     private boolean unary = false;
 
@@ -25,11 +25,12 @@ public class TokenOperator extends Token {
         unary = isUnary;
     }
 
-    public int getPrecedence() {
+    public int getPrecedence() throws ParsingException {
         final String ops = "()+-*/";
         int index = ops.indexOf(data);
-        if (index == -1)
-            return -1; // TODO: 12.10.16 Exception
+        if (index == -1) {
+            throw new ParsingException("unknown operator " + data);
+        }
         if (isSubtruct() && isUnary()) {
             return 3;
         }
@@ -53,8 +54,9 @@ public class TokenOperator extends Token {
     }
 
     public double apply(double var1, double var2) throws ParsingException {
-        if (isUnary())
+        if (isUnary()) {
             throw new ParsingException("trying to apply " + data + " as binary operator");
+        }
         if (isAddition()) {
             return var1 + var2;
         }
@@ -71,8 +73,9 @@ public class TokenOperator extends Token {
     }
 
     public double apply(double var) throws ParsingException {
-        if (!isUnary())
+        if (!isUnary()) {
             throw new ParsingException("trying to apply " + data + " as unary");
+        }
         if (isAddition()) {
             throw new ParsingException("+ is not unary operator");
         }

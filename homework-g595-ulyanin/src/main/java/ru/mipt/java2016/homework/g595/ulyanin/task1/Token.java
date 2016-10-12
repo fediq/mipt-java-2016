@@ -9,7 +9,7 @@ import ru.mipt.java2016.homework.base.task1.ParsingException;
 
 public class Token {
 
-    public enum TokenType {OPERATOR, NUMBER, BRACE_OPEN, BRACE_CLOSE}
+    public enum TokenType { OPERATOR, NUMBER, BRACE_OPEN, BRACE_CLOSE }
 
     protected String data;
     protected TokenType type;
