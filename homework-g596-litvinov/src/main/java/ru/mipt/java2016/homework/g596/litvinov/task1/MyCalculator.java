@@ -11,11 +11,13 @@ import ru.mipt.java2016.homework.base.task1.ParsingException;
 public class MyCalculator implements Calculator {
 
     private int pos = -1;
-    private char ch, prevCh = 'Q';
+    private char ch;
+    private char prevCh = 'Q';
     private int bracesCount = 0;
     private boolean isFirstBrace = true;
     private boolean isFinalBrace = false;
 
+    @Override
     public double calculate(String exp) throws ParsingException {
         if (exp == null) {
             throw new ParsingException("Null expression");
@@ -91,26 +93,28 @@ public class MyCalculator implements Calculator {
         }
     }
 
-    private void popFunction(Stack<Double> Operands, Stack<Character> Functions)
+    private void popFunction(Stack<Double> operands, Stack<Character> functions)
             throws ParsingException {
-        if (Operands.size() < 2) {
+        if (operands.size() < 2) {
             throw new ParsingException("Invalid expression");
         }
-        double b = Operands.pop();
-        double a = Operands.pop();
-        switch (Functions.pop()) {
+        double b = operands.pop();
+        double a = operands.pop();
+        switch (functions.pop()) {
             case '+':
-                Operands.push(a + b);
+                operands.push(a + b);
                 break;
             case '-':
-                Operands.push(a - b);
+                operands.push(a - b);
                 break;
             case '*':
-                Operands.push(a * b);
+                operands.push(a * b);
                 break;
             case '/':
-                Operands.push(a / b);
+                operands.push(a / b);
                 break;
+            default:
+                throw new ParsingException("Invalid operation");
         }
     }
 
@@ -138,28 +142,27 @@ public class MyCalculator implements Calculator {
     }
 
     private double scanOperand(String expression) throws ParsingException {
-        String operand = "";
-        boolean OneDot = true;
+        String op = "";
+        boolean oneDot = true;
         do {
-            operand += ch;
+            op += ch;
             nextChar(expression);
             if (Character.isLetter(ch)) {
                 throw new ParsingException("Invalid argument");
             }
             if (ch == '.') {
-                if (!OneDot) {
+                if (!oneDot) {
                     throw new ParsingException("Invalid argument");
                 } else {
-                    OneDot = false;
+                    oneDot = false;
                 }
             }
         } while (!Character.isSpaceChar(ch) && !isFunc(ch));
-        return Double.parseDouble(operand);
+        return Double.parseDouble(op);
     }
 
-    private boolean isFunc(char ch) {
-        return (ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '%' || ch == '('
-                || ch == ')');
+    private boolean isFunc(char c) {
+        return (c == '+' || c == '-' || c == '*' || c == '/' || c == '%' || c == '(' || c == ')');
     }
 
     private void eatSpace(String expression) {
