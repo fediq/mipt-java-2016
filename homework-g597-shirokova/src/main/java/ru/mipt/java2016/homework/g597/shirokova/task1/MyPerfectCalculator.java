@@ -9,179 +9,163 @@ class MyPerfectCalculator implements Calculator {
 
     static final Calculator INSTANCE = new MyPerfectCalculator();
 
-    private static final HashSet<Character> OPERATORS = new HashSet<>(Arrays.asList('+', '-', '*', '/'));
+    private static final HashSet<Character> OPERATORS = new HashSet<>(Arrays.asList('+', '-', '*', '/', '!'));
     private static final HashSet<Character> DIGITS = new HashSet<>(Arrays.asList(
             '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.'));
-
-    private static boolean isCorrectSymbol(Character symbol) throws ParsingException {
-        if (OPERATORS.contains(symbol)) {
-            return true;
-        }
-        return DIGITS.contains(symbol);
-    }
-
-    private static boolean isNumber(Character symbol) throws ParsingException {
-        return DIGITS.contains(symbol);
-    }
-
-    private static boolean isOperator(Character symbol) {
-        return OPERATORS.contains(symbol);
-    }
-
-    private static int getPriority(char symbol) throws ParsingException { // Приоритет оператора
-        switch (symbol) {
-            case ('!'):
-                return 3;
-            case ('+'):
-                return 2;
-            case ('-'):
-                return 2;
-            case ('*'):
-                return 1;
-            case ('/'):
-                return 1;
-            default:
-        }
-        return 0;
-    }
-
-    private static String GetPolishNotation(String expression) throws ParsingException {
-        Stack<Character> stack = new Stack<>();
-        StringBuilder out = new StringBuilder("");
-        boolean opening = false;  // для закрывающей скобки
-        boolean wasnumber = false;  // для вытаскивания целого числа по цифрам
-        boolean unary = true;  // булеан на унарность; true когда нет числа перед оператором
-        int badnumber = 0;  // для двойных точек
-        for (char symbol : expression.toCharArray()) {
-            if (!isCorrectSymbol(symbol)) {  // если это вообще какой-то левый символ
-                throw new ParsingException("Invalid expression.");
-            }
-            if (symbol == ' ') {  // если пробел - пропускаем
-                continue;
-            }
-            if (isNumber(symbol)) {  // если число - добавляем в итоговую строку
-                unary = false;
-                if (!wasnumber) {
-                    out.append(" ").append(symbol); // out = out + " " + chr;
-                    wasnumber = true;
-                    badnumber = 0;
-                } else {
-                    out.append(symbol);  // out = out + chr;
-                }
-                continue;
-            }
-            wasnumber = false;
-
-            if (symbol == '(') {  // если открывающая скобка - добавляем в стек
-                unary = true;
-                stack.push(symbol);
-                continue;
-            }
-            if (symbol == ')') {  // если закрывающая скобка
-                unary = false;
-                while (!stack.empty()) { // то выталкиваем элементы из стека в итоговую строку
-                    char chrnow = stack.pop();
-                    if (chrnow == '(') { // пока не найдем открывающую скобку
-                        opening = true;
-                        break;
-                    } else {
-                        out.append(" ").append(chrnow);  // out = out + " " + chrnow;
-                    }
-                }
-                if (!opening) {
-                    throw new ParsingException("Invalid expression.");
-                }
-                opening = false;
-            }
-            if (isOperator(symbol)) { // если оператор
-                if (unary) {  // так еще и унарный
-                    unary = false;
-                    if (symbol == '-') {  //кладем в стэк унарный минус, обозначаемый через $
-                        stack.push('!');
-                    }
-                    if (symbol == '*' || symbol == '/') {
-                        throw new ParsingException("Invalid expression.");
-                    }
-
-                } else {  // иначе то выталкиваем вершину стэка по приоритету
-                    unary = true;
-                    while (!stack.empty() && isOperator(stack.peek()) &&
-                            getPriority(symbol) <= getPriority(stack.peek())) {
-                        char chrnow = stack.pop();
-                        out.append(" ").append(chrnow);  // out = out + " " + chrnow;
-                    }
-                    stack.push(symbol);  // и добавим оператор в стек
-                }
-            }
-        }
-        while (!stack.empty()) { //выталкиваем оставшиеся элементы
-            char chrnow = stack.pop();
-            if (!isOperator(chrnow)) {
-                throw new ParsingException("Invalid expression.");
-            }
-            out.append(" ").append(chrnow);  // out = out + " " + chrnow;
-        }
-        return out.toString();
-    }
-
-    private static double calculating(double a, double b, char operator) {
-        double c = 0.;
-        if (operator == '+') {
-            c = b + a;
-        }
-        if (operator == '-') {
-            c = b - a;
-        }
-        if (operator == '*') {
-            c = b * a;
-        }
-        if (operator == '/') {
-            c = b / a;
-        }
-        return c;
-    }
-
-    private static double calculating(String expression) throws ParsingException {
-        Stack<Double> stack = new Stack<>();
-        String[] parts = expression.split(" ");  // на 0 позиции - пустая строка
-        if (parts.length == 1) {
-            throw new ParsingException("Invalid expression.");
-        }
-        for (int i = 1; i < parts.length; i++) {
-            String str = parts[i];
-            if (!isOperator(str.charAt(0))) {  // если это число
-                double num = Double.parseDouble(str);
-                stack.push(num);  // добавляем его в стек;
-            } else { // а если это оператор, то считаем два  числа и результат гоняем в стэк
-                if (str.length() == 1 && stack.size() >= 2 && str.charAt(0) != '$') {
-                    double a = stack.pop();
-                    double b = stack.pop();
-                    double c = calculating(a, b, str.charAt(0));
-                    stack.push(c);
-                } else {
-                    if (str.length() == 1 && stack.size() >= 1 && str.charAt(0) == '$') {
-                        double c = stack.pop();
-                        stack.push(-c);
-                    } else {
-                        throw new ParsingException("Invalid expression.");
-                    }
-                }
-            }
-        }
-
-        double res = stack.pop();
-        if (!stack.empty()) {
-            throw new ParsingException("Invalid expression.");
-        }
-        return res;
-    }
+    private static final HashSet<Character> HELPERS = new HashSet<>(Arrays.asList(' ', '\t', '\n', ')', '('));
 
     @Override
     public double calculate(String expression) throws ParsingException {
         if (expression == null || expression.equals("")) {
-            throw new ParsingException("Expression is empty.");
+            throw new ParsingException("Expression is empty");
         }
-        return calculating(GetPolishNotation(expression));
+        return calculateExpression(getPostfixExpression(expression));
+    }
+
+    private int getPriority(char symbol) throws ParsingException { // Приоритет оператора
+        switch (symbol) {
+            case ('!'):
+                return 3;
+            case ('*'):
+                return 2;
+            case ('/'):
+                return 2;
+            case ('+'):
+                return 1;
+            default:
+                return 1;
+        }
+    }
+
+    private double calculateSimpleExpression(double firstOperand, double secondOperand, char operator) {
+        switch(operator) {
+            case ('+'):
+                return secondOperand + firstOperand;
+
+            case ('-'):
+                return secondOperand - firstOperand;
+
+            case ('*'):
+                return secondOperand * firstOperand;
+
+            default:
+                return  secondOperand / firstOperand;
+        }
+    }
+
+    private String getPostfixExpression(String expression) throws ParsingException {
+        boolean isPartOfNumber = false;  // является ли число частью другого числа
+        boolean isUnary = true;  // унарен ли оператор
+        int countOfOpenedBrackets = 0;  // количество открывающих скобок
+        int countOfPoints = 0;  // количество точек в числе
+        Stack<Character> stack = new Stack<>();
+        StringBuilder postfixExpression = new StringBuilder("");
+        for (char symbol : expression.toCharArray()) {
+            if (!OPERATORS.contains(symbol) && !DIGITS.contains(symbol) && !HELPERS.contains(symbol)) {
+                throw new ParsingException("Expression has incorrect symbol");
+            }
+            if (DIGITS.contains(symbol)) {  // если число
+                isUnary = false; //после него не идет унарный оператор
+                if (symbol == '.') {
+                    countOfPoints++;
+                }
+                if (isPartOfNumber) { //если уже часть числа - дописываем
+                    postfixExpression.append(symbol);
+                } else {
+                    postfixExpression.append(" ").append(symbol); // иначе записываем после пробела
+                    isPartOfNumber = true; //может быть началом числа
+                    countOfPoints = 0;
+                }
+                if (countOfPoints >= 2) {
+                    throw new ParsingException("Bad Number");
+                }
+                continue;
+            }
+
+            isPartOfNumber = false; // закончили считывать число
+
+            if (symbol == '(') {  // если открывающая скоба
+                isUnary = true; // после нее может идти унарный оператор
+                ++countOfOpenedBrackets;
+                stack.push(symbol); //добавили в стек
+                continue;
+            }
+            if (symbol == ')') {  // если закрывающая скобка
+                isUnary = false; // после нее не может идти унарный оператор
+                if (countOfOpenedBrackets != 0) {
+                    while (!stack.empty()) { // выталкиваем элементы из стека в итоговую строку
+                        char currentSymbol = stack.pop();
+                            if (currentSymbol == '(') { // пока не найдем открывающую скобку
+                                --countOfOpenedBrackets;
+                                break;
+                            } else {
+                                postfixExpression.append(" ").append(currentSymbol); //считываем пока не нашли парную скобку
+                            }
+                    }
+                } else {
+                    throw new ParsingException("Wrong brackets balance");
+                }
+                continue;
+            }
+
+            if (OPERATORS.contains(symbol)) { // если оператор
+                if (isUnary) {  // унарный
+                    isUnary = false;
+                    if (symbol == '-') {  //если унарный минус
+                        stack.push('!'); //кладем в стек !
+                    }
+                    if (symbol == '*' || symbol == '/') {
+                        throw new ParsingException("Wrong unary operator");
+                    }
+
+                } else {  // выталкиваем вершину стэка по приоритету
+                    isUnary = true;
+                    while (!stack.empty() && OPERATORS.contains(stack.peek()) &&
+                            getPriority(symbol) <= getPriority(stack.peek())) {
+                        char currentSymbol = stack.pop();
+                        postfixExpression.append(" ").append(currentSymbol);
+                    }
+                    stack.push(symbol);
+                }
+            }
+        }
+
+        while (!stack.empty()) { // выталкиваем остальные элементы
+            char currentSymbol = stack.pop();
+            if (!OPERATORS.contains(currentSymbol)) {
+                throw new ParsingException("Invalid expression");
+            }
+            postfixExpression.append(" ").append(currentSymbol);
+        }
+
+        return postfixExpression.toString();
+    }
+
+    private double calculateExpression(String expression) throws ParsingException {
+        Stack<Double> stack = new Stack<>();
+        String[] tokens = expression.split(" "); //разбиваем на лехсемы по пробелам, первая - пустая
+        if (tokens.length == 1) {
+            throw new ParsingException("Expression has only helpers");
+        }
+        for (int i = 1; i < tokens.length; i++) {
+            String currentToken = tokens[i]; //текущая лексема
+            if (!OPERATORS.contains(currentToken.charAt(0))) {  // если число
+                double currentNumber = Double.parseDouble(currentToken);
+                stack.push(currentNumber);  // добавляем его в стек;
+                continue;
+            }
+            if (stack.size() >= 2 && currentToken.charAt(0) != '!') { // eсли оператор, то достаем 2 элемента и результат кладем в стек
+                stack.push(calculateSimpleExpression(stack.pop(), stack.pop(), currentToken.charAt(0)));
+                continue;
+            }
+            if (currentToken.charAt(0) == '!') { //если унарный - то только минус
+                stack.push(-1 * stack.pop());
+                continue;
+            }
+            throw new ParsingException("Invalid expression.");
+        }
+
+        return stack.pop();
     }
 }
 
