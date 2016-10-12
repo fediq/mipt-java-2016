@@ -15,7 +15,7 @@ import ru.mipt.java2016.homework.base.task1.ParsingException;
 public class MyCalc implements Calculator {
 
     //Получение приоритета символа.
-    private static int getPriority (char x) throws ParsingException {
+    private static int getPriority(char x) throws ParsingException {
         switch (x) {
             case '(' : return 0;
             case ')' : return 0;
@@ -40,66 +40,56 @@ public class MyCalc implements Calculator {
     //Получение ОПЗ по прямой записи.
     private String getOPZ(String expression) throws ParsingException {
         Stack<Character> operators = new Stack<>(); //Стек операторов
-        boolean is_unary = true; //Проверка на унарность операции.
+        boolean isUnary = true; //Проверка на унарность операции.
         StringBuilder finalOPZ = new StringBuilder(); //Собственно, ОПЗ.
         for (Character i : expression.toCharArray()) {
             if ((Character.isDigit(i)) || (i == '.')) {
-                is_unary = false;
+                isUnary = false;
                 finalOPZ.append(i);
             } else if ((i == '+') || (i == '-') || (i == '*') || (i == '/')) {
-                if (is_unary) {
+                if (isUnary) {
                     if (i == '+') {
-                        is_unary = false; // Плюс ничего не меняет, не считаем унарным.
-                    }
-                    else
-                    if (i == '-') {
+                        isUnary = false; // Плюс ничего не меняет, не считаем унарным.
+                    } else if (i == '-') {
                         operators.push('~');
-                        is_unary = false;
-                    }
-                    else {
+                        isUnary = false;
+                    } else {
                         throw new ParsingException("Illegal expression!");
                     }
-                }
-                else {
-                    is_unary = true;
+                } else {
+                    isUnary = true;
                     finalOPZ.append(' ');
                     while (!operators.empty()) {
                         Character tmp = operators.pop();
                         if (getPriority(i) <= getPriority(tmp)) {
                             finalOPZ.append(' ').append(tmp).append(' ');
-                        }
-                        else {
+                        } else {
                             operators.push(tmp);
                             break;
                         }
                     }
                     operators.push(i);
                 }
-            }
-            else if (i == '(') {
-                is_unary = true;
+            } else if (i == '(') {
+                isUnary = true;
                 finalOPZ.append(' ');
                 operators.push(i);
-            }
-            else if (i == ')') {
-                is_unary = false;
+            } else if (i == ')') {
+                isUnary = false;
                 boolean firstBrackets = false;
                 while (!operators.empty()) {
                     Character tmp = operators.pop();
                     if (tmp == '(') {
                         firstBrackets = true;
                         break;
-                    }
-                    else {
+                    } else {
                         finalOPZ.append(' ').append(tmp).append(' ');
                     }
                 }
-
                 if (!firstBrackets) {
                     throw new ParsingException("THe bracket balance is illegal!");
                 }
-            }
-            else {
+            } else {
                 throw new ParsingException("Illegal symbol!");
             }
         }
@@ -108,8 +98,7 @@ public class MyCalc implements Calculator {
             Character tmp = operators.pop();
             if ((tmp == '+') || (tmp == '-') || (tmp == '*') || (tmp == '/') || (tmp == '~')) {
                 finalOPZ.append(' ').append(tmp).append(' ');
-            }
-            else {
+            } else {
                 throw new ParsingException("Invalid expression");
             }
         }
@@ -142,16 +131,14 @@ public class MyCalc implements Calculator {
                     results.push(res);
                 } else {
                     throw new ParsingException("Invalid expression");
-                }
-            else if (s.length() == 1 && s.charAt(0) == '~') {
+                } else if (s.length() == 1 && s.charAt(0) == '~') {
                 if (results.size() > 0) {
                     double op = results.pop();
                     results.push(op * -1);
                 } else {
                     throw new ParsingException("Invalid expression");
                 }
-            }
-            else
+            } else
                 //? - предшествующий символ не обязателен
                 //* - сколько угодно предшествующих символов
                 //\\. - точка
