@@ -1,7 +1,7 @@
 package ru.mipt.java2016.homework.g596.litvinov.task1;
 
 /**
- * Created by stanislav on 29.09.16.
+ * Created by Stanislav on 29.09.16.
  */
 
 import ru.mipt.java2016.homework.base.task1.Calculator;
@@ -11,32 +11,32 @@ import java.util.Stack;
 
 public class MyCalculator implements Calculator {
 
-    int pos = -1;
-    char ch, prevCh= 'Q';
-    int bracesCount  = 0;
-    boolean isFirstBrace = true;
-    boolean isFinalBrace = false;
+    private int pos = -1;
+    private char ch, prevCh = 'Q';
+    private int bracesCount = 0;
+    private boolean isFirstBrace = true;
+    private boolean isFinalBrace = false;
 
 
-
-    
-    public double calculate(String expression) throws ParsingException {
-        if (expression == null) {
+    public double calculate(String exp) throws ParsingException {
+        if (exp == null) {
             throw new ParsingException("Null expression");
         }
-        expression = "(" + expression + ")";
+
+        StringBuilder expression = new StringBuilder("(" + exp + ")");
+
         try {
-            Stack<Double> operands = new Stack<Double>();
-            Stack<Character> functions = new Stack<Character>();
-            nextChar(expression);
+            Stack<Double> operands = new Stack<>();
+            Stack<Character> functions = new Stack<>();
+            nextChar(expression.toString());
             while(ch != '\0') {
-                eatSpace(expression);
+                eatSpace(expression.toString());
                 if(isFunc(prevCh) && isFunc(ch) && prevCh != ')' &&
-                        (ch == '+' || ch == '-'))
+                        (ch == '-'))
                     if (prevCh == '/' || prevCh == '*'){
                         prevCh = ch;
-                        nextChar(expression);
-                        double num = scanOperand(expression);
+                        nextChar(expression.toString());
+                        double num = scanOperand(expression.toString());
                         if (prevCh == '-')
                             num *= -1;
                         operands.push(num);
@@ -45,7 +45,7 @@ public class MyCalculator implements Calculator {
                               operands.push(0.0);
                 if (Character.isDigit(ch)) {
                     prevCh = ch;
-                    double num = scanOperand(expression);
+                    double num = scanOperand(expression.toString());
                     operands.push(num);
                 }
                 if (isFunc(ch)) {
@@ -73,7 +73,7 @@ public class MyCalculator implements Calculator {
                         functions.push(ch);
                     }
                     prevCh = ch;
-                    nextChar(expression);
+                    nextChar(expression.toString());
                 }
                 else if (!Character.isSpaceChar(ch))
                     throw new ParsingException("invalid expression");
@@ -88,6 +88,8 @@ public class MyCalculator implements Calculator {
     }
 
     private void popFunction(Stack<Double> Operands, Stack<Character> Functions) throws ParsingException{
+        if (Operands.size() < 2)
+            throw new ParsingException("Invalid expression");
         double b = Operands.pop();
         double a = Operands.pop();
         switch (Functions.pop()){
@@ -132,11 +134,17 @@ public class MyCalculator implements Calculator {
 
     private double scanOperand(String expression) throws ParsingException{
         String operand = "";
+        boolean OneDot = true;
         do{
             operand += ch;
             nextChar(expression);
-            if(Character.isLetter(ch))
-                throw new ParsingException("Invalid arguments");
+            if (Character.isLetter(ch))
+                throw new ParsingException("Invalid argument");
+            if (ch == '.')
+                if (!OneDot)
+                    throw new ParsingException("Invalid argument");
+                else
+                    OneDot = false;
         } while (!Character.isSpaceChar(ch) && !isFunc(ch));
         return Double.parseDouble(operand);
     }
