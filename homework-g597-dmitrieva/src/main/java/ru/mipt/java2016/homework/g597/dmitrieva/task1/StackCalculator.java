@@ -98,8 +98,7 @@ public class StackCalculator implements Calculator{
                         while (!stack.empty())
                         {
                             if (getPriority(currentSymbol) <= getPriority(stack.lastElement())) {
-                                postfixLine.append(' ').append(stack.lastElement()).append(' ');
-                                stack.pop();
+                                postfixLine.append(' ').append(stack.pop()).append(' ');
                             }
                             else
                                 break;
@@ -114,8 +113,7 @@ public class StackCalculator implements Calculator{
                 isUnaryOperation = false;
                 while (!stack.empty() && !(stack.lastElement().equals('('))) {
                     postfixLine.append(' ');
-                    postfixLine.append(stack.lastElement()).append(' ');
-                    stack.pop();
+                    postfixLine.append(stack.pop()).append(' ');
                 }
                 // Если в стеке не осталось открывающейся скобки
                 // то в выражении не согласованы скобки.
@@ -189,16 +187,13 @@ public class StackCalculator implements Calculator{
                 else {
                     if (currentSymbol.equals('±')) {
                         Double a;
-                        a = stack.lastElement();
-                        stack.pop();
+                        a = stack.pop();
                         stack.push(-1 * a);
                     }
                     if (OPERATORS.contains(currentSymbol)) {
                         Double a, b;
-                        a = stack.lastElement();
-                        stack.pop();
-                        b = stack.lastElement();
-                        stack.pop();
+                        a = stack.pop();
+                        b = stack.pop();
                         stack.push(countAtomicOperation(currentSymbol, a, b));
                     }
                 }
