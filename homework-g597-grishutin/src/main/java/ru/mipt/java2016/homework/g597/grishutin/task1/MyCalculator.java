@@ -87,12 +87,12 @@ class MyCalculator implements Calculator{
                     }
 
                 } else if (token.equals("#")) {
-                  if (operands.size() < 1) {
-                      throw new ParsingException("Invalid expression: expected number near unary -");
-                  } else {
-                      double operand = operands.pop();
-                      operands.push(-1 * operand);
-                  }
+                    if (operands.size() < 1) {
+                        throw new ParsingException("Invalid expression: expected number near unary -");
+                    } else {
+                        double operand = operands.pop();
+                        operands.push(-1 * operand);
+                    }
                 } else {
                     try {
                         operand1 = Double.parseDouble(token);
