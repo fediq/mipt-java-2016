@@ -36,21 +36,24 @@ public class MyCalculator  implements ru.mipt.java2016.homework.base.task1.Calcu
             if(lexicalUnits.get(leftId).isDouble()) return lexicalUnits.get(leftId).getDoubleValue();
             throw new ParsingException("stops on parsing not double one token expression");
         }
-        int id = get_opened_math_sign("+", leftId, rightId);
-        if(id != -1){
-            return parse_and_calc(leftId, id) + parse_and_calc(id + 1, rightId);
+        int id;
+        String operation = "err";
+        if((id = get_opened_math_sign("+", leftId, rightId)) != -1){
+            operation = "+";
+        }else if((id = get_opened_math_sign("-", leftId, rightId)) != -1){
+            operation = "-";
+        }else if((id = get_opened_math_sign("*", leftId, rightId)) != -1){
+            operation = "*";
+        }else if((id = get_opened_math_sign("/", leftId, rightId)) != -1){
+            operation = "/";
         }
-        id = get_opened_math_sign("-", leftId, rightId);
         if(id != -1){
-            return parse_and_calc(leftId, id) - parse_and_calc(id + 1, rightId);
-        }
-        id = get_opened_math_sign("*", leftId, rightId);
-        if(id != -1){
-            return parse_and_calc(leftId, id) * parse_and_calc(id + 1, rightId);
-        }
-        id = get_opened_math_sign("/", leftId, rightId);
-        if(id != -1){
-            return parse_and_calc(leftId, id) / parse_and_calc(id + 1, rightId);
+            double left_operand = parse_and_calc(leftId, id);
+            double right_operand = parse_and_calc(id + 1, rightId);
+            if(operation.equals("+")) return left_operand + right_operand;
+            else if(operation.equals("-")) return left_operand - right_operand;
+            else if(operation.equals("*")) return left_operand * right_operand;
+            else return left_operand / right_operand;
         }
         if(lexicalUnits.get(leftId).isOpenBracer() && lexicalUnits.get(rightId - 1).isCloseBracer())
             return parse_and_calc(leftId + 1, rightId - 1);
