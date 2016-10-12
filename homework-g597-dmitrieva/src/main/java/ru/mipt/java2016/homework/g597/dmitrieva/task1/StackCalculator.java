@@ -30,7 +30,7 @@ public class StackCalculator implements Calculator{
     }
 
     // Возвращает приоритет операции
-    private int getPriority(Character operator) throws ParsingException{
+    private int getPriority(char operator) throws ParsingException{
         if (operator == '(' || operator ==')')
                 return 0;
         if (operator == '+' || operator == '-')
@@ -52,10 +52,10 @@ public class StackCalculator implements Calculator{
             throw new ParsingException("The line is empty");
         }
         for (int i = 0; i < expression.length(); i++) {
-            Character currentSymbol = expression.charAt(i);
+            char currentSymbol = expression.charAt(i);
 
             // Если пробельный символ, то игнориурем.
-            if (currentSymbol.equals(' ') || currentSymbol.equals('\t') || currentSymbol.equals('\n')) {
+            if (currentSymbol == ' ' || currentSymbol == '\t' || currentSymbol == '\n') {
                 continue;
             }
 
@@ -65,55 +65,56 @@ public class StackCalculator implements Calculator{
                 isUnaryOperation = false;
             }
             // Если символ является открывающей скобкой, помещаем его в стек.
-            else if (currentSymbol.equals('(')) {
+            else if (currentSymbol == '(') {
                 stack.push(currentSymbol);
                 postfixLine.append(' ').append(' ');
                 isUnaryOperation = true;
                 //Если символ является оператором
             }
-            else if (OPERATORS.contains(currentSymbol)) {
+            else {
+                if (OPERATORS.contains(currentSymbol)) {
                     // Если это унарный минус
                     if (isUnaryOperation) {
-                        if (currentSymbol.equals('-')) {
+                        if (currentSymbol == '-') {
                             stack.push('±');
                             postfixLine.append(' ').append(' ');
                             isUnaryOperation = false;
-                        }
-                        else
+                        } else {
                             throw new ParsingException("Invalid expression");
+                        }
                     } else { // если это бинарный оператор
                         isUnaryOperation = true;
                         //то пока приоритет этого оператора меньше или равен приоритету оператора,
                         // находящегося на вершине стека, выталкиваем верхний элементы стека в выходную строку.
-                        while (!stack.empty())
-                        {
+                        while (!stack.empty()) {
                             if (getPriority(currentSymbol) <= getPriority(stack.lastElement())) {
                                 postfixLine.append(' ').append(stack.pop()).append(' ');
-                            }
-                            else
+                            } else {
                                 break;
+                            }
                         }
                         postfixLine.append(' ').append(' ');
                         stack.push(currentSymbol);
                     }
-            }
-            // Если символ является закрывающей скобкой: до тех пор, пока верхним элементом
-            // стека не станет открывающая скобка,выталкиваем элементы из стека в выходную строку.
-            else if (currentSymbol.equals(')')) {
-                isUnaryOperation = false;
-                while (!stack.empty() && !(stack.lastElement().equals('('))) {
-                    postfixLine.append(' ');
-                    postfixLine.append(stack.pop()).append(' ');
                 }
-                // Если в стеке не осталось открывающейся скобки
-                // то в выражении не согласованы скобки.
-                if (stack.empty()) {
-                    throw new ParsingException("Invalid expression");
+                // Если символ является закрывающей скобкой: до тех пор, пока верхним элементом
+                // стека не станет открывающая скобка,выталкиваем элементы из стека в выходную строку.
+                else if (currentSymbol == ')') {
+                    isUnaryOperation = false;
+                    while (!stack.empty() && !(stack.lastElement().equals('('))) {
+                        postfixLine.append(' ');
+                        postfixLine.append(stack.pop()).append(' ');
+                    }
+                    // Если в стеке не осталось открывающейся скобки
+                    // то в выражении не согласованы скобки.
+                    if (stack.empty()) {
+                        throw new ParsingException("Invalid expression");
+                    }
+                    stack.pop(); // Убираем из стека соответствующую открывающую скобку.
+                    postfixLine.append(' ').append(' ');
+                } else {
+                    throw new ParsingException("Invalid symbol");
                 }
-                stack.pop(); // Убираем из стека соответствующую открывающую скобку.
-                postfixLine.append(' ').append(' ');
-            } else {
-                throw new ParsingException("Invalid symbol");
             }
         }
         // Когда входная строка закончилась, выталкиваем все символы из стека в выходную строку.
@@ -133,25 +134,19 @@ public class StackCalculator implements Calculator{
     }
 
     //Считает значение элементарного выражения.
-    private Double countAtomicOperation (Character operation, Double a, Double b) throws ParsingException{
-        Double result;
+    private Double countAtomicOperation (Character operation, Double a, Double b) throws ParsingException {
         switch (operation) {
             case '+':
-                result = a + b;
-                break;
+                return a + b;
             case '-':
-                result = b - a;
-                break;
+                return b - a;
             case '*':
-                result = a * b;
-                break;
+                return a * b;
             case '/':
-                result = b / a;
-                break;
+                return b / a;
             default:
                 throw new ParsingException("Invalid symbol");
         }
-        return result;
     }
 
     // Вычисление выражения в постфиксной записи.
@@ -164,17 +159,15 @@ public class StackCalculator implements Calculator{
             // Здесь мы, собственно, парсим входную строку
             if (SYMBOLS.contains(currentSymbol)) {
                 oneNumber.append(currentSymbol);
-            }
-            else {
-                if(i > 0 && currentSymbol.equals(' ') && SYMBOLS.contains(postfixLine.charAt(i-1))) {
+            } else {
+                if (i > 0 && currentSymbol.equals(' ') && SYMBOLS.contains(postfixLine.charAt(i - 1))) {
                     try {
                         stack.push(Double.parseDouble(oneNumber.toString()));
                     } catch (NumberFormatException e) {
                         throw new ParsingException("Bad number");
                     }
                     oneNumber.delete(0, oneNumber.length());
-                }
-                else {
+                } else {
                     if (currentSymbol.equals('±')) {
                         Double a;
                         a = stack.pop();
