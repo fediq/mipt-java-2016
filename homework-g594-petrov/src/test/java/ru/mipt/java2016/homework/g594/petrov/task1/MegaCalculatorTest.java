@@ -6,12 +6,9 @@ import ru.mipt.java2016.homework.tests.task1.AbstractCalculatorTest;
 /**
  * Created by Филипп on 10.10.2016.
  */
-public class MegaCalculatorTest extends AbstractCalculatorTest
-{
-
+public class MegaCalculatorTest extends AbstractCalculatorTest {
     @Override
-    protected Calculator calc()
-    {
+    protected Calculator calc() {
         return new MegaCalculator();
     }
 }
