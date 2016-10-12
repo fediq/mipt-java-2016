@@ -58,9 +58,14 @@ class ShuntingYardCalculator implements Calculator {
                 result.add(new OperatorToken(c));
             } else if (c == '(' || c == ')') {
                 if (c == ')' && result.size() > 0 && result.get(result.size() - 1) instanceof BracketToken
+<<<<<<< 689452c8a5b183c37b3009c4aa10a4b58a93a119
                         && ((BracketToken) result.get(result.size() - 1)).getType() == Bracket.OPENING) {
                     throw new ParsingException("Empty brackets");
                 }
+=======
+                        && ((BracketToken) result.get(result.size() - 1)).getType() == Bracket.OPENING)
+                    throw new ParsingException("Empty brackets");
+>>>>>>> commit before merge
                 result.add(new BracketToken(c));
             } else {
                 throw new ParsingException("Illegal character");
@@ -119,9 +124,14 @@ class ShuntingYardCalculator implements Calculator {
                         ++bracketBalance;
                         break;
                     case CLOSING:
+<<<<<<< 689452c8a5b183c37b3009c4aa10a4b58a93a119
                         if (bracketBalance == 0) {
                             throw new ParsingException("Bad bracket balance");
                         }
+=======
+                        if (bracketBalance == 0)
+                            throw new ParsingException("Bad bracket balance");
+>>>>>>> commit before merge
                         while (operators.peek() instanceof OperatorToken) {
                             ((OperatorToken) operators.pop()).getOperator().apply(numbers);
                         }
@@ -129,6 +139,7 @@ class ShuntingYardCalculator implements Calculator {
                         --bracketBalance;
                         gotOperand = true;
                         break;
+<<<<<<< 689452c8a5b183c37b3009c4aa10a4b58a93a119
                     default:
                         throw new IllegalStateException();
                 }
@@ -140,6 +151,15 @@ class ShuntingYardCalculator implements Calculator {
         if (numbers.size() != 1) {
             throw new ParsingException("Illegal expression");
         }
+=======
+                }
+            }
+        }
+        if (bracketBalance != 0)
+            throw new ParsingException("Bad bracket balance");
+        if (numbers.size() != 1)
+            throw new ParsingException("Illegal expression");
+>>>>>>> commit before merge
         infix.remove(infix.size() - 1);
 
         return numbers.pop();
@@ -150,9 +170,13 @@ class ShuntingYardCalculator implements Calculator {
         return c == '+' || c == '-' || c == '*' || c == '/';
     }
 
+<<<<<<< 689452c8a5b183c37b3009c4aa10a4b58a93a119
     private enum Bracket {
         OPENING, CLOSING
     }
+=======
+    private enum Bracket {OPENING, CLOSING}
+>>>>>>> commit before merge
 
     private class Token {
     }
@@ -160,8 +184,13 @@ class ShuntingYardCalculator implements Calculator {
     private class NumberToken extends Token {
         private double number;
 
+<<<<<<< 689452c8a5b183c37b3009c4aa10a4b58a93a119
         private NumberToken(double number) {
             this.number = number;
+=======
+        private NumberToken(double number_) {
+            number = number_;
+>>>>>>> commit before merge
         }
 
         private double getNumber() {
@@ -197,8 +226,13 @@ class ShuntingYardCalculator implements Calculator {
             this.operator = operator;
         }
 
+<<<<<<< 689452c8a5b183c37b3009c4aa10a4b58a93a119
         private OperatorToken(char operatorChar) {
             switch (operatorChar) {
+=======
+        private OperatorToken(char operator_) {
+            switch (operator_) {
+>>>>>>> commit before merge
                 case '+':
                     operator = Operator.ADD;
                     break;

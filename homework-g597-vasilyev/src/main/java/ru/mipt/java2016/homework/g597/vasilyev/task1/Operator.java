@@ -29,10 +29,16 @@ enum Operator {
             throw new ParsingException("Too few operands");
         }
 
+<<<<<<< 689452c8a5b183c37b3009c4aa10a4b58a93a119
         double[] args = new double[valency];
         for (int i = valency - 1; i >= 0; --i) {
             args[i] = numbers.pop();
         }
+=======
+        double args[] = new double[valency];
+        for (int i = valency - 1; i >= 0; --i)
+            args[i] = numbers.pop();
+>>>>>>> commit before merge
 
         switch (this) {
             case ADD:
@@ -53,6 +59,7 @@ enum Operator {
             case UNARY_MINUS:
                 numbers.push(-args[0]);
                 break;
+<<<<<<< 689452c8a5b183c37b3009c4aa10a4b58a93a119
             default:
                 throw new IllegalStateException();
         }
@@ -61,4 +68,12 @@ enum Operator {
     public final int priority;
     public final int valency;
     public final boolean hasLeftAssociativity;
+=======
+        }
+    }
+
+    final int priority;
+    final int valency;
+    final boolean hasLeftAssociativity;
+>>>>>>> commit before merge
 }

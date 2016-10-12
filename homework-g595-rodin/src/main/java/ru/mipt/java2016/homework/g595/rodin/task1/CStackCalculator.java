@@ -60,13 +60,15 @@ public class CStackCalculator implements Calculator {
                 continue;
             }
             if(tokenValence == 1) {
-                Double item = calculationsStack.pop();
-                calculationsStack.push(-1*item);
+                Double Operand = calculationsStack.pop();
+                calculationsStack.push(-1*Operand);
+                continue;
             }
             if(tokenValence == 2) {
                 Double rightOperand = calculationsStack.pop();
                 Double leftOperand = calculationsStack.pop();
                 calculationsStack.push(Operate(leftOperand,rightOperand,token));
+                continue;
             }
 
         }
@@ -87,7 +89,7 @@ public class CStackCalculator implements Calculator {
              * Expression consists only of space symbols.
              */
         }
-        expression = expression.replace("(-","(0-").replace("/-","/_").replace("*-","*_");
+        expression = expression.replace("(-","(_").replace("/-","/_").replace("*-","*_");
         if(expression.charAt(0) == '-') {
             expression = "0" + expression;
         }
@@ -99,7 +101,6 @@ public class CStackCalculator implements Calculator {
     }
 
     private void getPolishNotation(StringTokenizer tokenList) throws ParsingException {
-
         Stack< String > stackOperators = new Stack<>();
         while( tokenList.hasMoreTokens()) {
             String token = tokenList.nextToken();
@@ -186,12 +187,12 @@ public class CStackCalculator implements Calculator {
 
     private byte getPrecedence(String token) {
         if (token.equals("+")) {
-            return 1;
+            return 0;
         }
         if(token.equals("_")) {
-            return 3;
+            return 2;
         }
-        return 2;
+        return 1;
     }
     private int getValence(String token) {
         if(isNumber(token)) {
