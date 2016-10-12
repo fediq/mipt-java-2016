@@ -49,6 +49,7 @@
         <module>homework-g594-glebov</module>
         <module>homework-g594-petrov</module>
         <module>homework-g597-kozlov</module>
+<<<<<<< HEAD
         <module>homework-g597-dmitrieva</module>
         <module>homework-g595-popovkin</module>
         <module>homework-g594-anukhin</module>
@@ -75,6 +76,9 @@
         <module>homework-g595-tkachenko</module>
         <module>homework-g597-miller</module>
 
+=======
+        <module>homework-g596-bystrov</module>
+>>>>>>> homework-g596-bystrov module added
     </modules>
 
     <build>
