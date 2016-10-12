@@ -1,5 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
                     http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -13,7 +13,7 @@
     <modules>
         <module>homework-base</module>
         <module>homework-tests</module>
-
+        <module>homework-g596-litvinov</module>
         <module>homework-g000-lavrentyev</module>
         <module>homework-g594-shevkunov</module>
         <module>homework-g597-vasilyev</module>
@@ -48,8 +48,8 @@
                 </dependencies>
                 <executions>
                     <execution>
-                        <id>check</id>
-                        <phase>test</phase>
+                        <id>validate</id>
+                        <phase>validate</phase>
                         <goals>
                             <goal>check</goal>
                         </goals>
@@ -60,7 +60,7 @@
                     <consoleOutput>true</consoleOutput>
                     <failsOnError>true</failsOnError>
                     <checkstyleRules>
-                        <module name = "Checker">
+                        <module name="Checker">
                             <property name="charset" value="UTF-8"/>
 
                             <property name="fileExtensions" value="java"/>
