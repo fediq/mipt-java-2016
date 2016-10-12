@@ -272,25 +272,47 @@ class SimpleCalculator implements Calculator {
         return result;
     }
 
-    private void unravelCalculationStack(Stack<CalculationToken> calculationStack,
-                                         OperationToken endOperationToken) {
-        /* calculationStack has a number on top */
+    /**
+     * A function to read the next number on the stack
+     * (allows for reading even in cases of unary minuses)
+     *
+     * @param calculationStack - Stack to be read from
+     * @return The next number on the stack
+     */
+    private Double readNextNumber(Stack<CalculationToken> calculationStack) {
         CalculationToken calculationToken = calculationStack.pop();
         DoubleToken doubleToken;
-        OperationToken operationToken;
-        Double calculation;
+        Double nextNumber;
 
         if (calculationToken instanceof OperationToken) { /* unary minus */
             calculationToken = calculationStack.pop();
             doubleToken = (DoubleToken) calculationToken;
-            calculation = -doubleToken.getNumber();
+            nextNumber = -doubleToken.getNumber();
         } else {
             doubleToken = (DoubleToken) calculationToken;
-            calculation = doubleToken.getNumber();
+            nextNumber = doubleToken.getNumber();
         }
 
+        return nextNumber;
+    }
 
-        while(!calculationStack.isEmpty()) {
+    /**
+     * Unravel the Stack for a block of equal-priority operations
+     * and replace the block with the result of the operations
+     * (shorten [x] [+] [y] ... [-] [z] to [x+y...-z] for example)
+     *
+     * @param calculationStack - Stack to be unravelled
+     * @param endOperationToken - OperationToken whose priority is different
+     *                                       from the block being calculated
+     */
+    private void unravelCalculationStack(Stack<CalculationToken> calculationStack,
+                                         OperationToken endOperationToken) {
+        OperationToken operationToken;
+        Double doubleTokenNumber;
+        /* calculationStack has a number (or a unary minus + number) on top */
+        Double calculation = readNextNumber(calculationStack);
+
+        while (!calculationStack.isEmpty()) {
             operationToken = (OperationToken) calculationStack.pop();
 
             if (operationToken.getPriority() == OperationToken.BRACKET_PRIORITY) {
@@ -301,9 +323,8 @@ class SimpleCalculator implements Calculator {
                 break;
             }
 
-            doubleToken = (DoubleToken) calculationStack.pop();
-
-            calculation = completeOperation(calculation, doubleToken.getNumber(),
+            doubleTokenNumber = readNextNumber(calculationStack);
+            calculation = completeOperation(calculation, doubleTokenNumber,
                                                          operationToken.getOperation());
         }
 
