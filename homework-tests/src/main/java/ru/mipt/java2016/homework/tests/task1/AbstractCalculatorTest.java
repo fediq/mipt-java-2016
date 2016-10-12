@@ -121,4 +121,5 @@ public abstract class AbstractCalculatorTest {
     public void testTooFewBraces() throws ParsingException {
         test("6.0 + (-4)) * (0.0 + 5/2)", -4.0);
     }
+
 }

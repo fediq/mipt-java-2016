@@ -43,7 +43,7 @@ public class MyCalculator implements Calculator {
                     }
                     else
                               operands.push(0.0);
-                if (isOperand(ch)) {
+                if (Character.isDigit(ch)) {
                     prevCh = ch;
                     double num = scanOperand(expression);
                     operands.push(num);
@@ -87,15 +87,6 @@ public class MyCalculator implements Calculator {
         }
     }
 
-//    private Object getToken(String expression){
-//        eatSpace(expression);
-//        if (pos == expression.length())
-//                return null;
-//            if(Character.isDigit(expression.charAt(pos)))
-//                return scanOperand(expression);
-//            else
-//                return expression.charAt(pos++)
-//    }
     private void popFunction(Stack<Double> Operands, Stack<Character> Functions) throws ParsingException{
         double b = Operands.pop();
         double a = Operands.pop();
@@ -149,15 +140,9 @@ public class MyCalculator implements Calculator {
         } while (!Character.isSpaceChar(ch) && !isFunc(ch));
         return Double.parseDouble(operand);
     }
-    private boolean isOperand(char ch){
-        if(Character.isDigit(ch))
-            return true;
-        return false;
-    }
+
     private boolean isFunc(char ch){
-           if(ch == '+' || ch == '-' || ch =='*' || ch == '/' || ch == '%' || ch == '(' || ch ==')')
-               return true;
-        return false;
+        return (ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '%' || ch == '(' || ch == ')');
     }
     private void eatSpace(String expression){
         while (Character.isWhitespace(ch)  && ch != 'x')
