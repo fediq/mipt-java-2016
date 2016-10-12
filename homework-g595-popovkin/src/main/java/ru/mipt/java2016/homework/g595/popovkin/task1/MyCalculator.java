@@ -1,6 +1,6 @@
 package ru.mipt.java2016.homework.g595.popovkin.task1;
 
-import ru.mipt.java2016.homework.base/task1.*;
+import ru.mipt.java2016.homework.base.task1.*;
 
 import java.util.*;
 /**
@@ -13,14 +13,15 @@ public class MyCalculator  implements ru.mipt.java2016.homework.base.task1.Calcu
     private List<LexicalUnit> lexicalUnits;
     private static final String UNARY_MINUS = "M";
 
-    // find math "sign1" or "sign2" outside any bracers, -1 if no such symbols, checks bracers balance
-    private int get_opened_math_sign(String sign1, String sign2, int leftId, int rightId) throws ParsingException{
+    // find last math "sign" outside any bracers, -1 if no such symbols, checks bracers balance
+    private int get_opened_math_sign(String sign, int leftId, int rightId) throws ParsingException{
+        //System.out.print(leftId);
+        //System.out.println(rightId);
         int balance = 0;
-        for(int i = leftId; i < rightId; ++i){
-            if(lexicalUnits.get(i).isOpenBracer()) ++balance;
-            else if(lexicalUnits.get(i).isCloseBracer()) --balance;
-            else if(lexicalUnits.get(i).isMathSign() && balance == 0
-                    && (sign1.equals(lexicalUnits.get(i).value) || sign2.equals(lexicalUnits.get(i).value))){
+        for(int i = rightId - 1; i >= leftId; --i){
+            if(lexicalUnits.get(i).isCloseBracer()) ++balance;
+            else if(lexicalUnits.get(i).isOpenBracer()) --balance;
+            else if(lexicalUnits.get(i).isMathSign() && balance == 0 && sign.equals(lexicalUnits.get(i).value)){
                 return i;
             }
             if(balance < 0) throw new ParsingException("wrong number of bracers");
@@ -30,42 +31,26 @@ public class MyCalculator  implements ru.mipt.java2016.homework.base.task1.Calcu
     }
 
     private double parse_and_calc(int leftId, int rightId) throws ParsingException{
-        /*
-        System.out.format("%d %d\n", leftId, rightId);
-
-        for(int i = leftId; i < rightId; ++i){
-            System.out.format("%s", lexicalUnits.get(i).value);
-        }
-        System.out.format("\n");
-        */
         if(leftId == rightId) throw new ParsingException("stops on parsing empty expression");
         if(leftId == rightId - 1){
             if(lexicalUnits.get(leftId).isDouble()) return lexicalUnits.get(leftId).getDoubleValue();
             throw new ParsingException("stops on parsing not double one token expression");
         }
-        int id = get_opened_math_sign("+", "+", leftId, rightId);
+        int id = get_opened_math_sign("+", leftId, rightId);
         if(id != -1){
-            if(lexicalUnits.get(id).value.equals("+")){
-                return parse_and_calc(leftId, id) + parse_and_calc(id + 1, rightId);
-            }else {
-                return parse_and_calc(leftId, id) - parse_and_calc(id + 1, rightId);
-            }
+            return parse_and_calc(leftId, id) + parse_and_calc(id + 1, rightId);
         }
-        id = get_opened_math_sign("-", "-", leftId, rightId);
+        id = get_opened_math_sign("-", leftId, rightId);
         if(id != -1){
-            if(lexicalUnits.get(id).value.equals("+")){
-                return parse_and_calc(leftId, id) + parse_and_calc(id + 1, rightId);
-            }else {
-                return parse_and_calc(leftId, id) - parse_and_calc(id + 1, rightId);
-            }
+            return parse_and_calc(leftId, id) - parse_and_calc(id + 1, rightId);
         }
-        id = get_opened_math_sign("*", "/", leftId, rightId);
+        id = get_opened_math_sign("*", leftId, rightId);
         if(id != -1){
-            if(lexicalUnits.get(id).value.equals("*")){
-                return parse_and_calc(leftId, id) * parse_and_calc(id + 1, rightId);
-            }else {
-                return parse_and_calc(leftId, id) / parse_and_calc(id + 1, rightId);
-            }
+            return parse_and_calc(leftId, id) * parse_and_calc(id + 1, rightId);
+        }
+        id = get_opened_math_sign("/", leftId, rightId);
+        if(id != -1){
+            return parse_and_calc(leftId, id) / parse_and_calc(id + 1, rightId);
         }
         if(lexicalUnits.get(leftId).isOpenBracer() && lexicalUnits.get(rightId - 1).isCloseBracer())
             return parse_and_calc(leftId + 1, rightId - 1);
