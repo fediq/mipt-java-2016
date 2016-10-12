@@ -1,0 +1,115 @@
+package ru.mipt.java2016.homework.g595.popovkin.task1;
+
+import ru.mipt.java2016.homework.base/task1.*;
+
+import java.util.*;
+/**
+ * Created by Howl on 11.10.2016.
+ */
+public class MyCalculator  implements ru.mipt.java2016.homework.base.task1.Calculator {
+    //private Map<Character, Integer> priority;
+    private static final Character[] SET_VALUES = new Character[]{ '(', ')', '*', '/', '+', '-' };
+    private static final Set<Character> aloneSymbolLexems = new HashSet<Character>(Arrays.asList(SET_VALUES));
+    private List<LexicalUnit> lexicalUnits;
+    private static final String UNARY_MINUS = "M";
+
+    // find math "sign1" or "sign2" outside any bracers, -1 if no such symbols, checks bracers balance
+    private int get_opened_math_sign(String sign1, String sign2, int leftId, int rightId) throws ParsingException{
+        int balance = 0;
+        for(int i = leftId; i < rightId; ++i){
+            if(lexicalUnits.get(i).isOpenBracer()) ++balance;
+            else if(lexicalUnits.get(i).isCloseBracer()) --balance;
+            else if(lexicalUnits.get(i).isMathSign() && balance == 0
+                    && (sign1.equals(lexicalUnits.get(i).value) || sign2.equals(lexicalUnits.get(i).value))){
+                return i;
+            }
+            if(balance < 0) throw new ParsingException("wrong number of bracers");
+        }
+        if(balance != 0) throw new ParsingException("wrong number of bracers");
+        return -1;
+    }
+
+    private double parse_and_calc(int leftId, int rightId) throws ParsingException{
+        /*
+        System.out.format("%d %d\n", leftId, rightId);
+
+        for(int i = leftId; i < rightId; ++i){
+            System.out.format("%s", lexicalUnits.get(i).value);
+        }
+        System.out.format("\n");
+        */
+        if(leftId == rightId) throw new ParsingException("stops on parsing empty expression");
+        if(leftId == rightId - 1){
+            if(lexicalUnits.get(leftId).isDouble()) return lexicalUnits.get(leftId).getDoubleValue();
+            throw new ParsingException("stops on parsing not double one token expression");
+        }
+        int id = get_opened_math_sign("+", "+", leftId, rightId);
+        if(id != -1){
+            if(lexicalUnits.get(id).value.equals("+")){
+                return parse_and_calc(leftId, id) + parse_and_calc(id + 1, rightId);
+            }else {
+                return parse_and_calc(leftId, id) - parse_and_calc(id + 1, rightId);
+            }
+        }
+        id = get_opened_math_sign("-", "-", leftId, rightId);
+        if(id != -1){
+            if(lexicalUnits.get(id).value.equals("+")){
+                return parse_and_calc(leftId, id) + parse_and_calc(id + 1, rightId);
+            }else {
+                return parse_and_calc(leftId, id) - parse_and_calc(id + 1, rightId);
+            }
+        }
+        id = get_opened_math_sign("*", "/", leftId, rightId);
+        if(id != -1){
+            if(lexicalUnits.get(id).value.equals("*")){
+                return parse_and_calc(leftId, id) * parse_and_calc(id + 1, rightId);
+            }else {
+                return parse_and_calc(leftId, id) / parse_and_calc(id + 1, rightId);
+            }
+        }
+        if(lexicalUnits.get(leftId).isOpenBracer() && lexicalUnits.get(rightId - 1).isCloseBracer())
+            return parse_and_calc(leftId + 1, rightId - 1);
+        if(lexicalUnits.get(leftId).isMathSign() && lexicalUnits.get(leftId).value.equals(UNARY_MINUS)){
+            return -parse_and_calc(leftId + 1, rightId);
+        }
+        throw new ParsingException("stops on parsing impossible expression");
+    }
+
+    private List<LexicalUnit> parse_to_lexical_units(String expression) throws ParsingException{
+        List<LexicalUnit> answer = new ArrayList<LexicalUnit>();
+        int rightPointerToExp;
+        //System.out.print(aloneSymbolLexems.toString());
+        for(int i = 0; i < expression.length(); i = rightPointerToExp){
+            rightPointerToExp = i + 1;
+            if(aloneSymbolLexems.contains(expression.charAt(i))){
+                answer.add(new LexicalUnit(expression.substring(i, i + 1)));
+                continue;
+            }
+            while(rightPointerToExp < expression.length() && !aloneSymbolLexems.contains(expression.charAt(rightPointerToExp))){
+                ++rightPointerToExp;
+            }
+            //System.out.format("%d %d\n", i, rightPointerToExp);
+            answer.add(new LexicalUnit(expression.substring(i, rightPointerToExp)));
+        }
+        return answer;
+    }
+
+    public double calculate(String expression) throws ParsingException {
+        if (expression == null) {
+            throw new ParsingException("Null expression");
+        }
+        expression = expression.replaceAll("\\s","");
+        lexicalUnits = parse_to_lexical_units(expression);
+        // finding unary minuses
+        for(int i = 0; i < lexicalUnits.size(); ++i)
+            if(lexicalUnits.get(i).isMathSign() && lexicalUnits.get(i).value.equals("-") &&
+                    (i == 0 || lexicalUnits.get(i - 1).isMathSign() || lexicalUnits.get(i - 1).isOpenBracer()))
+                lexicalUnits.get(i).value = UNARY_MINUS;
+        //System.out.format("%s\n", lexicalUnits.toString());
+        //for(int i = 0; i < lexicalUnits.size(); ++i)
+        //    System.out.format("%s\n", lexicalUnits.get(i).value);
+        return parse_and_calc(0, lexicalUnits.size());
+    }
+
+    public MyCalculator(){}
+}
