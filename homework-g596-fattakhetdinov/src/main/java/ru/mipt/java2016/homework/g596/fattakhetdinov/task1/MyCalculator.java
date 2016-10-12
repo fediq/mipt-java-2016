@@ -30,7 +30,7 @@ public class MyCalculator implements Calculator {
                 double num;
                 try {
                     num = Double.parseDouble(digit.toString());
-                } catch (Exception e) {
+                } catch (NumberFormatException e) {
                     throw new ParsingException("Invalid number");
                 }
                 nums.push(num);
