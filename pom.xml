@@ -46,8 +46,8 @@
                 </dependencies>
                 <executions>
                     <execution>
-                        <id>validate</id>
-                        <phase>validate</phase>
+                        <id>check</id>
+                        <phase>test</phase>
                         <goals>
                             <goal>check</goal>
                         </goals>
