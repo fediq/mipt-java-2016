@@ -112,7 +112,6 @@ public class MyCalculator implements Calculator {
                 Operands.push(a / b);
                 break;
         }
-
     }
 
     private boolean canPop(char op1, Stack<Character> func) throws ParsingException {
