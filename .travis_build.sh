@@ -1,6 +1,7 @@
 #!/bin/sh
 
 set -e
+sudo : required
 
 if [ "${TRAVIS_PULL_REQUEST}" = "false" ]; then
     echo "Building push"
