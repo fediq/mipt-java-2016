@@ -70,13 +70,13 @@ public class MyCalculator implements Calculator {
 
             if (waitUnary && isMayBeUnary((op))) {
                 if (op == '+') {
-                    op = 'p';//Унарный плюс
+                    op = 'p'; //Унарный плюс
                 }
                 if (op == '-') {
-                    op = 'm';//Унарный минус
+                    op = 'm'; //Унарный минус
                 }
             }
-            int nowPriority = priority(op);// Приоритет операции
+            int nowPriority = priority(op); // Приоритет операции
             while (!ops.empty() && !nums.empty() && nowPriority <= priority(ops.peek())) {
                 doOperation(ops.pop());
             }
@@ -186,7 +186,6 @@ public class MyCalculator implements Calculator {
     }
 
     private boolean isOp(char value) {
-
         for (int i = 0; i < OPERATIONS.length(); i++) {
             if (OPERATIONS.charAt(i) == value) {
                 return true;
@@ -252,14 +251,16 @@ public class MyCalculator implements Calculator {
                 nums.pop();
                 nums.push(-val);
                 return;
+            default:
         }
 
-        double first, second;
+        double first;
+        double second;
         first = nums.pop();
         second = nums.pop();
         double result;
 
-        switch (op) { // Обработка бинарных операций
+        switch (op) { //Обработка бинарных операций
             case '+':
                 result = second + first;
                 break;
