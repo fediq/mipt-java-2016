@@ -102,7 +102,7 @@ class MyCalculator implements Calculator {
     }
 
     public double calculate(String exp) throws ParsingException {
-        boolean unar_possib = true;//wait unary operation
+        boolean unar_possib = true; //wait unary operation
         int numberAfterOp = 0; //how many numbers were after last operation
         int brackbalnce = 0;
         if (exp == null || exp.length() == 0)
@@ -144,10 +144,10 @@ class MyCalculator implements Calculator {
                 if (unar_possib) {
                     switch (currentOp) {
                         case '+':
-                            currentOp = 'p';//unaryPlus
+                            currentOp = 'p'; //unaryPlus
                             break;
                         case '-':
-                            currentOp = 'm';//unaryMinus
+                            currentOp = 'm'; //unaryMinus
                             break;
                         default:
                             throw new ParsingException("Illegal sequence");
