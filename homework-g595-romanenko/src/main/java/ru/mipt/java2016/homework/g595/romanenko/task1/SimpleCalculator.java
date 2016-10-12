@@ -1,6 +1,5 @@
 package ru.mipt.java2016.homework.g595.romanenko.task1;
 
-import javafx.util.Pair;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
 import java.util.ArrayList;
@@ -17,22 +16,16 @@ Extended Backus–Naur Form :
 
 public class SimpleCalculator implements ru.mipt.java2016.homework.base.task1.Calculator {
 
-    private enum ExpressionTokens {
-        MUL, MINUS, NUMBER, LEFT_BRACES, RIGHT_BRACES, PLUS, DIVIDE
-    }
 
-    private static ArrayList<Pair<ExpressionTokens, Double>> tokens;
-    private static int current_token;
+    private final ArrayList<Token> tokens = new ArrayList<>();
+    private int current_token = 0;
 
     private void Parse(String expression) throws ParsingException {
-        tokens = new ArrayList<Pair<ExpressionTokens, Double>>();
-        current_token = 0;
-
         if (expression == null)
             throw new ParsingException("Null expression");
 
         for (int i = 0; i < expression.length(); i++) {
-            ExpressionTokens current_token;
+            Token.ExpressionToken current_token;
             Double number = null;
 
             if (Character.isWhitespace(expression.charAt(i)) || Character.isSpaceChar(expression.charAt(i)))
@@ -40,26 +33,33 @@ public class SimpleCalculator implements ru.mipt.java2016.homework.base.task1.Ca
 
             switch (expression.charAt(i)) {
                 case '*':
-                    current_token = ExpressionTokens.MUL;
+                    current_token = Token.ExpressionToken.MUL;
                     break;
+
                 case '/':
-                    current_token = ExpressionTokens.DIVIDE;
+                    current_token = Token.ExpressionToken.DIVIDE;
                     break;
+
                 case '+':
-                    current_token = ExpressionTokens.PLUS;
+                    current_token = Token.ExpressionToken.PLUS;
                     break;
+
                 case '-':
-                    current_token = ExpressionTokens.MINUS;
+                    current_token = Token.ExpressionToken.MINUS;
                     break;
+
                 case '(':
-                    current_token = ExpressionTokens.LEFT_BRACES;
+                    current_token = Token.ExpressionToken.LEFT_BRACES;
                     break;
+
                 case ')':
-                    current_token = ExpressionTokens.RIGHT_BRACES;
+                    current_token = Token.ExpressionToken.RIGHT_BRACES;
                     break;
+
                 default:
                     if (!Character.isDigit(expression.charAt(i)))
-                        throw new ParsingException(String.format("Unknown symbol at {0}", i));
+                        throw new ParsingException(String.format("Unknown symbol at %d", i));
+
                     boolean has_found_dot = false;
                     int start = i;
                     for (; i < expression.length(); i++) {
@@ -76,10 +76,13 @@ public class SimpleCalculator implements ru.mipt.java2016.homework.base.task1.Ca
                     if (i == expression.length())
                         i--;
                     number = Double.parseDouble(expression.substring(start, i + 1));
-                    current_token = ExpressionTokens.NUMBER;
+                    current_token = Token.ExpressionToken.NUMBER;
                     break;
             }
-            tokens.add(new Pair<ExpressionTokens, Double>(current_token, number));
+            if (current_token != Token.ExpressionToken.NUMBER)
+                tokens.add(new Token(current_token));
+            else
+                tokens.add(new Token(number));
         }
     }
 
@@ -87,24 +90,23 @@ public class SimpleCalculator implements ru.mipt.java2016.homework.base.task1.Ca
         current_token -= 1;
     }
 
-    @org.jetbrains.annotations.Nullable
-    private Pair<ExpressionTokens, Double> GetToken() {
+    private Token GetToken() {
         if (current_token >= tokens.size())
             return null;
-        Pair<ExpressionTokens, Double> result = tokens.get(current_token);
+        Token result = tokens.get(current_token);
         current_token += 1;
         return result;
     }
 
     private Double Expression() throws ParsingException {
         Double result = Mul();
-        Pair<ExpressionTokens, Double> token;
+        Token token;
         do {
             token = GetToken();
             if (token != null) {
-                if (token.getKey() == ExpressionTokens.PLUS)
+                if (token.getType() == Token.ExpressionToken.PLUS)
                     result += Mul();
-                else if (token.getKey() == ExpressionTokens.MINUS)
+                else if (token.getType() == Token.ExpressionToken.MINUS)
                     result -= Mul();
                 else {
                     ReturnToken();
@@ -117,13 +119,13 @@ public class SimpleCalculator implements ru.mipt.java2016.homework.base.task1.Ca
 
     private Double Mul() throws ParsingException {
         Double result = BracesExpression();
-        Pair<ExpressionTokens, Double> token;
+        Token token;
         do {
             token = GetToken();
             if (token != null) {
-                if (token.getKey() == ExpressionTokens.MUL)
+                if (token.getType() == Token.ExpressionToken.MUL)
                     result *= BracesExpression();
-                else if (token.getKey() == ExpressionTokens.DIVIDE) {
+                else if (token.getType() == Token.ExpressionToken.DIVIDE) {
                     result /= BracesExpression();
                 } else {
                     ReturnToken();
@@ -135,14 +137,16 @@ public class SimpleCalculator implements ru.mipt.java2016.homework.base.task1.Ca
     }
 
     private Double BracesExpression() throws ParsingException {
-        Pair<ExpressionTokens, Double> token = GetToken();
+        Token token = GetToken();
         Double result;
         if (token == null)
             throw new ParsingException("Not enough numbers");
-        if (token.getKey() == ExpressionTokens.LEFT_BRACES) {
+
+        if (token.getType() == Token.ExpressionToken.LEFT_BRACES) {
             result = Expression();
             token = GetToken();
-            if (token == null || token.getKey() != ExpressionTokens.RIGHT_BRACES)
+
+            if (token == null || token.getType() != Token.ExpressionToken.RIGHT_BRACES)
                 throw new ParsingException("Wrong amount of braces");
         } else {
             ReturnToken();
@@ -152,14 +156,14 @@ public class SimpleCalculator implements ru.mipt.java2016.homework.base.task1.Ca
     }
 
     private Double NumberExpr() throws ParsingException {
-        Pair<ExpressionTokens, Double> token = GetToken();
+        Token token = GetToken();
         Double result;
         if (token == null)
             throw new ParsingException("Not enough numbers");
-        if (token.getKey() == ExpressionTokens.MINUS)
+        if (token.getType() == Token.ExpressionToken.MINUS)
             result = -BracesExpression();
-        else if (token.getKey() == ExpressionTokens.NUMBER)
-            result = token.getValue();
+        else if (token.getType() == Token.ExpressionToken.NUMBER)
+            result = token.getNumber();
         else
             throw new ParsingException("Unclear order");
         return result;
