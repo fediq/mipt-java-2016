@@ -9,5 +9,7 @@ import ru.mipt.java2016.homework.tests.task1.AbstractCalculatorTest;
 
 public class TestStackCalculator extends AbstractCalculatorTest {
     @Override
-    protected  Calculator calc() { return new StackCalculator(); }
+    protected  Calculator calc() {
+        return new StackCalculator();
+    }
 }
