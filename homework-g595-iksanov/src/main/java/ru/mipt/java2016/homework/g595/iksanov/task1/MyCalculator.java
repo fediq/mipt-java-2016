@@ -9,6 +9,7 @@ import ru.mipt.java2016.homework.base.task1.ParsingException;
 public class MyCalculator implements Calculator {
 
 
+
     @Override
     public double calculate(String expression) throws ParsingException {
 
