@@ -2,7 +2,10 @@ package ru.mipt.java2016.homework.g597.grishutin.task1;
 
 import ru.mipt.java2016.homework.base.task1.*;
 import java.security.InvalidParameterException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Scanner;
+import java.util.Stack;
 
 class MyCalculator implements Calculator{
     static final Calculator INSTANCE = new MyCalculator();
