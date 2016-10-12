@@ -13,14 +13,13 @@
     <modules>
         <module>homework-base</module>
         <module>homework-tests</module>
+
         <module>homework-g000-lavrentyev</module>
-        <module>homework-g595-rodin</module>
         <module>homework-g594-shevkunov</module>
         <module>homework-g597-vasilyev</module>
         <module>homework-g597-moiseev</module>
         <module>homework-g597-kozlov</module>
-
-
+        <module>homework-g597-dmitrieva</module>
     </modules>
 
     <build>
@@ -48,8 +47,8 @@
                 </dependencies>
                 <executions>
                     <execution>
-                        <id>validate</id>
-                        <phase>validate</phase>
+                        <id>check</id>
+                        <phase>test</phase>
                         <goals>
                             <goal>check</goal>
                         </goals>
