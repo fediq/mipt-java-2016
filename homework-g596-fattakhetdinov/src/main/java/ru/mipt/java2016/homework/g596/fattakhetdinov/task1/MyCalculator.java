@@ -1,6 +1,5 @@
 package ru.mipt.java2016.homework.g596.fattakhetdinov.task1;
 
-
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
@@ -12,35 +11,45 @@ public class MyCalculator implements Calculator {
     public MyCalculator() {
     }
 
-    private String expression = "";
     private Stack<Double> nums = new Stack<>();
     private Stack<Character> ops = new Stack<>();
 
-    public double calculate(String exp) throws ParsingException {
-        this.expression = exp;
-        checkExpression();
-
+    public double calculate(String expression) throws ParsingException {
+        checkExpression(expression);
 
         boolean waitUnary = true;
 
         for (int i = 0; i < expression.length(); i++) {
-            if (isSpaceSymbol(expression.charAt(i))) continue; //Пропускаем пробелы, /t и /r
-            if (isNum(expression.charAt(i))) { //Перевод в число
-                String digit = "";
-                for (; i < expression.length() && isNum(expression.charAt(i)); i++) {
-                    digit += expression.charAt(i);
+            if (isSpaceSymbol(expression.charAt(i))) {
+                continue; //Пропускаем пробелы, /t и /r
+            }
+            if (Character.isDigit(expression.charAt(i))) { //Перевод в число
+                StringBuilder digit = new StringBuilder();
+                for (; i < expression.length() && (Character.isDigit(expression.charAt(i))
+                        || expression.charAt(i) == '.'); i++) {
+                    digit.append(expression.charAt(i));
                 }
-                double num = stringToNum(digit);
+                String doubleInString = digit.substring(0);
+                double num;
+                try {
+                    num = Double.parseDouble(doubleInString);
+                } catch (Exception e) {
+                    throw new ParsingException("Invalid number");
+                }
                 nums.push(num);
                 waitUnary = false;
             }
 
             //Пропускаем пробелы, /t и /r
-            while (i < expression.length() && isSpaceSymbol(expression.charAt(i))) i++;
+            while (i < expression.length() && isSpaceSymbol(expression.charAt(i))) {
+                i++;
+            }
 
-            if (i == expression.length()) break; //В конце строки могли быть пробелы
+            if (i == expression.length()) {
+                break; //В конце строки могли быть пробелы
+            }
 
-            if (isNum(expression.charAt(i))) {
+            if (Character.isDigit(expression.charAt(i)) || expression.charAt(i) == '.') {
                 throw new ParsingException("Два числа идут подряд");
             }
 
@@ -62,9 +71,13 @@ public class MyCalculator implements Calculator {
                 continue;
             }
 
-            if (waitUnary && isUnary((op))) {
-                if (op == '+') op = 'p';//Унарный плюс
-                if (op == '-') op = 'm';//Унарный минус
+            if (waitUnary && isMayBeUnary((op))) {
+                if (op == '+') {
+                    op = 'p';//Унарный плюс
+                }
+                if (op == '-') {
+                    op = 'm';//Унарный минус
+                }
             }
             int nowPriority = priority(op);// Приоритет операции
             while (!ops.empty() && !nums.empty() && nowPriority <= priority(ops.peek())) {
@@ -84,14 +97,17 @@ public class MyCalculator implements Calculator {
         }
     }
 
-    private void checkExpression() throws ParsingException { //Проверка исходного выражения на корректность
+    private void checkExpression(String expression) throws ParsingException {
+        //Проверка исходного выражения на корректность
+
         if (expression == null) { //Проверка на null
             throw new ParsingException("Expression == null!");
         }
 
         int bracketBalance = 0; //Скобочный баланс
         boolean wasDigitInBracket = false;
-        String previousSymbol = "="; //Считаем что -1 символ - '=', необходимо для проверки первого символа выражения
+        char previousSymbol = '=';
+        //Считаем что -1 символ - '=', необходимо для проверки первого символа выражения
         for (int i = 0; i < expression.length(); i++) {
             if (isSpaceSymbol(expression.charAt(i))) { //Пропускаем все символы пробела
                 continue;
@@ -101,16 +117,22 @@ public class MyCalculator implements Calculator {
             }
 
             //Проверка скобочного баланса
-            if (expression.charAt(i) == '(') bracketBalance++;
-            if (expression.charAt(i) == ')') bracketBalance--;
-            if (bracketBalance < 0) throw new ParsingException("invalid bracket balance");
+            if (expression.charAt(i) == '(') {
+                bracketBalance++;
+            }
+            if (expression.charAt(i) == ')') {
+                bracketBalance--;
+            }
+            if (bracketBalance < 0) {
+                throw new ParsingException("invalid bracket balance");
+            }
 
             //Проверка на наличие подстроки вида "()" или "(+-*/)", т.е. без чисел внутри
             if (expression.charAt(i) == '(') {
                 wasDigitInBracket = false;
             }
 
-            if (isNum(expression.charAt(i))) {
+            if (Character.isDigit(expression.charAt(i))) {
                 wasDigitInBracket = true;
             }
 
@@ -119,77 +141,93 @@ public class MyCalculator implements Calculator {
             }
 
             //Проверка на возможность наличия действия, скобки или числа c учетом предыдущего символа
-            String currentSymbol = expression.substring(i, i + 1);
-            if ("=(*/+-".contains(previousSymbol) && "(+-0123456789".contains(currentSymbol)) {
+            char currentSymbol = expression.charAt(i);
+            if ((isOp(previousSymbol) || previousSymbol == '=' || previousSymbol == '(') &&
+                    (isMayBeUnary(currentSymbol) || currentSymbol == '(' ||
+                    currentSymbol == '.' || Character.isDigit(currentSymbol))) {
                 previousSymbol = currentSymbol;
-                if (currentSymbol.equals("+")) {
-                    previousSymbol = "p"; //Унарный плюс
+                if (currentSymbol == '+') {
+                    previousSymbol = 'p'; //Унарный плюс
                 }
-                if (currentSymbol.equals("-")) {
-                    previousSymbol = "m"; //Унарный минус
+                if (currentSymbol == '-') {
+                    previousSymbol = 'm'; //Унарный минус
                 }
                 continue;
             }
 
-            if ("0123456789".contains(previousSymbol) && "+-*/)0123456789.".contains(currentSymbol)) {
+            if (Character.isDigit(previousSymbol) &&
+                    (Character.isDigit(currentSymbol) || isOp(currentSymbol) ||
+                     currentSymbol == ')' || currentSymbol == '.')) {
                 previousSymbol = currentSymbol;
                 continue;
             }
 
-            if (")".contains(previousSymbol) && "+-*/)".contains(currentSymbol)) {
+            if (previousSymbol == ')' && (isOp(currentSymbol) || currentSymbol == ')')) {
                 previousSymbol = currentSymbol;
                 continue;
             }
 
-            if ("pm.".contains(previousSymbol) && "(0123456789".contains(currentSymbol)) {
+            if (isUnary(previousSymbol) &&
+                    (Character.isDigit(currentSymbol) || currentSymbol == '(')) {
+                previousSymbol = currentSymbol;
+                continue;
+            }
+
+            if (previousSymbol == '.' && Character.isDigit(currentSymbol)) {
                 previousSymbol = currentSymbol;
                 continue;
             }
 
             throw new ParsingException("Invalid expression");
         }
-        if (bracketBalance > 0) throw new ParsingException("invalid bracket balance");
-        if ("(/*-+.".contains(previousSymbol)) throw new ParsingException("Invalid expression");
+        if (bracketBalance > 0) {
+            throw new ParsingException("invalid bracket balance");
+        }
+        if (isOp(previousSymbol) || previousSymbol == '(' || previousSymbol == '.') {
+            throw new ParsingException("Invalid expression");
+        }
         //Проверка последнего символа
     }
 
     private boolean isOp(char value) {
-        String a = "-+/*()";
+        String a = "-+/*";
         for (int i = 0; i < a.length(); i++) {
-            if (a.charAt(i) == value)
+            if (a.charAt(i) == value) {
                 return true;
+            }
         }
         return false;
     }
 
-    private boolean isNum(char value) {
-        String a = "0123456789.";
-        for (int i = 0; i < a.length(); i++) {
-            if (a.charAt(i) == value)
-                return true;
-        }
-        return false;
+    private boolean isMayBeUnary(char value) {
+        return value == '+' || value == '-';
     }
 
     private boolean isUnary(char value) {
-        return value == '+' || value == '-';
+        return value == 'p' || value == 'm';
+    }
+
+    private boolean isBracket(char value) {
+        return value == '(' || value == ')';
     }
 
     private boolean isSpaceSymbol(char value) {
         String a = "\n\t ";
         for (int i = 0; i < a.length(); i++) {
-            if (a.charAt(i) == value)
+            if (a.charAt(i) == value) {
                 return true;
+            }
         }
         return false;
     }
 
     private boolean isCorrectSymbol(char value) {
-        return (isOp(value) || isNum(value) || isSpaceSymbol(value));
+        return (isOp(value) || isBracket(value) || Character.isDigit(value) || isSpaceSymbol(value)
+                || value == '.');
     }
 
-    private int priority(char digit) throws ParsingException {
-        switch (digit) {
+    private int priority(char operation) throws ParsingException {
+        switch (operation) {
             case '(':
             case ')':
                 return 0;
@@ -207,36 +245,7 @@ public class MyCalculator implements Calculator {
         }
     }
 
-    private double stringToNum(String str) throws ParsingException //Перевод строки в double
-    {
-        double result = 0;
-        int numPoints = 0;
-        int pos = str.length();
-        if (str.charAt(0) == '.' || str.charAt(str.length() - 1) == '.') {
-            throw new ParsingException("Point location in number error");
-        }
-        for (int i = 0; i < str.length(); i++) {
-            if (str.charAt(i) == '.') {
-                numPoints++;
-                pos = i;
-            }
-        }
-        if (numPoints > 1) {
-            throw new ParsingException("More than 1 point in number");
-        }
-
-        for (int i = 0; i < str.length(); i++) {
-            if (pos > i) {
-                result += (str.charAt(i) - '0') * Math.pow(10, (pos - i - 1));
-            }
-            if (pos < i) {
-                result += (str.charAt(i) - '0') * Math.pow(10, (pos - i));
-            }
-        }
-        return result;
-    }
-
-    private void doOperation(char op) throws ParsingException {
+    private void doOperation(char op) {
         double val = nums.peek();
         switch (op) { //Обработка унарных операций
             case 'p':
