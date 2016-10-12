@@ -2,7 +2,6 @@ package ru.mipt.java2016.homework.g597.vasilyev.task1;
 
 import java.util.ArrayList;
 import java.util.Stack;
-
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
@@ -58,7 +57,8 @@ class ShuntingYardCalculator implements Calculator {
                 result.add(new OperatorToken(c));
             } else if (c == '(' || c == ')') {
                 if (c == ')' && result.size() > 0 && result.get(result.size() - 1) instanceof BracketToken
-                        && ((BracketToken) result.get(result.size() - 1)).getType() == Bracket.OPENING) {
+                        && ((BracketToken) result.get(result.size() - 1)).getType()
+                        == Bracket.OPENING) {
                     throw new ParsingException("Empty brackets");
                 }
                 result.add(new BracketToken(c));
