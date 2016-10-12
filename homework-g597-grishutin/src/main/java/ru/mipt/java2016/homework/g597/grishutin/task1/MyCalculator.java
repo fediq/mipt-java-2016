@@ -114,11 +114,11 @@ class MyCalculator implements Calculator{
     }
 
     private String infixToPostfix(String expression) throws ParsingException {
-        System.out.println(expression);
         StringBuilder answer = new StringBuilder();
         Stack<String> operators = new Stack<>();
         Character c;
         boolean unary = true; // true if next met operator is unary
+        String prevUnary = ""; // for excluding ++ operator
         ParsingCondition cond = ParsingCondition.WaitingToken;
         for (int i = 0; i < expression.length(); ++i) {
             c = expression.charAt(i);
@@ -168,12 +168,16 @@ class MyCalculator implements Calculator{
                         case "-":
                             operators.push("#");
                         case "+":
+                            if (prevUnary.equals("+")) {
+                                throw new ParsingException("Invalid expression: unexpected+");
+                            }
                             unary = true;
                             break;
                         default:
                             throw new ParsingException(
                                     String.format("Invalid expression: invalid unary operator: %c", c));
                     }
+                    prevUnary = c.toString();
                 } else {
                     unary = true;
                     answer.append(' ');
@@ -191,7 +195,6 @@ class MyCalculator implements Calculator{
         }
         while (!operators.empty()) {
             String curOperator = operators.pop();
-            System.out.println(String.format("Found %s in stack", curOperator));
             if (OPERATORS.contains(curOperator) || curOperator.equals("#")) {
                 answer.append(String.format(" %s ", curOperator));
             } else {
