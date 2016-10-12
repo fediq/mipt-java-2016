@@ -15,7 +15,7 @@ import ru.mipt.java2016.homework.base.task1.ParsingException;
 public class MyCalc implements Calculator {
 
     //Получение приоритета символа.
-    public int getPriority (char x) throws ParsingException {
+    private static int getPriority (char x) throws ParsingException {
         switch (x) {
             case '(' : return 0;
             case ')' : return 0;
@@ -38,12 +38,12 @@ public class MyCalc implements Calculator {
     }
 
     //Получение ОПЗ по прямой записи.
-    public String getOPZ(String expression) throws ParsingException {
+    private String getOPZ(String expression) throws ParsingException {
         Stack<Character> operators = new Stack<>(); //Стек операторов
         boolean is_unary = true; //Проверка на унарность операции.
         StringBuilder finalOPZ = new StringBuilder(); //Собственно, ОПЗ.
         for (Character i : expression.toCharArray()) {
-            if (((i >= '0') && (i <= '9')) || (i == '.')) {
+            if ((Character.isDigit(i)) || (i == '.')) {
                 is_unary = false;
                 finalOPZ.append(i);
             } else if ((i == '+') || (i == '-') || (i == '*') || (i == '/')) {
@@ -118,7 +118,7 @@ public class MyCalc implements Calculator {
     }
 
     //Применение одного оператора.
-    public double makeOperation(double op1, double op2, char operation) throws ParsingException {
+    private static double makeOperation(double op1, double op2, char operation) throws ParsingException {
         switch (operation) {
             case '+' : return op1 + op2;
             case '-' : return op1 - op2;
@@ -129,7 +129,7 @@ public class MyCalc implements Calculator {
     }
 
     //Подсчет значения ОПЗ.
-    public double calculation(String expression) throws ParsingException {
+    private static double calculation(String expression) throws ParsingException {
         Scanner stream = new Scanner(expression);
         Stack<Double> results = new Stack<>();
         while (stream.hasNext()) {
