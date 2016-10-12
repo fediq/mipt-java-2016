@@ -13,11 +13,11 @@ import java.util.Stack;
  */
 class SimpleCalculator implements Calculator {
     /* A ParsingException standard error string */
-    private final static String ILLEGAL_POSITION_IN_EXPRESSION =
-                                "Expression contains Illegal Symbol Position(s): ";
+    private static final String ILLEGAL_POSITION_IN_EXPRESSION =
+            "Expression contains Illegal Symbol Position(s): ";
 
     /* An iterator for going through the string expression */
-    private int expression_iterator = 0;
+    private int expressionIterator = 0;
 
     /**
      * Convert a Character to its Double equivalent
@@ -25,95 +25,109 @@ class SimpleCalculator implements Calculator {
      * @param c - character to convert to Double
      * @return Double version value of c
      */
-    private Double get_double_digit(Character c) {
-        return (double)((int)c - '0');
+    private Double getDoubleDigit(Character c) {
+        return (double) ((int) c - '0');
     }
 
     /**
-     * Read a double number from the expression_iterator position in expression
+     * Read a double number from the expressionIterator position in expression
      *
      * @param expression - the expression String
      * @return value of the read double number
      * @throws ParsingException - expression is illegal and cannot be calculated
      */
-    private Double read_double_number_from_expression(String expression) throws ParsingException {
-        Character c = expression.charAt(expression_iterator);
-        Double number = get_double_digit(c);
+    private Double readDoubleNumberFromExpression(String expression) throws ParsingException {
+        Character c = expression.charAt(expressionIterator);
+        Double number = getDoubleDigit(c);
 
-        while(++expression_iterator < expression.length()) {
-            c = expression.charAt(expression_iterator);
-            if (!Character.isDigit(c))
+        while (++expressionIterator < expression.length()) {
+            c = expression.charAt(expressionIterator);
+            if (!Character.isDigit(c)) {
                 break;
+            }
 
             number *= 10;
-            number += get_double_digit(c);
+            number += getDoubleDigit(c);
         }
         if (c == '.') {
-            if (++expression_iterator == expression.length()) {
+            if (++expressionIterator == expression.length()) {
                 throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION + c);
             }
 
-            c = expression.charAt(expression_iterator);
-            double place_factor = 10;
-            number += get_double_digit(c) / place_factor;
+            c = expression.charAt(expressionIterator);
+            double placeFactor = 10;
+            number += getDoubleDigit(c) / placeFactor;
 
             if (!Character.isDigit(c)) {
                 throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION + c);
             }
 
-            while(++expression_iterator < expression.length()) {
-                c = expression.charAt(expression_iterator);
-                if (!Character.isDigit(c))
+            while (++expressionIterator < expression.length()) {
+                c = expression.charAt(expressionIterator);
+                if (!Character.isDigit(c)) {
                     break;
+                }
 
-                place_factor *= 10;
-                number += get_double_digit(c) / place_factor;
+                placeFactor *= 10;
+                number += getDoubleDigit(c) / placeFactor;
             }
         }
 
-        --expression_iterator;
+        --expressionIterator;
         return number;
     }
-
 
 
     /**
      * Class for holding a calculation token
      */
-    private class CalculationToken {}
+    private class CalculationToken {
+    }
 
     /**
      * Class for holding an operation and its priority as a token
      */
     private class OperationToken extends CalculationToken {
-        int priority;
-        Character operation;
+        static final int UNDEFINED_PRIORITY = -1;
+        static final int PLUSMINUS_PRIORITY = 1;
+        static final int TIMESDIVIDE_PRIORITY = 2;
+        static final int BRACKET_PRIORITY = 3;
 
-        OperationToken(Character operation_to_wrap) {
-            operation = operation_to_wrap;
+        private int priority;
+        private Character operation;
+
+        OperationToken(Character operationToWrap) {
+            operation = operationToWrap;
 
             if (operation == null) {
                 priority = -1;
-            }
-            else {
+            } else {
                 switch (operation) {
                     case '+':
                     case '-':
-                        priority = 1;
+                        priority = PLUSMINUS_PRIORITY;
                         break;
                     case '*':
                     case '/':
-                        priority = 2;
+                        priority = TIMESDIVIDE_PRIORITY;
                         break;
                     case '(':
                     case ')':
-                        priority = 3;
+                        priority = BRACKET_PRIORITY;
                         break;
                     default:
-                        priority = -1;
+                        priority = UNDEFINED_PRIORITY;
                         break;
                 }
             }
+        }
+
+        int getPriority() {
+            return priority;
+        }
+
+        Character getOperation() {
+            return operation;
         }
     }
 
@@ -121,17 +135,21 @@ class SimpleCalculator implements Calculator {
      * Class for holding a number as a token
      */
     private class DoubleToken extends CalculationToken {
-        Double number;
+        private Double number;
 
-        DoubleToken(Double number_to_wrap) {
-            number = number_to_wrap;
+        DoubleToken(Double numberToWrap) {
+            number = numberToWrap;
+        }
+
+        Double getNumber() {
+            return number;
         }
     }
 
     /**
      * Check whether c is an arithmetic (+ - * /) character
      */
-    private boolean c_is_arithmetic(Character c) {
+    private boolean cIsArithmetic(Character c) {
         return (c == '+' || c == '-' || c == '*' || c == '/');
     }
 
@@ -152,12 +170,12 @@ class SimpleCalculator implements Calculator {
             throw new ParsingException("Expression is Empty");
         }
 
-        Stack<CalculationToken> calculation_token_stack = new Stack<>();
-        Character prev_token = '\0';
-        int bracket_sum = 0;
+        Stack<CalculationToken> calculationTokenStack = new Stack<>();
+        Character prevToken = '\0';
+        int bracketSum = 0;
 
-        for (expression_iterator = 0; expression_iterator < expression.length(); ++expression_iterator) {
-            Character c = expression.charAt(expression_iterator);
+        for (expressionIterator = 0; expressionIterator < expression.length(); ++expressionIterator) {
+            Character c = expression.charAt(expressionIterator);
 
             switch (c) {
                 case ' ':
@@ -166,78 +184,78 @@ class SimpleCalculator implements Calculator {
                     continue;
                 case '.':
                     throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION + " . ");
+                default:
+                    break;
             }
-            if (!c_is_arithmetic(c) && c != '(' && c != ')' && !Character.isDigit(c)) {
+            if (!cIsArithmetic(c) && c != '(' && c != ')' && !Character.isDigit(c)) {
                 throw new ParsingException("Unexpected symbol");
             }
 
 
-            if (Character.isDigit(c) && (prev_token == 'n' || prev_token == ')')){
-                throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION +
-                                             " number in unexpected place ");
-            }
-            if (Character.isDigit(c)) {
-                Double number = read_double_number_from_expression(expression);
-                calculation_token_stack.push(new DoubleToken(number));
-                prev_token = 'n';
-                continue;
-            }
-
-            if (prev_token == 'n' && c == '(') {
+            if (Character.isDigit(c) && (prevToken == 'n' || prevToken == ')')) {
                 throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION +
                         " number in unexpected place ");
             }
-            if ((prev_token == '\0' || prev_token == '(') && (c != '-' && c != '(')) {
+            if (Character.isDigit(c)) {
+                Double number = readDoubleNumberFromExpression(expression);
+                calculationTokenStack.push(new DoubleToken(number));
+                prevToken = 'n';
+                continue;
+            }
+
+            if (prevToken == 'n' && c == '(') {
+                throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION +
+                        " number in unexpected place ");
+            }
+            if ((prevToken == '\0' || prevToken == '(') && (c != '-' && c != '(')) {
                 throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION + c);
             }
-            if (c_is_arithmetic(prev_token) && c_is_arithmetic(c)) {
-                throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION + prev_token + c);
+            if (cIsArithmetic(prevToken) && cIsArithmetic(c) && c != '-') {
+                throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION + prevToken + c);
             }
 
 
-            calculation_token_stack.push(new OperationToken(c));
+            calculationTokenStack.push(new OperationToken(c));
 
             if (c == '(') {
-                ++bracket_sum;
+                ++bracketSum;
             } else if (c == ')') {
-                --bracket_sum;
+                --bracketSum;
             }
 
-            prev_token = c;
+            prevToken = c;
         }
 
-        if (bracket_sum != 0) {
+        if (cIsArithmetic(prevToken)) {
+            throw new ParsingException("Expression ends with an unfinished arithmetic expression");
+        }
+
+        if (bracketSum != 0) {
             throw new ParsingException("Expression contains a Faulty Bracket Sequence");
         }
 
-        return calculation_token_stack;
+        return calculationTokenStack;
     }
 
     /**
      * A function returns the value of [first] [operation] [second]
      *
-     * @param first - first operand
-     * @param second - second operand
+     * @param first     - first operand
+     * @param second    - second operand
      * @param operation - the performed operation
      * @return Result of [first] [operation] [second]
      */
-    private Double complete_operation(Double first, Double second, Character operation)
-            throws ParsingException {
-        if (operation == null || second == null || (first == null && operation != '-')) {
-            throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION);
-        }
-
+    private Double completeOperation(Double first, Double second, Character operation) {
         Double result = 0.0;
 
-        switch(operation) {
+        switch (operation) {
             case '+':
                 result = first + second;
                 break;
             case '-':
                 if (first == null) {
                     result = -second;
-                }
-                else {
+                } else {
                     result = first - second;
                 }
                 break;
@@ -247,9 +265,53 @@ class SimpleCalculator implements Calculator {
             case '/':
                 result = first / second;
                 break;
+            default:
+                break;
         }
 
         return result;
+    }
+
+    private void unravelCalculationStack(Stack<CalculationToken> calculationStack,
+                                         OperationToken endOperationToken) {
+        /* calculationStack has a number on top */
+        CalculationToken calculationToken = calculationStack.pop();
+        DoubleToken doubleToken;
+        OperationToken operationToken;
+        Double calculation;
+
+        if (calculationToken instanceof OperationToken) { /* unary minus */
+            calculationToken = calculationStack.pop();
+            doubleToken = (DoubleToken) calculationToken;
+            calculation = -doubleToken.getNumber();
+        } else {
+            doubleToken = (DoubleToken) calculationToken;
+            calculation = doubleToken.getNumber();
+        }
+
+
+        while(!calculationStack.isEmpty()) {
+            operationToken = (OperationToken) calculationStack.pop();
+
+            if (operationToken.getPriority() == OperationToken.BRACKET_PRIORITY) {
+                break;
+            }
+            if (operationToken.getPriority() == endOperationToken.getPriority()) {
+                calculationStack.push(operationToken);
+                break;
+            }
+
+            doubleToken = (DoubleToken) calculationStack.pop();
+
+            calculation = completeOperation(calculation, doubleToken.getNumber(),
+                                                         operationToken.getOperation());
+        }
+
+        calculationStack.push(new DoubleToken(calculation));
+
+        if (cIsArithmetic(endOperationToken.getOperation())) {
+            calculationStack.push(endOperationToken);
+        }
     }
 
     /**
@@ -260,88 +322,46 @@ class SimpleCalculator implements Calculator {
      * @throws ParsingException - expression is illegal and cannot be calculated
      */
     public double calculate(String expression) throws ParsingException {
-        Stack<CalculationToken> tokenized_expression = tokenize(expression);
-        Stack<CalculationToken> calculation_stack = new Stack<>();
+        Stack<CalculationToken> tokenizedExpression = tokenize(expression);
+        Stack<CalculationToken> calculationStack = new Stack<>();
 
-//        Character operation = null;
-//        OperationWrapper operation_wrap = new OperationWrapper('\0');
-//        Double calculation = null;
-//        Double number = null;
-//
-//        for (expression_iterator = 0; expression_iterator < expression.length(); ++expression_iterator) {
-//            Character c = expression.charAt(expression_iterator);
-//
-//            switch (c) {
-//                case ' ':
-//                case '\n':
-//                case '\t':
-//                    continue;
-//                case '.':
-//                    throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION + " . ");
-//            }
-//            if (Character.isDigit(c) && number != null) {
-//                throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION +
-//                        " Two numbers back to back ");
-//            }
-//
-//
-//            if (Character.isDigit(c) && number == null) {
-//                number = read_double_number_from_expression(expression);
-//                continue;
-//            } else {
-//                operation_wrap.setter(c);
-//            }
-//
-//
-//            if (operation_wrap.priority == 3) {
-//                if (operation_wrap.operation == '(') {
-//                    if (number != null) {
-//                        throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION + " Number( ");
-//                    }
-//
-//                    calculation_stack.push(new CalculationSnapshot(calculation, operation));
-//                    calculation = null;
-//                    operation_wrap.setter('\0');
-//                    continue;
-//                } else if (operation_wrap.operation == ')') {
-//                    if (calculation == null) {
-//                        throw new ParsingException("Empty Braces");
-//                    }
-//
-//
-//                    number = calculation;
-//                    operation_wrap.setter('\0');
-//                    continue;
-//                }
-//            }
-//
-//
-//            if (number == null) { /* c == '+' '-' '*' '/' */
-//                if (operation != null) {
-//                    throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION + " 2");
-//                } else {
-//                    operation = c;
-//                }
-//            } else {
-//                if (operation == null) {
-//                    if (calculation == null) {
-//                        calculation = number;
-//                    } else {
-//                        throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION + " 3");
-//                    }
-//                } else {
-//                    calculation = complete_operation(calculation, number, operation);
-//                    operation = null;
-//                }
-//            }
-//        }
-//
-//        if (calculation == null) {
-//            throw new ParsingException("Resulting calculation is empty");
-//        }
-//
-//        return calculation;
+        OperationToken prevOperationToken = new OperationToken('\0');
 
-        return 0.0;
+        while (!tokenizedExpression.isEmpty()) {
+            CalculationToken token = tokenizedExpression.pop();
+
+            if (token instanceof DoubleToken) {
+                calculationStack.push(token);
+                continue;
+            }
+            /* else if (token instanceof OperationToken) */
+            OperationToken operationToken = (OperationToken) token;
+
+            if (operationToken.getPriority() == OperationToken.BRACKET_PRIORITY) {
+                if (operationToken.getOperation() == '(') {
+                    unravelCalculationStack(calculationStack, operationToken);
+                } else /* (OperationToken.getOperation() == ')') */ {
+                    calculationStack.push(token);
+                }
+                continue;
+            }
+
+            if (operationToken.getPriority() == OperationToken.PLUSMINUS_PRIORITY &&
+                    prevOperationToken.getPriority() == OperationToken.TIMESDIVIDE_PRIORITY) {
+                unravelCalculationStack(calculationStack, operationToken);
+                prevOperationToken = operationToken;
+                continue;
+            }
+
+            calculationStack.push(token);
+            prevOperationToken = operationToken;
+        }
+
+        if (calculationStack.isEmpty()) {
+            throw new ParsingException("Failed to evaluate expression. Maybe empty?");
+        }
+
+        unravelCalculationStack(calculationStack, new OperationToken('\0'));
+        return ((DoubleToken) calculationStack.pop()).getNumber();
     }
 }
