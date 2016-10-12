@@ -128,16 +128,22 @@ class SimpleCalculator implements Calculator {
         }
     }
 
+    /**
+     * Check whether c is an arithmetic (+ - * /) character
+     */
+    private boolean c_is_arithmetic(Character c) {
+        return (c == '+' || c == '-' || c == '*' || c == '/');
+    }
 
     /**
-     * Tokenise expression into a stack of numbers and operations.
+     * Tokenize expression into a stack of numbers and operations.
      * Check that expression contains only recognised symbols in a readable sequence,
      * and has a correct bracket sequence.
      *
      * @param expression - arithmetic-containing string which is converted to tokens
      * @throws ParsingException - expression is illegal and cannot be calculated
      */
-    private Stack<CalculationToken> tokenise(String expression) throws ParsingException {
+    private Stack<CalculationToken> tokenize(String expression) throws ParsingException {
         if (expression == null) {
             throw new ParsingException("Expression is Null");
         }
@@ -147,7 +153,7 @@ class SimpleCalculator implements Calculator {
         }
 
         Stack<CalculationToken> calculation_token_stack = new Stack<>();
-        boolean prev_token_is_a_number_token = false;
+        Character prev_token = '\0';
         int bracket_sum = 0;
 
         for (expression_iterator = 0; expression_iterator < expression.length(); ++expression_iterator) {
@@ -161,25 +167,43 @@ class SimpleCalculator implements Calculator {
                 case '.':
                     throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION + " . ");
             }
+            if (!c_is_arithmetic(c) && c != '(' && c != ')' && !Character.isDigit(c)) {
+                throw new ParsingException("Unexpected symbol");
+            }
 
-            if (Character.isDigit(c) && prev_token_is_a_number_token) {
+
+            if (Character.isDigit(c) && (prev_token == 'n' || prev_token == ')')){
                 throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION +
-                        " Two numbers back to back ");
+                                             " number in unexpected place ");
             }
             if (Character.isDigit(c)) {
                 Double number = read_double_number_from_expression(expression);
                 calculation_token_stack.push(new DoubleToken(number));
-                prev_token_is_a_number_token = true;
+                prev_token = 'n';
                 continue;
             }
 
+            if (prev_token == 'n' && c == '(') {
+                throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION +
+                        " number in unexpected place ");
+            }
+            if ((prev_token == '\0' || prev_token == '(') && (c != '-' && c != '(')) {
+                throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION + c);
+            }
+            if (c_is_arithmetic(prev_token) && c_is_arithmetic(c)) {
+                throw new ParsingException(ILLEGAL_POSITION_IN_EXPRESSION + prev_token + c);
+            }
+
+
+            calculation_token_stack.push(new OperationToken(c));
+
             if (c == '(') {
                 ++bracket_sum;
-            } else {
+            } else if (c == ')') {
                 --bracket_sum;
             }
 
-            calculation_token_stack.push(new OperationToken(c));
+            prev_token = c;
         }
 
         if (bracket_sum != 0) {
@@ -236,7 +260,8 @@ class SimpleCalculator implements Calculator {
      * @throws ParsingException - expression is illegal and cannot be calculated
      */
     public double calculate(String expression) throws ParsingException {
-        Stack<CalculationToken> calculation_stack = tokenise(expression);
+        Stack<CalculationToken> tokenized_expression = tokenize(expression);
+        Stack<CalculationToken> calculation_stack = new Stack<>();
 
 //        Character operation = null;
 //        OperationWrapper operation_wrap = new OperationWrapper('\0');
