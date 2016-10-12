@@ -14,17 +14,7 @@ import java.util.TreeSet;
  */
 
 public class StackCalculator implements Calculator{
-    /**
-     * Принимает строку с валидным арифметическим выражением.
-     * Возвращает результат выполнения этого выражения.
-     * Выражение может содержать числа десятичного формата, операторы +, -, *, / и операторы приоритета (, ).
-     * В выражении допустимы любые space-символы.
-     *
-     * @param expression строка с арифметическим выражением
-     * @return           результат расчета выражения
-     * @throws ParsingException
-     *                   не удалось распознать выражение
-     */
+
 
     private static final Set<Character> SYMBOLS = new TreeSet<>(Arrays.asList
             ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.'));
