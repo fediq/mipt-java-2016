@@ -13,11 +13,11 @@ import java.util.TreeSet;
  * Created by macbook on 10.10.16.
  */
 
-public class StackCalculator implements Calculator{
+public class StackCalculator implements Calculator {
 
 
-    private static final Set<Character> SYMBOLS = new TreeSet<>(Arrays.asList
-            ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.'));
+    private static final Set<Character> SYMBOLS = new TreeSet<>(Arrays.asList(
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.'));
     private static final Set<Character> OPERATORS = new TreeSet<>(Arrays.asList('+', '-', '*', '/'));
 
     @Override
@@ -30,15 +30,19 @@ public class StackCalculator implements Calculator{
     }
 
     // Возвращает приоритет операции
-    private int getPriority(char operator) throws ParsingException{
-        if (operator == '(' || operator ==')')
-                return 0;
-        if (operator == '+' || operator == '-')
-                return 1;
-        if (operator == '*' || operator == '/')
-                return 2;
-        if (operator == '±')
-                return 3;
+    private int getPriority(char operator) throws ParsingException {
+        if (operator == '(' || operator == ')') {
+            return 0;
+        }
+        if (operator == '+' || operator == '-') {
+            return 1;
+        }
+        if (operator == '*' || operator == '/') {
+            return 2;
+        }
+        if (operator == '±') {
+            return 3;
+        }
         throw new ParsingException("Invalid symbol");
     }
 
@@ -48,7 +52,7 @@ public class StackCalculator implements Calculator{
         StringBuilder postfixLine = new StringBuilder(); // Арифметическое выражение в обратной нотации.
         Stack<Character> stack = new Stack<>(); // Стек операторов.
         stack.push('(');
-        if ( expression.length() == 0) {
+        if (expression.length() == 0) {
             throw new ParsingException("The line is empty");
         }
         for (int i = 0; i < expression.length(); i++) {
@@ -63,15 +67,13 @@ public class StackCalculator implements Calculator{
             if (SYMBOLS.contains(currentSymbol)) {
                 postfixLine.append(currentSymbol);
                 isUnaryOperation = false;
-            }
-            // Если символ является открывающей скобкой, помещаем его в стек.
-            else if (currentSymbol == '(') {
+            } else if (currentSymbol == '(') {
+                // Если символ является открывающей скобкой, помещаем его в стек.
                 stack.push(currentSymbol);
                 postfixLine.append(' ').append(' ');
                 isUnaryOperation = true;
                 //Если символ является оператором
-            }
-            else {
+            } else {
                 if (OPERATORS.contains(currentSymbol)) {
                     // Если это унарный минус
                     if (isUnaryOperation) {
@@ -96,10 +98,9 @@ public class StackCalculator implements Calculator{
                         postfixLine.append(' ').append(' ');
                         stack.push(currentSymbol);
                     }
-                }
+                } else if (currentSymbol == ')') {
                 // Если символ является закрывающей скобкой: до тех пор, пока верхним элементом
                 // стека не станет открывающая скобка,выталкиваем элементы из стека в выходную строку.
-                else if (currentSymbol == ')') {
                     isUnaryOperation = false;
                     while (!stack.empty() && !(stack.lastElement().equals('('))) {
                         postfixLine.append(' ');
@@ -134,7 +135,7 @@ public class StackCalculator implements Calculator{
     }
 
     //Считает значение элементарного выражения.
-    private Double countAtomicOperation (Character operation, Double a, Double b) throws ParsingException {
+    private Double countAtomicOperation(Character operation, Double a, Double b) throws ParsingException {
         switch (operation) {
             case '+':
                 return a + b;
@@ -174,7 +175,8 @@ public class StackCalculator implements Calculator{
                         stack.push(-1 * a);
                     }
                     if (OPERATORS.contains(currentSymbol)) {
-                        Double a, b;
+                        Double a;
+                        Double b;
                         a = stack.pop();
                         b = stack.pop();
                         stack.push(countAtomicOperation(currentSymbol, a, b));
@@ -185,9 +187,8 @@ public class StackCalculator implements Calculator{
         // В конце в стеке должен был остаться один элемент, который является ответом.
         if (stack.size() == 1) {
             return stack.lastElement();
-        }
+        } else {
         // Если нет, то случилось что-то плохое.
-        else {
             throw new ParsingException("Invalid expression");
         }
     }
