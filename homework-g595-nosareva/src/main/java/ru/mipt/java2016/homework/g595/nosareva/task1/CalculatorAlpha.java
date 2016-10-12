@@ -6,56 +6,40 @@ import ru.mipt.java2016.homework.base.task1.Calculator;
 public class CalculatorAlpha implements Calculator {
 
     private int position;
-    private StringBuilder strToCalculate;
-
-    private void getEps() {
-        while ( strToCalculate.charAt(position) == ' ' ||
-                strToCalculate.charAt(position) == '\n' ||
-                strToCalculate.charAt(position) == '\t') {
-            position++;
-        }
-    }
+    private String strToCalculate;
 
     private StringBuilder getNumber() {
 
-        getEps();
         StringBuilder number = new StringBuilder();
         while ( strToCalculate.charAt(position) >= '0' &&
                 strToCalculate.charAt(position) <= '9' ) {
             number.append(strToCalculate.charAt(position++));
         }
-        getEps();
         return number;
     }
 
-    private StringBuilder getPoint() {
+    private String getPoint() {
 
         StringBuilder number = getNumber();
-        getEps();
         if (strToCalculate.charAt(position) == '.') {
             position++;
             number.append('.');
             number.append(getNumber());
         }
-        getEps();
-        return number;
+        return number.toString();
     }
 
     private double getBrackets() throws ParsingException{
-        StringBuilder number = getPoint();
+        String number = getPoint();
         if (number.length() != 0) {
-            getEps();
-            return Double.parseDouble(number.toString());
+            return Double.parseDouble(number);
         }
 
-        getEps();
         if (strToCalculate.charAt(position) == '(') {
             position++;
             double result = getSum();
-            getEps();
             if (strToCalculate.charAt(position) == ')') {
                 position++;
-                getEps();
                 return result;
             } else {
                 throw new ParsingException("Close bracket expected");
@@ -63,17 +47,14 @@ public class CalculatorAlpha implements Calculator {
         } else if (strToCalculate.charAt(position) != '-') {
             throw new ParsingException("Unexpected symbol");
         } else {
-            getEps();
             return -0.0;
         }
     }
 
     private double getMul() throws ParsingException{
         double number = getBrackets();
-        getEps();
         while ( strToCalculate.charAt(position) == '*' ||
                 strToCalculate.charAt(position) == '/') {
-            getEps();
             char operation = strToCalculate.charAt(position++);
             if (operation == '*') {
                 number *= getBrackets();
@@ -81,16 +62,13 @@ public class CalculatorAlpha implements Calculator {
                 number /= getBrackets();
             }
         }
-        getEps();
         return number;
     }
 
     private double getSum() throws ParsingException{
         double number = getMul();
-        getEps();
         while ( strToCalculate.charAt(position) == '+' ||
                 strToCalculate.charAt(position) == '-') {
-            getEps();
             char operation = strToCalculate.charAt(position++);
             if (operation == '+') {
                 number += getMul();
@@ -98,7 +76,6 @@ public class CalculatorAlpha implements Calculator {
                 number -= getMul();
             }
         }
-        getEps();
         return number;
     }
 
@@ -108,8 +85,6 @@ public class CalculatorAlpha implements Calculator {
         if (position == strToCalculate.length() - 1) {
             return result;
         } else {
-            System.out.println(position);
-            System.out.println("[" + strToCalculate.charAt(position) + "]");
             throw new ParsingException("Unknown character");
         }
     }
@@ -120,7 +95,9 @@ public class CalculatorAlpha implements Calculator {
             throw new ParsingException("Null expression");
         }
 
-        strToCalculate = new StringBuilder(expression.concat("#"));
+        expression = expression.replaceAll("[ \n\t]", "");
+
+        strToCalculate = expression.concat("#");
         return getResult();
     }
 
