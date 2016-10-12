@@ -4,9 +4,7 @@ package ru.mipt.java2016.homework.g594.petrov.task1;
  * Created by Филипп on 10.10.2016.
  */
 
-import com.sun.deploy.net.proxy.pac.PACFunctions;
-import com.sun.org.apache.xerces.internal.impl.dv.xs.DoubleDV;
-import com.sun.org.apache.xpath.internal.operations.Bool;
+
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
@@ -72,11 +70,12 @@ public class MegaCalculator implements Calculator
                         {
                             if(getPriority(operatorStack.lastElement()) >= 3)
                             {
-                                postfixNotation.append(' ').append(operatorStack.lastElement()).append(' ');
-                                operatorStack.pop();
+                                postfixNotation.append(' ').append(operatorStack.pop()).append(' ');
                             }
                             else
+                            {
                                 break;
+                            }
                         }
                         operatorStack.push('&');
                         postfixNotation.append(' ').append(' ');
@@ -91,8 +90,7 @@ public class MegaCalculator implements Calculator
                     {
                         if(getPriority(operatorStack.lastElement()) >= getPriority(c))
                         {
-                            postfixNotation.append(' ').append(operatorStack.lastElement()).append(' ');
-                            operatorStack.pop();
+                            postfixNotation.append(' ').append(operatorStack.pop()).append(' ');
                         }
                         else
                             break;
@@ -116,8 +114,7 @@ public class MegaCalculator implements Calculator
                         postfixNotation.append(' ').append(' ');
                         while(!operatorStack.empty())
                         {
-                            Character tmp = operatorStack.lastElement();
-                            operatorStack.pop();
+                            Character tmp = operatorStack.pop();
                             if(tmp.equals('('))
                             {
                                 isOpen = true;
@@ -138,8 +135,7 @@ public class MegaCalculator implements Calculator
         {
             if(OPERATORS.contains(operatorStack.lastElement()) || operatorStack.lastElement().equals('&'))
             {
-                postfixNotation.append(' ').append(operatorStack.lastElement()).append(' ');
-                operatorStack.pop();
+                postfixNotation.append(' ').append(operatorStack.pop()).append(' ');
             }
             else
                 throw new ParsingException("Invalid expression");
@@ -213,7 +209,7 @@ public class MegaCalculator implements Calculator
         }
         if(numbers.size() == 1)
         {
-            return numbers.lastElement();
+            return numbers.pop();
         }
         else
             throw new ParsingException("Invalid expression");
