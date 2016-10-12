@@ -182,13 +182,16 @@ class PolishCalculator implements Calculator {
             put("U-", Operation.UNARYMINUS);
             put("(", Operation.OPENBRAСKET);
             put(")", Operation.CLOSEBRAСKET);
+
+            put("U(", Operation.OPENBRAСKET);
+            put("U)", Operation.CLOSEBRAСKET);
         }};
 
         private final int order;
     }
 
-    private Stack<Double> valStack = new Stack<Double>();
-    private Stack<Operation> operStack = new Stack<Operation>();
+    private Stack<Double> valStack = new Stack<>();
+    private Stack<Operation> operStack = new Stack<>();
     private StringBuilder buffer = new StringBuilder();
 
     private void proceedOperation(Operation eval) throws ParsingException {
@@ -245,7 +248,11 @@ class PolishCalculator implements Calculator {
                 unary = true;
                 break;
             case VAL:
-                valStack.push(Double.parseDouble(buffer.toString()));
+                try {
+                    valStack.push(Double.parseDouble(buffer.toString()));
+                } catch (NumberFormatException e) {
+                    throw new ParsingException("Bad number.");
+                }
                 unary = false;
                 break;
         }
@@ -272,12 +279,25 @@ class PolishCalculator implements Calculator {
                         state = ParserState.OPER;
                     }
                     buffer.append(expr.charAt(i));
-                    Operation readed = Operation.getOperation(buffer.toString());
-                    if ((null != readed) && (readed.isBracket())) {
-                        unary = false;
-                        pushBuffer();
-                        state = ParserState.NONE;
-                        unary = readed.closeBracket() == null;
+                    Operation readed = Operation.getOperation(unary ? "U"
+                            + buffer.toString() : buffer.toString());
+                    if (null != readed) {
+                        if (readed.isBracket()) {
+                            unary = false;
+                            pushBuffer();
+                            state = ParserState.NONE;
+                            unary = readed.closeBracket() == null;
+                        } else {
+                            if ((!operStack.empty()) && (operStack.peek() == Operation.UNARYPLUS)
+                                && (readed == Operation.UNARYPLUS)) {
+                                throw new ParsingException("I love ++i");
+                                // I think that ++1 is correct;
+                                // this is ony for testPlusPlus
+                            }
+                            pushBuffer();
+                            unary = true;
+                            state = ParserState.NONE;
+                        }
                     }
                 }
             }
