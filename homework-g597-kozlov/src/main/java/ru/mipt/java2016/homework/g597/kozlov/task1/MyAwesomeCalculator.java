@@ -35,21 +35,21 @@ public class MyAwesomeCalculator implements Calculator {
     private static int getPriority(char chr) throws ParsingException { // Приоритет оператора
         switch (chr) {
             case ('+'):
-              return 1;
+                return 1;
             case ('-'):
-              return 1;
+                return 1;
             case ('*'):
-              return 2;
+                return 2;
             case ('/'):
-              return 2;
+                return 2;
             case ('$'):
-              return 3;
+                return 3;
             default:
         }
         return 0;
     }
 
-    private static String ReversePolishNotation(String expression) throws ParsingException {
+    private static String reversePolishNotation(String expression) throws ParsingException {
         Stack<Character> stack = new Stack<>();
         StringBuilder out = new StringBuilder("");
         boolean isOpeningBraceOpenedBefore = false;  // для закрывающей скобки
@@ -191,6 +191,6 @@ public class MyAwesomeCalculator implements Calculator {
         if (expression == null || expression.equals("")) {
             throw new ParsingException("Expression is empty.");
         }
-        return calculating(ReversePolishNotation(expression));
+        return calculating(reversePolishNotation(expression));
     }
 }
