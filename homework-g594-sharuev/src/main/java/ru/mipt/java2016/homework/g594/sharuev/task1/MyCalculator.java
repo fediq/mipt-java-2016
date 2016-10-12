@@ -14,164 +14,165 @@ public class MyCalculator implements ru.mipt.java2016.homework.base.task1.Calcul
     } else if (expression.equals("")) {
       throw new ParsingException("Empty string");
     }
-    StringBuilder ss = new StringBuilder();
-    ToReversePolish(new StringReader(expression), ss);
-    if (ss.toString().equals("")) {
+    String reversePolish = ToReversePolish(expression);
+    if (reversePolish.equals("")) {
       throw new ParsingException("String with only whitespaces");
     }
 
-    return CalculateReversePolish(new StringReader(ss.toString()));
+    return CalculateReversePolish(reversePolish);
   }
 
-  private int readNumber(StringReader is, StringBuilder os, char c) throws IOException {
+  private int readNumber(StringReader in, StringBuilder out, char first) throws IOException {
     int read;
     do {
-      os.append(c);
-      read = is.read();
+      out.append(first);
+      read = in.read();
       if (read == -1) {
         break;
       } else {
-        c = (char) read;
+        first = (char) read;
       }
-    } while (Character.isDigit(c) || c == '.');
+    } while (Character.isDigit(first) || first == '.');
     if (read != -1) {
-      read = c;
+      read = first;
     }
     return read;
   }
 
-  private boolean ToReversePolish(StringReader is, StringBuilder os) throws ParsingException {
-    Stack<Character> oper = new Stack<Character>();
-    char c;
-    int unary_flag = 1; //If 1, then - or + must be unary. If 0, then binary.
-    int read = -1; // Value that came in. If we want value to be passed to the next iteration, we must store it here.
+  private String ToReversePolish(String expressionStr) throws ParsingException {
+    StringReader expression = new StringReader(expressionStr);
+    StringBuilder result = new StringBuilder();
+    Stack<Character> operators = new Stack<Character>();
+
+    // Next char to analyze.
+    char peek;
+    // If 1, then - or + must be unary. If 0, then binary.
+    int isUnary = 1;
+    // Value that came in.
+    // If we want value to be passed to the next iteration, we must store it here.
+    int read = -1;
     boolean lastWasUnary = false;
     try {
-      while (true) {
-        if (read == -1) {
-          read = is.read();
-          if (read == -1) {
-            break;
-          }
-        }
-        c = (char) read;
+      while (read != -1 || (read = expression.read()) != -1) {
+        peek = (char) read;
         read = -1;
 
         // If read digit, read all the number (including decimal delimiter).
         // Last read character is not a digit, so process it as a character.
-        if (Character.isDigit(c)) {
-          read = readNumber(is, os, c);
-          os.append(' ');
+        if (Character.isDigit(peek)) {
+          read = readNumber(expression, result, peek);
+          result.append(' ');
           if (lastWasUnary) {
             lastWasUnary = false;
           }
-        } else if ((c == '-' || c == '+') && unary_flag == 1) {
+        } else if ((peek == '-' || peek == '+') && isUnary == 1) {
           // Unary + or - in the beginning, after ( or after operator.
           lastWasUnary = true;
-          oper.push('m');
-          read = -1;
-        } else if (c == '(') {
-          oper.push('(');
-          unary_flag = 2; // Will be 1 at the beginning of the next iteration.
+          operators.push('m');
+        } else if (peek == '(') {
+          operators.push('(');
+          isUnary = 2; // Will be 1 at the beginning of the next iteration.
           lastWasUnary = false;
-        } else if (c == ')') {
-          if (oper.empty()) {
+        } else if (peek == ')') {
+          if (operators.empty()) {
             throw new ParsingException("Closing bracket without opening one");
           }
-          while (oper.peek() != '(') {
-            os.append(oper.pop());
-            if (oper.empty()) {
+          while (operators.peek() != '(') {
+            result.append(operators.pop());
+            if (operators.empty()) {
               throw new ParsingException("Closing bracket without opening one");
             }
           }
-          oper.pop(); // Remove ( from stack.
+          operators.pop(); // Remove ( from stack.
           lastWasUnary = false;
-        } else if (Operators.isOperatorChar(c)) {
-          if (unary_flag == 1) {
-            throw new ParsingException(String.format("Missing operand for %c", c));
+        } else if (Operators.isOperatorChar(peek)) {
+          if (isUnary == 1) {
+            throw new ParsingException(String.format("Missing operand for %c", peek));
           }
           if (lastWasUnary == false) {
-            while (!oper.empty() && oper.peek() != '('
-                    && ((Operators.associativity(c) == Operators.Associativity.left) ?
-                    (Operators.priority(c) <= Operators.priority(oper.peek())) :
-                    (Operators.priority(c) < Operators.priority(oper.peek())))) {
-              os.append(oper.pop());
+            while (!operators.empty() && operators.peek() != '('
+                    && ((Operators.associativity(peek) == Operators.Associativity.left) ?
+                    (Operators.priority(peek) <= Operators.priority(operators.peek())) :
+                    (Operators.priority(peek) < Operators.priority(operators.peek())))) {
+              result.append(operators.pop());
             }
           } else {
-            if (!(c == '+' || c == '-')) {
+            if (!(peek == '+' || peek == '-')) {
               lastWasUnary = false;
             } else {
               throw new ParsingException("Two unary operators in a row");
             }
           }
-          oper.push(c);
+          operators.push(peek);
 
-          unary_flag = 2;
-        } else if (Character.isWhitespace(c)) {
+          isUnary = 2;
+        } else if (Character.isWhitespace(peek)) {
           continue;
         } else {
-          throw new ParsingException(String.format("Unknown character %c", c));
+          throw new ParsingException(String.format("Unknown character %c", peek));
         }
-        if (unary_flag > 0) {
-          --unary_flag;
+        if (isUnary > 0) {
+          --isUnary;
         }
       }
-      while (!oper.empty()) {
-        if (oper.peek() == '(') {
+      while (!operators.empty()) {
+        if (operators.peek() == '(') {
           throw new ParsingException("No closing bracket");
         }
-        os.append(oper.pop());
+        result.append(operators.pop());
       }
     } catch (IOException e) {
       throw new ParsingException(String.format("Some weird IO error: %s", e.getMessage()));
     }
     // System.out.println(os.toString());
-    return true;
+    return result.toString();
   }
 
-  private double CalculateReversePolish(StringReader is) throws ParsingException {
-    StringBuilder sb = new StringBuilder();
-    Stack<Double> st = new Stack<Double>();
-    char c;
+  private double CalculateReversePolish(String reversePolishStr) throws ParsingException {
+    StringReader reversePolish = new StringReader(reversePolishStr);
+    StringBuilder numberSB = new StringBuilder();
+    Stack<Double> numbers = new Stack<Double>();
+
+    // Next char to analyze.
+    char peek;
+    // Character that was read.
     int read;
     try {
-      while (true) {
-        read = is.read();
-        if (read == -1) {
-          break;
-        }
-        c = (char) read;
+      while ((read = reversePolish.read()) != -1) {
+        peek = (char) read;
 
-        if (Character.isDigit(c)) {
+        if (Character.isDigit(peek)) {
           do {
-            sb.append(c);
-            c = (char) is.read();
-          } while (Character.isDigit(c) || c == '.');
+            numberSB.append(peek);
+            peek = (char) reversePolish.read();
+          } while (Character.isDigit(peek) || peek == '.');
           // Catching double decimal delimiters, for example.
           try {
-            st.push(Double.parseDouble(sb.toString()));
+            numbers.push(Double.parseDouble(numberSB.toString()));
           } catch (NumberFormatException nfe) {
-            throw new ParsingException(String.format("Wrong decimal literal: %s", sb.toString()));
+            throw new ParsingException(
+                    String.format("Wrong decimal literal: %s", numberSB.toString())
+            );
           }
-          sb.setLength(0);
-        } else if (c == 'm') {
-          double a1 = st.pop();
-          st.push(-a1);
+          numberSB.setLength(0);
+        } else if (Operators.isUnary(peek)) {
+          double arg = numbers.pop();
+          numbers.push(Operators.evaluateUnary(peek, arg));
         } else {
-          double a2 = st.pop();
-          double a1 = st.pop();
-          st.push(Operators.evaluateBinary(c, a2, a1));
+          double arg2 = numbers.pop();
+          double arg1 = numbers.pop();
+          numbers.push(Operators.evaluateBinary(peek, arg2, arg1));
         }
       }
     } catch (IOException e) {
       throw new ParsingException(String.format("Some weird IO error: %s", e.getMessage()));
     }
-    return st.pop();
+    return numbers.pop();
   }
 
   private static class Operators {
-    private static boolean isOperatorChar(char c) {
-      switch (c) {
+    private static boolean isOperatorChar(char operator) {
+      switch (operator) {
         case '+':
         case '-':
         case '*':
@@ -183,8 +184,17 @@ public class MyCalculator implements ru.mipt.java2016.homework.base.task1.Calcul
       }
     }
 
-    private static Associativity associativity(char c) throws ParsingException {
-      switch (c) {
+    static boolean isUnary(char operator) {
+      switch (operator) {
+        case 'm':
+          return true;
+        default:
+          return false;
+      }
+    }
+
+    private static Associativity associativity(char operator) throws ParsingException {
+      switch (operator) {
         case '+':
         case '*':
         case '/':
@@ -195,12 +205,12 @@ public class MyCalculator implements ru.mipt.java2016.homework.base.task1.Calcul
         case 'm':
           return Associativity.left;
         default:
-          throw new ParsingException(String.format("Unknown operator %c", c));
+          throw new ParsingException(String.format("Unknown operator %c", operator));
       }
     }
 
-    private static int priority(char c) throws ParsingException {
-      switch (c) {
+    private static int priority(char operator) throws ParsingException {
+      switch (operator) {
         case '(':
         case ')':
           return 0;
@@ -215,22 +225,32 @@ public class MyCalculator implements ru.mipt.java2016.homework.base.task1.Calcul
         case 'm':
           return 4;
         default:
-          throw new ParsingException(String.format("Unknown operator %c", c));
+          throw new ParsingException(String.format("Unknown operator %c", operator));
       }
     }
 
-    static private double evaluateBinary(char c, double a2, double a1) throws ParsingException {
-      switch (c) {
+    static private double evaluateBinary(char operator, double arg2, double arg1)
+            throws ParsingException {
+      switch (operator) {
         case '+':
-          return a1 + a2;
+          return arg1 + arg2;
         case '-':
-          return a1 - a2;
+          return arg1 - arg2;
         case '*':
-          return a1 * a2;
+          return arg1 * arg2;
         case '/':
-          return a1 / a2;
+          return arg1 / arg2;
         case '^':
-          return Math.pow(a1, a2);
+          return Math.pow(arg1, arg2);
+        default:
+          throw new ParsingException("Unknown operator");
+      }
+    }
+
+    static private double evaluateUnary(char operator, double arg) throws ParsingException {
+      switch (operator) {
+        case 'm':
+          return -arg;
         default:
           throw new ParsingException("Unknown operator");
       }
