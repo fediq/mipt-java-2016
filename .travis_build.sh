@@ -6,7 +6,13 @@ if [ "${TRAVIS_PULL_REQUEST}" = "false" ]; then
     echo "Building push"
     mvn test -B
 else
-    echo "Building pull"
+    echo "Building pull request ${TRAVIS_PULL_REQUEST}"
     PROJECTS=$(git diff origin/master..HEAD --name-only | grep '/' | sed -e 's/^\([^\/]*\)\/.*$/\1/' | sort | uniq | awk 'BEGIN{ORS=","}; {print $1}')
-    mvn test -B -amd -am -pl ${PROJECTS}
+    if [ -n "$PROJECTS" ]; then
+        echo "Modified modules: ${PROJECTS}"
+    	mvn test -B -amd -am -pl ${PROJECTS}
+    else
+        echo "Cannot detect modified modules; running full test"
+        mvn test -B
+    fi
 fi
