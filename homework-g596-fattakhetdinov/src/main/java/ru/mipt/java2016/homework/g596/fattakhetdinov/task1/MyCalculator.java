@@ -8,9 +8,7 @@ import java.util.Stack;
 
 public class MyCalculator implements Calculator {
 
-    public MyCalculator() {
-    }
-
+    private static final String OPERATIONS = "+-*/";
     private Stack<Double> nums = new Stack<>();
     private Stack<Character> ops = new Stack<>();
 
@@ -29,10 +27,9 @@ public class MyCalculator implements Calculator {
                         || expression.charAt(i) == '.'); i++) {
                     digit.append(expression.charAt(i));
                 }
-                String doubleInString = digit.substring(0);
                 double num;
                 try {
-                    num = Double.parseDouble(doubleInString);
+                    num = Double.parseDouble(digit.toString());
                 } catch (Exception e) {
                     throw new ParsingException("Invalid number");
                 }
@@ -142,9 +139,9 @@ public class MyCalculator implements Calculator {
 
             //Проверка на возможность наличия действия, скобки или числа c учетом предыдущего символа
             char currentSymbol = expression.charAt(i);
-            if ((isOp(previousSymbol) || previousSymbol == '=' || previousSymbol == '(') &&
-                    (isMayBeUnary(currentSymbol) || currentSymbol == '(' ||
-                    currentSymbol == '.' || Character.isDigit(currentSymbol))) {
+            if ((isOp(previousSymbol) || previousSymbol == '=' || previousSymbol == '(') && (
+                    isMayBeUnary(currentSymbol) || currentSymbol == '(' || currentSymbol == '.'
+                            || Character.isDigit(currentSymbol))) {
                 previousSymbol = currentSymbol;
                 if (currentSymbol == '+') {
                     previousSymbol = 'p'; //Унарный плюс
@@ -155,9 +152,8 @@ public class MyCalculator implements Calculator {
                 continue;
             }
 
-            if (Character.isDigit(previousSymbol) &&
-                    (Character.isDigit(currentSymbol) || isOp(currentSymbol) ||
-                     currentSymbol == ')' || currentSymbol == '.')) {
+            if (Character.isDigit(previousSymbol) && (Character.isDigit(currentSymbol) || isOp(
+                    currentSymbol) || currentSymbol == ')' || currentSymbol == '.')) {
                 previousSymbol = currentSymbol;
                 continue;
             }
@@ -167,8 +163,8 @@ public class MyCalculator implements Calculator {
                 continue;
             }
 
-            if (isUnary(previousSymbol) &&
-                    (Character.isDigit(currentSymbol) || currentSymbol == '(')) {
+            if (isUnary(previousSymbol) && (Character.isDigit(currentSymbol)
+                    || currentSymbol == '(')) {
                 previousSymbol = currentSymbol;
                 continue;
             }
@@ -190,9 +186,9 @@ public class MyCalculator implements Calculator {
     }
 
     private boolean isOp(char value) {
-        String a = "-+/*";
-        for (int i = 0; i < a.length(); i++) {
-            if (a.charAt(i) == value) {
+
+        for (int i = 0; i < OPERATIONS.length(); i++) {
+            if (OPERATIONS.charAt(i) == value) {
                 return true;
             }
         }
