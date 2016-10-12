@@ -3,7 +3,7 @@ package ru.mipt.java2016.homework.g594.shevkunov.task1;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
-import javax.swing.text.html.parser.Parser;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
@@ -56,7 +56,7 @@ class PolishCalculator implements Calculator {
                     }
                 }
             }
-        },  MULTIPLY(1) {
+        }, MULTIPLY(1) {
             @Override
             public double compute(double... args) {
                 double result = 1.; //neutral elent
@@ -65,12 +65,12 @@ class PolishCalculator implements Calculator {
                 }
                 return result;
             }
-        },  DIVISION(1) {
+        }, DIVISION(1) {
             @Override
             public double compute(double... args) {
-                if(args.length == 1){
+                if (args.length == 1) {
                     return 1. / args[0];
-                } else{
+                } else {
                     if (args.length > 1) {
                         double result = args[0];
                         for (int i = 1; i < args.length; ++i) {
@@ -82,11 +82,12 @@ class PolishCalculator implements Calculator {
                     }
                 }
             }
-        },  UNARYPLUS(777) {
+        }, UNARYPLUS(777) {
             @Override
             public int valence() {
                 return 1;
             }
+
             @Override
             public double compute(double... args) {
                 return +args[0];
@@ -96,19 +97,22 @@ class PolishCalculator implements Calculator {
             public int valence() {
                 return 1;
             }
+
             @Override
             public double compute(double... args) {
                 return -args[0];
             }
-        },  OPENBRAСKET(-1) {
+        }, OPENBRAСKET(-1) {
             @Override
             public int valence() {
                 return 0;
             }
+
             @Override
             public boolean isBracket() {
                 return true;
             }
+
             @Override
             public double compute(double... args) {
                 return Double.NaN;
@@ -118,14 +122,17 @@ class PolishCalculator implements Calculator {
             public int valence() {
                 return 0;
             }
+
             @Override
             public boolean isBracket() {
                 return true;
             }
+
             @Override
             public Operation closeBracket() {
                 return Operation.OPENBRAСKET;
             }
+
             @Override
             public double compute(double... args) {
                 return Double.NaN;
@@ -157,9 +164,9 @@ class PolishCalculator implements Calculator {
             this.order = order;
         }
 
-        static public Operation getOperation(String s) {
-            if (stringRepresentations.containsKey(s)) {
-                return stringRepresentations.get(s);
+        public static Operation getOperation(String name) {
+            if (STRING_REPRESENTATIONS.containsKey(name)) {
+                return STRING_REPRESENTATIONS.get(name);
             } else {
                 return null;
             }
@@ -173,19 +180,24 @@ class PolishCalculator implements Calculator {
             return this.order >= op.order;
         }
 
-        static private Map<String, Operation> stringRepresentations = new HashMap<String, Operation>(){{
-            put("+", Operation.PLUS);
-            put("-", Operation.MINUS);
-            put("*", Operation.MULTIPLY);
-            put("/", Operation.DIVISION);
-            put("U+", Operation.UNARYPLUS);
-            put("U-", Operation.UNARYMINUS);
-            put("(", Operation.OPENBRAСKET);
-            put(")", Operation.CLOSEBRAСKET);
+        private static final Map<String, Operation> STRING_REPRESENTATIONS;
 
-            put("U(", Operation.OPENBRAСKET);
-            put("U)", Operation.CLOSEBRAСKET);
-        }};
+        static {
+            Map<String, Operation> map = new HashMap<>();
+            map.put("+", Operation.PLUS);
+            map.put("-", Operation.MINUS);
+            map.put("*", Operation.MULTIPLY);
+            map.put("/", Operation.DIVISION);
+            map.put("U+", Operation.UNARYPLUS);
+            map.put("U-", Operation.UNARYMINUS);
+            map.put("(", Operation.OPENBRAСKET);
+            map.put(")", Operation.CLOSEBRAСKET);
+
+            map.put("U(", Operation.OPENBRAСKET);
+            map.put("U)", Operation.CLOSEBRAСKET);
+
+            STRING_REPRESENTATIONS = Collections.unmodifiableMap(map);
+        }
 
         private final int order;
     }
@@ -198,7 +210,7 @@ class PolishCalculator implements Calculator {
         if (eval.isBracket()) {
             throw new ParsingException("Incorrect expression.");
         }
-        double args[] = new double[eval.valence()];
+        double[] args = new double[eval.valence()];
         for (int argIndex = args.length - 1; argIndex >= 0; --argIndex) {
             if (!valStack.isEmpty()) {
                 args[argIndex] = valStack.pop();
@@ -210,7 +222,7 @@ class PolishCalculator implements Calculator {
     }
 
     private void pushOperation(String opString, boolean isUnary) throws ParsingException {
-        Operation op =  isUnary ? Operation.getOperation("U" + opString) : Operation.getOperation(opString);
+        Operation op = isUnary ? Operation.getOperation("U" + opString) : Operation.getOperation(opString);
         if (null != op) { // Yoda style
             if (!op.isBracket()) {
                 while (!operStack.isEmpty() &&
@@ -255,6 +267,8 @@ class PolishCalculator implements Calculator {
                 }
                 unary = false;
                 break;
+            default:
+                // do nothing
         }
         buffer.delete(0, buffer.length());
     }
@@ -289,7 +303,7 @@ class PolishCalculator implements Calculator {
                             unary = readed.closeBracket() == null;
                         } else {
                             if ((!operStack.empty()) && (operStack.peek() == Operation.UNARYPLUS)
-                                && (readed == Operation.UNARYPLUS)) {
+                                    && (readed == Operation.UNARYPLUS)) {
                                 throw new ParsingException("I love ++i");
                                 // I think that ++1 is correct;
                                 // this is ony for testPlusPlus
