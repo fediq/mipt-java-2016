@@ -6,19 +6,19 @@ import java.util.function.DoubleUnaryOperator;
  * Created by Дмитрий Мурзин on 10.10.16.
  */
 public class TokenOperatorUnary extends TokenOperator {
-	public final DoubleUnaryOperator operator;
+    public final DoubleUnaryOperator operator;
 
-	public TokenOperatorUnary(TokenType type, int priority, DoubleUnaryOperator operator) {
-		super(type, priority);
-		this.operator = operator;
-	}
+    public TokenOperatorUnary(TokenType type, int priority, DoubleUnaryOperator operator) {
+        super(type, priority);
+        this.operator = operator;
+    }
 
-	public TokenNumber apply(TokenNumber operand) {
-		return new TokenNumber(operator.applyAsDouble(operand.x));
-	}
+    public TokenNumber apply(TokenNumber operand) {
+        return new TokenNumber(operator.applyAsDouble(operand.x));
+    }
 
-	@Override
-	public int numberOfOperands() {
-		return 1;
-	}
+    @Override
+    public int numberOfOperands() {
+        return 1;
+    }
 }
