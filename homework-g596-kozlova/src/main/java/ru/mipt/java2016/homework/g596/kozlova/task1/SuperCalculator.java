@@ -28,7 +28,8 @@ public class SuperCalculator implements Calculator {
         // стек операторов, которые встречаются в строке
         StringBuffer result = new StringBuffer();
         // результирующее выражение, записанное в польской записи
-        Character c = '.', c_last = '.';
+        Character c = 'a';
+        Character c_last = 'a';
         Integer numberPoint = 0;
         for(int i = 0; i < expression.length(); i++) {
             // перебор элементов нашего выражения
@@ -56,8 +57,11 @@ public class SuperCalculator implements Calculator {
                 if (unaryCheck) {
                     // если он уже унарен
                     if (c == '-' || c == '+') {
-                        if (c == '-') stack.push('&');
-                        // добавляем в стек оператор, которого заранее в исходном множестве операторов нет для обозначения унарного -
+                        if (c == '-') {
+                            stack.push('&');
+                        }
+                        /* добавляем в стек оператор, которого заранее в исходном множестве
+                            операторов нет для обозначения унарного минуса*/
                         unaryCheck = false;
                     } else {
                         throw new ParsingException("This is invalid expression");
@@ -76,12 +80,14 @@ public class SuperCalculator implements Calculator {
                         }
                         else {
                             stack.push(tmp);
-                            // приоритет данной операции меньше рассматриваемой и не меньше остальных лежащих в стеке, поэтому возвращаем ее и выходим из цикла
+                            /* приоритет данной операции меньше рассматриваемой и не меньше остальных лежащих в стеке,
+                                поэтому возвращаем ее и выходим из цикла*/
                             break;
                         }
                     }
                     stack.push(c);
-                    // после этого добавляем данную операцию в стек (приоритет данной операции максимален среди уже лежащих в стеке)
+                    /* после этого добавляем данную операцию в стек
+                      (приоритет данной операции максимален среди уже лежащих в стеке)*/
                 }
             } else if (c == '(') {
                 // если символ - открывающая скобка, то помещаем его в стек
@@ -199,6 +205,7 @@ public class SuperCalculator implements Calculator {
 
     private static final Set<Character> MathematicalOperators = new HashSet<>(Arrays.asList('*', '/', '+', '-'));
     // математические операторы, которые могут встретиться в выражении
-    private static final Set<Character> ComponentsOfNumber = new HashSet<>(Arrays.asList('1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '.')); 
+    private static final Set<Character> ComponentsOfNumber = new HashSet<>(Arrays.asList(
+            '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '.'));
     // образующие числа - все цифры и точка, если число не целое
 }
