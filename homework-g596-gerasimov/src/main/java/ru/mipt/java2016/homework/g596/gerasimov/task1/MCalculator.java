@@ -83,12 +83,10 @@ public class MCalculator implements Calculator {
         Stack<Double> numbers = new Stack<>();
         Stack<Token> operators = new Stack<>();
         int bBalance = 0;
-        boolean gotNum = false;
 
         for (Token tmp : iExpr) {
             if (tmp instanceof NumToken) {
                 numbers.push(((NumToken) tmp).getValue());
-                gotNum = true;
             } else if (tmp instanceof OperatorToken) {
                 Operator op = ((OperatorToken) tmp).getOperator();
                 while (operators.size() > 0 && operators.peek() instanceof OperatorToken) {
