@@ -3,6 +3,7 @@ package ru.mipt.java2016.homework.g594.ishkhanyan.task1;
 
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
+
 import java.util.Stack;
 
 
@@ -41,8 +42,7 @@ class MyCalculator implements Calculator {
         }
     }
 
-    private double getVal(String str) throws ParsingException // convert string >> double
-    {
+    private double getVal(String str) throws ParsingException { // convert string >> double
         double result = 0;
         int points = 0;
         int pos = str.length();
@@ -78,6 +78,9 @@ class MyCalculator implements Calculator {
                     break;
                 case 'm':
                     numbers.push(-l);
+                    break;
+                default:
+                    break;
 
             }
         } else {
@@ -96,16 +99,19 @@ class MyCalculator implements Calculator {
                 case '/':
                     numbers.push(l / r);
                     break;
+                default:
+                    break;
             }
         }
     }
 
     public double calculate(String exp) throws ParsingException {
-        boolean unar_possib = true; //wait unary operation
+        boolean mayUnary = true; //wait unary operation
         int numberAfterOp = 0; //how many numbers were after last operation
         int brackbalnce = 0;
-        if (exp == null || exp.length() == 0)
+        if (exp == null || exp.length() == 0) {
             throw new ParsingException("empty expression");
+        }
         Stack<Double> numbers = new Stack<>();
         Stack<Character> oper = new Stack<>();
         for (int i = 0; i < exp.length(); ++i) {
@@ -116,7 +122,7 @@ class MyCalculator implements Calculator {
             if (exp.charAt(i) == '(') {
                 oper.push(exp.charAt(i));
                 numberAfterOp = 0;
-                unar_possib = true;
+                mayUnary = true;
                 ++brackbalnce;
                 continue;
             }
@@ -125,22 +131,21 @@ class MyCalculator implements Calculator {
                 if (numberAfterOp == 0) { // check that operation is not last meaning symbol in brackets
                     throw new ParsingException("illegal expression");
                 }
-                if (brackbalnce == 0)                       //checking bracket balance
-                {
+                if (brackbalnce == 0) {     //checking bracket balance
                     throw new ParsingException("balance error");
                 }
                 while (oper.peek() != '(') {
                     doOper(numbers, oper.pop());
                 }
                 oper.pop();
-                unar_possib = false;
+                mayUnary = false;
                 --brackbalnce;
                 continue;
             }
 
             if (isOper(exp.charAt(i))) {
                 char currentOp = exp.charAt(i);
-                if (unar_possib) {
+                if (mayUnary) {
                     switch (currentOp) {
                         case '+':
                             currentOp = 'p'; //unaryPlus
@@ -151,8 +156,7 @@ class MyCalculator implements Calculator {
                         default:
                             throw new ParsingException("Illegal sequence");
                     }
-                } else if (numberAfterOp == 0) //check that we have not two unary operations
-                {
+                } else if (numberAfterOp == 0) { //check that we have not two unary operations
                     throw new ParsingException("double operation");
                 }
                 while (!oper.empty() && !numbers.empty() && (priority(oper.peek()) >= priority(currentOp)
@@ -162,23 +166,25 @@ class MyCalculator implements Calculator {
                 oper.push(currentOp);
                 switch (currentOp) {
                     case '+':
-                        unar_possib = false;
+                        mayUnary = false;
                         break;
                     case '-':
-                        unar_possib = false;
+                        mayUnary = false;
                         break;
                     case 'p':
-                        unar_possib = false;
+                        mayUnary = false;
                         break;
                     case 'm':
-                        unar_possib = false;
+                        mayUnary = false;
                         break;
 
                     case '*':
-                        unar_possib = true;
+                        mayUnary = true;
                         break;
                     case '/':
-                        unar_possib = true;
+                        mayUnary = true;
+                        break;
+                    default:
                         break;
                 }
                 numberAfterOp = 0;
@@ -192,7 +198,7 @@ class MyCalculator implements Calculator {
                 }
                 --i;
                 numbers.push(getVal(num));
-                unar_possib = false;
+                mayUnary = false;
                 numberAfterOp = 1;
                 continue;
             }
