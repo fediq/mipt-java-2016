@@ -1,20 +1,21 @@
 package ru.mipt.java2016.homework.g596.grebenshchikova.task1;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Scanner;
+import java.util.Set;
+import java.util.Stack;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
-import java.util.*;
 
-/**
- * Created by liza on 10.10.16.
- */
 public class MyCalculator implements Calculator {
 
-    private static final HashSet<Character> operator =
-            new HashSet<>(Arrays.asList('+', '-', '*', '/'));
+    private static final Set<Character> operator = new HashSet<>(Arrays.asList('+', '-', '*', '/'));
 
 
-    private enum ParsingCondition {waiting_for_token, reading_number};
+    private enum ParsingCondition {waiting_for_token, reading_number}
+
 
     private int operator_priority(char symb) throws ParsingException {
         switch (symb) {
@@ -78,7 +79,7 @@ public class MyCalculator implements Calculator {
             throw new ParsingException("Expression is empty");
         }
         StringBuilder result = new StringBuilder();
-        Stack<Character> operators = new Stack<Character>();// стек для хранения операторов
+        Stack<Character> operators = new Stack<>();// стек для хранения операторов
         Character symb;
         boolean unary = true; // унарность оператора
         ParsingCondition cond = ParsingCondition.waiting_for_token;
@@ -116,9 +117,7 @@ public class MyCalculator implements Calculator {
                             while (!operators.empty()) {
                                 Character curr_char = operators.pop();
                                 if (operator_priority(curr_char) >= operator_priority(symb)) {
-                                    result.append(' ');
-                                    result.append(curr_char);
-                                    result.append(' ');
+                                    result.append(' ').append(curr_char).append(' ');
                                 } else {
                                     operators.push(curr_char);
                                     break;
@@ -185,7 +184,7 @@ public class MyCalculator implements Calculator {
     private double calculate_postfix_expression(String expression)
             throws ParsingException, ArithmeticException {
         Scanner scan = new Scanner(expression);
-        Stack<Double> tmp_results = new Stack<Double>();
+        Stack<Double> tmp_results = new Stack<>();
         double tmp_result;
         double operand1;
         double operand2;
@@ -213,17 +212,12 @@ public class MyCalculator implements Calculator {
                 }
 
             } else {
-                boolean flag = true; // проверка, является  ли числом
                 try {
                     tmp = Double.parseDouble(curr_str);
                 } catch (NumberFormatException e) {
-                    flag = false;
                     throw new ParsingException("Wrong expression 11");
                 }
-                if (flag) {
-                    tmp_results.push(tmp);
-                }
-
+                tmp_results.push(tmp);
             }
         }
         if (tmp_results.size() == 1) {
@@ -235,12 +229,11 @@ public class MyCalculator implements Calculator {
     }
 
     @Override
-    public double calculate(String expression) throws ParsingException, ArithmeticException {
+    public double calculate(String expression) throws ParsingException {
         if (expression == null) {
             throw new ParsingException("Expression is null");
         }
         String postfix_expression = to_postfix(expression.replaceAll("\\s", ""));
-        double answer = calculate_postfix_expression(postfix_expression);
-        return answer;
+        return calculate_postfix_expression(postfix_expression);
     }
 }
