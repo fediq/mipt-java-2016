@@ -13,7 +13,7 @@ import java.util.Stack;
 
 public class MyAwesomeCalculator implements Calculator {
     private static boolean isCorrectCharacter(char chr) throws ParsingException {
-        if (chr == ' ' || chr == '.' || chr == '\n' || chr == '\t' ||
+        return chr == ' ' || chr == '.' || chr == '\n' || chr == '\t' ||
                 chr == '0' || chr == '1' ||
                 chr == '2' || chr == '3' ||
                 chr == '4' || chr == '5' ||
@@ -21,10 +21,7 @@ public class MyAwesomeCalculator implements Calculator {
                 chr == '8' || chr == '9' ||
                 chr == '(' || chr == ')' ||
                 chr == '+' || chr == '-' ||
-                chr == '*' || chr == '/') {
-            return true;
-        }
-        return false;
+                chr == '*' || chr == '/';
     }
 
     private static boolean isNumeric(char chr) throws ParsingException {

@@ -1,18 +1,23 @@
 package ru.mipt.java2016.homework.g594.shevkunov.task1;
 
-import ru.mipt.java2016.homework.base.task1.Calculator;
-import ru.mipt.java2016.homework.base.task1.ParsingException;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
+import ru.mipt.java2016.homework.base.task1.Calculator;
+import ru.mipt.java2016.homework.base.task1.ParsingException;
 
 /**
  * Evaluates a value from expressing
  * Created by shevkunov on 04.10.16.
  */
 class PolishCalculator implements Calculator {
+    private Stack<Double> valStack = new Stack<>();
+    private Stack<Operation> operStack = new Stack<>();
+    private StringBuilder buffer = new StringBuilder();
+    private ParserState state = ParserState.NONE;
+    private boolean unary = true;
+
     public double calculate(String expression) throws ParsingException {
         if (expression == null) {
             throw new ParsingException("Null expression.");
@@ -25,9 +30,130 @@ class PolishCalculator implements Calculator {
         }
     }
 
+    private void proceedOperation(Operation eval) throws ParsingException {
+        if (eval.isBracket()) {
+            throw new ParsingException("Incorrect expression.");
+        }
+        double[] args = new double[eval.valence()];
+        for (int argIndex = args.length - 1; argIndex >= 0; --argIndex) {
+            if (!valStack.isEmpty()) {
+                args[argIndex] = valStack.pop();
+            } else {
+                throw new ParsingException("Incorrect expression.");
+            }
+        }
+        valStack.push(eval.evaluate(args));
+    }
+
+    private void pushOperation(String opString, boolean isUnary) throws ParsingException {
+        Operation op =
+                isUnary ? Operation.getOperation("U" + opString) : Operation.getOperation(opString);
+        if (null != op) { // Yoda style
+            if (!op.isBracket()) {
+                while (!operStack.isEmpty() && (
+                        ((operStack.peek().valence() != 1) && operStack.peek().notWeakerThan(op))
+                                || (operStack.peek().valence() == 1) && operStack.peek()
+                                .strongerThan(op))) {
+                    proceedOperation(operStack.pop());
+                }
+                operStack.push(op);
+            } else {
+                if (op.closeBracket() == null) {
+                    operStack.push(op);
+                } else {
+                    while (!operStack.isEmpty() && (operStack.peek() != op.closeBracket())) {
+                        proceedOperation(operStack.pop());
+                    }
+                    if (operStack.isEmpty()) {
+                        throw new ParsingException("Incorrect expression.");
+                    } else {
+                        operStack.pop();
+                    }
+                }
+            }
+        } else {
+            throw new ParsingException("Unknown operation : " + opString);
+        }
+    }
+
+    private void pushBuffer() throws ParsingException {
+        switch (state) {
+            case OPER:
+                pushOperation(buffer.toString(), unary);
+                unary = true;
+                break;
+            case VAL:
+                try {
+                    valStack.push(Double.parseDouble(buffer.toString()));
+                } catch (NumberFormatException e) {
+                    throw new ParsingException("Bad number.");
+                }
+                unary = false;
+                break;
+            default:
+                // do nothing
+        }
+        buffer.delete(0, buffer.length());
+    }
+
+    private double parse(String expr) throws ParsingException {
+        unary = true;
+        state = ParserState.NONE;
+        for (int i = 0; i < expr.length(); ++i) {
+            if (Character.isDigit(expr.charAt(i)) || (expr.charAt(i) == '.')) {
+                if (state != ParserState.VAL) {
+                    pushBuffer();
+                    state = ParserState.VAL;
+                }
+                buffer.append(expr.charAt(i));
+            } else {
+                if (Character.isWhitespace(expr.charAt(i))) {
+                    pushBuffer();
+                    state = ParserState.NONE;
+                } else {
+                    if (state != ParserState.OPER) {
+                        pushBuffer();
+                        state = ParserState.OPER;
+                    }
+                    buffer.append(expr.charAt(i));
+                    Operation readed = Operation
+                            .getOperation(unary ? "U" + buffer.toString() : buffer.toString());
+                    if (null != readed) {
+                        if (readed.isBracket()) {
+                            unary = false;
+                            pushBuffer();
+                            state = ParserState.NONE;
+                            unary = readed.closeBracket() == null;
+                        } else {
+                            if ((!operStack.empty()) && (operStack.peek() == Operation.UNARYPLUS)
+                                    && (readed == Operation.UNARYPLUS)) {
+                                throw new ParsingException("I love ++i");
+                                // I think that ++1 is correct;
+                                // this is ony for testPlusPlus
+                            }
+                            pushBuffer();
+                            unary = true;
+                            state = ParserState.NONE;
+                        }
+                    }
+                }
+            }
+        }
+        pushBuffer();
+
+        while (!operStack.isEmpty()) {
+            proceedOperation(operStack.pop());
+        }
+        if (valStack.size() != 1) {
+            throw new ParsingException("Incorrect expression.");
+        }
+        return valStack.pop();
+    }
+
     private enum ParserState {
         OPER, VAL, NONE
     }
+
 
     private enum Operation {
         PLUS(0) {
@@ -139,6 +265,39 @@ class PolishCalculator implements Calculator {
             }
         };
 
+        private static final Map<String, Operation> STRING_REPRESENTATIONS;
+
+        static {
+            Map<String, Operation> map = new HashMap<>();
+            map.put("+", Operation.PLUS);
+            map.put("-", Operation.MINUS);
+            map.put("*", Operation.MULTIPLY);
+            map.put("/", Operation.DIVISION);
+            map.put("U+", Operation.UNARYPLUS);
+            map.put("U-", Operation.UNARYMINUS);
+            map.put("(", Operation.OPENBRAСKET);
+            map.put(")", Operation.CLOSEBRAСKET);
+
+            map.put("U(", Operation.OPENBRAСKET);
+            map.put("U)", Operation.CLOSEBRAСKET);
+
+            STRING_REPRESENTATIONS = Collections.unmodifiableMap(map);
+        }
+
+        private final int order;
+
+        Operation(int order) {
+            this.order = order;
+        }
+
+        public static Operation getOperation(String name) {
+            if (STRING_REPRESENTATIONS.containsKey(name)) {
+                return STRING_REPRESENTATIONS.get(name);
+            } else {
+                return null;
+            }
+        }
+
         protected abstract double compute(double[] args);
 
         public double evaluate(double... args) throws ParsingException {
@@ -160,18 +319,6 @@ class PolishCalculator implements Calculator {
             return 2; // default
         }
 
-        Operation(int order) {
-            this.order = order;
-        }
-
-        public static Operation getOperation(String name) {
-            if (STRING_REPRESENTATIONS.containsKey(name)) {
-                return STRING_REPRESENTATIONS.get(name);
-            } else {
-                return null;
-            }
-        }
-
         public boolean strongerThan(Operation op) {
             return this.order > op.order;
         }
@@ -179,151 +326,5 @@ class PolishCalculator implements Calculator {
         public boolean notWeakerThan(Operation op) {
             return this.order >= op.order;
         }
-
-        private static final Map<String, Operation> STRING_REPRESENTATIONS;
-
-        static {
-            Map<String, Operation> map = new HashMap<>();
-            map.put("+", Operation.PLUS);
-            map.put("-", Operation.MINUS);
-            map.put("*", Operation.MULTIPLY);
-            map.put("/", Operation.DIVISION);
-            map.put("U+", Operation.UNARYPLUS);
-            map.put("U-", Operation.UNARYMINUS);
-            map.put("(", Operation.OPENBRAСKET);
-            map.put(")", Operation.CLOSEBRAСKET);
-
-            map.put("U(", Operation.OPENBRAСKET);
-            map.put("U)", Operation.CLOSEBRAСKET);
-
-            STRING_REPRESENTATIONS = Collections.unmodifiableMap(map);
-        }
-
-        private final int order;
-    }
-
-    private Stack<Double> valStack = new Stack<>();
-    private Stack<Operation> operStack = new Stack<>();
-    private StringBuilder buffer = new StringBuilder();
-
-    private void proceedOperation(Operation eval) throws ParsingException {
-        if (eval.isBracket()) {
-            throw new ParsingException("Incorrect expression.");
-        }
-        double[] args = new double[eval.valence()];
-        for (int argIndex = args.length - 1; argIndex >= 0; --argIndex) {
-            if (!valStack.isEmpty()) {
-                args[argIndex] = valStack.pop();
-            } else {
-                throw new ParsingException("Incorrect expression.");
-            }
-        }
-        valStack.push(eval.evaluate(args));
-    }
-
-    private void pushOperation(String opString, boolean isUnary) throws ParsingException {
-        Operation op = isUnary ? Operation.getOperation("U" + opString) : Operation.getOperation(opString);
-        if (null != op) { // Yoda style
-            if (!op.isBracket()) {
-                while (!operStack.isEmpty() &&
-                        (((operStack.peek().valence() != 1) && operStack.peek().notWeakerThan(op))
-                                || (operStack.peek().valence() == 1) && operStack.peek().strongerThan(op))) {
-                    proceedOperation(operStack.pop());
-                }
-                operStack.push(op);
-            } else {
-                if (op.closeBracket() == null) {
-                    operStack.push(op);
-                } else {
-                    while (!operStack.isEmpty() && (operStack.peek() != op.closeBracket())) {
-                        proceedOperation(operStack.pop());
-                    }
-                    if (operStack.isEmpty()) {
-                        throw new ParsingException("Incorrect expression.");
-                    } else {
-                        operStack.pop();
-                    }
-                }
-            }
-        } else {
-            throw new ParsingException("Unknown operation : " + opString);
-        }
-    }
-
-    private ParserState state = ParserState.NONE;
-    private boolean unary = true;
-
-    private void pushBuffer() throws ParsingException {
-        switch (state) {
-            case OPER:
-                pushOperation(buffer.toString(), unary);
-                unary = true;
-                break;
-            case VAL:
-                try {
-                    valStack.push(Double.parseDouble(buffer.toString()));
-                } catch (NumberFormatException e) {
-                    throw new ParsingException("Bad number.");
-                }
-                unary = false;
-                break;
-            default:
-                // do nothing
-        }
-        buffer.delete(0, buffer.length());
-    }
-
-    private double parse(String expr) throws ParsingException {
-        unary = true;
-        state = ParserState.NONE;
-        for (int i = 0; i < expr.length(); ++i) {
-            if (Character.isDigit(expr.charAt(i)) || (expr.charAt(i) == '.')) {
-                if (state != ParserState.VAL) {
-                    pushBuffer();
-                    state = ParserState.VAL;
-                }
-                buffer.append(expr.charAt(i));
-            } else {
-                if (Character.isWhitespace(expr.charAt(i))) {
-                    pushBuffer();
-                    state = ParserState.NONE;
-                } else {
-                    if (state != ParserState.OPER) {
-                        pushBuffer();
-                        state = ParserState.OPER;
-                    }
-                    buffer.append(expr.charAt(i));
-                    Operation readed = Operation.getOperation(unary ? "U"
-                            + buffer.toString() : buffer.toString());
-                    if (null != readed) {
-                        if (readed.isBracket()) {
-                            unary = false;
-                            pushBuffer();
-                            state = ParserState.NONE;
-                            unary = readed.closeBracket() == null;
-                        } else {
-                            if ((!operStack.empty()) && (operStack.peek() == Operation.UNARYPLUS)
-                                    && (readed == Operation.UNARYPLUS)) {
-                                throw new ParsingException("I love ++i");
-                                // I think that ++1 is correct;
-                                // this is ony for testPlusPlus
-                            }
-                            pushBuffer();
-                            unary = true;
-                            state = ParserState.NONE;
-                        }
-                    }
-                }
-            }
-        }
-        pushBuffer();
-
-        while (!operStack.isEmpty()) {
-            proceedOperation(operStack.pop());
-        }
-        if (valStack.size() != 1) {
-            throw new ParsingException("Incorrect expression.");
-        }
-        return valStack.pop();
     }
 }
