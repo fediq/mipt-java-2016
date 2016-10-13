@@ -100,7 +100,12 @@ public class CalculatorImplementation implements Calculator {
                     ++balance;
                 } else {
                     if (balance == 1) {
-                        values.add(f(previous_position_of_bracket + 1, i - 1));
+                        if (in_number) {
+                            values.add(-f(previous_position_of_bracket + 1, i - 1));
+                        } else {
+                            values.add(f(previous_position_of_bracket + 1, i - 1));
+                        }
+                        in_number = false;
                     }
                     --balance;
                 }
