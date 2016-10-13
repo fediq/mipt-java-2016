@@ -155,4 +155,5 @@ public abstract class AbstractCalculatorTest {
     public void testBadNumber() throws ParsingException {
         tryFail("1.2.3");
     }
+
 }

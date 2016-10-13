@@ -1,6 +1,8 @@
 ## Программирование на Java
 
-Поток 2016го года
+[![Build Status](https://travis-ci.org/fediq/mipt-java-2016.svg?branch=master)](https://travis-ci.org/fediq/mipt-java-2016)
+
+Поток 2016го года.
 
 ### Материалы
 
