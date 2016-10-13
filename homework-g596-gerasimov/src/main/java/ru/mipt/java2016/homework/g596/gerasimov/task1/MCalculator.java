@@ -11,10 +11,11 @@ import ru.mipt.java2016.homework.base.task1.ParsingException;
 
 public class MCalculator implements Calculator {
 
-    private ArrayList<Token> Tokenize(String expression) throws ParsingException {
+    private ArrayList<Token> tokenize(String expression) throws ParsingException {
         ArrayList<Token> res = new ArrayList<>();
         char c;
         boolean gotNum = false;
+        boolean gotUOp = false;
 
         for (int i = 0; i < expression.length(); ++i) {
             c = expression.charAt(i);
@@ -22,13 +23,12 @@ public class MCalculator implements Calculator {
             if (Character.isWhitespace(c)) {
                 continue;
             } else if (Character.isDigit(c)) {
-                StringBuilder num_s = new StringBuilder();
-                boolean met_dot = false;
-                while (i < expression.length() && (Character.isDigit(c) || (c == '.'
-                        && !met_dot))) {
-                    num_s.append(c);
+                StringBuilder sNum = new StringBuilder();
+                boolean metDot = false;
+                while (i < expression.length() && (Character.isDigit(c) || (c == '.' && !metDot))) {
+                    sNum.append(c);
                     if (c == '.') {
-                        met_dot = true;
+                        metDot = true;
                     }
                     ++i;
                     if (i < expression.length()) {
@@ -37,7 +37,8 @@ public class MCalculator implements Calculator {
                 }
                 --i;
                 gotNum = true;
-                res.add(new NumToken(Double.parseDouble(num_s.toString())));
+                gotUOp = false;
+                res.add(new NumToken(Double.parseDouble(sNum.toString())));
             } else if (c == '(' || c == ')') {
                 if (c == '(' && res.size() > 0 && res.get(res.size() - 1) instanceof BracketToken
                         && ((BracketToken) res.get(res.size() - 1)).getIsOpening()) {
@@ -48,15 +49,21 @@ public class MCalculator implements Calculator {
                 } else {
                     gotNum = true;
                 }
+                gotUOp = false;
                 res.add(new BracketToken(c));
             } else if (c == '+' || c == '-' || c == '*' || c == '/') {
                 if (!gotNum) {
+                    if (gotUOp) {
+                        throw new ParsingException("Wrong usage operators!");
+                    }
                     switch (c) {
                         case '+':
                             c = '#';
+                            gotUOp = true;
                             break;
                         case '-':
                             c = '&';
+                            gotUOp = true;
                             break;
                         default:
                             throw new ParsingException("Wrong operator order");
@@ -72,13 +79,13 @@ public class MCalculator implements Calculator {
         return res;
     }
 
-    private double Calculation(ArrayList<Token> i_expr) throws ParsingException {
+    private double calculation(ArrayList<Token> iExpr) throws ParsingException {
         Stack<Double> numbers = new Stack<>();
         Stack<Token> operators = new Stack<>();
-        int b_balance = 0;
+        int bBalance = 0;
         boolean gotNum = false;
 
-        for (Token tmp : i_expr) {
+        for (Token tmp : iExpr) {
             if (tmp instanceof NumToken) {
                 numbers.push(((NumToken) tmp).getValue());
                 gotNum = true;
@@ -86,8 +93,8 @@ public class MCalculator implements Calculator {
                 Operator op = ((OperatorToken) tmp).getOperator();
                 while (operators.size() > 0 && operators.peek() instanceof OperatorToken) {
                     Operator prev = ((OperatorToken) operators.peek()).getOperator();
-                    if ((op.priority <= prev.priority && op.isLA) || (op.priority
-                            < prev.priority)) {
+                    if ((op.getPriority() <= prev.getPriority() && op.getIsLA()) || (
+                            op.getPriority() < prev.getPriority())) {
                         prev.use(numbers);
                         operators.pop();
                     } else {
@@ -100,10 +107,10 @@ public class MCalculator implements Calculator {
                 boolean isOpening = ((BracketToken) tmp).getIsOpening();
                 if (isOpening) {
                     operators.push(tmp);
-                    ++b_balance;
+                    ++bBalance;
                 } else {
-                    --b_balance;
-                    if (b_balance < 0) {
+                    --bBalance;
+                    if (bBalance < 0) {
                         throw new ParsingException("Wrong bracket balance!");
                     }
                     while (operators.peek() instanceof OperatorToken) {
@@ -117,7 +124,7 @@ public class MCalculator implements Calculator {
             ((OperatorToken) operators.pop()).getOperator().use(numbers);
         }
 
-        if (b_balance != 0) {
+        if (bBalance != 0) {
             throw new ParsingException("Wrong bracket balance!");
         }
         if (numbers.size() != 1) {
@@ -132,26 +139,25 @@ public class MCalculator implements Calculator {
         if (expression == null) {
             throw new ParsingException("Null string");
         }
-        ArrayList<Token> i_expr = Tokenize(expression);
-        if (i_expr.size() == 0) {
+        ArrayList<Token> iExpr = tokenize(expression);
+        if (iExpr.size() == 0) {
             throw new ParsingException("Empty input!");
         }
-
-        return Calculation(i_expr);
+        return calculation(iExpr);
     }
 
-    enum Operator {
+    private enum Operator {
         PLUS(1, 2, true), MINUS(1, 2, true), MULTIPLY(2, 2, true), DIVIDE(2, 2, true), U_PLUS(3, 1,
                 false), U_MINUS(3, 1, false);
 
-        int priority;
-        int valency;
-        boolean isLA;
+        private int priority;
+        private int valency;
+        private boolean isLA;
 
-        Operator(int priority_, int valency_, boolean isLA_) {
-            priority = priority_;
-            valency = valency_;
-            isLA = isLA_;
+        Operator(int priority0, int valency0, boolean isLA0) {
+            priority = priority0;
+            valency = valency0;
+            isLA = isLA0;
         }
 
         private void use(Stack<Double> nums) throws ParsingException {
@@ -188,6 +194,18 @@ public class MCalculator implements Calculator {
             }
             nums.push(tmp);
         }
+
+        private int getPriority() {
+            return priority;
+        }
+
+        private int getValency() {
+            return valency;
+        }
+
+        private boolean getIsLA() {
+            return isLA;
+        }
     }
 
 
@@ -221,8 +239,8 @@ public class MCalculator implements Calculator {
     private class NumToken extends Token {
         private double value;
 
-        private NumToken(double value_) {
-            value = value_;
+        private NumToken(double value0) {
+            value = value0;
         }
 
         private double getValue() {
@@ -232,7 +250,7 @@ public class MCalculator implements Calculator {
 
 
     private class OperatorToken extends Token {
-        Operator op;
+        private Operator op;
 
         private OperatorToken(char c) {
             switch (c) {
