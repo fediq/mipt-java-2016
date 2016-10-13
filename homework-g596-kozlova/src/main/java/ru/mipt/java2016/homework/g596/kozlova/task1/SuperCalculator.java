@@ -19,10 +19,15 @@ public class SuperCalculator implements Calculator {
         boolean unaryCheck = true;                                                              // проверка, что следующий оператор действует над одним операндом, т.е. унарен
         Stack<Character> stack = new Stack<>();                                                 // стек операторов, которые встречаются в строке
         StringBuffer result = new StringBuffer();                                               // результирующее выражение, записанное в польской записи
-        Character c;
+        Character c = '.', c_last = '.';
+        Integer numberPoint = 0;
         for(int i = 0; i < expression.length(); i++) {                                          // перебор элементов нашего выражения
+            if (i > 0) c_last = c;
             c = expression.charAt(i);
             if (ComponentsOfNumber.contains(c)) {                                               // если данный символ является компонентой числа, то добавляем его к выходной строке - result
+                if (i > 0 && !ComponentsOfNumber.contains(c_last)) numberPoint = 0;
+                if (c == '.') numberPoint++;
+                if (numberPoint > 1) throw new ParsingException("This is invalid expression");
                 result.append(c);
                 unaryCheck = false;
             } else if (MathematicalOperators.contains(c)) {                                     /* если символ является символом функции, то помещаем его в стек операторов - stack
