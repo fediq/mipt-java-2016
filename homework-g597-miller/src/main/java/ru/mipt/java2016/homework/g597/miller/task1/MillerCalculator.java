@@ -11,7 +11,14 @@ import java.util.Stack;
  */
 
 class MillerCalculator implements Calculator {
-    private static int Priority(char symbol) {
+
+    // Стек, содержащий постфиксную запись выражения.
+    private Stack<String> postfix;
+    // Стек для промежуточных вычислений.
+    private Stack<Double> numbers;
+
+    // Возвращает приоритет операции.
+    private static int priority(char symbol) {
         switch (symbol) {
             case '(':
                 return 0;
@@ -30,12 +37,14 @@ class MillerCalculator implements Calculator {
         }
     }
 
-    private static boolean IsNumber(char symbol) {
+    // Проверяет, является ли данный char цифрой.
+    private static boolean isNumber(char symbol) {
         int ord = symbol;
         return ((ord >= 48) && (ord <= 57));
     }
 
-    private static boolean IsNumber(String str) {
+    // Проверяет, является ли данный String числом.
+    private static boolean isNumber(String str) {
         if ((str == null) || (str.length() == 0)) {
             return false;
         }
@@ -65,15 +74,18 @@ class MillerCalculator implements Calculator {
         return itIsNumber;
     }
 
-    private static String ToString(char symbol) {
-        String s = "";
-        s += symbol;
-        return s;
-    }
-
-    private static double ToDouble(String s) {
-        double number = 0, toAdd = 0;
-        int digit, pointPosition, start;
+    // Переводит тип String в double.
+    private static double toDouble(String s) {
+        // Целая часть числа.
+        double number = 0;
+        // Дробная часть числа.
+        double toAdd = 0;
+        // Поциферное считывание.
+        int digit;
+        // Позиция точки в записи.
+        int pointPosition;
+        // Точка начала записи числа.
+        int start;
         // Negative?
         start = 0;
         if (s.charAt(0) == '-') {
@@ -102,25 +114,13 @@ class MillerCalculator implements Calculator {
         return number;
     }
 
-    @Override
-    public double calculate(String expression) throws ParsingException {
-        if (expression == null) {
-            throw new ParsingException("Expression is null");
-        }
-        // Пробельный символ - уходи.
-        expression = expression.replaceAll("[ \\n\\t]", "");
-        if (expression.length() == 0) {
-            throw new ParsingException("Expression is empty");
-        }
-
+    // Переводит expression в постфиксную запись на стеке.
+    private void toPostfix(String expression) throws ParsingException {
+        char symbol;
         // Указатель для прохода по expression.
         int pointer = 0;
         // Позиция последней открывающей скобки.
         int lastOpenBracketPosition = -1;
-        // Для посимвольного считывания.
-        char symbol;
-        // Для вычислений.
-        double dValue1, dValue2;
         // Режим чтения числа.
         boolean numberReading = false;
         // В режиме чтения числа найдена точка.
@@ -129,17 +129,11 @@ class MillerCalculator implements Calculator {
         boolean unaryExpected = true;
         // Следующее число должно быть отрицательным.
         boolean toNegative = false;
-        // Запись постфиксной записи.
-        Stack<String> postfix = new Stack<>();
-        // Для реверса стека postfix.
-        Stack<String> postfixR = new Stack<>();
         // Стеки, необходимые для переводов и подсчётов.
         Stack<Character> symbols = new Stack<>();
-        Stack<Double> numbers = new Stack<>();
         // Строка для запоминания числа.
         StringBuilder number = new StringBuilder("");
 
-        // Перевод в постфиксную запись.
         while (pointer < expression.length()) {
             symbol = expression.charAt(pointer++);
             if (unaryExpected && (symbol == '-')) {
@@ -148,7 +142,7 @@ class MillerCalculator implements Calculator {
                 continue;
             }
             // Чтение числа.
-            if (IsNumber(symbol)) {
+            if (isNumber(symbol)) {
                 if (!numberReading) {
                     if (toNegative) {
                         number.append("-");
@@ -174,17 +168,9 @@ class MillerCalculator implements Calculator {
                 }
             }
             // Неожиданный символ.
-            if (Priority(symbol) < 0) {
+            if (priority(symbol) < 0) {
                 throw new ParsingException("Unexpected symbol '" + symbol + "'");
             }
-
-            // Если "(", то в стек.
-            // Если ")", то из стека до "(".
-            // Если стек пуст или приоритет больше, то в стек.
-            // Если приоритет меньше или равен, то из стека до операции с меньшим
-            //  или равным приоритетом (не включительно).
-            // В конце всё из стека.
-            // '[' ~ '-('
             if (symbol == '(') {
                 lastOpenBracketPosition = pointer;
                 if (toNegative) {
@@ -205,28 +191,26 @@ class MillerCalculator implements Calculator {
                 }
                 unaryExpected = false;
                 while (!symbols.empty() && (symbols.peek() != '(') && (symbols.peek() != '[')) {
-                    postfix.push(ToString(symbols.peek()));
-                    symbols.pop();
+                    postfix.push(symbols.pop().toString());
                 }
                 // Нет соответствующей скобки.
                 if (symbols.empty()) {
                     throw new ParsingException("Wrong brackets result");
                 }
-                if (symbols.peek() == '[') {
+                if (symbols.pop() == '[') {
+                    // '[' ~ '-('
                     postfix.push("-1");
                     postfix.push("*");
                 }
-                symbols.pop();
                 continue;
             }
-            unaryExpected = (Priority(symbol) == 2);
-            if (symbols.empty() || Priority(symbol) > Priority(symbols.peek())) {
+            unaryExpected = (priority(symbol) == 2);
+            if (symbols.empty() || priority(symbol) > priority(symbols.peek())) {
                 symbols.push(symbol);
                 continue;
             }
-            while (!symbols.empty() && Priority(symbol) <= Priority(symbols.peek())) {
-                postfix.push(ToString(symbols.peek()));
-                symbols.pop();
+            while (!symbols.empty() && priority(symbol) <= priority(symbols.peek())) {
+                postfix.push(symbols.pop().toString());
             }
             symbols.push(symbol);
         }
@@ -239,29 +223,30 @@ class MillerCalculator implements Calculator {
             if (symbols.peek() == '(') { // Нет соответствующей скобки.
                 throw new ParsingException("Wrong brackets result");
             }
-            postfix.push(ToString(symbols.peek()));
-            symbols.pop();
+            postfix.push(symbols.pop().toString());
         }
+    }
 
-        // Переворачиваем стек.
+    // Вычисляет значение выражения из стека postfix.
+    private double calculateWithStack() throws ParsingException {
+        char symbol;
+        double dValue1;
+        double dValue2;
+        Stack<String> postfixR = new Stack<>();
+
         while (!postfix.empty()) {
-            postfixR.push(postfix.peek());
-            postfix.pop();
+            postfixR.push(postfix.pop());
         }
         while (!postfixR.empty()) {
-            if (IsNumber(postfixR.peek())) {
-                numbers.push(ToDouble(postfixR.peek()));
-                postfixR.pop();
+            if (isNumber(postfixR.peek())) {
+                numbers.push(toDouble(postfixR.pop()));
             } else {
-                symbol = postfixR.peek().charAt(0);
-                postfixR.pop();
+                symbol = postfixR.pop().charAt(0);
                 if (numbers.size() < 2) {
                     throw new ParsingException("Wrong operations number");
                 }
-                dValue2 = numbers.peek();
-                numbers.pop();
-                dValue1 = numbers.peek();
-                numbers.pop();
+                dValue2 = numbers.pop();
+                dValue1 = numbers.pop();
 
                 if (symbol == '+') {
                     numbers.push(dValue1 + dValue2);
@@ -277,7 +262,24 @@ class MillerCalculator implements Calculator {
         if (numbers.size() > 1) {
             throw new ParsingException("Wrong operations number");
         }
-
         return numbers.peek();
+    }
+
+    @Override
+    public double calculate(String expression) throws ParsingException {
+        if (expression == null) {
+            throw new ParsingException("Expression is null");
+        }
+
+        // Пробельный символ - уходи.
+        expression = expression.replaceAll("[ \\n\\t]", "");
+        if (expression.length() == 0) {
+            throw new ParsingException("Expression is empty");
+        }
+
+        postfix = new Stack<>();
+        numbers = new Stack<>();
+        toPostfix(expression);
+        return calculateWithStack();
     }
 }
