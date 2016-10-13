@@ -19,43 +19,51 @@ public class SwagCalculator implements Calculator  {
     public double calculate(String expression) throws ParsingException {
 
         // Testing for nullability
-        if (expression == null)
+        if (expression == null) {
             throw new ParsingException("Expression cannot be null.");
+        }
 
         // Removing all space symbols and indentations
         expression = removeSpaceSymbols(expression);
 
         // Checking for empty expression
-        if (checkForEmptyExpression(expression))
-            throw new  ParsingException("Expression is either empty or consists of delimiters only.");
+        if (checkForEmptyExpression(expression)) {
+            throw new ParsingException("Expression is either empty or consists of delimiters only.");
+        }
 
         // Checking for invalid symbols
-        if (!checkForInvalidSymbols(expression))
+        if (!checkForInvalidSymbols(expression)) {
             throw new ParsingException("Expression contains invalid symbols.");
+        }
 
         // Checking for the correctness of the bracket balance
-        if (bracketBalance(expression) != 0)
+        if (bracketBalance(expression) != 0) {
             throw  new ParsingException("Incorrect bracket balance.");
+        }
 
         // Checking for incorrect lexems, such as .45 or 1.4.5
-        if (checkForIncorrectLexems(expression))
+        if (checkForIncorrectLexems(expression)) {
             throw new ParsingException("Expression contains incorrect lexem.");
+        }
 
         transformToRPN(expression);
         return calculateRPN();
     }
 
     private int getOperationPriority(char op) {
-        if (op == '+' || op == '-')
+        if (op == '+' || op == '-') {
             return 1;
-        if (op == '*' || op == '/')
+        }
+        if (op == '*' || op == '/') {
             return 2;
-        if (op == 'u')
+        }
+        if (op == 'u') {
             return 3;
+        }
         return -1;
     }
 
-    private double calculateOperation(double l, double r, char op) throws ParsingException{
+    private double calculateOperation(double l, double r, char op) throws ParsingException {
         switch (op) {
             case '+':
                 return l + r;
@@ -91,8 +99,9 @@ public class SwagCalculator implements Calculator  {
             } else if (expression.charAt(i) == ')') {
                 count -= 1;
             }
-            if (count < 0)
+            if (count < 0) {
                 return -1;
+            }
         }
         return count;
     }
@@ -106,12 +115,14 @@ public class SwagCalculator implements Calculator  {
                 currentLexem += Character.toString(ch);
             } else if (ch == '.') {
                 currentLexem += Character.toString(ch);
-                if (dotEncountered)
+                if (dotEncountered) {
                     return true;
+                }
                 dotEncountered = true;
             } else {
-                if (currentLexem != "" && currentLexem.charAt(currentLexem.length()-1) == '.')
+                if (currentLexem != "" && currentLexem.charAt(currentLexem.length() - 1) == '.') {
                     return true;
+                }
                 currentLexem = "";
                 dotEncountered = false;
             }
@@ -127,8 +138,9 @@ public class SwagCalculator implements Calculator  {
     private boolean checkForInvalidSymbols(String expression) {
         for (int i = 0; i < expression.length(); i++) {
             char ch = expression.charAt(i);
-            if (isOperator(ch) || Character.isDigit(ch) || ch == '.' || isDelimiter(ch) || isBracket(ch))
+            if (isOperator(ch) || Character.isDigit(ch) || ch == '.' || isDelimiter(ch) || isBracket(ch)) {
                 continue;
+            }
             return false;
         }
         return true;
@@ -139,7 +151,7 @@ public class SwagCalculator implements Calculator  {
     }
 
     private boolean checkForEmptyExpression(String expression) {
-        return expression.length() == 0;
+        return expression.length() == 0 || expression == "()";
     }
 
     private boolean isDelimiter(char ch) {
@@ -153,13 +165,12 @@ public class SwagCalculator implements Calculator  {
     private void transformToRPN(String expression) throws ParsingException {
         boolean mayBeUnary = true;
         for (int i = 0; i < expression.length(); i++) {
-            System.out.println("ENTERED");
-            System.out.println(i);
             char ch = expression.charAt(i);
 
             // Should not be encountered! Just in case
-            if (isDelimiter(ch))
+            if (isDelimiter(ch)) {
                 continue;
+            }
 
             // We always push the opening bracket to the stack
             if (ch == '(') {
@@ -172,9 +183,9 @@ public class SwagCalculator implements Calculator  {
             if (ch == ')') {
                 while (operations.lastElement() != '(') {
                     processStackOperation();
-                    operations.removeElementAt(operations.size()-1);
+                    operations.removeElementAt(operations.size() - 1);
                 }
-                operations.removeElementAt(operations.size()-1);
+                operations.removeElementAt(operations.size() - 1);
                 mayBeUnary = false;
                 continue;
             }
@@ -182,12 +193,15 @@ public class SwagCalculator implements Calculator  {
             // Add operator
             if (isOperator(ch)) {
                 if (mayBeUnary) {
-                    if (ch == '+' || ch == '*' || ch == '/')
+                    if (ch == '+' || ch == '*' || ch == '/') {
                         throw new ParsingException("Invalid unary operator.");
+                    }
                     ch = 'u';
                 }
-                while (!operations.isEmpty() && (ch != 'u' && getOperationPriority(operations.lastElement()) >= getOperationPriority(ch)
-                        || ch == 'u' && getOperationPriority(operations.lastElement()) > getOperationPriority(ch))) {
+                while (!operations.isEmpty() && (ch != 'u' && getOperationPriority(operations.lastElement())
+                        >= getOperationPriority(ch)
+                        || ch == 'u' && getOperationPriority(operations.lastElement())
+                        > getOperationPriority(ch))) {
                     processStackOperation();
                     operations.removeElementAt(operations.size() - 1);
                 }
@@ -198,7 +212,8 @@ public class SwagCalculator implements Calculator  {
 
             // The following symbols must make up a lexem
             String lexem = "";
-            while (i < expression.length() && (Character.isDigit(expression.charAt(i)) || expression.charAt(i) == '.')) {
+            while (i < expression.length() && (Character.isDigit(expression.charAt(i))
+                    || expression.charAt(i) == '.')) {
                 lexem += Character.toString(expression.charAt(i));
                 i += 1;
             }
