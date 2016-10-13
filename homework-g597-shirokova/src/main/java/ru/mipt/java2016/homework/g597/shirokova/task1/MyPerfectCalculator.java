@@ -40,7 +40,7 @@ class MyPerfectCalculator implements Calculator {
     }
 
     private double calculateSimpleExpression(double firstOperand, double secondOperand, char operator) {
-        switch(operator) {
+        switch (operator) {
             case ('+'):
                 return secondOperand + firstOperand;
 
@@ -101,7 +101,7 @@ class MyPerfectCalculator implements Calculator {
                                 --countOfOpenedBrackets;
                                 break;
                             } else {
-                                postfixExpression.append(" ").append(currentSymbol); //считываем пока не нашли парную скобку
+                                postfixExpression.append(" ").append(currentSymbol);
                             }
                     }
                 } else {
@@ -156,7 +156,8 @@ class MyPerfectCalculator implements Calculator {
                 stack.push(currentNumber);  // добавляем его в стек;
                 continue;
             }
-            if (stack.size() >= 2 && currentToken.charAt(0) != '!') { // eсли оператор, то достаем 2 элемента и результат кладем в стек
+            if (stack.size() >= 2 && currentToken.charAt(0) != '!') {
+                // eсли оператор, то достаем 2 элемента и результат кладем в стек
                 stack.push(calculateSimpleExpression(stack.pop(), stack.pop(), currentToken.charAt(0)));
                 continue;
             }
