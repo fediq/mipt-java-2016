@@ -3,6 +3,7 @@ package ru.mipt.java2016.homework.g595.romanenko.task1;
 /**
  * Created by Ilya on 12.10.2016.
  */
+
 class Token {
 
     enum ExpressionToken {
