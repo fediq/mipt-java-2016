@@ -35,49 +35,46 @@ public class ImplCalculator implements Calculator {
     }
 
     //do action from string at index between too values
-    private double combine(String string, int index, double val1, double val2) throws ParsingException {
-        double result;
-        switch (string.charAt(index)) {
-            case '*': result = val1 * val2;
-                break;
-            case '/': result = val1 / val2;
-                break;
-            case '+': result = val1 + val2;
-                break;
-            case '-': result = val1 - val2;
-                break;
-
+    private double combine(char operator, double val1, double val2) throws ParsingException {
+        switch (operator) {
+            case '*': return val1 * val2;
+            case '/': return val1 / val2;
+            case '+': return val1 + val2;
+            case '-': return val1 - val2;
             default: throw new ParsingException("Parsing failed");
         }
-        return result;
     }
 
     //parsing substring to double, minding unary minus before value
-    private double getVal(String string, int from, int to) throws ParsingException {
+    private double getVal(String string) throws ParsingException {
+        if (string.length() == 0) {
+            throw new ParsingException("Empty substring");
+        }
         double value;
         int sign = 1;
-        int index = from;
+        int index = 0;
         //checking unary minus
-        if (string.charAt(from) == '!') {
+        if (string.charAt(index) == '!') {
             index++;
             sign = -1;
         }
-        try { //parsing substring
-            value = Double.parseDouble(string.substring(index, to));
-        } catch (NumberFormatException expected) {
-            throw new ParsingException(expected.getMessage());
+        try {
+            value = Double.parseDouble(string.substring(index));
+        } catch (NumberFormatException excepted) {
+            throw new ParsingException(excepted.getMessage());
         }
         return sign * value;
     }
 
     //function to calculate substring, that consists only of values and *,/
-    private double forwardCalc(String string, int from, int to) throws ParsingException {
-        if (to - from < 1) {
+    private double forwardCalc(String string) throws ParsingException {
+        if (string.length() == 0) {
             throw new ParsingException("Empty Substr");
         }
         double result = 1;
         double value;
-        int index = from;
+        int index = 0;
+        int to = string.length();
         int nextMult;
         int nextDiv;
         //we will go through string parsing one value and action before it
@@ -88,14 +85,14 @@ public class ImplCalculator implements Calculator {
             if (nextMult == -1 || (nextMult > nextDiv && nextDiv != -1)) {
                 nextMult = nextDiv;
             }
-            if (nextMult == -1 || nextMult > to) { //if there is no action, parse till the end
+            if (nextMult == -1) { //if there is no action, parse till the end
                 nextMult = to;
             }
-            value = getVal(string, index, nextMult);
-            if (index == from) { //if it is first value without action before
+            value = getVal(string.substring(index, nextMult));
+            if (index == 0) { //if it is first value without action before
                 result = value;
             } else {
-                result = combine(string, index - 1, result, value);
+                result = combine(string.charAt(index - 1), result, value);
             }
             index = nextMult + 1; //move to the next value
         }
@@ -110,7 +107,7 @@ public class ImplCalculator implements Calculator {
         int index = from;
 
         if (nextBracket == -1 || nextBracket >= to) { //if we have no brackets, we can do it easier
-            return noBracketCalc(string, from, to);
+            return noBracketCalc(string.substring(from, to));
         }
         if (nextBracketClose < nextBracket) {
             throw new ParsingException("Bad bracket balance");
@@ -132,10 +129,10 @@ public class ImplCalculator implements Calculator {
             }
             if (nextBracket > index) { //if there is smth before bracket
                 if (index == from) { //if it is start of substr
-                    prevRes = forwardCalc(string, index, nextBracket - 1);
+                    prevRes = forwardCalc(string.substring(index, nextBracket - 1));
                 } else {
-                    prevRes = combine(string, nextBracket - 1, prevRes,
-                            forwardCalc(string, index, nextBracket - 1));
+                    prevRes = combine(string.charAt(nextBracket - 1), prevRes,
+                            forwardCalc(string.substring(index, nextBracket - 1)));
                 }
                 index = nextBracket;
             }
@@ -143,7 +140,7 @@ public class ImplCalculator implements Calculator {
             if (index == from) { //combine previous result with inbracket value
                 prevRes = bracketRes;
             } else {
-                prevRes = combine(string, index - 1, prevRes, bracketRes);
+                prevRes = combine(string.charAt(index - 1), prevRes, bracketRes);
             }
 
             index = rightBracket + 2; //cause invariant is starting with value
@@ -173,20 +170,20 @@ public class ImplCalculator implements Calculator {
         }
 
         if (index == from) { //if there is + or - before first bracket
-            return combine(string, nextAdd, noBracketCalc(string, from, nextAdd),
+            return combine(string.charAt(nextAdd), noBracketCalc(string.substring(from, nextAdd)),
                     calcSubstr(string, nextAdd + 1, to));
         }
 
         //if we exited while and there is no more + or -
         if (nextAdd < index && (nextBracket == -1 || nextBracket >= to)) {
-            return combine(string, index - 1, prevRes, forwardCalc(string, index, to));
+            return combine(string.charAt(index - 1), prevRes, forwardCalc(string.substring(index, to)));
         }
         //if there is + or -, but not right after bracket
         if (string.charAt(index - 1) == '*' || string.charAt(index - 1) == '/') {
-            prevRes = combine(string, index - 1, prevRes, forwardCalc(string, index, nextAdd));
+            prevRes = combine(string.charAt(index - 1), prevRes, forwardCalc(string.substring(index, nextAdd)));
         }
 
-        return combine(string, nextAdd, prevRes, calcSubstr(string, nextAdd + 1, to));
+        return combine(string.charAt(nextAdd), prevRes, calcSubstr(string, nextAdd + 1, to));
     }
 
     //find right pair bracket for given
@@ -209,21 +206,22 @@ public class ImplCalculator implements Calculator {
     }
 
     //calculate substring without brackets
-    private double noBracketCalc(String string, int from, int to) throws ParsingException {
-        if (to - from < 1) {
+    private double noBracketCalc(String string) throws ParsingException {
+        if (string.length() == 0) {
             throw new ParsingException("Empty Substr");
         }
+        int to = string.length();
         //searching last + or - in substring
-        int firstAdd = max(string.lastIndexOf('+', to - 1),
+        int lastAdd = max(string.lastIndexOf('+', to - 1),
                 string.lastIndexOf('-', to - 1));
 
-        if (firstAdd <= from) { //if there is no + or -
-            return forwardCalc(string, from, to);
+        if (lastAdd <= 0) { //if there is no + or -
+            return forwardCalc(string.substring(0, to));
         }
 
-        double sufRes = forwardCalc(string, firstAdd + 1, to);
-        double prefRes = noBracketCalc(string, from, firstAdd);
+        double sufRes = forwardCalc(string.substring(lastAdd + 1, to));
+        double prefRes = noBracketCalc(string.substring(0, lastAdd));
 
-        return combine(string, firstAdd, prefRes, sufRes);
+        return combine(string.charAt(lastAdd), prefRes, sufRes);
     }
 }
