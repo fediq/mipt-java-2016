@@ -2,9 +2,7 @@ package ru.mipt.java2016.homework.g595.iksanov.task1;
 
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
-
 import java.util.Stack;
-
 import static java.lang.Character.isDigit;
 
 /**
@@ -93,13 +91,14 @@ public class MyCalculator implements Calculator {
             } else if (Character.isDigit(symb) || symb == '.') {
                 resultExpr.append(symb);
                 operatorIsUnary = false; //унарный оператор не может стоять после операнда
-            } else {
+            }
+            else {
                 throw new ParsingException("Invalid expression1");
             }
         }
         while (!operatorStack.isEmpty()) { //выталкиваем все остальные символы из стека в выходную строку
             char symb = operatorStack.pop();
-            if (isOperator(symb) || symb == '_') {
+            if (isOperator(symb) || symb =='_') {
                 resultExpr.append(symb);
             } else {
                 throw new ParsingException("Invalid expression2");
@@ -109,7 +108,7 @@ public class MyCalculator implements Calculator {
     }
 
 
-    private double calculateExpression(String postfixExpression) throws ParsingException {
+    private double calculateExpression(String postfixExpression) throws ParsingException{
         Stack<Double> calcStack = new Stack<>();
         for (int i = 0; i < postfixExpression.length(); ++i) {
             char symb = postfixExpression.charAt(i);
