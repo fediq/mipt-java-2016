@@ -15,7 +15,6 @@
         <module>homework-tests</module>
         <module>homework-g596-litvinov</module>
         <module>homework-g000-lavrentyev</module>
-        <module>homework-g597-shirokova</module>
         <module>homework-g594-shevkunov</module>
         <module>homework-g596-fattakhetdinov</module>
         <module>homework-g597-vasilyev</module>
@@ -23,6 +22,7 @@
         <module>homework-g597-kozlov</module>
         <module>homework-g597-dmitrieva</module>
         <module>homework-g596-ivanova</module>
+        <module>homework-g597-shirokova</module>
     </modules>
 
     <build>
