@@ -15,6 +15,7 @@
         <module>homework-tests</module>
 
         <module>homework-g000-lavrentyev</module>
+        <module>homework-g594-vorobeyv</module>
     </modules>
 
     <build>
