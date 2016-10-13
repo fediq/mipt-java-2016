@@ -29,17 +29,17 @@ public class SuperCalculator implements Calculator {
         StringBuffer result = new StringBuffer();
         // результирующее выражение, записанное в польской записи
         Character c = 'a';
-        Character c_last = 'a';
+        Character cLast = 'a';
         Integer numberPoint = 0;
-        for(int i = 0; i < expression.length(); i++) {
+        for(int i = 0; i < expression.length(); i++){
             // перебор элементов нашего выражения
             if (i > 0) {
-                c_last = c;
+                cLast = c;
             }
             c = expression.charAt(i);
-            if (ComponentsOfNumber.contains(c)) {
+            if (COMPONENTSOFNUMBER.contains(c)) {
                 // если данный символ является компонентой числа, то добавляем его к выходной строке - result
-                if (i > 0 && !ComponentsOfNumber.contains(c_last)) {
+                if (i > 0 && !COMPONENTSOFNUMBER.contains(cLast)) {
                     numberPoint = 0;
                 }
                 if (c == '.') {
@@ -51,7 +51,7 @@ public class SuperCalculator implements Calculator {
                 }
                 result.append(c);
                 unaryCheck = false;
-            } else if (MathematicalOperators.contains(c)) {
+            } else if (MATEMATICALOPERATORS.contains(c)) {
                 /* если символ является символом функции, то помещаем его в стек операторов - stack
                    (все опреаторы добавим в конце соответствующих операндов)*/
                 if (unaryCheck) {
@@ -77,8 +77,7 @@ public class SuperCalculator implements Calculator {
                         Character tmp = stack.pop();
                         if (getPriority(tmp) >= getPriority(c)) {
                             ((result.append(' ')).append(tmp)).append(' ');
-                        }
-                        else {
+                        } else {
                             stack.push(tmp);
                             /* приоритет данной операции меньше рассматриваемой и не меньше остальных лежащих в стеке,
                                 поэтому возвращаем ее и выходим из цикла*/
@@ -115,8 +114,9 @@ public class SuperCalculator implements Calculator {
                     throw new ParsingException("This is invalid expression");
                     /* если стек закончился раньше, чем мы встретили открывающую скобку, это означает,
                        что в выражении не согласованы скобки или неверно расставлены разделители в исходном выражении*/
-                }                unaryCheck = false;
-                unaryCheck = false;
+                } else {
+                    unaryCheck = false;
+                }
             } else {
                 throw new ParsingException("This is invalid symbol");
             }
@@ -125,7 +125,7 @@ public class SuperCalculator implements Calculator {
         while (!stack.empty()) {
             // выталкиваем оставшиеся элементы из стека и добавляем их в конец выражения
             Character tmp = stack.pop();
-            if (MathematicalOperators.contains(tmp) || tmp.equals('&')) {
+            if (MATEMATICALOPERATORS.contains(tmp) || tmp.equals('&')) {
                 result.append(' ').append(tmp).append(' ');
             } else {
                 throw new ParsingException("This is invalid expression");
@@ -150,7 +150,7 @@ public class SuperCalculator implements Calculator {
                 } else {
                     throw new ParsingException("This is invalid expression");
                 }
-            } else if (s.length() == 1 && MathematicalOperators.contains(s.charAt(0))) {
+            } else if (s.length() == 1 && MATEMATICALOPERATORS.contains(s.charAt(0))) {
                 // если это бинарный оператор, то применяем его к двум верхним элементам стека
                 if (stack.size() > 1) {
                     double operand2 = stack.pop();
@@ -203,9 +203,9 @@ public class SuperCalculator implements Calculator {
         }
     }
 
-    private static final Set<Character> MathematicalOperators = new HashSet<>(Arrays.asList('*', '/', '+', '-'));
+    private static final Set<Character> MATEMATICALOPERATORS = new HashSet<>(Arrays.asList('*', '/', '+', '-'));
     // математические операторы, которые могут встретиться в выражении
-    private static final Set<Character> ComponentsOfNumber = new HashSet<>(Arrays.asList(
+    private static final Set<Character> COMPONENTSOFNUMBER = new HashSet<>(Arrays.asList(
             '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '.'));
     // образующие числа - все цифры и точка, если число не целое
 }
