@@ -3,9 +3,9 @@ package ru.mipt.java2016.homework.g597.shirokova.task1;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
-import java.util.Stack;
-import java.util.HashSet;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Stack;
 
 class MyPerfectCalculator implements Calculator {
 
@@ -51,7 +51,7 @@ class MyPerfectCalculator implements Calculator {
                 return secondOperand * firstOperand;
 
             default:
-                return  secondOperand / firstOperand;
+                return secondOperand / firstOperand;
         }
     }
 
@@ -97,12 +97,12 @@ class MyPerfectCalculator implements Calculator {
                 if (countOfOpenedBrackets != 0) {
                     while (!stack.empty()) { // выталкиваем элементы из стека в итоговую строку
                         char currentSymbol = stack.pop();
-                            if (currentSymbol == '(') { // пока не найдем открывающую скобку
-                                --countOfOpenedBrackets;
-                                break;
-                            } else {
-                                postfixExpression.append(" ").append(currentSymbol);
-                            }
+                        if (currentSymbol == '(') { // пока не найдем открывающую скобку
+                            --countOfOpenedBrackets;
+                            break;
+                        } else {
+                            postfixExpression.append(" ").append(currentSymbol);
+                        }
                     }
                 } else {
                     throw new ParsingException("Wrong brackets balance");
