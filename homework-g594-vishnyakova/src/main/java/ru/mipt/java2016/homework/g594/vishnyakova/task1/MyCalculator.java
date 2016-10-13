@@ -12,21 +12,24 @@ import static java.lang.Character.*;
  */
 public class MyCalculator implements Calculator {
 
-    private static final double eps = 1E-5;
-    private LinkedList<Character> operations = new <Character>LinkedList();
-    private LinkedList<Double> numbers = new <Double>LinkedList();
-    /// public and private поля
+    private LinkedList<Character> operations = new<Character> LinkedList();
+    private LinkedList<Double> numbers = new<Double> LinkedList();
 
     @Override
     public double calculate(String expression) throws ParsingException {
 
-        if (expression == null) throw new ParsingException("Null expression");
-        if (haveSplitedNumbers(expression))
+        if (expression == null) {
+            throw new ParsingException("Null expression");
+        }
+        if (haveSplitedNumbers(expression)) {
             throw new ParsingException("Only space-symbols between numbers");
+        }
 
         expression = expression.replaceAll("\\s", "");
 
-        if (expression.equals("")) throw new ParsingException("Empty string");
+        if (expression.equals("")) {
+            throw new ParsingException("Empty string");
+        }
 
         expression = "(" + expression + ")";
 
@@ -56,8 +59,12 @@ public class MyCalculator implements Calculator {
                     lastNumber += digit(cur, 10);
                     continue;
                 }
-                if (hadDot) throw new ParsingException("Two or more dots in a number");
-                if (!readNumber) throw new ParsingException("Number starts with a dot");
+                if (hadDot) {
+                    throw new ParsingException("Two or more dots in a number");
+                }
+                if (!readNumber) {
+                    throw new ParsingException("Number starts with a dot");
+                }
                 hadDot = true;
                 afterDot = 1;
                 continue;
@@ -66,7 +73,9 @@ public class MyCalculator implements Calculator {
                 throw new ParsingException("Unknown symbol");
             }
             if (readNumber) {
-                if (hadDot && !hadSomeAfterDot) throw new ParsingException("Number like '1.'");
+                if (hadDot && !hadSomeAfterDot) {
+                    throw new ParsingException("Number like '1.'");
+                }
                 numbers.push(lastNumber);
                 lastNumber = 0;
                 hadDot = false;
@@ -81,11 +90,15 @@ public class MyCalculator implements Calculator {
                 char back = '^';
                 while (operations.size() != 0) {
                     back = operations.pop();
-                    if (back == '(') break;
+                    if (back == '(') {
+                        break;
+                    }
                     doOperation(back);
                 }
                 canBeUnary = false;
-                if (back != '(') throw new ParsingException("Broken brace balance");
+                if (back != '(') {
+                    throw new ParsingException("Broken brace balance");
+                }
                 continue;
             }
             if (canBeUnary && canUnary(cur)) {
@@ -103,28 +116,39 @@ public class MyCalculator implements Calculator {
             operations.push(cur);
             canBeUnary = true;
         }
-        if (numbers.size() != 1 || operations.size() != 0) throw new ParsingException("Wrong input");
+        if (numbers.size() != 1 || operations.size() != 0) {
+            throw new ParsingException("Wrong input");
+        }
         return numbers.pop();
     }
 
     private void doOperation(char c) throws ParsingException {
         if (isUnary(c)) {
-            if (numbers.size() < 1) throw new ParsingException("Not enough operands for unary operation");
+            if (numbers.size() < 1) {
+                throw new ParsingException("Not enough operands for unary operation");
+            }
             double x = numbers.pop();
-            if (c == '@') numbers.push(-x);
+            if (c == '@') {
+                numbers.push(-x);
+            }
             return;
         }
 
-        if (numbers.size() < 2) throw new ParsingException("Not enough operands for operation");
+        if (numbers.size() < 2) {
+            throw new ParsingException("Not enough operands for operation");
+        }
         double x = numbers.pop();
         double y = numbers.pop();
-        if (c == '+') numbers.push(y + x);
-        if (c == '-') numbers.push(y - x);
-        if (c == '*') numbers.push(y * x);
+        if (c == '+') {
+            numbers.push(y + x);
+        }
+        if (c == '-') {
+            numbers.push(y - x);
+        }
+        if (c == '*') {
+            numbers.push(y * x);
+        }
         if (c == '/') {
-            /*if (abs(x) < eps) {
-                throw new ParsingException("Division by zero");
-            }*/
             numbers.push(y / x);
         }
     }
@@ -142,7 +166,9 @@ public class MyCalculator implements Calculator {
     }
 
     char makeUnary(char c) {
-        if (c == '+') return '&';
+        if (c == '+') {
+            return '&';
+        }
         return '@';
     }
 
@@ -151,9 +177,15 @@ public class MyCalculator implements Calculator {
     }
 
     private int getPriority(char c) {
-        if (isUnary(c)) return 2;
-        if (c == '+' || c == '-') return 0;
-        if (c == '*' || c == '/') return 1;
+        if (isUnary(c)) {
+            return 2;
+        }
+        if (c == '+' || c == '-') {
+            return 0;
+        }
+        if (c == '*' || c == '/') {
+            return 1;
+        }
         return -1;
     }
 
@@ -161,7 +193,9 @@ public class MyCalculator implements Calculator {
         Character lastMeaning = '^';
         for (int i = 0; i < expression.length(); ++i) {
             if (isDigOrDot(lastMeaning) && isDigOrDot(expression.charAt(i))
-                    && !isDigOrDot(expression.charAt(i - 1))) return true;
+                    && !isDigOrDot(expression.charAt(i - 1))) {
+                return true;
+            }
             if (!isWhitespace(expression.charAt(i))) {
                 lastMeaning = expression.charAt(i);
             }
