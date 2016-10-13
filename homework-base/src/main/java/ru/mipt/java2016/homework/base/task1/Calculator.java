@@ -17,4 +17,8 @@ public interface Calculator {
      *                   не удалось распознать выражение
      */
     double calculate(String expression) throws ParsingException;
+
+    //double calculate(String expression) throws ParsingException;
+
+    //double calculate(String expression) throws ParsingException;
 }
