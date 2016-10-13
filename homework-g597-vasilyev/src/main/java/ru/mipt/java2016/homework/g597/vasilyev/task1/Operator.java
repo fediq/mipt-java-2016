@@ -1,7 +1,8 @@
 package ru.mipt.java2016.homework.g597.vasilyev.task1;
 
-import java.util.Stack;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
+
+import java.util.Stack;
 
 /**
  * Created by mizabrik on 10.10.16.
