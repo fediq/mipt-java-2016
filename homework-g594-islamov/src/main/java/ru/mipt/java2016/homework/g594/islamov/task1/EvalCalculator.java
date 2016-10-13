@@ -82,22 +82,19 @@ public class EvalCalculator implements Calculator {
                         || expression.charAt( cur_pos ) == '.' ) {
                 throw new ParsingException("Not a valid expression");
             }
-            if( expression.charAt( cur_pos ) == '+' )
-            {
+            if( expression.charAt( cur_pos ) == '+' ) {
                 result_pair = Multiplier( expression, cur_pos + 1, end_pos );
                 result += result_pair.first;
                 cur_pos = result_pair.second;
                 continue;
             }
-            if ( expression.charAt( cur_pos ) == '-' )
-            {
+            if ( expression.charAt( cur_pos ) == '-' ) {
                 result_pair = Multiplier( expression, cur_pos + 1, end_pos );
                 result -= result_pair.first;
                 cur_pos = result_pair.second;
                 continue;
             }
-            if ( expression.charAt( cur_pos ) == '/' )
-            {
+            if ( expression.charAt( cur_pos ) == '/' ) {
                 result_pair = Multiplier( expression, cur_pos + 1, end_pos );
                 result /= result_pair.first;
                 cur_pos = result_pair.second;
@@ -110,23 +107,26 @@ public class EvalCalculator implements Calculator {
     }
 
     private pair GetNextLexem( String expression, int cur_pos, int end_pos ) throws ParsingException {
+        int sign = 1;
         pair result_pair = new pair();
         double result = 0;
         double fractional_part = 0;
         int order = 0;
-        while( cur_pos < end_pos && IsNumber( expression.charAt( cur_pos ) ) )
-        {
+        if( cur_pos < end_pos && expression.charAt( cur_pos ) == '-') {
+            cur_pos += 1;
+            sign = -1;
+        }
+        while( cur_pos < end_pos && IsNumber( expression.charAt( cur_pos ) ) ) {
             result *= 10;
             result += expression.charAt(cur_pos) - ( int )'0';
             cur_pos += 1;
         }
         if( cur_pos < end_pos && expression.charAt( cur_pos ) == '.' ) {
             cur_pos += 1;
-            if( cur_pos == end_pos || !IsNumber( expression.charAt( cur_pos ) ) ){
+            if( cur_pos == end_pos || !IsNumber( expression.charAt( cur_pos ) ) ) {
                 throw new ParsingException("Not a valid expression");
             }
-            while( cur_pos < end_pos && IsNumber( expression.charAt( cur_pos ) ) )
-            {
+            while( cur_pos < end_pos && IsNumber( expression.charAt( cur_pos ) ) ) {
                 order += 1;
                 fractional_part *= 10;
                 fractional_part += expression.charAt( cur_pos ) - ( int )'0';
@@ -140,7 +140,7 @@ public class EvalCalculator implements Calculator {
             }
         result += fractional_part;
         }
-        result_pair.first = result;
+        result_pair.first = sign * result;
         result_pair.second = cur_pos;
         return result_pair;
     }
@@ -170,8 +170,7 @@ public class EvalCalculator implements Calculator {
             result = result_pair.first;
             cur_pos = result_pair.second;
         } else {
-            if( expression.charAt( cur_pos ) == '(' )
-            {
+            if( expression.charAt( cur_pos ) == '(' ) {
                 result_pair = EvaluateExpression( expression, cur_pos + 1, end_pos );
                 result = result_pair.first;
                 cur_pos = result_pair.second;
@@ -186,11 +185,16 @@ public class EvalCalculator implements Calculator {
         }
         result *= sign;
         cur_pos = SkipSpaces( expression, cur_pos, end_pos );
-        while( cur_pos < end_pos && ( expression.charAt( cur_pos ) == '*' )  )
-        {
+        while( cur_pos < end_pos && ( expression.charAt( cur_pos ) == '*' || expression.charAt( cur_pos ) == '/' ) ) {
+            char operation = expression.charAt( cur_pos );
             cur_pos = SkipSpaces( expression, cur_pos + 1, end_pos );
-            result_pair = Multiplier( expression, cur_pos, end_pos );
-            result *= result_pair.first;
+            if( operation == '*') {
+                result_pair = Multiplier( expression, cur_pos, end_pos );
+                result *= result_pair.first;
+            } else {
+                result_pair = GetNextLexem( expression, cur_pos, end_pos );
+                result /= result_pair.first;
+            }
             cur_pos = result_pair.second;
             cur_pos = SkipSpaces( expression, cur_pos, end_pos );
         }
