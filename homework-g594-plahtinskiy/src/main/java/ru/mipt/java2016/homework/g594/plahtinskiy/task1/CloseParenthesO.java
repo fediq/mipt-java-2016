@@ -8,7 +8,7 @@ import java.util.Stack;
 /**
  * Created by VadimPl on 13.10.16.
  */
-public final class CloseParenthesisOperator extends Lexeme {
+public final class CloseParenthesO extends Operations {
 
     @Override
     protected int priority() throws ParsingException {
@@ -21,15 +21,15 @@ public final class CloseParenthesisOperator extends Lexeme {
     }
 
     @Override
-    protected void makeOperation(Stack<NumberLexeme> results) throws ParsingException {
+    protected void makeOperation(Stack<CNumber> results) throws ParsingException {
         throw new ParsingException("Logical error: close parenthesis can't make any operation");
     }
 
     @Override
-    public void addLexeme(Stack<NumberLexeme> results, Stack<Lexeme> operations) throws Exception {
+    public void addLexeme(Stack<CNumber> results, Stack<Operations> operations) throws Exception {
         try {
             while (operations.peek().priority() != 0) {
-                Lexeme operation = operations.pop();
+                Operations operation = operations.pop();
                 operation.makeOperation(results);
             }
         } catch (EmptyStackException e) {

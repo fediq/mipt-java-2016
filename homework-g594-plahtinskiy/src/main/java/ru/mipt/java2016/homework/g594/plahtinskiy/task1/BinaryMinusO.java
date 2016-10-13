@@ -9,7 +9,7 @@ import java.util.Stack;
 /**
  * Created by VadimPl on 13.10.16.
  */
-public final class PlusOperator extends Lexeme {
+public final class BinaryMinusO extends Operations {
 
     @Override
     protected int priority() {
@@ -17,14 +17,13 @@ public final class PlusOperator extends Lexeme {
     }
 
     @Override
-    protected void makeOperation(Stack<NumberLexeme> results) throws ParsingException {
+    protected void makeOperation(Stack<CNumber> results) throws ParsingException {
         try {
-            NumberLexeme second = results.pop();
-            NumberLexeme first = results.pop();
-            results.push(new NumberLexeme(first.value + second.value));
+            CNumber second = results.pop();
+            CNumber first = results.pop();
+            results.push(new CNumber(first.value - second.value));
         } catch (EmptyStackException e) {
-            throw new ParsingException("Not enough arguments for plus operation");
+            throw new ParsingException("Not enough arguments for binary minus operation");
         }
     }
-
 }

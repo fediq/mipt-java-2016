@@ -8,13 +8,13 @@ import java.util.Stack;
  * Created by VadimPl on 13.10.16.
  */
 
-public final class NumberLexeme extends Lexeme {
+public final class CNumber extends Operations {
 
-    public NumberLexeme(double value) {
+    public CNumber(double value) {
         this.value = value;
     }
 
-    public NumberLexeme(String s) {
+    public CNumber(String s) {
         this.value = Double.valueOf(s);
     }
 
@@ -24,12 +24,12 @@ public final class NumberLexeme extends Lexeme {
     }
 
     @Override
-    protected void makeOperation(Stack<NumberLexeme> results) throws ParsingException {
+    protected void makeOperation(Stack<CNumber> results) throws ParsingException {
         throw new ParsingException("Logical error: NumberLexeme can't make any operation");
     }
 
     @Override
-    public void addLexeme(Stack<NumberLexeme> results, Stack<Lexeme> operations) throws ParsingException {
+    public void addLexeme(Stack<CNumber> results, Stack<Operations> operations) throws ParsingException {
         results.push(this);
     }
 

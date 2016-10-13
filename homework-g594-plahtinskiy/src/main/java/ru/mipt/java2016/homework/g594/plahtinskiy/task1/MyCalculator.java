@@ -19,11 +19,11 @@ public class MyCalculator implements Calculator {
         expression = "(" + expression.replaceAll("\\s", "") + ")";
         expression = MakeUnaryMinus( expression );
         StringTokenizer tokenizer = new StringTokenizer(expression, "+-*/~()", true);
-        Stack<NumberLexeme> results = new Stack<NumberLexeme>();
-        Stack<Lexeme> operations = new Stack<Lexeme>();
+        Stack<CNumber> results = new Stack<CNumber>();
+        Stack<Operations> operations = new Stack<Operations>();
         while (tokenizer.hasMoreTokens()) {
             String t = tokenizer.nextToken();
-            Lexeme lex = Lexeme.fromString(t);
+            Operations lex = Operations.fromString(t);
             try {
                 lex.addLexeme(results, operations);
             } catch (Exception e) {
