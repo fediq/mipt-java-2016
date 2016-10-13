@@ -15,13 +15,13 @@ class MyCalculator implements Calculator {
         line = expression.replaceAll(" ", "");
         line = line.replaceAll("\n", "");
         line = line.replaceAll("\t", "");
-        correct_bracket_sequence();
+        correctbracketsequence();
         line = line + "  ";
         index = 0;
         return addition();
     }
 
-    private void correct_bracket_sequence() throws ParsingException {
+    private void correctbracketsequence() throws ParsingException {
         int quantity = 0;
         char element;
         for (int i = 0; i < line.length(); i++) {
@@ -41,28 +41,39 @@ class MyCalculator implements Calculator {
         }
     }
 
-    private double number_recognition() throws ParsingException {
+    private double number() throws ParsingException {
         double result = 0;
-        int integer_part = 10;
-        double fractional_part = 1.;
-        boolean point_is = false;
+        int integer = 10;
+        double fractional = 1.;
+        boolean point = false;
         char element;
-        if (line.charAt(index) == '-')
+        if (line.charAt(index) == '-') {
             result *= -1;
-        for (; ; ) {
+        }
+        if (line.charAt(index) == '+') {
+            throw new ParsingException("Wrong symbol");
+        }
+        while (true) {
             element = line.charAt(index);
             index++;
-            if (((Character.getNumericValue(element) >= 0) && (Character.getNumericValue(element) <= 9)) || (element == '.')) {
-                if (point_is)
-                    fractional_part *= 0.1;
+            if (((Character.getNumericValue(element) >= 0) && (Character.getNumericValue(element) <= 9))
+                    || (element == '.')) {
+                if (point) {
+                    fractional *= 0.1;
+                }
                 if (element == '.') {
-                    point_is = true;
-                    integer_part = 1;
+                    if (!point) {
+                        point = true;
+                        integer = 1;
+                    } else {
+                        throw new ParsingException("Wrong symbol");
+                    }
                 } else {
-                    result = result * integer_part + Character.getNumericValue(element) * fractional_part;
+                    result = result * integer + Character.getNumericValue(element) * fractional;
                 }
             } else {
-                if ((element == '*') || (element == '/') || (element == '+') || (element == '-') || (element == ' ') || (element == '(') || (element == ')')) {
+                if ((element == '*') || (element == '/') || (element == '+') || (element == '-')
+                        || (element == ' ') || (element == '(') || (element == ')')) {
                     index--;
                     return result;
                 }
@@ -73,7 +84,7 @@ class MyCalculator implements Calculator {
 
     private double addition() throws ParsingException {
         double x = multiplication();
-        for (; ; ) {
+        while (true) {
             char element = line.charAt(index);
             index++;
             switch (element) {
@@ -90,37 +101,38 @@ class MyCalculator implements Calculator {
         }
     }
 
-    private double brackets_recognition() throws ParsingException {
+    private double brackets() throws ParsingException {
         char element = line.charAt(index);
         index++;
         if (element == '(') {
-            double partial_count = addition();
+            double partial = addition();
             index++;
-            return partial_count;
+            return partial;
         } else {
-            if (((Character.getNumericValue(element) >= 0) && (Character.getNumericValue(element) <= 9)) || element == '+' || element == '-' || element == '*' || element == '/') {
+            if (((Character.getNumericValue(element) >= 0) && (Character.getNumericValue(element) <= 9))
+                    || element == '+' || element == '-') {
                 index--;
-                return number_recognition();
+                return number();
             }
             throw new ParsingException("Wrong symbol");
         }
     }
 
     private double multiplication() throws ParsingException {
-        double partial_count = brackets_recognition();
-        for (; ; ) {
+        double partial = brackets();
+        while (true) {
             char element = line.charAt(index);
             index++;
             switch (element) {
                 case '*':
-                    partial_count *= brackets_recognition();
+                    partial *= brackets();
                     break;
                 case '/':
-                    partial_count /= brackets_recognition();
+                    partial /= brackets();
                     break;
                 default:
                     index--;
-                    return partial_count;
+                    return partial;
             }
         }
     }
