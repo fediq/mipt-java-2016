@@ -123,7 +123,8 @@ public class MyCalc implements Calculator {
         Stack<Double> results = new Stack<>();
         while (stream.hasNext()) {
             String s = stream.next();
-            if (s.length() == 1 && ((s.charAt(0) == '+') || (s.charAt(0) == '-') || (s.charAt(0) == '*') || (s.charAt(0) == '/')))
+            if (s.length() == 1 && ((s.charAt(0) == '+') || (s.charAt(0) == '-')
+                    || (s.charAt(0) == '*') || (s.charAt(0) == '/'))) {
                 if (results.size() > 1) {
                     double op2 = results.pop();
                     double op1 = results.pop();
@@ -131,7 +132,8 @@ public class MyCalc implements Calculator {
                     results.push(res);
                 } else {
                     throw new ParsingException("Invalid expression");
-                } else if (s.length() == 1 && s.charAt(0) == '~') {
+                }
+            } else if (s.length() == 1 && s.charAt(0) == '~') {
                 if (results.size() > 0) {
                     double op = results.pop();
                     results.push(op * -1);
@@ -147,11 +149,11 @@ public class MyCalc implements Calculator {
                 } else {
                     throw new ParsingException("Invalid expression");
                 }
-            }
-            if (results.size() == 1) {
-                return results.peek();
-            } else {
-                throw new ParsingException("Invalid expression");
-            }
+        }
+        if (results.size() == 1) {
+            return results.peek();
+        } else {
+            throw new ParsingException("Invalid expression");
+        }
     }
 }
