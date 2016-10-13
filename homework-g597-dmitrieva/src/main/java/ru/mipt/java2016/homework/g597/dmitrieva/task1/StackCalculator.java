@@ -60,6 +60,7 @@ public class StackCalculator implements Calculator {
 
             // Если пробельный символ, то игнориурем.
             if (currentSymbol == ' ' || currentSymbol == '\t' || currentSymbol == '\n') {
+                postfixLine.append(' ');
                 continue;
             }
 
@@ -193,3 +194,4 @@ public class StackCalculator implements Calculator {
         }
     }
 }
+
