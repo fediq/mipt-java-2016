@@ -4,32 +4,34 @@ import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
 import java.util.*;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.BufferOverflowException;
 
 
 /**
  * Created by Maxim Kochukov on 13/10/16.
  */
+
 public class MegaCalculator implements Calculator {
 
 
     private enum OperatorType {
         OperatorTypePlus(1), OperatorTypeMinus(2), OperatorTypeMultiply(3), OperatorTypeDivide(4);
-        final int priority;
-        OperatorType(int p) { priority = p; }
+        private final int priority;
+
+        OperatorType(int p) {
+            priority = p;
+        }
+
+        public int getPriority() {
+            return priority;
+        }
     }
 
     public final double calculate(final String expression) throws ParsingException {
         if (expression == null) {
             throw new ParsingException("Expression cannot be null");
         }
-        if ( expression.equals("") ) {
+        if (expression.equals("")) {
             throw new ParsingException("Expression cannot be empty");
         }
 
@@ -40,29 +42,29 @@ public class MegaCalculator implements Calculator {
         TokenStream ts = new TokenStream(localExpression);
         ArrayList<Token> tokenList = new ArrayList<>();
         Token token = ts.getToken();
-        while (token != null){
+        while (token != null) {
 
             tokenList.add(token);
             token = ts.getToken();
 
         }
-        tokenList = Pshekify(tokenList);
+        tokenList = convertToRPN(tokenList);
 
         return calculateTokenizedRPN(tokenList);
     }
 
-    public static ArrayList<Token> Pshekify(ArrayList<Token> input) {
+    public static ArrayList<Token> convertToRPN(ArrayList<Token> input) {
 
-        ArrayList<Token>  output = new ArrayList<>();
-        Deque<Token> stack  = new LinkedList<>();
+        ArrayList<Token> output = new ArrayList<>();
+        Deque<Token> stack = new LinkedList<>();
 
-        for ( Token token : input) {
+        for (Token token : input) {
             if (token instanceof Operator) { // If operator
                 Operator operator = (Operator) token;
 
-                while ( ! stack.isEmpty()
+                while (!stack.isEmpty()
                         && stack.peek() instanceof Operator
-                        && (((Operator)stack.peek()).getType().priority >= operator.getType().priority)) {
+                        && (((Operator) stack.peek()).getType().getPriority() >= operator.getType().getPriority())) {
                     output.add(stack.pop());
                 }
                 stack.push(operator);
@@ -72,17 +74,17 @@ public class MegaCalculator implements Calculator {
                 if (!brace.getType()) { // opening
                     stack.push(token);
                 } else { // closing
-                    while ( !stack.isEmpty() && !( stack.peek() instanceof Brace)) { // while not '('
+                    while (!stack.isEmpty() && !(stack.peek() instanceof Brace)) { // while not '('
                         output.add(stack.pop());
 
                     }
                     stack.pop();
                 }
-            }else { // If digit
+            } else { // If digit
                 output.add(token);
             }
         }
-        while ( ! stack.isEmpty()) {
+        while (!stack.isEmpty()) {
             output.add(stack.pop());
         }
         return output;
@@ -122,58 +124,55 @@ public class MegaCalculator implements Calculator {
         return numbers.peek().getValue();
     }
 
-    public String prepare(String expression) throws ParsingException{
+    public String prepare(String expression) throws ParsingException {
 
-        expression = expression.replaceAll("\\s+","");
-        expression = expression.replaceAll("\n","");
+        expression = expression.replaceAll("\\s+", "");
+        expression = expression.replaceAll("\n", "");
 
         // begining ; after opening brace ; after operation ;
 
-        if (!expression.isEmpty() && expression.charAt(0) == '-'){
-            expression = '~'+expression.substring(1);
+        if (!expression.isEmpty() && expression.charAt(0) == '-') {
+            expression = '~' + expression.substring(1);
         }
 
         Pattern unacceptablePairs = Pattern.compile("([+\\-*/]{2})|([(][+\\-*/])|\\(\\)");
         int balance = 0;
         char last = '!';
-        char cur;//([+-*/]{2})|([(][+-*/])|\(\)
+        char cur;
 
-
-        for (int i = 0 ; i < expression.length() ; i++ ) {
+        for (int i = 0; i < expression.length(); i++) {
             cur = expression.charAt(i);
-            if (last == '(' && cur == '-'){
-                String finish = (i == expression.length() - 1) ? "" : expression.substring(i+1);
-                expression = expression.substring(0,i) + '~' + finish;
+            if (last == '(' && cur == '-') {
+                String finish = (i == expression.length() - 1) ? "" : expression.substring(i + 1);
+                expression = expression.substring(0, i) + '~' + finish;
                 cur = '~';
-            }else if ("+-;/".indexOf(last) >= 0 && cur == '-'){
-                String finish = (i == expression.length() - 1) ? "" : expression.substring(i+1);
-                expression = expression.substring(0,i) + '~' + finish;
+            } else if ("+-;/".indexOf(last) >= 0 && cur == '-') {
+                String finish = (i == expression.length() - 1) ? "" : expression.substring(i + 1);
+                expression = expression.substring(0, i) + '~' + finish;
                 cur = '~';
             }
-            if (cur == '(')
+            if (cur == '(') {
                 balance++;
-            else if (cur == ')')
+            } else if (cur == ')') {
                 balance--;
+            }
 
-
-            if (unacceptablePairs.matcher(Character.toString(last) + cur).matches())
+            if (unacceptablePairs.matcher(Character.toString(last) + cur).matches()) {
                 throw new ParsingException("Invalid characters position");
-
-
+            }
 
             last = cur;
         }
 
-        if (balance != 0)
+        if (balance != 0) {
             throw new ParsingException("Unbalanced parentheses");
-
+        }
         Pattern invalidCharCheck = Pattern.compile("[~\\d\\(\\)\\+\\-\\*\\/\\.]+");
-        if (!invalidCharCheck.matcher(expression).matches())
+        if (!invalidCharCheck.matcher(expression).matches()) {
             throw new ParsingException("Invalid characters");
-
+        }
         return expression;
     }
-
 
 
     private class TokenStream {
@@ -182,49 +181,49 @@ public class MegaCalculator implements Calculator {
         private boolean full;
         private String expression;
 
-        TokenStream(final String expression_) {
-            expression = expression_;
+        TokenStream(final String expr) {
+            expression = expr;
             buffer = null;
             full = false;
         }
 
-        public Token getToken() throws ParsingException{
+        public Token getToken() throws ParsingException {
 
             if (expression.length() == 0) {
                 return null;
             }
 
-            if (full){
+            if (full) {
                 full = false;
                 return buffer;
             }
             char c = getChar();
             Token token;
 
-            if ("()".indexOf(c) >= 0){
+            if ("()".indexOf(c) >= 0) {
                 token = new Brace(c);
-            } else if ("+-*/".indexOf(c) >= 0){
+            } else if ("+-*/".indexOf(c) >= 0) {
                 token = new Operator(c);
-            }else if ("0123456789~".indexOf(c) >= 0){
+            } else if ("0123456789~".indexOf(c) >= 0) {
                 token = new Number(getNumber(c));
-            }else {
+            } else {
                 throw new ParsingException("Unexpected symbol");
             }
 
             return token;
         }
 
-        public void pushToken(Token buffer_) throws ParsingException {
-            if (full == false) {
+        public void pushToken(Token buf) throws ParsingException {
+            if (!full) {
                 full = true;
-                buffer = buffer_;
-            }else{
+                buffer = buf;
+            } else {
                 throw new ParsingException("TokenStream buffer already full");
             }
         }
 
-        private char getChar(){
-            if (expression.length() == 0 ) {
+        private char getChar() {
+            if (expression.length() == 0) {
                 return 0;
             }
             char retval = expression.charAt(0);
@@ -232,16 +231,16 @@ public class MegaCalculator implements Calculator {
             return retval;
         }
 
-        private double getNumber(final char c) throws ParsingException{
+        private double getNumber(final char c) throws ParsingException {
 
             String numberString = (c == '~') ? "-" : Character.toString(c);
 
             boolean singleDotPresent = false;
 
-            while (!expression.isEmpty() && ".0123456789".indexOf( expression.charAt(0) ) >= 0) {
+            while (!expression.isEmpty() && ".0123456789".indexOf(expression.charAt(0)) >= 0) {
                 char cur = getChar();
-                if (cur == '.'){
-                    if (singleDotPresent){
+                if (cur == '.') {
+                    if (singleDotPresent) {
                         throw new ParsingException("Multiple dots present in one number");
                     }
                     singleDotPresent = true;
@@ -251,7 +250,7 @@ public class MegaCalculator implements Calculator {
             }
             if (numberString.equals("-")) {
                 numberString = "-1";
-                expression = "*"+expression;
+                expression = "*" + expression;
             }
 
             return Double.parseDouble(numberString);
@@ -263,7 +262,8 @@ public class MegaCalculator implements Calculator {
 
     private abstract class Token {
         protected String visualRepresentation;
-        public String getVisualRepresentation(){
+
+        public String getVisualRepresentation() {
             return visualRepresentation;
         }
     }
@@ -272,23 +272,27 @@ public class MegaCalculator implements Calculator {
 
         private double value;
 
-        Number(final double value_) {
-            value = value_;
+        Number(final double val) {
+            value = val;
             visualRepresentation = new Double(value).toString();
         }
 
         public double getValue() {
             return value;
         }
-        public double add(Number n){
+
+        public double add(Number n) {
             return value + n.getValue();
         }
-        public double substract(Number n){
-            return  n.getValue() - value;
+
+        public double substract(Number n) {
+            return n.getValue() - value;
         }
-        public double multiply(Number n){
+
+        public double multiply(Number n) {
             return value * n.getValue();
         }
+
         public double divide(Number n) {
             return n.getValue() / value;
         }
@@ -300,7 +304,7 @@ public class MegaCalculator implements Calculator {
 
         private OperatorType type;
 
-        Operator(final char symbol) throws ParsingException{
+        Operator(final char symbol) throws ParsingException {
 
             visualRepresentation = Character.toString(symbol);
 
@@ -318,12 +322,12 @@ public class MegaCalculator implements Calculator {
                     type = OperatorType.OperatorTypeDivide;
                     break;
                 default:
-                   throw new ParsingException("Unknown operator symbol");
+                    throw new ParsingException("Unknown operator symbol");
             }
 
         }
 
-        public OperatorType getType(){
+        public OperatorType getType() {
             return type;
         }
     }
@@ -332,7 +336,7 @@ public class MegaCalculator implements Calculator {
 
         private boolean type; // 0 - opening ; 1 – closing
 
-        Brace(final char symbol) throws ParsingException{
+        Brace(final char symbol) throws ParsingException {
 
             visualRepresentation = Character.toString(symbol);
 
@@ -348,7 +352,7 @@ public class MegaCalculator implements Calculator {
             }
         }
 
-        public boolean getType(){
+        public boolean getType() {
             return type;
         }
 

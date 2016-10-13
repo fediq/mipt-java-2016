@@ -2,55 +2,21 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <artifactId>mipt-java-2016</artifactId>
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
+    <parent>
+        <artifactId>mipt-java-2016</artifactId>
+        <groupId>ru.mipt.java2016</groupId>
+        <version>1.0.0</version>
+    </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>homework-g597-kochukov</groupId>
-    <version>1.0.0</version>
+    <artifactId>homework-g597-kochukov</artifactId>
     <dependencies>
         <dependency>
             <groupId>ru.mipt.java2016</groupId>
             <artifactId>homework-tests</artifactId>
             <version>1.0.0</version>
         </dependency>
-        <dependency>
-            <groupId>ru.mipt.java2016</groupId>
-            <artifactId>homework-base</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>ru.mipt.java2016</groupId>
-            <artifactId>homework-base</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>ru.mipt.java2016</groupId>
-            <artifactId>homework-base</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>ru.mipt.java2016</groupId>
-            <artifactId>homework-tests</artifactId>
-            <version>1.0.0</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>ru.mipt.java2016</groupId>
-            <artifactId>homework-base</artifactId>
-            <version>1.0.0</version>
-        </dependency>
+
         <dependency>
             <groupId>ru.mipt.java2016</groupId>
             <artifactId>homework-base</artifactId>
