@@ -12,52 +12,51 @@ import java.util.Stack;
  */
 public class MyCalculator implements Calculator {
 
-    private enum TokenType{
+    private enum TokenType {
         FUNCTION, OPERAND
     }
 
-    private class Token
-    {
+    private class Token {
         private TokenType type;
-        public TokenType getType(){
+
+        public TokenType getType() {
             return type;
         }
     }
 
-    private class Operand extends Token{
+    private class Operand extends Token {
         private double value;
 
-        public Operand(double value_){
-            value = value_;
+        Operand(double value) {
+            this.value = value;
             super.type = TokenType.OPERAND;
         }
 
-        public double getValue(){
+        double getValue() {
             return value;
         }
     }
 
-    private class Function extends Token{
+    private class Function extends Token {
 
-        public Function(char symbol_, int argumentsCount_) throws ParsingException{
+        Function(char symbol, int argumentsCount) throws ParsingException {
             super.type = TokenType.FUNCTION;
-            symbol = symbol_;
-            argumentsCount = argumentsCount_;
+            this.symbol = symbol;
+            this.argumentsCount = argumentsCount;
 
-            switch(symbol) {
+            switch (symbol) {
                 case '(':
                 case ')':
                     priority = -1;
                     break;
                 case '+':
                 case '-':
-                     if (argumentsCount == 1) {
-                         priority = 1;
-                     }
-                     else {
-                         priority = 3;
-                     }
-                     break;
+                    if (argumentsCount == 1) {
+                        priority = 1;
+                    } else {
+                        priority = 3;
+                    }
+                    break;
                 case '*':
                 case '/':
                     priority = 2;
@@ -67,23 +66,21 @@ public class MyCalculator implements Calculator {
             }
         }
 
-        public Operand calculate(ArrayList<Operand> arguments) throws ParsingException{
+        Operand calculate(ArrayList<Operand> arguments) throws ParsingException {
             int argumentsSize = arguments.size();
-            switch(symbol){
+            switch (symbol) {
                 case '-':
-                    if (argumentsCount == 2){   //binary
+                    if (argumentsCount == 2) {   //binary
                         return new Operand(arguments.get(argumentsSize - 1).getValue() -
                                 arguments.get(argumentsSize - 2).getValue());
-                    }
-                    else{    //unary
-                        return new Operand(-arguments.get(argumentsSize- 1).getValue());
+                    } else {    //unary
+                        return new Operand(-arguments.get(argumentsSize - 1).getValue());
                     }
                 case '+':
-                    if (argumentsCount == 2){   //binary
+                    if (argumentsCount == 2) {   //binary
                         return new Operand(arguments.get(argumentsSize - 1).getValue() +
                                 arguments.get(argumentsSize - 2).getValue());
-                    }
-                    else{    //unary
+                    } else {    //unary
                         return new Operand(arguments.get(argumentsSize - 1).getValue());
                     }
                 case '*':
@@ -98,13 +95,15 @@ public class MyCalculator implements Calculator {
             }
         }
 
-        public int getPriority (){
+        int getPriority() {
             return priority;
         }
-        public int getArgumentsCount(){
+
+        int getArgumentsCount() {
             return argumentsCount;
         }
-        public int getSymbol(){
+
+        int getSymbol() {
             return symbol;
         }
 
@@ -120,9 +119,9 @@ public class MyCalculator implements Calculator {
         Token previousToken = new Function(')', 1);
 
         token = getToken(expression, previousToken);
-        while (token != null){
-            if (token.getType() == TokenType.FUNCTION){
-                if (((Function)token).getSymbol() == ')') {
+        while (token != null) {
+            if (token.getType() == TokenType.FUNCTION) {
+                if (((Function) token).getSymbol() == ')') {
                     while (!functions.empty() && functions.peek().getSymbol() != '(') {
                         popFunction();
                     }
@@ -130,25 +129,23 @@ public class MyCalculator implements Calculator {
                         throw new ParsingException("Invalid brackets");
                     }
                     functions.pop();
-                }
-                else{
-                    while (canPop((Function)token)){
+                } else {
+                    while (canPop((Function) token)) {
                         popFunction();
                     }
-                    functions.push((Function)token);
+                    functions.push((Function) token);
                 }
-            }
-            else{
+            } else {
                 operands.push((Operand) token);
             }
             ++pos;
             previousToken = token;
             token = getToken(expression, previousToken);
         }
-        if (operands.size() > 1 || !functions.empty()){
+        if (operands.size() > 1 || !functions.empty()) {
             throw new ParsingException("Invalid expression");
         }
-        if (operands.empty()){
+        if (operands.empty()) {
             throw new ParsingException("Empty string");
         }
         double result = operands.peek().getValue();
@@ -158,7 +155,7 @@ public class MyCalculator implements Calculator {
 
     private void popFunction() throws ParsingException {
         Function function = functions.peek();
-        if (function.getArgumentsCount() > operands.size()){
+        if (function.getArgumentsCount() > operands.size()) {
             throw new ParsingException("Operands Exception");
         }
 
@@ -171,30 +168,28 @@ public class MyCalculator implements Calculator {
         functions.pop();
     }
 
-    private void readSpaces (String s){
-        while (pos < s.length() && Character.isWhitespace(s.charAt(pos))){
+    private void readSpaces(String s) {
+        while (pos < s.length() && Character.isWhitespace(s.charAt(pos))) {
             ++pos;
         }
     }
 
-    private Function readFunction (String s, Token previousToken) throws ParsingException{
+    private Function readFunction(String s, Token previousToken) throws ParsingException {
         if ((s.charAt(pos) == '+' || s.charAt(pos) == '-') &&
                 previousToken.getType() == TokenType.FUNCTION &&
-                ((Function)previousToken).getSymbol() != ')') { //unary + or -
+                ((Function) previousToken).getSymbol() != ')') { //unary + or -
             return new Function(s.charAt(pos), 1);
-        }
-        else if (s.charAt(pos) == '(' || s.charAt(pos) == ')'){
+        } else if (s.charAt(pos) == '(' || s.charAt(pos) == ')') {
             return new Function(s.charAt(pos), 0);
-        }
-        else{
+        } else {
             return new Function(s.charAt(pos), 2);
         }
     }
 
-    private String readDouble (String s){
+    private String readDouble(String s) {
         String result = "";
         while (pos < s.length() &&
-                (Character.isDigit(s.charAt(pos)) || s.charAt(pos) == '.')){
+                (Character.isDigit(s.charAt(pos)) || s.charAt(pos) == '.')) {
             result += s.charAt(pos++);
         }
         --pos;
@@ -202,26 +197,24 @@ public class MyCalculator implements Calculator {
     }
 
 
-    private Token getToken (String s, Token previousToken) throws ParsingException{
+    private Token getToken(String s, Token previousToken) throws ParsingException {
         readSpaces(s);
-        if (pos == s.length()){ // End of Line
+        if (pos == s.length()) { // End of Line
             return null;
         }
-        if (Character.isDigit(s.charAt(pos))){
+        if (Character.isDigit(s.charAt(pos))) {
             try {
                 return new Operand(Double.parseDouble(readDouble(s)));
-            }
-            catch (NumberFormatException e){
+            } catch (NumberFormatException e) {
                 throw new ParsingException("Double parsing exception");
             }
-        }
-        else{
+        } else {
             return readFunction(s, previousToken);
         }
     }
 
-    private boolean canPop (Function operation) throws ParsingException {
-        if (functions.empty()){
+    private boolean canPop(Function operation) throws ParsingException {
+        if (functions.empty()) {
             return false;
         }
         int priority1 = operation.getPriority();
