@@ -31,7 +31,7 @@ public class SuperCalculator implements Calculator {
         Character c = 'a';
         Character cLast = 'a';
         Integer numberPoint = 0;
-        for(int i = 0; i < expression.length(); i++){
+        for (int i = 0; i < expression.length(); i++) {
             // перебор элементов нашего выражения
             if (i > 0) {
                 cLast = c;
@@ -172,8 +172,7 @@ public class SuperCalculator implements Calculator {
         if (stack.size() == 1) {
             return stack.pop();
             // в конце стека остается один элемент, который и оказывается результатом
-        }
-        else {
+        } else {
             throw new ParsingException("This is invalid expression");
         }
     }
