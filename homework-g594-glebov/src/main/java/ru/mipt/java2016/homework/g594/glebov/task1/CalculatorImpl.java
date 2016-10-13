@@ -3,10 +3,6 @@ package ru.mipt.java2016.homework.g594.glebov.task1;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.DoubleSummaryStatistics;
 import java.util.Stack;
 
 /**
@@ -15,25 +11,23 @@ import java.util.Stack;
 
 public class CalculatorImpl implements Calculator {
     public double calculate(String expression) throws ParsingException {
-        if(expression == null) {
+        if (expression == null) {
             throw new ParsingException("Null expression");
         }
         String polishNotation = getPolishNotation(expression.replaceAll("\\s", ""));
         return calculatePolishNotation(polishNotation);
     }
 
-    private String getPolishNotation (String expression) throws ParsingException {
-        Stack<Character> stack = new Stack<Character>();
-        StringBuilder answer = new StringBuilder();
+    private void checkBugs(String expression) throws ParsingException {
         int flag = 0; // Флаг, показывает, начали ли мы писать число в стек(1) или нет(0)
         int dotflag = 0; // Флаг, показывает, была ли в нашем числе точка
-        int unflag = 0; // Проверяем, что перед каждым числом не больше одного унарного операнда
         int opflag = 0; // Проверяем, что нет несколких операндов подряд
         int notemptyflag = 0; // Проверяем, что строка не пуста
         char[] expr = expression.toCharArray();
         for (int i = 0; i < expr.length; i++) { // Предобработка, проверяем, что в с числами все хорошо
             char c = expr[i];
-            if ((c >= '0' && c <= '9') || c == ' ' || c == '*' || c == '/' || c == '+' || c == '-' || c == '(' || c == ')' || c == '.') {
+            if ((c >= '0' && c <= '9') || c == ' ' || c == '*' || c == '/' || c == '+' || c == '-' || c == '(' ||
+                    c == ')' || c == '.') {
                 if (c >= '0' && c <= '9') {
                     opflag = 0;
                     notemptyflag = 1;
@@ -60,7 +54,7 @@ public class CalculatorImpl implements Calculator {
                     dotflag = 0;
                 }
                 if (c == '*' || c == '/' || c == '+' || c == '-') {
-                    if(flag == 0 && c != '-') {
+                    if (flag == 0 && c != '-') {
                         throw new ParsingException("We have only one argument for binary operator");
                     }
                     if (opflag >= 1 && !(flag == 0 && c == '-')) {
@@ -77,21 +71,22 @@ public class CalculatorImpl implements Calculator {
             }
         }
 
-        if(opflag != 0) {
+        if (opflag != 0) {
             throw new ParsingException("There is false operator");
         }
         if (notemptyflag == 0) {
             throw new ParsingException("There are no numbers in string");
         }
-        flag = 0;
-        dotflag = 0;
-        opflag = 0;
-        notemptyflag = 0;
-        unflag = 0; // Отвечает за унарный минус. Равен 0, если может быть унарным, 1 если не может ( при числе или ')' )
+    }
 
+    private String getPolishNotation(String expression) throws ParsingException {
+        Stack<Character> stack = new Stack<Character>();
+        StringBuilder answer = new StringBuilder();
+        int flag = 0; // Флаг, показывает, начали ли мы писать число в стек(1) или нет(0)
+        int unflag = 0; // Проверяем, что перед каждым числом не больше одного унарного операнда
+        checkBugs(expression);
         expression = expression + '|';
-        expr = expression.toCharArray();
-
+        char[] expr = expression.toCharArray();
         for (int i = 0; i < expr.length; i++) {
             char c = expr[i];
             if (c >= '0' && c <= '9') {
@@ -113,16 +108,15 @@ public class CalculatorImpl implements Calculator {
             }
             if (c == '*' || c == '(' || c == '/' || c == '+' || c == '-' || c == ')' || c == '|') {
                 if (stack.empty()) {
-                    if(c == '-' && unflag == 0) {
+                    if (c == '-' && unflag == 0) {
                         stack.push('&');
                     } else {
                         stack.push(c);
                     }
                     flag = 0;
-                    if(c == '*' || c == '/' || c == '+' || c == '(') {
+                    if (c == '*' || c == '/' || c == '+' || c == '(') {
                         unflag = 0;
-                    }
-                    else {
+                    } else {
                         unflag = 1;
                     }
                 } else {
@@ -132,7 +126,7 @@ public class CalculatorImpl implements Calculator {
                             flag = 0;
                         }
                         if (stack.empty()) {
-                            if(c == '-' && unflag == 0) {
+                            if (c == '-' && unflag == 0) {
                                 stack.push('&');
                             } else {
                                 stack.push(c);
@@ -143,23 +137,15 @@ public class CalculatorImpl implements Calculator {
                         if (c == '|' && stack.peek() == '(') {
                             throw new ParsingException("Incorrect balance");
                         }
-                        if (c == '|' && (stack.peek() == '&' || stack.peek() == '*' || stack.peek() == '/' || stack.peek() == '+' || stack.peek() == '-')) {
+                        if (c == '|' && (stack.peek() == '&' || stack.peek() == '*' || stack.peek() == '/' ||
+                                stack.peek() == '+' || stack.peek() == '-')) {
                             char c1 = stack.pop();
                             answer.append(' ');
                             answer.append(c1);
                             continue;
                         }
-                        if (c == '(') {
-                            stack.push(c);
-                            unflag = 0;
-                            break;
-                        }
-                        if ((c == '+' || c == '*' || c == '/') && stack.peek() == '(') {
-                            stack.push(c);
-                            unflag = 0;
-                            break;
-                        }
-                        if ((c == '*' || c == '/') && (stack.peek() == '+' || stack.peek() == '-')) {
+                        if (c == '(' || ((c == '+' || c == '*' || c == '/') && stack.peek() == '(') ||
+                                ((c == '*' || c == '/') && (stack.peek() == '+' || stack.peek() == '-'))) {
                             stack.push(c);
                             unflag = 0;
                             break;
@@ -169,7 +155,8 @@ public class CalculatorImpl implements Calculator {
                             unflag = 1;
                             break;
                         }
-                        if (c == ')' && (stack.peek() == '*' || stack.peek() == '/' || stack.peek() == '+' || stack.peek() == '-')) {
+                        if (c == ')' && (stack.peek() == '*' || stack.peek() == '/' || stack.peek() == '+' ||
+                                stack.peek() == '-')) {
                             char c1 = stack.pop();
                             unflag = 1;
                             answer.append(' ');
@@ -203,16 +190,17 @@ public class CalculatorImpl implements Calculator {
                         }
                         if (c == '-' && stack.peek() == '(') {
                             stack.push(c);
-                            if(unflag == 0) {
+                            if (unflag == 0) {
                                 unflag = 2;
                             }
                             break;
                         }
-                        if (c == '-' && (stack.peek() == '*' || stack.peek() == '/' || stack.peek() == '+' || stack.peek() == '-')) {
+                        if (c == '-' && (stack.peek() == '*' || stack.peek() == '/' || stack.peek() == '+' ||
+                                stack.peek() == '-')) {
                             char c1 = stack.pop();
                             answer.append(' ');
                             answer.append(c1);
-                            if(unflag == 0) {
+                            if (unflag == 0) {
                                 unflag = 2;
                             }
                             continue;
@@ -222,7 +210,8 @@ public class CalculatorImpl implements Calculator {
                             unflag = 0;
                             break;
                         }
-                        if ((c == '*' || c == '/' || c == '+' || c == '-' || c == ')' || c == '|') && stack.peek() == '&') {
+                        if ((c == '*' || c == '/' || c == '+' || c == '-' || c == ')' || c == '|') &&
+                                stack.peek() == '&') {
                             char c1 = stack.pop();
                             answer.append(' ');
                             answer.append(c1);
@@ -259,10 +248,10 @@ public class CalculatorImpl implements Calculator {
         int dotflag = 0; // Показывает, встретили ли мы точку в момент чтения числа
         int pow = 1;
         int sign = 1;
-        for(int i = 0; i < expr.length; i++) {
+        for (int i = 0; i < expr.length; i++) {
             char c = expr[i];
             if (c == ' ') {
-                if(numflag == 1) {
+                if (numflag == 1) {
                     stack.push(curNumber * sign);
                     dotflag = 0;
                     curNumber = 0.0;
@@ -271,8 +260,7 @@ public class CalculatorImpl implements Calculator {
                     pow = 1;
                     continue;
                 }
-            }
-            else if (c == '*' || c == '/' || c == '+' || c == '-' || c == '&') {
+            } else if (c == '*' || c == '/' || c == '+' || c == '-' || c == '&') {
                 if (c == '&') {
                     Double a = stack.pop();
                     a = -1 * a;
@@ -286,25 +274,21 @@ public class CalculatorImpl implements Calculator {
                 Double b = stack.pop();
                 a = calcOperator(a, b, c);
                 stack.push(a);
-            }
-            else if (c == '.') {
+            } else if (c == '.') {
                 dotflag = 1;
-            }
-            else if (c >= '0' && c <= '9') {
+            } else if (c >= '0' && c <= '9') {
                 numflag = 1;
-                if(dotflag == 0) {
+                if (dotflag == 0) {
                     curNumber = curNumber * 10 + Character.getNumericValue(c);
-                }
-                else {
+                } else {
                     curNumber = curNumber + Character.getNumericValue(c) * Math.pow(10, -1 * pow);
                     pow = pow + 1;
                 }
-            }
-            else {
+            } else {
                 throw new ParsingException("Wrong Symbol");
             }
         }
-        if(stack.size() != 1) {
+        if (stack.size() != 1) {
             throw new ParsingException("Incorrect string");
         }
         return stack.peek();
