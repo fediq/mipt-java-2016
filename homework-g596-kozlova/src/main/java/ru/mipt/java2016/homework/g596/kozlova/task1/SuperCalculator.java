@@ -27,7 +27,7 @@ public class SuperCalculator implements Calculator {
             if (ComponentsOfNumber.contains(c)) {                                               // если данный символ является компонентой числа, то добавляем его к выходной строке - result
                 if (i > 0 && !ComponentsOfNumber.contains(c_last)) numberPoint = 0;
                 if (c == '.') numberPoint++;
-                if (numberPoint > 1) throw new ParsingException("This is invalid expression");
+                if (numberPoint > 1) throw new ParsingException("This is invalid expression");  // в числе не больше 1 точки
                 result.append(c);
                 unaryCheck = false;
             } else if (MathematicalOperators.contains(c)) {                                     /* если символ является символом функции, то помещаем его в стек операторов - stack
