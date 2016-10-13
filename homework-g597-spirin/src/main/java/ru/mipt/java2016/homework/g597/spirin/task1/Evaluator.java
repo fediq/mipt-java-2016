@@ -1,7 +1,5 @@
 package ru.mipt.java2016.homework.g597.spirin.task1;
 
-import java.util.Stack;
-
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
