@@ -55,7 +55,7 @@ class EvaluatorHelper {
     return result;
   }
 
-  // Evaluating the whole expression
+  // Evaluation the whole expression
   private double processExpression() throws ParsingException {
     double result = processTerm();
 
@@ -88,7 +88,7 @@ class EvaluatorHelper {
     return result;
   }
 
-  // Evaluating factors of the expression
+  // Evaluation factors of the expression
   private double processFactor() throws ParsingException {
     if (tryCaptureChar('-')) {
       return -processFactor();
