@@ -13,6 +13,7 @@
     <modules>
         <module>homework-base</module>
         <module>homework-tests</module>
+        <module>homework-g596-litvinov</module>
         <module>homework-g000-lavrentyev</module>
         <module>homework-g594-shevkunov</module>
         <module>homework-g595-romanenko</module>
