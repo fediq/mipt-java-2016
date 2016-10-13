@@ -8,10 +8,10 @@ import java.util.Stack;
 public class MyFirstCalculator implements ru.mipt.java2016.homework.base.task1.Calculator {
 
     private class Element {
-        public int type = 0;
-        public double value = 0;
-        public char symbol = ' ';
-        public boolean isUnary = false;
+        private int type = 0;
+        private double value = 0;
+        private char symbol = ' ';
+        private boolean isUnary = false;
 
         Element(int t, double v, char c) {
             type = t;
@@ -21,7 +21,7 @@ public class MyFirstCalculator implements ru.mipt.java2016.homework.base.task1.C
     }
 
     private String equation;
-    private int iter_begin = 0;
+    private int iterBegin = 0;
     private boolean prevMinus = false;
     private boolean prevOper = false;
     private boolean prevSkob = true;
@@ -81,8 +81,9 @@ public class MyFirstCalculator implements ru.mipt.java2016.homework.base.task1.C
                 ans = true;
             }
         }
-        if (balance > 0)
+        if (balance > 0) {
             ans = true;
+        }
         return ans;
     }
 
@@ -103,7 +104,7 @@ public class MyFirstCalculator implements ru.mipt.java2016.homework.base.task1.C
         int newType = 0;
         double newValue = 0;
         char newSymbol = ' ';
-        int i = iter_begin;
+        int i = iterBegin;
         if (i < equation.length()) {
             while ((i < equation.length()) && Character.isWhitespace(equation.charAt(i))) {
                 i++;
@@ -117,7 +118,8 @@ public class MyFirstCalculator implements ru.mipt.java2016.homework.base.task1.C
             } else {
                 if (Character.isDigit(equation.charAt(i))) {
                     StringBuilder subString = new StringBuilder();
-                    while ((i < equation.length()) && (Character.isDigit(equation.charAt(i)) || (equation.charAt(i) == '.'))) {
+                    while ((i < equation.length()) && (Character.isDigit(equation.charAt(i))
+                            || (equation.charAt(i) == '.'))) {
                         subString.append(equation.charAt(i));
                         i++;
                     }
@@ -132,7 +134,7 @@ public class MyFirstCalculator implements ru.mipt.java2016.homework.base.task1.C
                 }
             }
         }
-        iter_begin = i;
+        iterBegin = i;
         return new Element(newType, newValue, newSymbol);
     }
 
@@ -173,15 +175,18 @@ public class MyFirstCalculator implements ru.mipt.java2016.homework.base.task1.C
                 if (prevOper && (nextElement.symbol == '-')) {
                     nextElement.isUnary = true;
                     iQ.push(nextElement);
-                }
-                else {
-                    if ((prevOper) && (!prevSkob) && (nextElement.symbol == ')'))
+                } else {
+                    if ((prevOper) && (!prevSkob) && (nextElement.symbol == ')')) {
                         throw new ParsingException("incorrect operations order");
-                    if ((prevOper) && (!prevSkob) && (nextElement.symbol != '('))
+                    }
+                    if ((prevOper) && (!prevSkob) && (nextElement.symbol != '(')) {
                         throw new ParsingException("incorrect operations order");
+                    }
 
                     if (getOperationPriority(nextElement.symbol) > 0) {
-                        while ((!iQ.empty()) && (getOperationPriority(iQ.elementAt(iQ.size() - 1).symbol) >= (getOperationPriority(nextElement.symbol)))) {
+                        while ((!iQ.empty())
+                                && (getOperationPriority(iQ.elementAt(iQ.size() - 1).symbol)
+                                >= (getOperationPriority(nextElement.symbol)))) {
                             Element newElement = iQ.lastElement();
                             iQ.pop();
                             eQ.push(newElement);
@@ -192,19 +197,21 @@ public class MyFirstCalculator implements ru.mipt.java2016.homework.base.task1.C
                         if (nextElement.symbol != ')') {
                             iQ.push(nextElement);
                         } else {
-                            while ((!iQ.empty()) && (getOperationPriority(iQ.elementAt(iQ.size() - 1).symbol) > (getOperationPriority(nextElement.symbol)))) {
+                            while ((!iQ.empty()) &&
+                                    (getOperationPriority(iQ.elementAt(iQ.size() - 1).symbol)
+                                            > (getOperationPriority(nextElement.symbol)))) {
                                 Element newElement = iQ.lastElement();
                                 iQ.pop();
                                 eQ.push(newElement);
                             }
-                            if (!iQ.empty())
+                            if (!iQ.empty()) {
                                 iQ.pop();
+                            }
                         }
                     }
                 }
                 prevOper = true;
-            }
-            else {
+            } else {
                 if (nextElement.type == 0) {
                     while (!iQ.empty()) {
                         Element newElement = iQ.lastElement();
@@ -225,54 +232,58 @@ public class MyFirstCalculator implements ru.mipt.java2016.homework.base.task1.C
     public double calculate(String expression) throws ParsingException {
         equation = expression;
         prevOper = true;
-        if (equation == null)
+        if (equation == null) {
             throw new ParsingException("null string");
-        if (equation.length() == 0)
+        }
+        if (equation.length() == 0) {
             throw new ParsingException("empty expression");
+        }
 
-        if (bracketBalance())
+        if (bracketBalance()) {
             throw new ParsingException(" find ( and ) disbalance");
+        }
 
-        if (doubleBracketError())
+        if (doubleBracketError()) {
             throw new ParsingException(" find empty () or )( ");
+        }
 
-        while (iter_begin < equation.length())
+        while (iterBegin < equation.length()) {
             pushNextElement();
+        }
 
         pushNextElement();
 
-        if (eQ.size() == 0)
+        if (eQ.size() == 0) {
             throw new ParsingException("empty expression");
+        }
 
         Stack<Double> myAnswer = new Stack<Double>();
         int y = 0;
         while (eQ.size() != y) {
-            Element A = eQ.elementAt(y);
+            Element element = eQ.elementAt(y);
             y++;
-            if (A.type == 2) {
-                myAnswer.push(A.value);
+            if (element.type == 2) {
+                myAnswer.push(element.value);
             } else {
                 if (myAnswer.size() == 0) {
                     throw new ParsingException("incorrect operation order");
-                }
-                else {
-                    if(myAnswer.size() == 1){
-                        if(A.symbol != '-'){
+                } else {
+                    if (myAnswer.size() == 1) {
+                        if (element.symbol != '-') {
                             throw new ParsingException("incorrect operation order");
                         }
                     }
-                    if(A.isUnary){
+                    if (element.isUnary) {
                         double tmp = myAnswer.lastElement();
                         myAnswer.pop();
                         tmp = -tmp;
                         myAnswer.push(tmp);
-                    }
-                    else{
+                    } else {
                         double first = myAnswer.lastElement();
                         myAnswer.pop();
                         double second = myAnswer.lastElement();
                         myAnswer.pop();
-                        myAnswer.push(getResult(second, first, A.symbol));
+                        myAnswer.push(getResult(second, first, element.symbol));
                     }
 
                 }
