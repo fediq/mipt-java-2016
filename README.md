@@ -1,5 +1,7 @@
 ## Программирование на Java
 
+[![Build Status](https://travis-ci.org/fediq/mipt-java-2016.svg?branch=master)](https://travis-ci.org/fediq/mipt-java-2016)
+
 Поток 2016го года.
 
 ### Материалы
@@ -21,7 +23,7 @@
 2. [Объекты](http://www.slideshare.net/FedorLavrentyev/java-02-65838195)
 3. [Классы](http://www.slideshare.net/FedorLavrentyev/programming-java-lection-03-classes-lavrentyev-fedor)
 4. [Обобщения и лямбды](http://www.slideshare.net/FedorLavrentyev/programmning-java-lection-04-generics-and-lambdas-lavrentyev-fedor)
-5. Проектирование - TBD
+5. [Проектирование](http://www.slideshare.net/FedorLavrentyev/programmning-java-lection-05-software-design-lavrentyev-fedor)
 
 #### Рекомендуемая литература
 
