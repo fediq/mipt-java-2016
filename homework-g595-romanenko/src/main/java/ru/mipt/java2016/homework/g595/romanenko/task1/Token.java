@@ -15,6 +15,7 @@ class Token {
     Token(ExpressionToken type) {
         this.type = type;
     }
+
     Token(Double number) {
         this.number = number;
         this.type = ExpressionToken.NUMBER;
@@ -24,7 +25,7 @@ class Token {
         return type;
     }
 
-    Double getNumber(){
+    Double getNumber() {
         return number;
     }
 }
