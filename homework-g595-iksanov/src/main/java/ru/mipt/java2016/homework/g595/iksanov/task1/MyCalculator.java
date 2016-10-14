@@ -4,7 +4,7 @@ import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 import java.util.Stack;
 
-import static java.lang.Character.isDigit;
+import java.lang.Character;
 
 /**
  * Calculator.
@@ -68,8 +68,7 @@ public class MyCalculator implements Calculator {
                         char curOperator = operatorStack.pop(); //достаем оператор с вершины стека
                         if (getPriority(symb) <= getPriority(curOperator)) {
                             //пока будет неравенство приоритетов, выталкиваем верхний элемент стека в результат
-                            resultExpr.append(curOperator);
-                            resultExpr.append(' ');
+                            resultExpr.append(curOperator).append(' ');
                         } else {
                             operatorStack.push(curOperator);
                             break;
@@ -139,7 +138,7 @@ public class MyCalculator implements Calculator {
             if (Character.isDigit(symb)) {
                 boolean isFloat = false;
                 double result = Character.getNumericValue(symb);
-                while (isDigit(postfixExpression.charAt(i + 1))) {
+                while (Character.isDigit(postfixExpression.charAt(i + 1))) {
                     ++i;
                     result = result * 10 +
                             Character.getNumericValue(postfixExpression.charAt(i));
@@ -149,7 +148,7 @@ public class MyCalculator implements Calculator {
                     isFloat = true;
                 }
                 double forFloatPart = 1;
-                while (isDigit(postfixExpression.charAt(i + 1))) {
+                while (Character.isDigit(postfixExpression.charAt(i + 1))) {
                     ++i;
                     forFloatPart *= 0.1;
                     result = result + forFloatPart *
