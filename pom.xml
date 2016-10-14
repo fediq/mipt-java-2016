@@ -53,6 +53,10 @@
         <module>homework-g594-petrov</module>
         <module>homework-g597-kozlov</module>
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+        <module>homework-g599a-kazakova</module>
+>>>>>>> commit
         <module>homework-g597-dmitrieva</module>
         <module>homework-g595-popovkin</module>
         <module>homework-g594-anukhin</module>
@@ -79,6 +83,7 @@
         <module>homework-g597-grishutin</module>
         <module>homework-g595-tkachenko</module>
         <module>homework-g597-miller</module>
+<<<<<<< HEAD
 
 =======
         <module>homework-g596-bystrov</module>
@@ -86,6 +91,8 @@
 =======
         <module>homework-g596-lapa</module>
 >>>>>>> Lapa homework 1
+=======
+>>>>>>> commit
     </modules>
 
     <build>
