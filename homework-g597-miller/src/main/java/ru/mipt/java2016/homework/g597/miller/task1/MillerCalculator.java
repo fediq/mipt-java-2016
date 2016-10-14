@@ -167,6 +167,10 @@ class MillerCalculator implements Calculator {
                     number.setLength(0);
                 }
             }
+            // Space-символы.
+            if ((symbol == ' ') || (symbol == '\n') || (symbol == '\t')) {
+                continue;
+            }
             // Неожиданный символ.
             if (priority(symbol) < 0) {
                 throw new ParsingException("Unexpected symbol '" + symbol + "'");
@@ -183,11 +187,11 @@ class MillerCalculator implements Calculator {
                 continue;
             }
             if (toNegative) {
-                throw new ParsingException("Incorrect unary operation position");
+                throw new ParsingException("Invalid expression (unary operation position)");
             }
             if (symbol == ')') {
                 if (pointer == (lastOpenBracketPosition + 1)) {
-                    throw new ParsingException("Empty bracket");
+                    throw new ParsingException("Invalid expression (empty bracket)");
                 }
                 unaryExpected = false;
                 while (!symbols.empty() && (symbols.peek() != '(') && (symbols.peek() != '[')) {
@@ -195,7 +199,7 @@ class MillerCalculator implements Calculator {
                 }
                 // Нет соответствующей скобки.
                 if (symbols.empty()) {
-                    throw new ParsingException("Wrong brackets result");
+                    throw new ParsingException("Invalid expression (brackets result issue)");
                 }
                 if (symbols.pop() == '[') {
                     // '[' ~ '-('
@@ -221,7 +225,7 @@ class MillerCalculator implements Calculator {
         // Опустошить стек symbols.
         while (!symbols.empty()) {
             if (symbols.peek() == '(') { // Нет соответствующей скобки.
-                throw new ParsingException("Wrong brackets result");
+                throw new ParsingException("Invalid expression (brackets result issue)");
             }
             postfix.push(symbols.pop().toString());
         }
@@ -243,7 +247,7 @@ class MillerCalculator implements Calculator {
             } else {
                 symbol = postfixR.pop().charAt(0);
                 if (numbers.size() < 2) {
-                    throw new ParsingException("Wrong operations number");
+                    throw new ParsingException("Invalid expression (operations issue)");
                 }
                 dValue2 = numbers.pop();
                 dValue1 = numbers.pop();
@@ -260,7 +264,10 @@ class MillerCalculator implements Calculator {
             }
         }
         if (numbers.size() > 1) {
-            throw new ParsingException("Wrong operations number");
+            throw new ParsingException("Invalid expression (operations issue)");
+        }
+        if (numbers.size() == 0) {
+            throw new ParsingException("Expression is empty");
         }
         return numbers.peek();
     }
@@ -270,13 +277,6 @@ class MillerCalculator implements Calculator {
         if (expression == null) {
             throw new ParsingException("Expression is null");
         }
-
-        // Пробельный символ - уходи.
-        expression = expression.replaceAll("[ \\n\\t]", "");
-        if (expression.length() == 0) {
-            throw new ParsingException("Expression is empty");
-        }
-
         postfix = new Stack<>();
         numbers = new Stack<>();
         toPostfix(expression);
