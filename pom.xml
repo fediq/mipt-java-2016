@@ -7,20 +7,6 @@
     <groupId>ru.mipt.java2016</groupId>
     <artifactId>mipt-java-2016</artifactId>
     <version>1.0.0</version>
-    <dependencies>
-        <dependency>
-            <groupId>ru.mipt.java2016</groupId>
-            <artifactId>homework-base</artifactId>
-            <version>1.0.0</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>ru.mipt.java2016</groupId>
-            <artifactId>homework-tests</artifactId>
-            <version>1.0.0</version>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
 
     <packaging>pom</packaging>
 
