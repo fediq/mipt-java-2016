@@ -16,7 +16,7 @@ public class CalculatorImpl implements Calculator {
     private boolean checkCorrect(String expression) throws ParsingException {
         int flag = 0;
         for (int i = 0; i < expression.length(); ++i) {
-            if (isDigit(expression.charAt(i)) && flag == 2){
+            if (isDigit(expression.charAt(i)) && flag == 2) {
                 throw new ParsingException("Wrong space");
             } else if (isDigit(expression.charAt(i))) {
                 flag = 1;
