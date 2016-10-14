@@ -14,7 +14,7 @@ public class EvalCalculator implements Calculator {
             throw new ParsingException("Null expression");
         }
         expression = expression.replaceAll("\\s", "");
-        tuple testTuple = new tuple();
+        Tuple testTuple = new Tuple();
         testTuple.changeFirst(0);
         testTuple.changeSecond(0);
         if (isValid(expression)) {
@@ -24,11 +24,7 @@ public class EvalCalculator implements Calculator {
     }
 
     private boolean isNumber(char symbol) {
-        if (('0' <= symbol) && (symbol <= '9')) {
-            return true;
-        } else {
-            return false;
-        }
+        return ('0' <= symbol) && (symbol <= '9');
     }
 
     private int isWrong(char symbol, int bracketBalance) throws ParsingException {
@@ -69,8 +65,8 @@ public class EvalCalculator implements Calculator {
         return currentPosition;
     }
 
-    private tuple evaluateExpression(String expression, int currentPosition, int endPosition) throws ParsingException {
-        tuple resultTuple;
+    private Tuple evaluateExpression(String expression, int currentPosition, int endPosition) throws ParsingException {
+        Tuple resultTuple;
         double result = 0;
         resultTuple = multiplier(expression, currentPosition, endPosition);
         result = resultTuple.getFirst();
@@ -104,9 +100,9 @@ public class EvalCalculator implements Calculator {
         return resultTuple;
     }
 
-    private tuple getNextLexem(String expression, int currentPosition, int endPosition) throws ParsingException {
+    private Tuple getNextLexem(String expression, int currentPosition, int endPosition) throws ParsingException {
         int sign = 1;
-        tuple resultTuple = new tuple();
+        Tuple resultTuple = new Tuple();
         double result = 0;
         double fractionalPart = 0;
         int order = 0;
@@ -143,11 +139,11 @@ public class EvalCalculator implements Calculator {
         return resultTuple;
     }
 
-    private tuple multiplier(String expression, int currentPosition, int endPosition) throws ParsingException {
+    private Tuple multiplier(String expression, int currentPosition, int endPosition) throws ParsingException {
         if (currentPosition == endPosition) {
             throw new ParsingException("Not a valid expression");
         }
-        tuple resultTuple;
+        Tuple resultTuple;
         double result = 0;
         currentPosition = skipSpaces(expression, currentPosition, endPosition);
         if (expression.charAt(currentPosition) == '/' || expression.charAt(currentPosition) == ')') {
@@ -202,7 +198,7 @@ public class EvalCalculator implements Calculator {
         return resultTuple;
     }
 
-    private class tuple {
+    private class Tuple {
         private double first;
         private int second;
 
