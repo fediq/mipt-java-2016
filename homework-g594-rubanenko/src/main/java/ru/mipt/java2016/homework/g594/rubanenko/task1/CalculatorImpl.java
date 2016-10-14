@@ -11,6 +11,24 @@ import java.util.Stack;
 
 public class CalculatorImpl implements Calculator {
 
+    /* ! special function to check if the string is correctly inserted
+     * ! for example "1 2" (definitely it's wrong) */
+    private boolean checkCorrect(String expression) throws ParsingException {
+        int flag = 0;
+        for (int i = 0; i < expression.length(); ++i) {
+            if (isDigit(expression.charAt(i)) && flag == 2){
+                throw new ParsingException("Wrong space");
+            } else if (isDigit(expression.charAt(i))) {
+                flag = 1;
+            } else if (expression.charAt(i) == ' ' && flag == 1) {
+                flag = 2;
+            } else {
+                flag = 0;
+            }
+        }
+        return true;
+    }
+
     /* ! return the priority of the operator */
     private int priority(char operation) throws ParsingException {
         if (operation == '(' || operation == ')') {
@@ -191,6 +209,11 @@ public class CalculatorImpl implements Calculator {
         if (expression == null) {
             throw new ParsingException("Null exception");
         } else {
+            try {
+                checkCorrect(expression);
+            } catch (ParsingException e) {
+                throw new ParsingException("Wrong");
+            }
             return calculatePolish(toPolish(expression));
         }
     }
