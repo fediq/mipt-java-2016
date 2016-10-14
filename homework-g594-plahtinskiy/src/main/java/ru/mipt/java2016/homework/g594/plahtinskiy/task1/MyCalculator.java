@@ -22,6 +22,7 @@ public class MyCalculator implements Calculator {
         StringTokenizer tokenizer = new StringTokenizer(expression, "+-*/~()", true);
         Stack<CNumber> results = new Stack<CNumber>();
         Stack<Operations> operations = new Stack<Operations>();
+
         while (tokenizer.hasMoreTokens()) {
             String t = tokenizer.nextToken();
             Operations lex = Operations.fromString(t);
