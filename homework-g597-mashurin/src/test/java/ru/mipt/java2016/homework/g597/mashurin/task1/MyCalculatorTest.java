@@ -6,7 +6,7 @@ import ru.mipt.java2016.homework.tests.task1.AbstractCalculatorTest;
 public class MyCalculatorTest extends AbstractCalculatorTest {
     @Override
     protected Calculator calc() {
-        return new ru.mipt.java2016.homework.g597.mashurin.task1.MyCalculator();
+        return new MyCalculator();
     }
 }
 
