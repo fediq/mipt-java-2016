@@ -1,5 +1,7 @@
 ## Программирование на Java
 
+[![Build Status](https://travis-ci.org/fediq/mipt-java-2016.svg?branch=master)](https://travis-ci.org/fediq/mipt-java-2016)
+
 Поток 2016го года.
 
 ### Материалы
@@ -21,7 +23,7 @@
 2. [Объекты](http://www.slideshare.net/FedorLavrentyev/java-02-65838195)
 3. [Классы](http://www.slideshare.net/FedorLavrentyev/programming-java-lection-03-classes-lavrentyev-fedor)
 4. [Обобщения и лямбды](http://www.slideshare.net/FedorLavrentyev/programmning-java-lection-04-generics-and-lambdas-lavrentyev-fedor)
-5. Проектирование - TBD
+5. [Проектирование](http://www.slideshare.net/FedorLavrentyev/programmning-java-lection-05-software-design-lavrentyev-fedor)
 
 #### Семинары 596-ой группы
 1. [Java vs C++; Работа с исключениям и I/O](https://yadi.sk/d/meyw4Nv1wUrzc)  
@@ -41,7 +43,7 @@
 ### Домашние задания
 
 1. [Калькулятор](tasks/01-Calculator.md) - дедлайн 14.10.2016 23:59 MSK
-2. [Key-value storage](tasks/02-KeyValueStorage.md) - дедлайн 31.10.2016 23:59 MSK (**ЧЕРНОВИК!**)
+2. [Key-value storage](tasks/02-KeyValueStorage.md) - дедлайн 31.10.2016 23:59 MSK (**Тесты дорабатываются**)
 3. [Оптимизация производительности](tasks/03-Performance.md) - дедлайн 31.11.2016 23:59 MSK (**ЧЕРНОВИК!**)
 
 #### Как оценивается
