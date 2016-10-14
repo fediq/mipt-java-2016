@@ -12,16 +12,52 @@ class MyCalculator implements Calculator {
         if (expression == null) {
             throw new ParsingException("NULL pointer");
         }
-        line = expression.replaceAll(" ", "");
-        line = line.replaceAll("\n", "");
-        line = line.replaceAll("\t", "");
-        correctbracketsequence();
+        line = expression.replaceAll("\\s+", " ");
+        correctExpression();
+        line = line.replaceAll("\\s", "");
+        correctBracketSequence();
         line = line + "  ";
         index = 0;
         return addition();
     }
 
-    private void correctbracketsequence() throws ParsingException {
+    private void correctExpression() throws ParsingException {
+        char left;
+        char right;
+        for (int i = 1; i < line.length() - 1; i++) {
+            if (line.charAt(i) != ' ') {
+                continue;
+            }
+            left = line.charAt(i - 1);
+            right = line.charAt(i + 1);
+            if ((Character.getNumericValue(left) >= 0 && Character.getNumericValue(left) <= 9)
+                    && (Character.getNumericValue(right) >= 0 && Character.getNumericValue(right) <= 9)) {
+                throw new ParsingException("Incorrect line");
+            }
+            if (right == '.' || left == '.') {
+                throw new ParsingException("Incorrect line");
+            }
+            if ((left == '(' && right == ')') || (left == ')' && right == '(')) {
+                throw new ParsingException("Incorrect line");
+            }
+            if ((left == '+' || left == '-' || left == '*' || left == '/')
+                    && (right == '+' || right == '*' || right == '/')) {
+                throw new ParsingException("Incorrect line");
+            }
+            if (((Character.getNumericValue(left) >= 0 && Character.getNumericValue(left) <= 9)
+                    && (right == '('))
+                    || ((Character.getNumericValue(right) >= 0 && Character.getNumericValue(right) <= 9)
+                    && (left == ')'))) {
+                throw new ParsingException("Incorrect line");
+            }
+            if (((left == '+' || left == '-' || left == '*' || left == '/') && (right == ')'))
+                    || ((right == '+' || right == '*' || right == '/') && (left == '('))) {
+                throw new ParsingException("Incorrect line");
+            }
+        }
+    }
+
+    private void correctBracketSequence() throws ParsingException {
         int quantity = 0;
         char element;
         for (int i = 0; i < line.length(); i++) {
