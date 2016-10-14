@@ -26,8 +26,15 @@
 5. [Проектирование](http://www.slideshare.net/FedorLavrentyev/programmning-java-lection-05-software-design-lavrentyev-fedor)
 
 #### Семинары 596-ой группы
+Стараемся придерживаться [google-кодстайла](https://google.github.io/styleguide/javaguide.html).  
+Проще всего этого можно добиться, скачав [настройки для кодстайла](https://github.com/DanAnastasyev/mipt-java-2016/blob/master/seminars/src/ru/mipt/java2016/seminars/idea-codestyle.xml). Посмотреть, как их устанавливать, можно [здесь](https://github.com/HPI-Information-Systems/Metanome/wiki/Installing-the-google-styleguide-settings-in-intellij-and-eclipse).  
+После этого не забываем использовать кнопку Code/Reformat Code, хотя бы перед коммитом.
+
+Обязательным является прохождение проверки Maven Checkstyle. Она происходит при запуске всех тестов (например, с помощью `mvn test` или по клавише test во вкладке Maven Projects).
+
 1. [Java vs C++; Работа с исключениям и I/O](https://yadi.sk/d/meyw4Nv1wUrzc)  
-[Примеры кода](https://github.com/DanAnastasyev/mipt-java-2016/tree/master/seminars/src/ru/mipt/java2016/seminars/seminar1)
+[Примеры кода](https://github.com/DanAnastasyev/mipt-java-2016/tree/master/seminars/src/ru/mipt/java2016/seminars/seminar1)  
+[Доп семинар](https://github.com/DanAnastasyev/mipt-java-2016/blob/master/seminars/src/ru/mipt/java2016/seminars/Seminar%201.5%20Notes.md)
 
 #### Рекомендуемая литература
 
