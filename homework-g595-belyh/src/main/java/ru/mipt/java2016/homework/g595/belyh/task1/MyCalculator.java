@@ -4,9 +4,9 @@ import ru.mipt.java2016.homework.base.task1.ParsingException;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 
 public class MyCalculator implements Calculator {
-    String expression_;
-    int pos;
-    char c;
+    private String expression_;
+    private int pos;
+    private char c;
 
     public double calculate(String expression) throws ParsingException {
         if (expression == null) {
