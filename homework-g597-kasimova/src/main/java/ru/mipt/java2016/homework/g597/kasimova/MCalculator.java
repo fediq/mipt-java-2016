@@ -31,9 +31,13 @@ public class MCalculator implements Calculator {
             }
             if (!illegalSymbols.contains(Character.toString(expression.charAt(i)))) {
                 curIndex++;
-                if (curIndex > 0 && numberIllegalSymbols > 0 &&
+                if (curIndex > 0 && ((numberIllegalSymbols > 0 &&
                         Character.isDigit(expressionNoSpace.charAt(curIndex - 1)) &&
-                        (Character.isDigit(expression.charAt(i)) || expression.charAt(i) == '(')) {
+                        Character.isDigit(expression.charAt(i))) ||
+                        ((Character.isDigit(expressionNoSpace.charAt(curIndex - 1)) ||
+                                expressionNoSpace.charAt(curIndex - 1) == ')') && expression.charAt(i) == '(') ||
+                        (Character.isDigit(expression.charAt(i)) &&
+                                expressionNoSpace.charAt(curIndex - 1) == ')'))) {
                     throw new ParsingException("Incorrect expression.\n");
                 } else {
                     expressionNoSpace = expressionNoSpace + expression.charAt(i);
