@@ -23,6 +23,7 @@
         <module>homework-g597-vasilyev</module>
         <module>homework-g595-belyh</module>
         <module>homework-g597-moiseev</module>
+        <module>homework-g595-shakhray</module>
         <module>homework-g594-glebov</module>
         <module>homework-g594-petrov</module>
         <module>homework-g597-kozlov</module>
@@ -32,6 +33,7 @@
         <module>homework-g595-proskurin</module>
         <module>homework-g594-sharuev</module>
         <module>homework-g596-hromov</module>
+        <module>homework-g594-islamov</module>
     </modules>
 
     <build>
