@@ -3,7 +3,11 @@ package ru.mipt.java2016.homework.g596.kozlova.task1;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Scanner;
+import java.util.Set;
+import java.util.Stack;
 
 public class SuperCalculator implements Calculator {
 
@@ -13,8 +17,7 @@ public class SuperCalculator implements Calculator {
             throw new ParsingException("This expression is null");
             // данное выражение пусто
         }
-        expression = expression.replaceAll("\\s", "");
-        String conversionOfExpression = getPolishNotation(expression);
+        String conversionOfExpression = getPolishNotation(expression.replaceAll("\\s", ""));
         // преобразование обычной записи в польскую
         return calculateOfPolishNotation(conversionOfExpression);
         // считаем результат для польской записи - все операции уже однозначны
@@ -28,18 +31,18 @@ public class SuperCalculator implements Calculator {
         // стек операторов, которые встречаются в строке
         StringBuffer result = new StringBuffer();
         // результирующее выражение, записанное в польской записи
-        Character c = 'a';
-        Character cLast = 'a';
-        Integer numberPoint = 0;
+        char c = 'a';
+        char cLast = 'a';
+        int numberPoint = 0;
         for (int i = 0; i < expression.length(); i++) {
             // перебор элементов нашего выражения
             if (i > 0) {
                 cLast = c;
             }
             c = expression.charAt(i);
-            if (COMPONENTSOFNUMBER.contains(c)) {
+            if (COMPONENTS_OF_NUMBER.contains(c)) {
                 // если данный символ является компонентой числа, то добавляем его к выходной строке - result
-                if (i > 0 && !COMPONENTSOFNUMBER.contains(cLast)) {
+                if (i > 0 && !COMPONENTS_OF_NUMBER.contains(cLast)) {
                     numberPoint = 0;
                 }
                 if (c == '.') {
@@ -51,7 +54,7 @@ public class SuperCalculator implements Calculator {
                 }
                 result.append(c);
                 unaryCheck = false;
-            } else if (MATEMATICALOPERATORS.contains(c)) {
+            } else if (MATEMATICAL_OPERATORS.contains(c)) {
                 /* если символ является символом функции, то помещаем его в стек операторов - stack
                    (все опреаторы добавим в конце соответствующих операндов)*/
                 if (unaryCheck) {
@@ -125,7 +128,7 @@ public class SuperCalculator implements Calculator {
         while (!stack.empty()) {
             // выталкиваем оставшиеся элементы из стека и добавляем их в конец выражения
             Character tmp = stack.pop();
-            if (MATEMATICALOPERATORS.contains(tmp) || tmp.equals('&')) {
+            if (MATEMATICAL_OPERATORS.contains(tmp) || tmp.equals('&')) {
                 result.append(' ').append(tmp).append(' ');
             } else {
                 throw new ParsingException("This is invalid expression");
@@ -150,7 +153,7 @@ public class SuperCalculator implements Calculator {
                 } else {
                     throw new ParsingException("This is invalid expression");
                 }
-            } else if (s.length() == 1 && MATEMATICALOPERATORS.contains(s.charAt(0))) {
+            } else if (s.length() == 1 && MATEMATICAL_OPERATORS.contains(s.charAt(0))) {
                 // если это бинарный оператор, то применяем его к двум верхним элементам стека
                 if (stack.size() > 1) {
                     double operand2 = stack.pop();
@@ -162,7 +165,7 @@ public class SuperCalculator implements Calculator {
                     throw new ParsingException("This is invalid expression");
                 }
             } else if (!(Double.valueOf(s)).isNaN()) {
-                double tmp = Double.valueOf(s);
+                double tmp = Double.parseDouble(s);
                 stack.push(tmp);
                 // отправляем его в стек
             } else {
@@ -202,9 +205,9 @@ public class SuperCalculator implements Calculator {
         }
     }
 
-    private static final Set<Character> MATEMATICALOPERATORS = new HashSet<>(Arrays.asList('*', '/', '+', '-'));
+    private static final Set<Character> MATEMATICAL_OPERATORS = new HashSet<>(Arrays.asList('*', '/', '+', '-'));
     // математические операторы, которые могут встретиться в выражении
-    private static final Set<Character> COMPONENTSOFNUMBER = new HashSet<>(Arrays.asList(
+    private static final Set<Character> COMPONENTS_OF_NUMBER = new HashSet<>(Arrays.asList(
             '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '.'));
     // образующие числа - все цифры и точка, если число не целое
 }
