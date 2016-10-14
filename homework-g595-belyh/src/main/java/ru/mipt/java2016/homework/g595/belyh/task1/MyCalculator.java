@@ -4,7 +4,7 @@ import ru.mipt.java2016.homework.base.task1.ParsingException;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 
 public class MyCalculator implements Calculator {
-    private String expression_;
+    private String expr;
     private int pos;
     private char c;
 
@@ -12,7 +12,7 @@ public class MyCalculator implements Calculator {
         if (expression == null) {
             throw new ParsingException("String is empty");
         }
-        expression_ = expression;
+        expr = expression;
         pos = 0;
         double ans = getSum();
         if (c != '\n') {
@@ -23,20 +23,20 @@ public class MyCalculator implements Calculator {
     }
 
     private void skipSpaces() {
-        while (pos < expression_.length() && (expression_.charAt(pos) == ' ' || expression_.charAt(pos) == '\n'
-            || expression_.charAt(pos) == '\t')) {
+        while (pos < expr.length() && (expr.charAt(pos) == ' ' || expr.charAt(pos) == '\n'
+            || expr.charAt(pos) == '\t')) {
             pos++;
         }
     }
 
     private void getChar() {
         skipSpaces();
-        if (pos == expression_.length()) {
+        if (pos == expr.length()) {
             c = '\n';
             return;
         }
 
-        c = expression_.charAt(pos);
+        c = expr.charAt(pos);
         //System.out.println(c);
         pos++;
     }
@@ -91,7 +91,7 @@ public class MyCalculator implements Calculator {
 
     private double getMult() throws ParsingException {
         double ans = getExpression();
-        while (pos < expression_.length()) {
+        while (pos < expr.length()) {
             if (c == '\n') {
                 break;
             }
@@ -100,9 +100,6 @@ public class MyCalculator implements Calculator {
                 ans *= getExpression();
             } else if (c == '/') {
                 double cur = getExpression();
-                if (cur == 0.0) {
-                    //throw new ParsingException("Division by zero");
-                }
 
                 ans /= cur;
             } else {
@@ -115,7 +112,7 @@ public class MyCalculator implements Calculator {
 
     private double getSum() throws ParsingException {
         double ans = getMult();
-        while (pos < expression_.length()) {
+        while (pos < expr.length()) {
             if (c == '\n') {
                 break;
             }
