@@ -1,7 +1,7 @@
 package ru.mipt.java2016.homework.g594.islamov.task1;
 
-import ru.mipt.java2016.homework.base.task1.ParsingException;
 import ru.mipt.java2016.homework.base.task1.Calculator;
+import ru.mipt.java2016.homework.base.task1.ParsingException;
 
 /**
  * Created by Iskander Islamov on 11.10.2016.
