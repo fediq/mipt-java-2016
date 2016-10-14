@@ -11,8 +11,8 @@ public class CalculatorAlpha implements Calculator {
     private StringBuilder getNumber() {
 
         StringBuilder number = new StringBuilder();
-        while ( strToCalculate.charAt(position) >= '0' &&
-                strToCalculate.charAt(position) <= '9' ) {
+        while (strToCalculate.charAt(position) >= '0' &&
+                strToCalculate.charAt(position) <= '9') {
             number.append(strToCalculate.charAt(position++));
         }
         return number;
@@ -29,7 +29,7 @@ public class CalculatorAlpha implements Calculator {
         return number.toString();
     }
 
-    private double getBrackets() throws ParsingException{
+    private double getBrackets() throws ParsingException {
         String number = getPoint();
         if (number.length() != 0) {
             return Double.parseDouble(number);
@@ -51,9 +51,9 @@ public class CalculatorAlpha implements Calculator {
         }
     }
 
-    private double getMul() throws ParsingException{
+    private double getMul() throws ParsingException {
         double number = getBrackets();
-        while ( strToCalculate.charAt(position) == '*' ||
+        while (strToCalculate.charAt(position) == '*' ||
                 strToCalculate.charAt(position) == '/') {
             char operation = strToCalculate.charAt(position++);
             if (operation == '*') {
@@ -65,9 +65,9 @@ public class CalculatorAlpha implements Calculator {
         return number;
     }
 
-    private double getSum() throws ParsingException{
+    private double getSum() throws ParsingException {
         double number = getMul();
-        while ( strToCalculate.charAt(position) == '+' ||
+        while (strToCalculate.charAt(position) == '+' ||
                 strToCalculate.charAt(position) == '-') {
             char operation = strToCalculate.charAt(position++);
             if (operation == '+') {
