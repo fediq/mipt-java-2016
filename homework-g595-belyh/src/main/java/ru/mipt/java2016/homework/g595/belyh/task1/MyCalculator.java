@@ -17,9 +17,9 @@ public class MyCalculator implements Calculator {
         double ans = getSum();
         if (c != '\n') {
             throw new ParsingException("Incorrect string");
-        } else {
-            return ans;
         }
+
+        return ans;
     }
 
     private void skipSpaces() {

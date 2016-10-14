@@ -4,8 +4,20 @@ import org.junit.Assert;
 import org.junit.Test;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
-
+/**
+  * Оснастка для тестирования {@link Calculator}.
+  * Для запуска нужно определить конкретный класс-потомок и определить ему метод {@link #calc()}
+  *
+  * @author Fedor S. Lavrentyev
+  * @since 28.09.16
+  */
 public abstract class AbstractCalculatorTest {
+    /**
+         * Фабричный метод для создания объектов тестируемого класса
+         *
+         * @return экземпляр объекта для тестирования
+         */
+
     protected abstract Calculator calc();
 
     protected void test(String expression, double expected) throws ParsingException {
