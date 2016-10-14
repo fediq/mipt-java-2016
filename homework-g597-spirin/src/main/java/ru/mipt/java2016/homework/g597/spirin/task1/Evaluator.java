@@ -15,20 +15,15 @@ class Evaluator implements Calculator {
         }
 
         if (!checkIfBalanceCorrect(expression)) {
-            throw new ParsingException("Wrong scobe balance");
+            throw new ParsingException("Incorrect bracket sequence");
         }
 
-        EvaluatorHelper evaluatorHelper = new EvaluatorHelper(removeAllWhitespaces(expression));
+        EvaluatorHelper evaluatorHelper = new EvaluatorHelper(expression);
 
         return evaluatorHelper.evaluate();
     }
 
-    // Remove all whitespaces from a string
-    private String removeAllWhitespaces(String expression) {
-        return expression.replaceAll("\\s", "");
-    }
-
-    // Check balance of scobes
+    // Check correctness of bracket sequence
     private boolean checkIfBalanceCorrect(String expression) {
         int balance = 0;
 
@@ -36,7 +31,6 @@ class Evaluator implements Calculator {
             if (balance < 0) {
                 return false;
             }
-
             if (ch == '(') {
                 balance++;
             } else if (ch == ')') {

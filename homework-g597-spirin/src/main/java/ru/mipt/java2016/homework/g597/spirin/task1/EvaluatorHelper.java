@@ -32,8 +32,9 @@ class EvaluatorHelper {
     }
 
     // Wait for expected character
-    private boolean tryCaptureChar(int charToBeCaptured) throws ParsingException {
-        while (ch == ' ') {
+    private boolean tryCaptureChar(char charToBeCaptured) throws ParsingException {
+        // Skip all whitespace characters
+        while (Character.isWhitespace(ch)) {
             getNextChar();
         }
 
