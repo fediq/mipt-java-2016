@@ -8,20 +8,19 @@ import ru.mipt.java2016.homework.base.task1.ParsingException;
  */
 
 public class EvalCalculator implements Calculator {
-
     @Override
     public double calculate(String expression) throws ParsingException {
         if (expression == null) {
             throw new ParsingException("Null expression");
         }
         expression = expression.replaceAll("\\s", "");
-        pair testPair = new pair();
-        testPair.changeFirst(0);
-        testPair.changeSecond(0);
+        tuple testTuple = new tuple();
+        testTuple.changeFirst(0);
+        testTuple.changeSecond(0);
         if (isValid(expression)) {
-            testPair = evaluateExpression(expression, 0, expression.length());
+            testTuple = evaluateExpression(expression, 0, expression.length());
         }
-        return testPair.first;
+        return testTuple.first;
     }
 
     private boolean isNumber(char symbol) {
@@ -70,44 +69,44 @@ public class EvalCalculator implements Calculator {
         return currentPosition;
     }
 
-    private pair evaluateExpression(String expression, int currentPosition, int endPosition) throws ParsingException {
-        pair resultPair;
+    private tuple evaluateExpression(String expression, int currentPosition, int endPosition) throws ParsingException {
+        tuple resultTuple;
         double result = 0;
-        resultPair = multiplier(expression, currentPosition, endPosition);
-        result = resultPair.getFirst();
-        currentPosition = resultPair.getSecond();
+        resultTuple = multiplier(expression, currentPosition, endPosition);
+        result = resultTuple.getFirst();
+        currentPosition = resultTuple.getSecond();
         while (currentPosition < endPosition && expression.charAt(currentPosition) != ')') {
             if (isNumber(expression.charAt(currentPosition)) || expression.charAt(currentPosition) == '('
                     || expression.charAt(currentPosition) == '.') {
                 throw new ParsingException("Not a valid expression");
             }
             if (expression.charAt(currentPosition) == '+') {
-                resultPair = multiplier(expression, currentPosition + 1, endPosition);
-                result += resultPair.getFirst();
-                currentPosition = resultPair.getSecond();
+                resultTuple = multiplier(expression, currentPosition + 1, endPosition);
+                result += resultTuple.getFirst();
+                currentPosition = resultTuple.getSecond();
                 continue;
             }
             if (expression.charAt(currentPosition) == '-') {
-                resultPair = multiplier(expression, currentPosition + 1, endPosition);
-                result -= resultPair.getFirst();
-                currentPosition = resultPair.getSecond();
+                resultTuple = multiplier(expression, currentPosition + 1, endPosition);
+                result -= resultTuple.getFirst();
+                currentPosition = resultTuple.getSecond();
                 continue;
             }
             if (expression.charAt(currentPosition) == '/') {
-                resultPair = multiplier(expression, currentPosition + 1, endPosition);
-                result /= resultPair.getFirst();
-                currentPosition = resultPair.getSecond();
+                resultTuple = multiplier(expression, currentPosition + 1, endPosition);
+                result /= resultTuple.getFirst();
+                currentPosition = resultTuple.getSecond();
                 continue;
             }
         }
-        resultPair.changeFirst(result);
-        resultPair.changeSecond(currentPosition);
-        return resultPair;
+        resultTuple.changeFirst(result);
+        resultTuple.changeSecond(currentPosition);
+        return resultTuple;
     }
 
-    private pair getNextLexem(String expression, int currentPosition, int endPosition) throws ParsingException {
+    private tuple getNextLexem(String expression, int currentPosition, int endPosition) throws ParsingException {
         int sign = 1;
-        pair resultPair = new pair();
+        tuple resultTuple = new tuple();
         double result = 0;
         double fractionalPart = 0;
         int order = 0;
@@ -139,16 +138,16 @@ public class EvalCalculator implements Calculator {
             }
             result += fractionalPart;
         }
-        resultPair.changeFirst(sign * result);
-        resultPair.changeSecond(currentPosition);
-        return resultPair;
+        resultTuple.changeFirst(sign * result);
+        resultTuple.changeSecond(currentPosition);
+        return resultTuple;
     }
 
-    private pair multiplier(String expression, int currentPosition, int endPosition) throws ParsingException {
+    private tuple multiplier(String expression, int currentPosition, int endPosition) throws ParsingException {
         if (currentPosition == endPosition) {
             throw new ParsingException("Not a valid expression");
         }
-        pair resultPair;
+        tuple resultTuple;
         double result = 0;
         currentPosition = skipSpaces(expression, currentPosition, endPosition);
         if (expression.charAt(currentPosition) == '/' || expression.charAt(currentPosition) == ')') {
@@ -165,14 +164,14 @@ public class EvalCalculator implements Calculator {
             }
         }
         if (isNumber(expression.charAt(currentPosition))) {
-            resultPair = getNextLexem(expression, currentPosition, endPosition);
-            result = resultPair.getFirst();
-            currentPosition = resultPair.getSecond();
+            resultTuple = getNextLexem(expression, currentPosition, endPosition);
+            result = resultTuple.getFirst();
+            currentPosition = resultTuple.getSecond();
         } else {
             if (expression.charAt(currentPosition) == '(') {
-                resultPair = evaluateExpression(expression, currentPosition + 1, endPosition);
-                result = resultPair.getFirst();
-                currentPosition = resultPair.getSecond();
+                resultTuple = evaluateExpression(expression, currentPosition + 1, endPosition);
+                result = resultTuple.getFirst();
+                currentPosition = resultTuple.getSecond();
                 if (expression.charAt(currentPosition) == ')') {
                     ++currentPosition;
                 } else {
@@ -189,33 +188,37 @@ public class EvalCalculator implements Calculator {
             char operation = expression.charAt(currentPosition);
             currentPosition = skipSpaces(expression, currentPosition + 1, endPosition);
             if (operation == '*') {
-                resultPair = multiplier(expression, currentPosition, endPosition);
-                result *= resultPair.getFirst();
+                resultTuple = multiplier(expression, currentPosition, endPosition);
+                result *= resultTuple.getFirst();
             } else {
-                resultPair = getNextLexem(expression, currentPosition, endPosition);
-                result /= resultPair.getFirst();
+                resultTuple = getNextLexem(expression, currentPosition, endPosition);
+                result /= resultTuple.getFirst();
             }
-            currentPosition = resultPair.getSecond();
+            currentPosition = resultTuple.getSecond();
             currentPosition = skipSpaces(expression, currentPosition, endPosition);
         }
-        resultPair.changeFirst(result);
-        resultPair.changeSecond(currentPosition);
-        return resultPair;
+        resultTuple.changeFirst(result);
+        resultTuple.changeSecond(currentPosition);
+        return resultTuple;
     }
 
-    private class pair {
+    private class tuple {
         private double first;
         private int second;
-        public double getFirst(){
+
+        public double getFirst() {
             return first;
         }
-        public int getSecond(){
+
+        public int getSecond() {
             return second;
         }
-        public void changeFirst(double data){
+
+        public void changeFirst(double data) {
             first = data;
         }
-        public void changeSecond(int data){
+
+        public void changeSecond(int data) {
             second = data;
         }
     }
