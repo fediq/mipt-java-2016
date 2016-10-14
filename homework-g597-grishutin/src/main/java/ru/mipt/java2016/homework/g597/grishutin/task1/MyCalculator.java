@@ -7,20 +7,21 @@ import java.util.HashSet;
 import java.util.Scanner;
 import java.util.Stack;
 
-class MyCalculator implements Calculator{
+class MyCalculator implements Calculator {
     static final Calculator INSTANCE = new MyCalculator();
 
-    private enum ParsingCondition {WaitingToken, ReadingNumber}
+    private enum ParsingCondition { WaitingToken, ReadingNumber }
+
     private static final HashSet<String> OPERATORS = new HashSet<>(Arrays.asList(
             "+", "-", "*", "/", "^"
     ));
 
-    private boolean IsOperator(String s) {
+    private boolean isOperator(String s) {
         return OPERATORS.contains(s);
     }
 
     @Override
-    public double calculate (String expression) throws ParsingException, ArithmeticException {
+    public double calculate(String expression) throws ParsingException, ArithmeticException {
         if (expression == null) {
             throw new ParsingException("Expression is null");
         }
@@ -69,13 +70,14 @@ class MyCalculator implements Calculator{
 
     private double evaluatePostfix(String postfix) throws ParsingException {
         Stack<Double> operands = new Stack<>();
-        Double operand1, operand2;
+        Double operand1;
+        Double operand2;
         Double result = 0.;
         String token;
         try (Scanner sc = new Scanner(postfix)) {
             while (sc.hasNext()) {
                 token = sc.next();
-                if (IsOperator(token)) {
+                if (isOperator(token)) {
                     if (operands.size() < 2) {
                         throw new ParsingException("Incorrect expression");
                     }
@@ -134,19 +136,18 @@ class MyCalculator implements Calculator{
                 prevIsDot = false;
             } else if (Character.isWhitespace(c)) {
                 answer.append(' ');
-            }
-            else if (c.equals('.')) {
-                if (cond == ParsingCondition.WaitingToken)
+            } else if (c.equals('.')) {
+                if (cond == ParsingCondition.WaitingToken) {
                     throw new ParsingException("Invalid expression: unexpected symbol '.'");
-                else {
+                } else {
                     answer.append('.');
                     cond = ParsingCondition.ReadingNumber;
                 }
                 prevIsDot = true;
             } else if (c.equals('(')) {
-                if (cond == ParsingCondition.ReadingNumber)
+                if (cond == ParsingCondition.ReadingNumber) {
                     throw new ParsingException("Invalid expression: unexpected symbol '('");
-                else {
+                } else {
                     unary = true;
                     answer.append(' ');
                     operators.push("(");
@@ -155,9 +156,9 @@ class MyCalculator implements Calculator{
                 }
                 prevIsDot = false;
             } else if (c.equals(')')) {
-                if (cond == ParsingCondition.WaitingToken)
+                if (cond == ParsingCondition.WaitingToken) {
                     throw new ParsingException("Invalid expression: unexpected ) after operator");
-                else {
+                } else {
                     boolean hasCorrespondingOpeningBracket = false;
                     while (!(operators.empty())) {
                         String curOperator = operators.pop();
@@ -174,7 +175,7 @@ class MyCalculator implements Calculator{
 
                 }
                 prevIsDot = false;
-            } else if (IsOperator(c.toString())) {
+            } else if (isOperator(c.toString())) {
                 if (unary) {
                     switch (c.toString()) {
                         case "-":
