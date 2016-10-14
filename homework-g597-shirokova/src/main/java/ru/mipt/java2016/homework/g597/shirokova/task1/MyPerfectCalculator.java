@@ -181,6 +181,8 @@ class MyPerfectCalculator implements Calculator {
         test1();
         test2();
         test3();
+        test4();
+        test5();
     }
 
     private static void test1() {
@@ -204,6 +206,24 @@ class MyPerfectCalculator implements Calculator {
             Calculator calculator = new MyPerfectCalculator();
             System.out.println(calculator.calculate("1 + 2 + 3"));
             System.out.println(calculator.calculate("-1 -2 -3"));
+        } catch (ParsingException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    private static void test4() {
+        try {
+            System.out.println(new MyPerfectCalculator().calculate("1(2)"));
+        } catch (ParsingException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    private static void test5() {
+        try {
+            System.out.println(new MyPerfectCalculator().calculate("(1)(2)"));
         } catch (ParsingException e) {
             e.printStackTrace();
         }
