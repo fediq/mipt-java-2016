@@ -5,15 +5,16 @@ import ru.mipt.java2016.homework.base.task1.Calculator;
 
 public class MyCalculator implements Calculator {
 
-    int pos = 0, bal = 0;
-    String expr;
+    private int pos = 0;
+    private int bal = 0;
+    private String expr;
 
-    void check() throws ParsingException {
+    private void check() throws ParsingException {
         if (bal < 0)
             throw new ParsingException("Incorrect expression!");
     }
 
-    double expression() throws ParsingException {
+    private double expression() throws ParsingException {
         double tans = 0;
         if (pos == expr.length())
             return tans;
@@ -46,7 +47,7 @@ public class MyCalculator implements Calculator {
             throw new ParsingException("Incorrect expression!");
     }
 
-    double mult(int flag) throws ParsingException {
+    private double mult(int flag) throws ParsingException {
         double tans = 0;
         tans = expression();
         if (pos == expr.length())
@@ -74,7 +75,7 @@ public class MyCalculator implements Calculator {
         throw new ParsingException("Incorrect expression!");
     }
 
-    double sum(int flag) throws ParsingException {
+    private double sum(int flag) throws ParsingException {
         double tans = 0;
         tans = mult(0);
         if (pos == expr.length())
