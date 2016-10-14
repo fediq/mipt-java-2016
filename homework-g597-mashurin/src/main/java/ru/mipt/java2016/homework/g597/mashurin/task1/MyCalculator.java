@@ -8,6 +8,7 @@ class MyCalculator implements Calculator {
     private String line;
     private int index;
 
+    @Override
     public double calculate(String expression) throws ParsingException {
         if (expression == null) {
             throw new ParsingException("NULL pointer");
