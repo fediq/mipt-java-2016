@@ -13,56 +13,52 @@ public class MCalculator implements Calculator {
 
     private ArrayList<Token> tokenize(String expression) throws ParsingException {
         ArrayList<Token> res = new ArrayList<>();
-        char c;
+        char currentChar;
         boolean gotNum = false;
         boolean gotUOp = false;
 
         for (int i = 0; i < expression.length(); ++i) {
-            c = expression.charAt(i);
+            currentChar = expression.charAt(i);
 
-            if (Character.isWhitespace(c)) {
+            if (Character.isWhitespace(currentChar)) {
                 continue;
-            } else if (Character.isDigit(c)) {
+            } else if (Character.isDigit(currentChar)) {
                 StringBuilder sNum = new StringBuilder();
                 boolean metDot = false;
-                while (i < expression.length() && (Character.isDigit(c) || (c == '.' && !metDot))) {
-                    sNum.append(c);
-                    if (c == '.') {
+                while (i < expression.length() && (Character.isDigit(currentChar) || (currentChar == '.' && !metDot))) {
+                    sNum.append(currentChar);
+                    if (currentChar == '.') {
                         metDot = true;
                     }
                     ++i;
                     if (i < expression.length()) {
-                        c = expression.charAt(i);
+                        currentChar = expression.charAt(i);
                     }
                 }
                 --i;
                 gotNum = true;
                 gotUOp = false;
                 res.add(new NumToken(Double.parseDouble(sNum.toString())));
-            } else if (c == '(' || c == ')') {
-                if (c == '(' && res.size() > 0 && res.get(res.size() - 1) instanceof BracketToken
+            } else if (currentChar == '(' || currentChar == ')') {
+                if (currentChar == '(' && res.size() > 0 && res.get(res.size() - 1) instanceof BracketToken
                         && ((BracketToken) res.get(res.size() - 1)).getIsOpening()) {
                     throw new ParsingException("Wrong bracket combination!");
                 }
-                if (c == '(') {
-                    gotNum = false;
-                } else {
-                    gotNum = true;
-                }
+                gotNum = !(currentChar == '(');
                 gotUOp = false;
-                res.add(new BracketToken(c));
-            } else if (c == '+' || c == '-' || c == '*' || c == '/') {
+                res.add(new BracketToken(currentChar));
+            } else if (currentChar == '+' || currentChar == '-' || currentChar == '*' || currentChar == '/') {
                 if (!gotNum) {
                     if (gotUOp) {
                         throw new ParsingException("Wrong usage operators!");
                     }
-                    switch (c) {
+                    switch (currentChar) {
                         case '+':
-                            c = '#';
+                            currentChar = '#';
                             gotUOp = true;
                             break;
                         case '-':
-                            c = '&';
+                            currentChar = '&';
                             gotUOp = true;
                             break;
                         default:
@@ -70,7 +66,7 @@ public class MCalculator implements Calculator {
                     }
                 }
                 gotNum = false;
-                res.add(new OperatorToken(c));
+                res.add(new OperatorToken(currentChar));
             } else {
                 throw new ParsingException("Wrong symbol!");
             }
@@ -91,8 +87,8 @@ public class MCalculator implements Calculator {
                 Operator op = ((OperatorToken) tmp).getOperator();
                 while (operators.size() > 0 && operators.peek() instanceof OperatorToken) {
                     Operator prev = ((OperatorToken) operators.peek()).getOperator();
-                    if ((op.getPriority() <= prev.getPriority() && op.getIsLA()) || (
-                            op.getPriority() < prev.getPriority())) {
+                    if ((op.getPriority() <= prev.getPriority() && op.getIsLA())
+                            || (op.getPriority() < prev.getPriority())) {
                         prev.use(numbers);
                         operators.pop();
                     } else {
@@ -152,10 +148,10 @@ public class MCalculator implements Calculator {
         private int valency;
         private boolean isLA;
 
-        Operator(int priority0, int valency0, boolean isLA0) {
-            priority = priority0;
-            valency = valency0;
-            isLA = isLA0;
+        Operator(int priority, int valency, boolean isLA) {
+            this.priority = priority;
+            this.valency = valency;
+            this.isLA = isLA;
         }
 
         private void use(Stack<Double> nums) throws ParsingException {
@@ -207,8 +203,7 @@ public class MCalculator implements Calculator {
     }
 
 
-    private class Token {
-
+    abstract class Token {
     }
 
 
@@ -237,8 +232,8 @@ public class MCalculator implements Calculator {
     private class NumToken extends Token {
         private double value;
 
-        private NumToken(double value0) {
-            value = value0;
+        private NumToken(double value) {
+            this.value = value;
         }
 
         private double getValue() {
