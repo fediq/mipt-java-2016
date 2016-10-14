@@ -61,7 +61,6 @@ public class MyCalculator implements Calculator {
     private boolean handler(Character cur_sim) throws ParsingException  //Решает, что нужно делать с функ.символом
     {
         if (cur_sim == ')') {
-            System.out.println("In handler, ')'");
             if (operands.size() == 0)
                 throw new ParsingException("Too few operands!");
             while (func.peek() != '(') {
