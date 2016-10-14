@@ -9,9 +9,8 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>homework-g000-lavrentyev</artifactId>
-    <packaging>pom</packaging>
-    <version>1.0.0</version>
+    <artifactId>homework-g595-nosareva</artifactId>
+
 
     <dependencies>
         <dependency>
@@ -19,13 +18,6 @@
             <artifactId>homework-base</artifactId>
             <version>1.0.0</version>
         </dependency>
-
-        <dependency>
-            <groupId>net.sourceforge.jeval</groupId>
-            <artifactId>jeval</artifactId>
-            <version>0.9.4</version>
-        </dependency>
-
         <dependency>
             <groupId>ru.mipt.java2016</groupId>
             <artifactId>homework-tests</artifactId>
