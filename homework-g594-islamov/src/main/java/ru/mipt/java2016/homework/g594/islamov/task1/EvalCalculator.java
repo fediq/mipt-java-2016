@@ -16,15 +16,15 @@ public class EvalCalculator implements Calculator {
         }
         expression = expression.replaceAll("\\s", "");
         pair testPair = new pair();
-        testPair.first = 0;
-        testPair.second = 0;
-        if (IsValid(expression)) {
-            testPair = EvaluateExpression(expression, 0, expression.length());
+        testPair.changeFirst(0);
+        testPair.changeSecond(0);
+        if (isValid(expression)) {
+            testPair = evaluateExpression(expression, 0, expression.length());
         }
         return testPair.first;
     }
 
-    private boolean IsNumber(char symbol) {
+    private boolean isNumber(char symbol) {
         if (('0' <= symbol) && (symbol <= '9')) {
             return true;
         } else {
@@ -32,7 +32,7 @@ public class EvalCalculator implements Calculator {
         }
     }
 
-    private int IsWrong(char symbol, int bracketBalance) throws ParsingException {
+    private int isWrong(char symbol, int bracketBalance) throws ParsingException {
         if (bracketBalance < 0) {
             throw new ParsingException("Not a valid expression");
         }
@@ -52,10 +52,10 @@ public class EvalCalculator implements Calculator {
         return bracketBalance;
     }
 
-    private boolean IsValid(String expression) throws ParsingException {
+    private boolean isValid(String expression) throws ParsingException {
         int bracketBalance = 0;
         for (int i = 0; i < expression.length(); ++i) {
-            bracketBalance = IsWrong(expression.charAt(i), bracketBalance);
+            bracketBalance = isWrong(expression.charAt(i), bracketBalance);
         }
         if (bracketBalance != 0) {
             throw new ParsingException("Not a valid expression");
@@ -63,49 +63,49 @@ public class EvalCalculator implements Calculator {
         return true;
     }
 
-    private int SkipSpaces(String expression, int currentPosition, int endPosition) {
+    private int skipSpaces(String expression, int currentPosition, int endPosition) {
         while (currentPosition < endPosition && expression.charAt(currentPosition) == ' ') {
             ++currentPosition;
         }
         return currentPosition;
     }
 
-    private pair EvaluateExpression(String expression, int currentPosition, int endPosition) throws ParsingException {
+    private pair evaluateExpression(String expression, int currentPosition, int endPosition) throws ParsingException {
         pair resultPair;
         double result = 0;
-        resultPair = Multiplier(expression, currentPosition, endPosition);
-        result = resultPair.first;
-        currentPosition = resultPair.second;
+        resultPair = multiplier(expression, currentPosition, endPosition);
+        result = resultPair.getFirst();
+        currentPosition = resultPair.getSecond();
         while (currentPosition < endPosition && expression.charAt(currentPosition) != ')') {
-            if (IsNumber(expression.charAt(currentPosition)) || expression.charAt(currentPosition) == '('
+            if (isNumber(expression.charAt(currentPosition)) || expression.charAt(currentPosition) == '('
                     || expression.charAt(currentPosition) == '.') {
                 throw new ParsingException("Not a valid expression");
             }
             if (expression.charAt(currentPosition) == '+') {
-                resultPair = Multiplier(expression, currentPosition + 1, endPosition);
-                result += resultPair.first;
-                currentPosition = resultPair.second;
+                resultPair = multiplier(expression, currentPosition + 1, endPosition);
+                result += resultPair.getFirst();
+                currentPosition = resultPair.getSecond();
                 continue;
             }
             if (expression.charAt(currentPosition) == '-') {
-                resultPair = Multiplier(expression, currentPosition + 1, endPosition);
-                result -= resultPair.first;
-                currentPosition = resultPair.second;
+                resultPair = multiplier(expression, currentPosition + 1, endPosition);
+                result -= resultPair.getFirst();
+                currentPosition = resultPair.getSecond();
                 continue;
             }
             if (expression.charAt(currentPosition) == '/') {
-                resultPair = Multiplier(expression, currentPosition + 1, endPosition);
-                result /= resultPair.first;
-                currentPosition = resultPair.second;
+                resultPair = multiplier(expression, currentPosition + 1, endPosition);
+                result /= resultPair.getFirst();
+                currentPosition = resultPair.getSecond();
                 continue;
             }
         }
-        resultPair.first = result;
-        resultPair.second = currentPosition;
+        resultPair.changeFirst(result);
+        resultPair.changeSecond(currentPosition);
         return resultPair;
     }
 
-    private pair GetNextLexem(String expression, int currentPosition, int endPosition) throws ParsingException {
+    private pair getNextLexem(String expression, int currentPosition, int endPosition) throws ParsingException {
         int sign = 1;
         pair resultPair = new pair();
         double result = 0;
@@ -115,17 +115,17 @@ public class EvalCalculator implements Calculator {
             ++currentPosition;
             sign = -1;
         }
-        while (currentPosition < endPosition && IsNumber(expression.charAt(currentPosition))) {
+        while (currentPosition < endPosition && isNumber(expression.charAt(currentPosition))) {
             result *= 10;
             result += expression.charAt(currentPosition) - (int) '0';
             ++currentPosition;
         }
         if (currentPosition < endPosition && expression.charAt(currentPosition) == '.') {
             currentPosition += 1;
-            if (currentPosition == endPosition || !IsNumber(expression.charAt(currentPosition))) {
+            if (currentPosition == endPosition || !isNumber(expression.charAt(currentPosition))) {
                 throw new ParsingException("Not a valid expression");
             }
-            while (currentPosition < endPosition && IsNumber(expression.charAt(currentPosition))) {
+            while (currentPosition < endPosition && isNumber(expression.charAt(currentPosition))) {
                 order += 1;
                 fractionalPart *= 10;
                 fractionalPart += expression.charAt(currentPosition) - (int) '0';
@@ -139,18 +139,18 @@ public class EvalCalculator implements Calculator {
             }
             result += fractionalPart;
         }
-        resultPair.first = sign * result;
-        resultPair.second = currentPosition;
+        resultPair.changeFirst(sign * result);
+        resultPair.changeSecond(currentPosition);
         return resultPair;
     }
 
-    private pair Multiplier(String expression, int currentPosition, int endPosition) throws ParsingException {
+    private pair multiplier(String expression, int currentPosition, int endPosition) throws ParsingException {
         if (currentPosition == endPosition) {
             throw new ParsingException("Not a valid expression");
         }
         pair resultPair;
         double result = 0;
-        currentPosition = SkipSpaces(expression, currentPosition, endPosition);
+        currentPosition = skipSpaces(expression, currentPosition, endPosition);
         if (expression.charAt(currentPosition) == '/' || expression.charAt(currentPosition) == ')') {
             throw new ParsingException("Not a valid expression");
         }
@@ -164,15 +164,15 @@ public class EvalCalculator implements Calculator {
                 ++currentPosition;
             }
         }
-        if (IsNumber(expression.charAt(currentPosition))) {
-            resultPair = GetNextLexem(expression, currentPosition, endPosition);
-            result = resultPair.first;
-            currentPosition = resultPair.second;
+        if (isNumber(expression.charAt(currentPosition))) {
+            resultPair = getNextLexem(expression, currentPosition, endPosition);
+            result = resultPair.getFirst();
+            currentPosition = resultPair.getSecond();
         } else {
             if (expression.charAt(currentPosition) == '(') {
-                resultPair = EvaluateExpression(expression, currentPosition + 1, endPosition);
-                result = resultPair.first;
-                currentPosition = resultPair.second;
+                resultPair = evaluateExpression(expression, currentPosition + 1, endPosition);
+                result = resultPair.getFirst();
+                currentPosition = resultPair.getSecond();
                 if (expression.charAt(currentPosition) == ')') {
                     ++currentPosition;
                 } else {
@@ -183,28 +183,40 @@ public class EvalCalculator implements Calculator {
             }
         }
         result *= sign;
-        currentPosition = SkipSpaces(expression, currentPosition, endPosition);
+        currentPosition = skipSpaces(expression, currentPosition, endPosition);
         while (currentPosition < endPosition && (expression.charAt(currentPosition) == '*'
                     || expression.charAt(currentPosition) == '/')) {
             char operation = expression.charAt(currentPosition);
-            currentPosition = SkipSpaces(expression, currentPosition + 1, endPosition);
+            currentPosition = skipSpaces(expression, currentPosition + 1, endPosition);
             if (operation == '*') {
-                resultPair = Multiplier(expression, currentPosition, endPosition);
-                result *= resultPair.first;
+                resultPair = multiplier(expression, currentPosition, endPosition);
+                result *= resultPair.getFirst();
             } else {
-                resultPair = GetNextLexem(expression, currentPosition, endPosition);
-                result /= resultPair.first;
+                resultPair = getNextLexem(expression, currentPosition, endPosition);
+                result /= resultPair.getFirst();
             }
-            currentPosition = resultPair.second;
-            currentPosition = SkipSpaces(expression, currentPosition, endPosition);
+            currentPosition = resultPair.getSecond();
+            currentPosition = skipSpaces(expression, currentPosition, endPosition);
         }
-        resultPair.first = result;
-        resultPair.second = currentPosition;
+        resultPair.changeFirst(result);
+        resultPair.changeSecond(currentPosition);
         return resultPair;
     }
 
     private class pair {
-        double first;
-        int second;
+        private double first;
+        private int second;
+        public double getFirst(){
+            return first;
+        }
+        public int getSecond(){
+            return second;
+        }
+        public void changeFirst(double data){
+            first = data;
+        }
+        public void changeSecond(int data){
+            second = data;
+        }
     }
 }
