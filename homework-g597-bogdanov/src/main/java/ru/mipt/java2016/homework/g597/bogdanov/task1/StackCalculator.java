@@ -109,7 +109,14 @@ class StackCalculator implements Calculator {
                         doesNumberHaveDot = true;
                     }
                 }
-            } else if (!SPACE_SYMBOLS.contains(character)) {
+            } else if (SPACE_SYMBOLS.contains(character)) {
+                if (!isNumberComplete) {
+                    isNumberComplete = true;
+                    doesNumberHaveDot = false;
+                    doubleStack.push(Double.parseDouble(stringBuilder.toString()));
+                    stringBuilder = new StringBuilder();
+                }
+            } else {
                 throw new ParsingException("invalid expression");
             }
         }
