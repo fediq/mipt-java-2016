@@ -28,33 +28,10 @@
         <module>homework-g597-kozlov</module>
         <module>homework-g597-dmitrieva</module>
         <module>homework-g596-ivanova</module>
-<<<<<<< HEAD
         <module>homework-g595-nosareva</module>
         <module>homework-g595-proskurin</module>
         <module>homework-g594-sharuev</module>
-=======
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-        <module>homework-g594-sharuev</module>
-<<<<<<< HEAD
-=======
-        <module>homework-g595-nosareva</module>
->>>>>>> 9d4040a... Implementation of calculator
-=======
-        <module>homework-g594-kozlov</module>
-<<<<<<< HEAD
->>>>>>> 95aecfa... Project structure created
-=======
-        <module>homework-g597-vasilyev</module>
-        <module>homework-g597-moiseev</module>
->>>>>>> 68ac5a9... before merge master
-=======
->>>>>>> a034a7b... codestyle checked
-=======
         <module>homework-g596-hromov</module>
->>>>>>> c5355a0... Chaneged some files
->>>>>>> 140eb15... 596.hromov.task1
     </modules>
 
     <build>

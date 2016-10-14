@@ -3,6 +3,7 @@ package ru.mipt.java2016.homework.g596.hromov.task1;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
+import java.util.EmptyStackException;
 import java.util.Stack;
 
 public class MyCalculator implements Calculator {
@@ -62,7 +63,7 @@ public class MyCalculator implements Calculator {
                 default:
                     throw new ParsingException("Wrong expression");
             }
-        } catch (ArrayIndexOutOfBoundsException e) {
+        } catch (EmptyStackException e) {
             throw new ParsingException("Wrong expression");
         }
     }
