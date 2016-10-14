@@ -24,7 +24,7 @@ public class MyCalculator implements Calculator {
 
     private void skipSpaces() {
         while (pos < expression_.length() && (expression_.charAt(pos) == ' ' || expression_.charAt(pos) == '\n'
-        || expression_.charAt(pos) == '\t')) {
+            || expression_.charAt(pos) == '\t')) {
             pos++;
         }
     }
