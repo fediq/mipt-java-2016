@@ -143,7 +143,6 @@ public class CalculatorImpl implements Calculator {
         }
         if (postfixString.toString().contains(")") || postfixString.toString().contains("(") ||
                 postfixString.length() == 0) {
-            System.out.println(postfixString.toString());
             throw new ParsingException("Invalid expression");
         }
         return postfixString.toString();
