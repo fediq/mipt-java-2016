@@ -9,23 +9,11 @@ import ru.mipt.java2016.homework.base.task1.ParsingException;
 
 import java.util.Stack;
 import java.util.StringTokenizer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 public class MyCalculator implements Calculator {
-
-    /*public static void main(String[] args) {
-        if (args.length < 1) {
-            System.err.println("First argument(expression) expected.");
-            System.exit(1);
-        }
-        try {
-            double result = calculate(args[0]);
-            System.out.println(result);
-        } catch (Exception e) {
-            System.err.println(e.getMessage());
-            System.exit(2);
-        }
-    }*/
 
     private static String markUnaryOperations(String s, char newSymbolMinus, char newSymbolPlus) throws ParsingException {
         String result = "(";
@@ -50,6 +38,9 @@ public class MyCalculator implements Calculator {
         if (inputString == null) {
             throw new ParsingException("Null expression");
         }
+        if (!validateString(inputString)) {
+            throw new ParsingException("Incorrect input");
+        }
         inputString = "(" + inputString.replaceAll("\\s", "") + ")";
         inputString = markUnaryOperations(inputString, '~', '#');
         StringTokenizer tokenizer = new StringTokenizer(inputString, "+-*/()~#", true);
@@ -67,5 +58,14 @@ public class MyCalculator implements Calculator {
         if (results.size() > 1)
             throw new ParsingException("Not enough operators for these numbers");
         return results.peek().value;
+    }
+
+    private boolean validateString(String inputString) {
+        boolean flag = true;
+        Pattern p = Pattern.compile("^\\d.?\\s+\\d$");
+        Matcher m = p.matcher(inputString);
+        if (m.matches())
+            flag = false;
+        return flag;
     }
 }
