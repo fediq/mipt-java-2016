@@ -10,14 +10,16 @@ public class MyCalculator implements Calculator {
     private String expr;
 
     private void check() throws ParsingException {
-        if (bal < 0)
+        if (bal < 0) {
             throw new ParsingException("Incorrect expression!");
+        }
     }
 
     private double expression() throws ParsingException {
         double tans = 0;
-        if (pos == expr.length())
+        if (pos == expr.length()) {
             return tans;
+        }
         if (expr.charAt(pos) == '(') {
             bal++;
             pos++;
@@ -43,31 +45,37 @@ public class MyCalculator implements Calculator {
             pos++;
             return -1 * sum(1);
         }
-        else
+        else {
             throw new ParsingException("Incorrect expression!");
+        }
     }
 
     private double mult(int flag) throws ParsingException {
         double tans = 0;
         tans = expression();
-        if (pos == expr.length())
+        if (pos == expr.length()) {
             return tans;
+        }
         if (expr.charAt(pos) == ')') {
             return tans;
         }
         if (expr.charAt(pos) == '*') {
             pos++;
-            if (flag == 0)
+            if (flag == 0) {
                 return tans * mult(flag);
-            else if (flag == 1)
+            }
+            else if (flag == 1) {
                 return tans / mult(flag);
+            }
         }
         else if (expr.charAt(pos) == '/') {
             pos++;
-            if (flag == 0)
+            if (flag == 0) {
                 return tans / mult(flag ^ 1);
-            else
+            }
+            else {
                 return tans * mult(flag);
+            }
         }
         else if (expr.charAt(pos) == '+' || expr.charAt(pos) == '-') {
             return tans;
@@ -78,8 +86,9 @@ public class MyCalculator implements Calculator {
     private double sum(int flag) throws ParsingException {
         double tans = 0;
         tans = mult(0);
-        if (pos == expr.length())
+        if (pos == expr.length()) {
             return tans;
+        }
         if (expr.charAt(pos) == ')') {
             bal--;
             check();
@@ -108,17 +117,20 @@ public class MyCalculator implements Calculator {
     }
 
     public double calculate(String expression) throws ParsingException {
-        if (expression == null)
+        if (expression == null) {
             throw new ParsingException("Empty expression!");
+        }
         expr = expression;
         expr = expr.replaceAll(" ", "");
         expr = expr.replaceAll("\t", "");
         expr = expr.replaceAll("\n", "");
-        if (expr.length() == 0)
+        if (expr.length() == 0) {
             throw new ParsingException("Empty expression!");
+        }
         double tans = sum(0);
-        if (bal > 0)
+        if (bal > 0) {
             throw new ParsingException("Incorrect expression!");
+        }
         return tans;
     }
 }
