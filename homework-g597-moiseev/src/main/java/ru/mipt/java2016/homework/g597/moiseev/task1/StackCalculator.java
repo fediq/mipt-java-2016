@@ -1,10 +1,13 @@
 package ru.mipt.java2016.homework.g597.moiseev.task1;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Scanner;
+import java.util.Set;
+import java.util.Stack;
+import java.util.regex.Pattern;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
-
-import java.util.*;
-import java.util.regex.Pattern;
 
 /**
  * Стековый калькулятор.
@@ -15,9 +18,11 @@ import java.util.regex.Pattern;
 
 public class StackCalculator implements Calculator {
 
-    private static final Set<Character> OPERATORS = new HashSet<>(Arrays.asList('+', '-', '*', '/')); // Операторы
-    private static final Set<Character> DIGITS_AND_DOT = new HashSet<>(Arrays.asList(
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.')); // Элементы числа
+    private static final Set<Character> OPERATORS =
+            new HashSet<>(Arrays.asList('+', '-', '*', '/')); // Операторы
+    private static final Set<Character> DIGITS_AND_DOT =
+            new HashSet<>(Arrays.asList('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.'));
+            // Элементы числа
 
     @Override
     public double calculate(String expression) throws ParsingException {

@@ -1,13 +1,12 @@
 package ru.mipt.java2016.homework.g597.dmitrieva.task1;
 
 
-import ru.mipt.java2016.homework.base.task1.Calculator;
-import ru.mipt.java2016.homework.base.task1.ParsingException;
-
 import java.util.Arrays;
 import java.util.Set;
 import java.util.Stack;
 import java.util.TreeSet;
+import ru.mipt.java2016.homework.base.task1.Calculator;
+import ru.mipt.java2016.homework.base.task1.ParsingException;
 
 /**
  * Created by macbook on 10.10.16.
@@ -16,9 +15,10 @@ import java.util.TreeSet;
 public class StackCalculator implements Calculator {
 
 
-    private static final Set<Character> SYMBOLS = new TreeSet<>(Arrays.asList(
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.'));
-    private static final Set<Character> OPERATORS = new TreeSet<>(Arrays.asList('+', '-', '*', '/'));
+    private static final Set<Character> SYMBOLS =
+            new TreeSet<>(Arrays.asList('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.'));
+    private static final Set<Character> OPERATORS =
+            new TreeSet<>(Arrays.asList('+', '-', '*', '/'));
 
     @Override
     public double calculate(String expression) throws ParsingException {
@@ -49,7 +49,8 @@ public class StackCalculator implements Calculator {
     // Переводит инфиксную запись в постфиксную.
     private String toReversedPolish(String expression) throws ParsingException {
         boolean isUnaryOperation = true;
-        StringBuilder postfixLine = new StringBuilder(); // Арифметическое выражение в обратной нотации.
+        StringBuilder postfixLine =
+                new StringBuilder(); // Арифметическое выражение в обратной нотации.
         Stack<Character> stack = new Stack<>(); // Стек операторов.
         stack.push('(');
         if (expression.length() == 0) {
@@ -100,8 +101,8 @@ public class StackCalculator implements Calculator {
                         stack.push(currentSymbol);
                     }
                 } else if (currentSymbol == ')') {
-                // Если символ является закрывающей скобкой: до тех пор, пока верхним элементом
-                // стека не станет открывающая скобка,выталкиваем элементы из стека в выходную строку.
+                    // Если символ является закрывающей скобкой: до тех пор, пока верхним элементом
+                    // стека не станет открывающая скобка,выталкиваем элементы из стека в выходную строку.
                     isUnaryOperation = false;
                     while (!stack.empty() && !(stack.lastElement().equals('('))) {
                         postfixLine.append(' ');
@@ -136,7 +137,8 @@ public class StackCalculator implements Calculator {
     }
 
     //Считает значение элементарного выражения.
-    private Double countAtomicOperation(Character operation, Double a, Double b) throws ParsingException {
+    private Double countAtomicOperation(Character operation, Double a, Double b)
+            throws ParsingException {
         switch (operation) {
             case '+':
                 return a + b;
@@ -154,7 +156,8 @@ public class StackCalculator implements Calculator {
     // Вычисление выражения в постфиксной записи.
     private double calculateReversedPolish(String postfixLine) throws ParsingException {
         Stack<Double> stack = new Stack<>(); // Стек операторов.
-        StringBuilder oneNumber = new StringBuilder(); // Для считывания числа из постфиксной строки.
+        StringBuilder oneNumber =
+                new StringBuilder(); // Для считывания числа из постфиксной строки.
 
         for (int i = 0; i < postfixLine.length(); i++) {
             Character currentSymbol = postfixLine.charAt(i);
@@ -162,7 +165,8 @@ public class StackCalculator implements Calculator {
             if (SYMBOLS.contains(currentSymbol)) {
                 oneNumber.append(currentSymbol);
             } else {
-                if (i > 0 && currentSymbol.equals(' ') && SYMBOLS.contains(postfixLine.charAt(i - 1))) {
+                if (i > 0 && currentSymbol.equals(' ') && SYMBOLS
+                        .contains(postfixLine.charAt(i - 1))) {
                     try {
                         stack.push(Double.parseDouble(oneNumber.toString()));
                     } catch (NumberFormatException e) {
@@ -189,7 +193,11 @@ public class StackCalculator implements Calculator {
         if (stack.size() == 1) {
             return stack.lastElement();
         } else {
+<<<<<<< HEAD
         // Если нет, то случилось что-то плохое
+=======
+            // Если нет, то случилось что-то плохое.
+>>>>>>> fediq/master
             throw new ParsingException("Invalid expression");
         }
     }
