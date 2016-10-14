@@ -10,6 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>homework-g000-lavrentyev</artifactId>
+    <packaging>pom</packaging>
     <version>1.0.0</version>
 
     <dependencies>

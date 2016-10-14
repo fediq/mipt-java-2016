@@ -214,6 +214,7 @@ public class CalculatorImpl implements Calculator {
             } catch (ParsingException e) {
                 throw new ParsingException("Wrong");
             }
+
             return calculatePolish(toPolish(expression));
         }
     }
