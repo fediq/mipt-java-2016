@@ -10,8 +10,6 @@ import ru.mipt.java2016.homework.tests.task1.AbstractCalculatorTest;
 public class PolishRecordCalculatorTest extends AbstractCalculatorTest {
     @Override
     protected Calculator calc()  {
-        PolishRecordCalculator calc = new PolishRecordCalculator();
-        return calc;
+        return new PolishRecordCalculator();
     }
-
 }
