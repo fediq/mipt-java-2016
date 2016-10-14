@@ -8,6 +8,7 @@ import java.util.Vector;
 public class MyCalculator implements Calculator {
     private Vector<Double> numbers = new Vector<Double>();
     private Vector<Character> operations = new Vector<Character>();
+    
     @Override
     public double calculate(String expression) throws ParsingException {
         if (expression == null) {
