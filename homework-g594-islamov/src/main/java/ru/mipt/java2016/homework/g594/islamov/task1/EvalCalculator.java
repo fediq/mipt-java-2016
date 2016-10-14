@@ -15,166 +15,166 @@ public class EvalCalculator implements Calculator {
             throw new ParsingException("Null expression");
         }
         expression = expression.replaceAll("\\s", "");
-        pair test_pair = new pair();
-        test_pair.first = 0;
-        test_pair.second = 0;
-        if( IsValid( expression ) ) {
-            test_pair = EvaluateExpression( expression, 0, expression.length() );
+        pair testPair = new pair();
+        testPair.first = 0;
+        testPair.second = 0;
+        if (IsValid(expression)) {
+            testPair = EvaluateExpression(expression, 0, expression.length());
         }
-        return test_pair.first;
+        return testPair.first;
     }
 
-    private boolean IsNumber( char symbol ) {
-        if( ( '0' <= symbol) && (symbol <= '9' ) ) {
+    private boolean IsNumber(char symbol) {
+        if (('0' <= symbol) && (symbol <= '9')) {
             return true;
-        } else{
+        } else {
             return false;
         }
     }
 
-    private int IsWrong( char symbol, int bracket_balance ) throws ParsingException {
-        if( bracket_balance < 0 ) {
+    private int IsWrong(char symbol, int bracketBalance) throws ParsingException {
+        if (bracketBalance < 0) {
             throw new ParsingException("Not a valid expression");
         }
         boolean flag = false;
-        if( symbol == '(' ) {
-            ++bracket_balance;
+        if (symbol == '(') {
+            ++bracketBalance;
         }
-        if( symbol == ')' ) {
-            --bracket_balance;
+        if (symbol == ')') {
+            --bracketBalance;
         }
-        if( !( ( '0' <= symbol ) && ( symbol <= '9' ) || ( symbol == '+' )
-                || ( symbol == '-' ) || ( symbol == '*' ) || ( symbol == '.' )
-                || ( symbol == '/' ) || ( symbol == ' ' )
-                || ( symbol == '(' ) || ( symbol == ')' ) ) ) {
+        if (!(('0' <= symbol) && (symbol <= '9') || (symbol == '+')
+                || (symbol == '-') || (symbol == '*') || (symbol == '.')
+                || (symbol == '/') || (symbol == ' ')
+                || (symbol == '(') || (symbol == ')'))) {
             throw new ParsingException("Not a valid expression");
         }
-        return bracket_balance;
+        return bracketBalance;
     }
 
-    private boolean IsValid( String expression ) throws ParsingException {
-        int bracket_balance = 0;
-        for( int i = 0; i < expression.length(); ++i) {
-            bracket_balance = IsWrong( expression.charAt( i ), bracket_balance );
+    private boolean IsValid(String expression) throws ParsingException {
+        int bracketBalance = 0;
+        for (int i = 0; i < expression.length(); ++i) {
+            bracketBalance = IsWrong(expression.charAt(i), bracketBalance);
         }
-        if( bracket_balance != 0 ) {
+        if (bracketBalance != 0) {
             throw new ParsingException("Not a valid expression");
         }
         return true;
     }
 
-    private int SkipSpaces( String expression, int cur_pos, int end_pos ) {
-        while( cur_pos < end_pos && expression.charAt(cur_pos) == ' ' ) {
-            ++cur_pos;
+    private int SkipSpaces(String expression, int currentPosition, int endPosition) {
+        while (currentPosition < endPosition && expression.charAt(currentPosition) == ' ') {
+            ++currentPosition;
         }
-        return cur_pos;
+        return currentPosition;
     }
 
-    private pair EvaluateExpression( String expression, int cur_pos, int end_pos ) throws ParsingException {
-        pair result_pair;
+    private pair EvaluateExpression(String expression, int currentPosition, int endPosition) throws ParsingException {
+        pair resultPair;
         double result = 0;
-        result_pair = Multiplier( expression, cur_pos, end_pos );
-        result = result_pair.first;
-        cur_pos = result_pair.second;
-        while( cur_pos < end_pos && expression.charAt( cur_pos ) != ')' ) {
-            if( IsNumber( expression.charAt( cur_pos ) ) || expression.charAt( cur_pos ) == '('
-                        || expression.charAt( cur_pos ) == '.' ) {
+        resultPair = Multiplier(expression, currentPosition, endPosition);
+        result = resultPair.first;
+        currentPosition = resultPair.second;
+        while (currentPosition < endPosition && expression.charAt(currentPosition) != ')') {
+            if (IsNumber(expression.charAt(currentPosition)) || expression.charAt(currentPosition) == '('
+                    || expression.charAt(currentPosition) == '.') {
                 throw new ParsingException("Not a valid expression");
             }
-            if( expression.charAt( cur_pos ) == '+' ) {
-                result_pair = Multiplier( expression, cur_pos + 1, end_pos );
-                result += result_pair.first;
-                cur_pos = result_pair.second;
+            if (expression.charAt(currentPosition) == '+') {
+                resultPair = Multiplier(expression, currentPosition + 1, endPosition);
+                result += resultPair.first;
+                currentPosition = resultPair.second;
                 continue;
             }
-            if ( expression.charAt( cur_pos ) == '-' ) {
-                result_pair = Multiplier( expression, cur_pos + 1, end_pos );
-                result -= result_pair.first;
-                cur_pos = result_pair.second;
+            if (expression.charAt(currentPosition) == '-') {
+                resultPair = Multiplier(expression, currentPosition + 1, endPosition);
+                result -= resultPair.first;
+                currentPosition = resultPair.second;
                 continue;
             }
-            if ( expression.charAt( cur_pos ) == '/' ) {
-                result_pair = Multiplier( expression, cur_pos + 1, end_pos );
-                result /= result_pair.first;
-                cur_pos = result_pair.second;
+            if (expression.charAt(currentPosition) == '/') {
+                resultPair = Multiplier(expression, currentPosition + 1, endPosition);
+                result /= resultPair.first;
+                currentPosition = resultPair.second;
                 continue;
             }
         }
-        result_pair.first = result;
-        result_pair.second = cur_pos;
-        return result_pair;
+        resultPair.first = result;
+        resultPair.second = currentPosition;
+        return resultPair;
     }
 
-    private pair GetNextLexem( String expression, int cur_pos, int end_pos ) throws ParsingException {
+    private pair GetNextLexem(String expression, int currentPosition, int endPosition) throws ParsingException {
         int sign = 1;
-        pair result_pair = new pair();
+        pair resultPair = new pair();
         double result = 0;
-        double fractional_part = 0;
+        double fractionalPart = 0;
         int order = 0;
-        if( cur_pos < end_pos && expression.charAt( cur_pos ) == '-') {
-            cur_pos += 1;
+        if (currentPosition < endPosition && expression.charAt(currentPosition) == '-') {
+            ++currentPosition;
             sign = -1;
         }
-        while( cur_pos < end_pos && IsNumber( expression.charAt( cur_pos ) ) ) {
+        while (currentPosition < endPosition && IsNumber(expression.charAt(currentPosition))) {
             result *= 10;
-            result += expression.charAt(cur_pos) - ( int )'0';
-            cur_pos += 1;
+            result += expression.charAt(currentPosition) - (int) '0';
+            ++currentPosition;
         }
-        if( cur_pos < end_pos && expression.charAt( cur_pos ) == '.' ) {
-            cur_pos += 1;
-            if( cur_pos == end_pos || !IsNumber( expression.charAt( cur_pos ) ) ) {
+        if (currentPosition < endPosition && expression.charAt(currentPosition) == '.') {
+            currentPosition += 1;
+            if (currentPosition == endPosition || !IsNumber(expression.charAt(currentPosition))) {
                 throw new ParsingException("Not a valid expression");
             }
-            while( cur_pos < end_pos && IsNumber( expression.charAt( cur_pos ) ) ) {
+            while (currentPosition < endPosition && IsNumber(expression.charAt(currentPosition))) {
                 order += 1;
-                fractional_part *= 10;
-                fractional_part += expression.charAt( cur_pos ) - ( int )'0';
-                cur_pos += 1;
+                fractionalPart *= 10;
+                fractionalPart += expression.charAt(currentPosition) - (int) '0';
+                ++currentPosition;
             }
-            for( int i = 0; i < order; ++i){
-                fractional_part /= 10;
+            for (int i = 0; i < order; ++i) {
+                fractionalPart /= 10;
             }
-            if( cur_pos < end_pos && expression.charAt( cur_pos ) == '.' ) {
-                throw new ParsingException( "Not a valid expression" );
+            if (currentPosition < endPosition && expression.charAt(currentPosition) == '.') {
+                throw new ParsingException("Not a valid expression");
             }
-        result += fractional_part;
+            result += fractionalPart;
         }
-        result_pair.first = sign * result;
-        result_pair.second = cur_pos;
-        return result_pair;
+        resultPair.first = sign * result;
+        resultPair.second = currentPosition;
+        return resultPair;
     }
 
-    private pair Multiplier( String expression, int cur_pos, int end_pos ) throws ParsingException {
-        if( cur_pos == end_pos ) {
+    private pair Multiplier(String expression, int currentPosition, int endPosition) throws ParsingException {
+        if (currentPosition == endPosition) {
             throw new ParsingException("Not a valid expression");
         }
-        pair result_pair;
+        pair resultPair;
         double result = 0;
-        cur_pos = SkipSpaces( expression, cur_pos, end_pos );
-        if( expression.charAt( cur_pos ) == '/' || expression.charAt( cur_pos ) == ')' ) {
+        currentPosition = SkipSpaces(expression, currentPosition, endPosition);
+        if (expression.charAt(currentPosition) == '/' || expression.charAt(currentPosition) == ')') {
             throw new ParsingException("Not a valid expression");
         }
         int sign = 1;
-        if( expression.charAt( cur_pos ) == '+' ) {
+        if (expression.charAt(currentPosition) == '+') {
             sign = 1;
-            cur_pos += 1;
+            ++currentPosition;
         } else {
-            if( expression.charAt(cur_pos) == '-') {
+            if (expression.charAt(currentPosition) == '-') {
                 sign = -1;
-                cur_pos += 1;
+                ++currentPosition;
             }
         }
-        if( IsNumber(expression.charAt( cur_pos ) ) ) {
-            result_pair = GetNextLexem( expression, cur_pos, end_pos );
-            result = result_pair.first;
-            cur_pos = result_pair.second;
+        if (IsNumber(expression.charAt(currentPosition))) {
+            resultPair = GetNextLexem(expression, currentPosition, endPosition);
+            result = resultPair.first;
+            currentPosition = resultPair.second;
         } else {
-            if( expression.charAt( cur_pos ) == '(' ) {
-                result_pair = EvaluateExpression( expression, cur_pos + 1, end_pos );
-                result = result_pair.first;
-                cur_pos = result_pair.second;
-                if( expression.charAt( cur_pos ) == ')' ) {
-                    ++cur_pos;
+            if (expression.charAt(currentPosition) == '(') {
+                resultPair = EvaluateExpression(expression, currentPosition + 1, endPosition);
+                result = resultPair.first;
+                currentPosition = resultPair.second;
+                if (expression.charAt(currentPosition) == ')') {
+                    ++currentPosition;
                 } else {
                     throw new ParsingException("Not a valid expression");
                 }
@@ -183,26 +183,27 @@ public class EvalCalculator implements Calculator {
             }
         }
         result *= sign;
-        cur_pos = SkipSpaces( expression, cur_pos, end_pos );
-        while( cur_pos < end_pos && ( expression.charAt( cur_pos ) == '*' || expression.charAt( cur_pos ) == '/' ) ) {
-            char operation = expression.charAt( cur_pos );
-            cur_pos = SkipSpaces( expression, cur_pos + 1, end_pos );
-            if( operation == '*') {
-                result_pair = Multiplier( expression, cur_pos, end_pos );
-                result *= result_pair.first;
+        currentPosition = SkipSpaces(expression, currentPosition, endPosition);
+        while (currentPosition < endPosition && (expression.charAt(currentPosition) == '*'
+                    || expression.charAt(currentPosition) == '/')) {
+            char operation = expression.charAt(currentPosition);
+            currentPosition = SkipSpaces(expression, currentPosition + 1, endPosition);
+            if (operation == '*') {
+                resultPair = Multiplier(expression, currentPosition, endPosition);
+                result *= resultPair.first;
             } else {
-                result_pair = GetNextLexem( expression, cur_pos, end_pos );
-                result /= result_pair.first;
+                resultPair = GetNextLexem(expression, currentPosition, endPosition);
+                result /= resultPair.first;
             }
-            cur_pos = result_pair.second;
-            cur_pos = SkipSpaces( expression, cur_pos, end_pos );
+            currentPosition = resultPair.second;
+            currentPosition = SkipSpaces(expression, currentPosition, endPosition);
         }
-        result_pair.first = result;
-        result_pair.second = cur_pos;
-        return result_pair;
+        resultPair.first = result;
+        resultPair.second = currentPosition;
+        return resultPair;
     }
 
-    private class pair{
+    private class pair {
         double first;
         int second;
     }
