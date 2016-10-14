@@ -24,7 +24,7 @@ class MyCalculator implements Calculator{
         if (expression == null) {
             throw new ParsingException("Expression is null");
         }
-        return evaluatePostfix(infixToPostfix(expression.replaceAll("\\s", "")));
+        return evaluatePostfix(infixToPostfix(expression));
     }
 
 
@@ -118,21 +118,31 @@ class MyCalculator implements Calculator{
         Stack<String> operators = new Stack<>();
         Character c;
         boolean unary = true; // true if next met operator is unary
+        boolean prevIsDot = false;
         String prevUnary = ""; // for excluding ++ operator
         ParsingCondition cond = ParsingCondition.WaitingToken;
+
         for (int i = 0; i < expression.length(); ++i) {
             c = expression.charAt(i);
+            if (prevIsDot && !(Character.isDigit(c))) {
+                throw new ParsingException("Invalid expression: unexpected token after dot");
+            }
             if (Character.isDigit(c)) {
                 unary = false;
                 answer.append(c);
                 cond = ParsingCondition.ReadingNumber;
-            } else if (c.equals('.')) {
+                prevIsDot = false;
+            } else if (Character.isWhitespace(c)) {
+                answer.append(' ');
+            }
+            else if (c.equals('.')) {
                 if (cond == ParsingCondition.WaitingToken)
                     throw new ParsingException("Invalid expression: unexpected symbol '.'");
                 else {
                     answer.append('.');
                     cond = ParsingCondition.ReadingNumber;
                 }
+                prevIsDot = true;
             } else if (c.equals('(')) {
                 if (cond == ParsingCondition.ReadingNumber)
                     throw new ParsingException("Invalid expression: unexpected symbol '('");
@@ -143,6 +153,7 @@ class MyCalculator implements Calculator{
 
                     cond = ParsingCondition.WaitingToken;
                 }
+                prevIsDot = false;
             } else if (c.equals(')')) {
                 if (cond == ParsingCondition.WaitingToken)
                     throw new ParsingException("Invalid expression: unexpected ) after operator");
@@ -162,6 +173,7 @@ class MyCalculator implements Calculator{
                     }
 
                 }
+                prevIsDot = false;
             } else if (IsOperator(c.toString())) {
                 if (unary) {
                     switch (c.toString()) {
