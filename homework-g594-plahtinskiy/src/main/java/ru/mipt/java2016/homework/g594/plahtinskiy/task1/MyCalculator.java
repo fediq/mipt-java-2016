@@ -18,6 +18,7 @@ public class MyCalculator implements Calculator {
 
         expression = "(" + expression.replaceAll("\\s", "") + ")";
         expression = MakeUnaryMinus( expression );
+        FindUnaryPlus(expression);
         StringTokenizer tokenizer = new StringTokenizer(expression, "+-*/~()", true);
         Stack<CNumber> results = new Stack<CNumber>();
         Stack<Operations> operations = new Stack<Operations>();
@@ -30,12 +31,15 @@ public class MyCalculator implements Calculator {
                 e.printStackTrace();
             }
         }
-        if (!operations.isEmpty())
+        if (!operations.isEmpty()) {
             throw new ParsingException("No parenthesis balance");
-        if (results.isEmpty())
+        }
+        if (results.isEmpty()) {
             throw new ParsingException("No numbers in equations");
-        if (results.size() > 1)
+        }
+        if (results.size() > 1) {
             throw new ParsingException("Not enough operators for these numbers");
+        }
         return results.peek().value;
     }
 
@@ -61,5 +65,12 @@ public class MyCalculator implements Calculator {
             result += this_symbol;
         }
         return result;
+    }
+    public void FindUnaryPlus( String expression ) throws ParsingException {
+        for (int i = 1; i < expression.length(); ++i) {
+            if (expression.charAt(i - 1) == '+' && expression.charAt(i) == '+') {
+                throw new ParsingException("++");
+            }
+        }
     }
 }

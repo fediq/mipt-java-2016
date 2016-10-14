@@ -10,11 +10,13 @@ import java.util.Stack;
 
 public final class CNumber extends Operations {
 
-    public CNumber(double value) {
+    public CNumber(double value)
+    {
         this.value = value;
     }
 
     public CNumber(String s) {
+
         this.value = Double.valueOf(s);
     }
 
