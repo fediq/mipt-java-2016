@@ -24,8 +24,7 @@ public class MyCalculator implements Calculator {
             bal++;
             pos++;
             return sum(0);
-        }
-        else if (expr.charAt(pos) >= '0' && expr.charAt(pos) <= '9') {
+        } else if (expr.charAt(pos) >= '0' && expr.charAt(pos) <= '9') {
             while (pos < expr.length() && expr.charAt(pos) >= '0' && expr.charAt(pos) <= '9') {
                 tans = tans * 10 + (expr.charAt(pos) - '0');
                 pos++;
@@ -40,12 +39,10 @@ public class MyCalculator implements Calculator {
                 }
             }
             return tans;
-        }
-        else if (expr.charAt(pos) == '-') {
+        } else if (expr.charAt(pos) == '-') {
             pos++;
             return -1 * sum(1);
-        }
-        else {
+        } else {
             throw new ParsingException("Incorrect expression!");
         }
     }
@@ -63,21 +60,17 @@ public class MyCalculator implements Calculator {
             pos++;
             if (flag == 0) {
                 return tans * mult(flag);
-            }
-            else if (flag == 1) {
+            } else if (flag == 1) {
                 return tans / mult(flag);
             }
-        }
-        else if (expr.charAt(pos) == '/') {
+        } else if (expr.charAt(pos) == '/') {
             pos++;
             if (flag == 0) {
                 return tans / mult(flag ^ 1);
-            }
-            else {
+            } else {
                 return tans * mult(flag);
             }
-        }
-        else if (expr.charAt(pos) == '+' || expr.charAt(pos) == '-') {
+        } else if (expr.charAt(pos) == '+' || expr.charAt(pos) == '-') {
             return tans;
         }
         throw new ParsingException("Incorrect expression!");
@@ -99,8 +92,7 @@ public class MyCalculator implements Calculator {
             pos++;
             if (flag == 0) {
                 return tans + sum(flag);
-            }
-            else {
+            } else {
                 return tans - sum(flag ^ 1);
             }
         }
@@ -108,8 +100,7 @@ public class MyCalculator implements Calculator {
             pos++;
             if (flag == 0) {
                 return tans - sum(flag ^ 1);
-            }
-            else {
+            } else {
                 return tans + sum(flag);
             }
         }
