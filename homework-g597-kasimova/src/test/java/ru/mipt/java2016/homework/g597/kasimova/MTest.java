@@ -8,6 +8,9 @@ import ru.mipt.java2016.homework.tests.task1.AbstractCalculatorTest;
  */
 
 public class MTest extends AbstractCalculatorTest {
+    /*
+
+    */
 
     @Override
     protected Calculator calc() {
