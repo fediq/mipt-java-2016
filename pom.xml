@@ -1,5 +1,5 @@
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xmlns="http://maven.apache.org/POM/4.0.0"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
                     http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -15,16 +15,15 @@
         <module>homework-tests</module>
         <module>homework-g596-litvinov</module>
         <module>homework-g000-lavrentyev</module>
-        <module>homework-g596-gerasimov</module>
+        <module>homework-g595-nosareva</module>
         <module>homework-g594-shevkunov</module>
-        <module>homework-g595-romanenko</module>
         <module>homework-g596-fattakhetdinov</module>
         <module>homework-g597-vasilyev</module>
         <module>homework-g597-moiseev</module>
-        <module>homework-g594-petrov</module>
         <module>homework-g597-kozlov</module>
         <module>homework-g597-dmitrieva</module>
         <module>homework-g596-ivanova</module>
+        <module>homework-g595-nosareva</module>
     </modules>
 
     <build>
