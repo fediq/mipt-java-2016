@@ -19,8 +19,8 @@ public class MCalculator implements Calculator {
     private String delSpace(String expression) throws ParsingException {
         final String illegalSymbols = " \t\n";
         int numberIllegalSymbols = 0;
-        String expressionNoSpace = "";
-        String newExpression = "";
+        StringBuilder expressionNoSpace = new StringBuilder("");
+        StringBuilder newExpression = new StringBuilder("");
         final String tempOperation = "+-()";
         char curChar;
         int curIndex = -1;
@@ -39,24 +39,24 @@ public class MCalculator implements Calculator {
                                 expressionNoSpace.charAt(curIndex - 1) == ')'))) {
                     throw new ParsingException("Incorrect expression.\n");
                 } else {
-                    expressionNoSpace = expressionNoSpace + expression.charAt(i);
+                    expressionNoSpace.append(expression.charAt(i));
                     numberIllegalSymbols = 0;
                 }
                 curChar = expressionNoSpace.charAt(curIndex);
                 if (curIndex > 0 && curChar == '-' && (expressionNoSpace.charAt(curIndex - 1) == '/' ||
                         expressionNoSpace.charAt(curIndex - 1) == '*')) {
-                    newExpression = newExpression + "(0-1)" + expressionNoSpace.charAt(curIndex - 1);
+                    newExpression.append("(0-1)").append(expressionNoSpace.charAt(curIndex - 1));
                 } else {
                     if (curChar == '-') {
                         if (curIndex == 0) {
-                            newExpression = newExpression + '0';
+                            newExpression.append('0');
                         } else {
                             if (tempOperation.contains(Character.toString(expressionNoSpace.charAt(curIndex - 1)))) {
-                                newExpression = newExpression + '0';
+                                newExpression.append('0');
                             }
                         }
                     }
-                    newExpression = newExpression + curChar;
+                    newExpression.append(curChar);
                 }
             } else {
                 numberIllegalSymbols++;
@@ -66,7 +66,7 @@ public class MCalculator implements Calculator {
         if (newExpression.length() == 0) {
             throw new ParsingException("Incorrect expression.\n");
         }
-        return newExpression;
+        return newExpression.toString();
     }
 
     private ArrayList<String> getPolishNotation(String expression) throws ParsingException {
