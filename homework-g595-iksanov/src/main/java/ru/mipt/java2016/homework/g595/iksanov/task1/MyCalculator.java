@@ -4,8 +4,6 @@ import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 import java.util.Stack;
 
-import java.lang.Character;
-
 /**
  * Calculator.
  * Created by Emil Iksanov.
