@@ -1,3 +1,4 @@
+<!--suppress ALL -->
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
@@ -13,6 +14,7 @@
     <modules>
         <module>homework-base</module>
         <module>homework-tests</module>
+        <module>homework-g596-kravets</module>
         <module>homework-g596-litvinov</module>
         <module>homework-g594-kozlov</module>
         <module>homework-g000-lavrentyev</module>
@@ -210,6 +212,7 @@
                     </checkstyleRules>
                 </configuration>
             </plugin>
+
         </plugins>
     </build>
 
