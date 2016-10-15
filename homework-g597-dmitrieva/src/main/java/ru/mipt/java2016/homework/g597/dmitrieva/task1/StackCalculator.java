@@ -1,12 +1,13 @@
 package ru.mipt.java2016.homework.g597.dmitrieva.task1;
 
 
+import ru.mipt.java2016.homework.base.task1.Calculator;
+import ru.mipt.java2016.homework.base.task1.ParsingException;
+
 import java.util.Arrays;
 import java.util.Set;
 import java.util.Stack;
 import java.util.TreeSet;
-import ru.mipt.java2016.homework.base.task1.Calculator;
-import ru.mipt.java2016.homework.base.task1.ParsingException;
 
 /**
  * Created by macbook on 10.10.16.
@@ -61,6 +62,7 @@ public class StackCalculator implements Calculator {
 
             // Если пробельный символ, то игнориурем.
             if (currentSymbol == ' ' || currentSymbol == '\t' || currentSymbol == '\n') {
+                postfixLine.append(' ');
                 continue;
             }
 
@@ -192,7 +194,7 @@ public class StackCalculator implements Calculator {
         if (stack.size() == 1) {
             return stack.lastElement();
         } else {
-            // Если нет, то случилось что-то плохое.
+        // Если нет, то случилось что-то плохое
             throw new ParsingException("Invalid expression");
         }
     }
