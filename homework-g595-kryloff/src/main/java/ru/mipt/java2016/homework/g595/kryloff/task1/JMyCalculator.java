@@ -1,7 +1,9 @@
 package ru.mipt.java2016.homework.g595.kryloff.task1;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Set;
 import java.util.Stack;
 import java.util.Vector;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
@@ -15,33 +17,21 @@ import ru.mipt.java2016.homework.base.task1.Calculator;
  */
 public class JMyCalculator implements Calculator {
 
-    private static final HashSet<Character> ACCEPTABLE_SYMBOLS
-            = new HashSet<>(Arrays.asList(
-                '(', ')', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '.', '+', '-', '*', '/'));
-    private static final HashSet<Character> SPACE_SYMBOLS
-            = new HashSet<>(Arrays.asList('\n', '\f', ' ', '\t', '\r'));
-    private static final HashSet NUMBER_SYMBOLS
-            = new HashSet<>(Arrays.asList('1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '.'));
-    private static final HashSet OPERATORS_AND_BRACES
-            = new HashSet(Arrays.asList('+', '-', '*', '/', '(', ')'));
-    private static final HashSet OPERATORS
-            = new HashSet(Arrays.asList('+', '-', '*', '/'));
-
-    JMyCalculator() {
-
-    }
-
-    //delete all space symbols from string
-    private String deleteSpaces(String expression) {
-        String temp = "";
-        for (char currentChar : expression.toCharArray()) {
-            if (!SPACE_SYMBOLS.contains(currentChar)) {
-                temp += currentChar;
-            }
-        }
-        return temp;
-
-    }
+    private static final Set<Character> ACCEPTABLE_SYMBOLS 
+            = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+                '(', ')', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '.', '+', '-', '*', '/')));
+    private static final Set<Character> NUMBER_SYMBOLS
+            = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+                    '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '.')));
+    private static final Set<Character> OPERATORS_AND_BRACES
+            = Collections.unmodifiableSet(new HashSet(Arrays.asList(
+                    '+', '-', '*', '/', '(', ')')));
+    private static final Set<Character> OPERATORS
+            = Collections.unmodifiableSet(new HashSet(Arrays.asList(
+                    '+', '-', '*', '/')));
+    private static final Set<String> ACCEPTABLE_OPERATORS_TOGETHER
+            = Collections.unmodifiableSet(new HashSet(Arrays.asList(
+            "--", "*-", "/-", "+-")));
 
     //check the expression for brace balance and unvalid symbols
     private void checkExpressionSymbolsAndBalance(String expression) throws ParsingException {
@@ -66,24 +56,25 @@ public class JMyCalculator implements Calculator {
     }
 
     private Vector<String> parseExpression(String expression) { //Get vector of lexems
-        String curLexem = "";
+        StringBuilder curLexem = new StringBuilder("");
         Vector<String> lexems = new Vector<String>();
         for (char currentChar : expression.toCharArray()) {
-            if (curLexem == "") {
-                curLexem += currentChar;
+            if (curLexem.length() == 0) {
+                curLexem.append(currentChar);
                 continue;
             }
             if (NUMBER_SYMBOLS.contains(curLexem.charAt(curLexem.length() - 1))
                     && NUMBER_SYMBOLS.contains(currentChar)) {
-                curLexem += currentChar;
+                curLexem.append(currentChar);
             } else {
-                lexems.add(curLexem);
-                curLexem = "" + currentChar;
+                lexems.add(curLexem.toString());
+                curLexem.delete(0, curLexem.length());
+                curLexem.append(currentChar);
             }
 
         }
-        if (!curLexem.equals("")) {
-            lexems.add(curLexem);
+        if (curLexem.length() != 0) {
+            lexems.add(curLexem.toString());
         }
         return lexems;
 
@@ -116,20 +107,9 @@ public class JMyCalculator implements Calculator {
     }
 
     private boolean isBadCombination(String operator1, String operator2) {
-        switch (operator1 + operator2) {
-            case "++":
-            case "--":
-            case "**":
-            case "*/":
-            case "/*":
-            case "//":
-            case "-*":
-            case "+*":
-            case "-/":
-            case "+/":
-                return true;
-            default:
-                break;
+        if (!ACCEPTABLE_OPERATORS_TOGETHER.contains(
+                ("" + operator1.charAt(0) + operator2.charAt(0)))) {
+            return true;
         }
         return false;
     }
@@ -292,7 +272,7 @@ public class JMyCalculator implements Calculator {
             throw new ParsingException("Null expression");
         }
         try {
-            expression = deleteSpaces(expression);
+            expression = expression.replaceAll("[ \n\f\t\r]", "");
             checkExpressionSymbolsAndBalance(expression);
             Vector<String> parsedExpression = parseExpression(expression);
             checkParsedExpression(parsedExpression);
