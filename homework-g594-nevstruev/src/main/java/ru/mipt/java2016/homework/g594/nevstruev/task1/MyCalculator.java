@@ -18,7 +18,8 @@ public class MyCalculator implements Calculator {
         int balance = 0;
         for (int i = 0; i < ss.length(); ++i) {
             char symbol = ss.charAt(i);
-            if (!((symbol >= '0' && symbol <= '9') || symbol == '(' || symbol == ')' || symbol == '-' || symbol == '+' || symbol == '/' ||
+            if (!((symbol >= '0' && symbol <= '9')
+                    || symbol == '(' || symbol == ')' || symbol == '-' || symbol == '+' || symbol == '/' ||
                     symbol == '*' || symbol == '.')) {
                 throw new ParsingException("Incorrect symbol");
             }
@@ -37,7 +38,7 @@ public class MyCalculator implements Calculator {
             } else {
                 continue;
             }
-            if (incorrect(lastSymbol, symbol)) {
+            if (incorrectString(lastSymbol, symbol)) {
                 throw new ParsingException("Incorrect");
             }
         }
@@ -46,7 +47,8 @@ public class MyCalculator implements Calculator {
         }
         return getInt(ss);
     }
-    private boolean incorrect(char last, char next) {
+
+    private boolean incorrectString(char last, char next) {
         //two act neighbor
         if ((last == '+' || last == '-' || last == '*' || last == '/' || last == '.') &&
                 (next == '+' || next == '.' || next == '*' || next == '/')) {
@@ -66,14 +68,11 @@ public class MyCalculator implements Calculator {
             return true;
         }
         //close bracket and not act
-        if (last == ')' && ((next >= '0' && next <= '9') || next == '.' || next == '(')) {
-            return true;
-        }
-        return false;
+        return last == ')' && ((next >= '0' && next <= '9') || next == '.' || next == '(');
     }
+
     private double getInt(String s) throws ParsingException {
         int balance = 0;
-        boolean Bracket = false;
         boolean isPlus = false;
         double sum = 0.0;
         int lastAct = 0;
@@ -81,31 +80,28 @@ public class MyCalculator implements Calculator {
             throw new ParsingException("Empty string");
         }
         for (int i = 0; i < s.length(); ++i) {
-             if (s.charAt(i) == '(' || s.charAt(i) == ')') {
-                 Bracket = true;
-             }
-             if (i == 0 && s.charAt(i) == '-') {
-                 continue;
-             }
-             if (s.charAt(i) == '(') {
-                 ++balance;
-             }
-             if (s.charAt(i) == ')') {
-                 --balance;
-             }
-             if (balance != 0) {
-                 continue;
-             }
-             if (s.charAt(i) == '+') {
-                 sum += getInt(s.substring(lastAct, i));
-                 lastAct = i + 1;
-                 isPlus = true;
-             }
-             if (s.charAt(i) == '-' && i > 0 && (s.charAt(i - 1) >= '0' && s.charAt(i - 1) <= '9')) {
-                 sum += getInt(s.substring(lastAct, i));
-                 lastAct = i;
-                 isPlus = true;
-             }
+            if (i == 0 && s.charAt(i) == '-') {
+                continue;
+            }
+            if (s.charAt(i) == '(') {
+                ++balance;
+            }
+            if (s.charAt(i) == ')') {
+                --balance;
+            }
+            if (balance != 0) {
+                continue;
+            }
+            if (s.charAt(i) == '+') {
+                sum += getInt(s.substring(lastAct, i));
+                lastAct = i + 1;
+                isPlus = true;
+            }
+            if (s.charAt(i) == '-' && i > 0 && (s.charAt(i - 1) >= '0' && s.charAt(i - 1) <= '9')) {
+                sum += getInt(s.substring(lastAct, i));
+                lastAct = i;
+                isPlus = true;
+            }
         }
         if (isPlus) {
             return sum + getInt(s.substring(lastAct, s.length()));
