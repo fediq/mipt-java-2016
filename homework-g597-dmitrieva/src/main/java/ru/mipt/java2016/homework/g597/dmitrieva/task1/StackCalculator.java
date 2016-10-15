@@ -1,12 +1,21 @@
 package ru.mipt.java2016.homework.g597.dmitrieva.task1;
 
 
+<<<<<<< HEAD
+=======
+import ru.mipt.java2016.homework.base.task1.Calculator;
+import ru.mipt.java2016.homework.base.task1.ParsingException;
+
+>>>>>>> upstream/master
 import java.util.Arrays;
 import java.util.Set;
 import java.util.Stack;
 import java.util.TreeSet;
+<<<<<<< HEAD
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
+=======
+>>>>>>> upstream/master
 
 /**
  * Created by macbook on 10.10.16.
@@ -61,6 +70,10 @@ public class StackCalculator implements Calculator {
 
             // Если пробельный символ, то игнориурем.
             if (currentSymbol == ' ' || currentSymbol == '\t' || currentSymbol == '\n') {
+<<<<<<< HEAD
+=======
+                postfixLine.append(' ');
+>>>>>>> upstream/master
                 continue;
             }
 
@@ -192,8 +205,16 @@ public class StackCalculator implements Calculator {
         if (stack.size() == 1) {
             return stack.lastElement();
         } else {
+<<<<<<< HEAD
             // Если нет, то случилось что-то плохое.
             throw new ParsingException("Invalid expression");
         }
     }
 }
+=======
+        // Если нет, то случилось что-то плохое
+            throw new ParsingException("Invalid expression");
+        }
+    }
+}
+>>>>>>> upstream/master
