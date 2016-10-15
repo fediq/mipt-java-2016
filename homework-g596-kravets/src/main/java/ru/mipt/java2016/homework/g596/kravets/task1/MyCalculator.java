@@ -18,62 +18,63 @@ public class MyCalculator implements Calculator {
         if (expression == null || expression.equals("")) {
             throw new ParsingException("Expression is null!");
         }
-        return ToCalculate(GoToPolishNotation(expression));
+        return toCalculate(goToPolishNotation(expression));
     }
 
-    private double ToCalculate(String expression)
+    private double toCalculate(String expression)
             throws ParsingException { // Считаем по польской записи
-        Stack<Double> NewStackResult = new Stack<>();
-        String[] PartsOfTheStringResult = expression
+        Stack<Double> newStackResult = new Stack<>();
+        String[] partsOfTheStringResult = expression
                 .split(" ");  // разделяем строку по пробелам, на нулевой позиции пустая строка
-        if (PartsOfTheStringResult.length == 1) {
+        if (partsOfTheStringResult.length == 1) {
             throw new ParsingException("Invalid expression!");
         }
-        for (int i = 1; i < PartsOfTheStringResult.length; i++) {
-            String part = PartsOfTheStringResult[i];
-            if (!IsOperator(part.charAt(0))) {  // Кладем в стек число
-                NewStackResult.push(Double.parseDouble(
+        for (int i = 1; i < partsOfTheStringResult.length; i++) {
+            String part = partsOfTheStringResult[i];
+            if (!isOperator(part.charAt(0))) {  // Кладем в стек число
+                newStackResult.push(Double.parseDouble(
                         part)); // преобразовуем строку в действительное число и добаляем в стэк
             } else  // а если это оператор, то считаем два  числа и результат гоняем в стэк
-                if (part.length() == 1 && NewStackResult.size() >= 2
+                if (part.length() == 1 && newStackResult.size() >= 2
                         && part.charAt(0) != '$') {  // проверка что это оператор
-                    double first = NewStackResult.pop(); // снимаем с вершины стэка первое слагаемое
+                    double first = newStackResult.pop(); // снимаем с вершины стэка первое слагаемое
                     double second =
-                            NewStackResult.pop(); // снимаем с вершины стэка второе слагаемое
-                    NewStackResult.push(IntermediateCalculation(first, second, part.charAt(
-                            0))); // Делаем промежуточный расчет и кладем результат в стэк
-                } else if (part.length() == 1 && NewStackResult.size() >= 1
+                            newStackResult.pop(); // снимаем с вершины стэка второе слагаемое
+                    newStackResult.push(intermediateCalculation(first, second,
+                            part.charAt(0))); // Делаем промежуточный расчет
+                } else if (part.length() == 1 && newStackResult.size() >= 1
                         && part.charAt(0) == '$') { // Если унарный минус
-                    NewStackResult.push(-NewStackResult.pop()); // преобразовуем
+                    double num = newStackResult.pop();
+                    newStackResult.push(-num); // преобразовуем
                 } else {
                     throw new ParsingException("Invalid expression!");
                 }
         }
-        double result = NewStackResult.pop();
-        if (!NewStackResult.empty()) { // В стэеке не должно быть элементов
+        double result = newStackResult.pop();
+        if (!newStackResult.empty()) { // В стэеке не должно быть элементов
             throw new ParsingException("Invalid expression!");
         }
         return result;
     }
 
-    private String GoToPolishNotation(String expression) throws ParsingException {
-        Stack<Character> StackOperations = new Stack<>();// Стек для хранения операторов
-        StringBuilder StringResult = new StringBuilder(""); //Результующая строка
+    private String goToPolishNotation(String expression) throws ParsingException {
+        Stack<Character> stackOperations = new Stack<>(); // Стек для хранения операторов
+        StringBuilder stringResult = new StringBuilder(""); //Результующая строка
         boolean flag = true; // метка что последующий оператор унарный
         boolean beginningOfDoubleNumber = false;  // флаг для записи действительного числа
         int amounPoint = 0;  // проверка что дейтвительное число существует
         for (Character chr : expression.toCharArray()) {
-            if (!CheckSymbolOfExpression(chr)) {  // если это вообще какой-то левый символ
+            if (!checkSymbolOfExpression(chr)) {  // если это вообще какой-то левый символ
                 throw new ParsingException("Invalid expression!");
             }
-            if (IsNumber(chr)) {  // если число - добавляем в итоговую строку
+            if (isNumber(chr)) {  // если число - добавляем в итоговую строку
                 flag = false;
                 if (!beginningOfDoubleNumber) { // начало записи числа в строку
                     beginningOfDoubleNumber = true; // Отмечаем что запись числа в троку началось
                     amounPoint = 0;  // количество точек снова равно нулю
-                    StringResult.append(" ").append(chr); //  // запись первой цифры
+                    stringResult.append(" ").append(chr); //  // запись первой цифры
                 } else { // Если продолжение числа , то просто записуем последующую цифру или точку
-                    StringResult.append(chr);  // out = out + chr;
+                    stringResult.append(chr);  // out = out + chr;
                     if (chr
                             == '.') { // Если это точка, то увиличиваем количество точек в данном числе
                         amounPoint++;
@@ -87,10 +88,10 @@ public class MyCalculator implements Calculator {
             }
 
             beginningOfDoubleNumber = false; // Cтавим метку что чило записали в строку
-            if (IsOperator(chr)) { // проверка, что оператор
+            if (isOperator(chr)) { // проверка, что оператор
                 if (flag) {  // проверка что унарный
                     if (chr.equals('-')) {  //кладем в стэк унарный минус, обозначаемый через $
-                        StackOperations.push('$'); // Добавляем в стек & - унарный минус
+                        stackOperations.push('$'); // Добавляем в стек & - унарный минус
                         flag = false;
                     } else if (chr.equals('+')) {
                         flag = false;
@@ -99,72 +100,72 @@ public class MyCalculator implements Calculator {
                     }
                 } else {  // иначе то выталкиваем вершину стэка по приоритету
                     flag = true; // метка что последующий оператор унарный
-                    while (!StackOperations
-                            .empty()) { // Пока стэк операторов не пуст, выталкиваем из стэка всё символы, у которых приоритет больше данного и записываем в строку
-                        Character PresentOperator =
-                                StackOperations.pop(); // Снимаем с вершины стэка
-                        if (CheckPriority(chr) <= CheckPriority(
-                                PresentOperator)) { // сравниваем приоритет
-                            StringResult.append(" ")
-                                    .append(PresentOperator);  // //записуем в результуюую строку
+                    while (!stackOperations
+                            .empty()) { // Пока стэк операторов не пуст, выталкиваем из стэка всё символы
+                        Character presentOperator =
+                                stackOperations.pop(); // Снимаем с вершины стэка
+                        if (checkPriority(chr) <= checkPriority(
+                                presentOperator)) { // сравниваем приоритет
+                            stringResult.append(" ")
+                                    .append(presentOperator);  // записуем в результуюую строку
                         } else {
-                            StackOperations.push(PresentOperator); // Иначе добавляем в стэк
+                            stackOperations.push(presentOperator); // Иначе добавляем в стэк
                             break; // выходим из циклв while..
                         }
                     }
-                    StackOperations.push(chr);// кладем оператор в стэк
+                    stackOperations.push(chr); // кладем оператор в стэк
                 }
             }
             if (chr.equals('(')) {  // если идет открыающиися скобка
-                StackOperations.push(chr); // Кладем в стэк
+                stackOperations.push(chr); // Кладем в стэк
                 flag = true;
             } else if (chr.equals(')')) {  // если закрывающая скобка
                 flag = false;
-                boolean PresenceOfOpeningBrackets = false;
-                while (!StackOperations
+                boolean presenceOfOpeningBrackets = false;
+                while (!stackOperations
                         .empty()) { // то выталкиваем элементы из стека в итоговую строку
-                    Character PresentOperator = StackOperations.pop();
-                    if (PresentOperator.equals('(')) { // пока не найдем открывающую скобку
-                        PresenceOfOpeningBrackets = true;
+                    Character presentOperator = stackOperations.pop();
+                    if (presentOperator.equals('(')) { // пока не найдем открывающую скобку
+                        presenceOfOpeningBrackets = true;
                         break;
                     } else {
-                        StringResult.append(" ")
-                                .append(PresentOperator);  // //записуем в результуюую строку
+                        stringResult.append(" ")
+                                .append(presentOperator);  // //записуем в результуюую строку
                     }
                 }
-                if (!PresenceOfOpeningBrackets) { // Eсли нарушен скобочный баланс, кидаем исключение
+                if (!presenceOfOpeningBrackets) { // Eсли нарушен скобочный баланс, кидаем исключение
                     throw new ParsingException("Invalid expression!");
                 }
             }
         }
-        while (!StackOperations.empty()) { // Записываем элементы , которые остались  стэке
-            Character PresentOperator = StackOperations.pop();
-            if (PresentOperator.equals('&') || IsOperator(PresentOperator)) {
-                StringResult.append(" ").append(PresentOperator);
+        while (!stackOperations.empty()) { // Записываем элементы , которые остались  стэке
+            Character presentOperator = stackOperations.pop();
+            if (presentOperator.equals('&') || isOperator(presentOperator)) {
+                stringResult.append(" ").append(presentOperator);
             } else {
                 throw new ParsingException("Invalid expression!");
             }
         }
-        return StringResult.toString(); // возвращаем искомую строку
+        return stringResult.toString(); // возвращаем искомую строку
     }
 
-    private boolean CheckSymbolOfExpression(char chr) throws ParsingException {
-        return (IsNumber(chr) || IsOperator(chr) || chr == ' ' || chr == '\n' || chr == '\t'
+    private boolean checkSymbolOfExpression(char chr) throws ParsingException {
+        return (isNumber(chr) || isOperator(chr) || chr == ' ' || chr == '\n' || chr == '\t'
                 || chr == '(' || chr == ')');
     }
 
-    private boolean IsNumber(char chr)
+    private boolean isNumber(char chr)
             throws ParsingException { //Проерка что символ принадлежит действительному числу
         return chr == '.' || chr == '0' || chr == '1' || chr == '2' || chr == '3' || chr == '4'
                 || chr == '5' || chr == '6' || chr == '7' || chr == '8' || chr == '9';
     }
 
-    private boolean IsOperator(char chr)
+    private boolean isOperator(char chr)
             throws ParsingException { // Проверка что символ есть оператором
         return (chr == '$' || chr == '+' || chr == '-' || chr == '/' || chr == '*');
     }
 
-    private int CheckPriority(Character chr)
+    private int checkPriority(Character chr)
             throws ParsingException { // Проверка приоритета символа
         if (chr.equals('(') || chr.equals('(')) {
             return 0;
@@ -182,7 +183,7 @@ public class MyCalculator implements Calculator {
         }
     }
 
-    private double IntermediateCalculation(double first, double second, char operator)
+    private double intermediateCalculation(double first, double second, char operator)
             throws ParsingException {
         switch (operator) {
             case '+':
