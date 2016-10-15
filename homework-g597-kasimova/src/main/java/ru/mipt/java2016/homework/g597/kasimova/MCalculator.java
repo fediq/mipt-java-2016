@@ -12,7 +12,6 @@ import java.util.Map;
  **/
 
 public class MCalculator implements Calculator {
-    private ArrayList<String> polishNotation = new ArrayList<>();
     private static final String OPERATIONS = "+-/*";
     private static final String VALID_CHARACTERS = "0123456789.+-*/() \n\t";
     private Map<String, Integer> priorities = new HashMap<String, Integer>();
@@ -70,7 +69,9 @@ public class MCalculator implements Calculator {
         return newExpression;
     }
 
-    private void getPolishNotation(String expression) throws ParsingException {
+    private ArrayList<String> getPolishNotation(String expression) throws ParsingException {
+        ArrayList<String> polishNotation = new ArrayList<>();
+
         String number = "";
 
         ArrayList<String> stack = new ArrayList<>();
@@ -122,8 +123,7 @@ public class MCalculator implements Calculator {
                 }
                 bracketsBalance--;
                 while (!stack.isEmpty() && !stack.get(stack.size() - 1).equals(Character.toString('('))) {
-                    polishNotation.add(stack.get(stack.size() - 1));
-                    stack.remove(stack.size() - 1);
+                    polishNotation.add(stack.remove(stack.size() - 1));
                 }
                 if (!stack.isEmpty()) {
                     stack.remove(stack.size() - 1);
@@ -149,9 +149,10 @@ public class MCalculator implements Calculator {
             polishNotation.add(stack.get(stack.size() - 1));
             stack.remove(stack.size() - 1);
         }
+        return polishNotation;
     }
 
-    private double calculateValue() throws ParsingException {
+    private double calculateValue(ArrayList<String> polishNotation) throws ParsingException {
         ArrayList<Double> result = new ArrayList<>();
         int position = -1;
         for (String token : polishNotation) {
@@ -205,13 +206,11 @@ public class MCalculator implements Calculator {
 
     private double getResult(String expression) throws ParsingException {
         expression = delSpace(expression);
-        getPolishNotation(expression);
-        return calculateValue();
+        return calculateValue(getPolishNotation(expression));
     }
 
 
     public double calculate(String expression) throws ParsingException {
-        polishNotation.clear();
         if (expression == null) {
             throw new ParsingException("Null expression.\n");
         }
