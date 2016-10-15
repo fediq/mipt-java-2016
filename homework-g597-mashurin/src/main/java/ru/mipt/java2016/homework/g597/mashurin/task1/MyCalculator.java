@@ -10,19 +10,59 @@ class MyCalculator implements Calculator {
 
     @Override
     public double calculate(String expression) throws ParsingException {
-        if (expression == null) {
-            throw new ParsingException("NULL pointer");
+        try {
+            if (expression == null) {
+                throw new ParsingException("NULL pointer");
+            }
+            line = expression.replaceAll("\\s+", " ");
+            validateExpressionWithSpace();
+            line = line.replaceAll("\\s", "");
+            validateExpressionWithoutSpace();
+            validateBracketSequence();
+            line = line + "  ";
+            index = 0;
+            double answer = addition();
+            line = "";
+            return answer;
+        } finally {
+            line = "";
         }
-        line = expression.replaceAll("\\s+", " ");
-        correctExpression();
-        line = line.replaceAll("\\s", "");
-        correctBracketSequence();
-        line = line + "  ";
-        index = 0;
-        return addition();
     }
 
-    private void correctExpression() throws ParsingException {
+    private static boolean isOperator(char element) {
+        if (element == '+' || element == '-' || element == '*' || element == '/') {
+            return true;
+        }
+        return false;
+    }
+
+    private void validateExpressionWithoutSpace() throws ParsingException {
+        char left;
+        char right;
+        for (int i = 0; i < line.length() - 1; i++) {
+            left = line.charAt(i);
+            right = line.charAt(i + 1);
+            if (right == '.' && left == '.') {
+                throw new ParsingException("Incorrect line");
+            }
+            if ((left == '(' && right == ')') || (left == ')' && right == '(')) {
+                throw new ParsingException("Incorrect line");
+            }
+            if (isOperator(left) && (right == '+' || right == '*' || right == '/')) {
+                throw new ParsingException("Incorrect line");
+            }
+            if ((Character.isDigit(left) && right == '(')
+                    || (Character.isDigit(right) && left == ')')) {
+                throw new ParsingException("Incorrect line");
+            }
+            if ((isOperator(left) && (right == ')'))
+                    || ((right == '+' || right == '*' || right == '/') && (left == '('))) {
+                throw new ParsingException("Incorrect line");
+            }
+        }
+    }
+
+    private void validateExpressionWithSpace() throws ParsingException {
         char left;
         char right;
         for (int i = 1; i < line.length() - 1; i++) {
@@ -31,34 +71,13 @@ class MyCalculator implements Calculator {
             }
             left = line.charAt(i - 1);
             right = line.charAt(i + 1);
-            if ((Character.getNumericValue(left) >= 0 && Character.getNumericValue(left) <= 9)
-                    && (Character.getNumericValue(right) >= 0 && Character.getNumericValue(right) <= 9)) {
-                throw new ParsingException("Incorrect line");
-            }
-            if (right == '.' || left == '.') {
-                throw new ParsingException("Incorrect line");
-            }
-            if ((left == '(' && right == ')') || (left == ')' && right == '(')) {
-                throw new ParsingException("Incorrect line");
-            }
-            if ((left == '+' || left == '-' || left == '*' || left == '/')
-                    && (right == '+' || right == '*' || right == '/')) {
-                throw new ParsingException("Incorrect line");
-            }
-            if (((Character.getNumericValue(left) >= 0 && Character.getNumericValue(left) <= 9)
-                    && (right == '('))
-                    || ((Character.getNumericValue(right) >= 0 && Character.getNumericValue(right) <= 9)
-                    && (left == ')'))) {
-                throw new ParsingException("Incorrect line");
-            }
-            if (((left == '+' || left == '-' || left == '*' || left == '/') && (right == ')'))
-                    || ((right == '+' || right == '*' || right == '/') && (left == '('))) {
+            if ((Character.isDigit(left)) && Character.isDigit(right)) {
                 throw new ParsingException("Incorrect line");
             }
         }
     }
 
-    private void correctBracketSequence() throws ParsingException {
+    private void validateBracketSequence() throws ParsingException {
         int quantity = 0;
         char element;
         for (int i = 0; i < line.length(); i++) {
@@ -80,7 +99,7 @@ class MyCalculator implements Calculator {
 
     private double number() throws ParsingException {
         double result = 0;
-        int integer = 10;
+        int multiplier = 10;
         double fractional = 1.;
         boolean point = false;
         char element;
@@ -93,24 +112,22 @@ class MyCalculator implements Calculator {
         while (true) {
             element = line.charAt(index);
             index++;
-            if (((Character.getNumericValue(element) >= 0) && (Character.getNumericValue(element) <= 9))
-                    || (element == '.')) {
+            if (Character.isDigit(element) || element == '.') {
                 if (point) {
                     fractional *= 0.1;
                 }
                 if (element == '.') {
                     if (!point) {
                         point = true;
-                        integer = 1;
+                        multiplier = 1;
                     } else {
                         throw new ParsingException("Wrong symbol");
                     }
                 } else {
-                    result = result * integer + Character.getNumericValue(element) * fractional;
+                    result = result * multiplier + Character.getNumericValue(element) * fractional;
                 }
             } else {
-                if ((element == '*') || (element == '/') || (element == '+') || (element == '-')
-                        || (element == ' ') || (element == '(') || (element == ')')) {
+                if (isOperator(element) || (element == ' ') || (element == '(') || (element == ')')) {
                     index--;
                     return result;
                 }
@@ -146,8 +163,7 @@ class MyCalculator implements Calculator {
             index++;
             return partial;
         } else {
-            if (((Character.getNumericValue(element) >= 0) && (Character.getNumericValue(element) <= 9))
-                    || element == '+' || element == '-') {
+            if (Character.isDigit(element) || element == '+' || element == '-') {
                 index--;
                 return number();
             }
