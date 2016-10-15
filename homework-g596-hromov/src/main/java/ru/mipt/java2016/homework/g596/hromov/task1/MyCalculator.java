@@ -26,11 +26,21 @@ public class MyCalculator implements Calculator {
         return (operation == '+') || (operation == '-') || (operation == '/') || (operation == '*');
     }
 
-    private int priorityOfOperation(char operation) {
-        return (operation == '#') ? 4 :
-                (operation == '+') || (operation == '-') ? 1 :
-                        (operation == '*') || (operation == '/') ? 2 :
-                                -1;
+    private int priorityOfOperation(char operation) throws ParsingException {
+        switch (operation) {
+            case ('#'):
+                return 4;
+            case ('+'):
+                return 1;
+            case ('-'):
+                return 1;
+            case ('*'):
+                return 2;
+            case ('/'):
+                return 2;
+            default:
+                throw new ParsingException("Wrong operation");
+        }
     }
 
     private static void processOperation(Stack<Double> st, char operation) throws ParsingException {
@@ -69,30 +79,31 @@ public class MyCalculator implements Calculator {
     }
 
     private double calculateExpression(String expression) throws ParsingException {
-        Stack<Double> st = new Stack<Double>();
-        Stack<Character> op = new Stack<Character>();
+        Stack<Double> stackOfNumbers = new Stack<Double>();
+        Stack<Character> operationsStack = new Stack<Character>();
         for (int i = 0; i < expression.length(); i++) {
             if (expression.charAt(i) == '(') {
-                op.push('(');
+                operationsStack.push('(');
             } else if (isOperation(expression.charAt(i))) {
                 char operation = expression.charAt(i);
                 if ((operation == '-') && ((i == 0) || (isOperation(expression.charAt(i - 1)))
                         || (expression.charAt(i - 1) == '('))) {
-                    op.push('#');
+                    operationsStack.push('#');
                 } else {
-                    while (!op.empty() && priorityOfOperation(op.peek()) >= priorityOfOperation(expression.charAt(i))) {
-                        processOperation(st, op.pop());
+                    while (!operationsStack.empty() &&
+                            priorityOfOperation(operationsStack.peek()) >= priorityOfOperation(expression.charAt(i))) {
+                        processOperation(stackOfNumbers, operationsStack.pop());
                     }
-                    op.push(expression.charAt(i));
+                    operationsStack.push(expression.charAt(i));
                 }
             } else if (expression.charAt(i) == ')') {
-                while (op.peek() != '(') {
-                    processOperation(st, op.pop());
-                    if (op.isEmpty()) {
+                while (operationsStack.peek() != '(') {
+                    processOperation(stackOfNumbers, operationsStack.pop());
+                    if (operationsStack.isEmpty()) {
                         throw new ParsingException("Wrong expression");
                     }
                 }
-                op.pop();
+                operationsStack.pop();
             } else {
                 int j = i;
                 while ((i < expression.length()) && !((isOperation(expression.charAt(i)))
@@ -105,16 +116,16 @@ public class MyCalculator implements Calculator {
                 } catch (NumberFormatException e) {
                     throw new ParsingException("Wrong number");
                 }
-                st.push(pushing);
+                stackOfNumbers.push(pushing);
                 i--;
             }
         }
-        while (!op.isEmpty()) {
-            processOperation(st, op.pop());
+        while (!operationsStack.isEmpty()) {
+            processOperation(stackOfNumbers, operationsStack.pop());
         }
-        if (st.isEmpty()) {
+        if (stackOfNumbers.isEmpty()) {
             throw new ParsingException("Empty string");
         }
-        return st.peek();
+        return stackOfNumbers.peek();
     }
 }
