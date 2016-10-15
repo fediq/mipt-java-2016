@@ -2,16 +2,13 @@ package ru.mipt.java2016.homework.g596.egorov.task1;
 /**
  * Created by евгений on 12.10.2016.
  */
+
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
-
-
 import java.util.Stack;
-import java.util.Vector;
-import java.lang.Character;
-import static java.lang.Character.isDigit;
 
+import static java.lang.Character.isDigit;
 
 
 public class MyCalculator implements Calculator {
@@ -26,8 +23,7 @@ public class MyCalculator implements Calculator {
         return (solution(expression));
     }
 
-    private double do_it(Double x, Character oper, Double y) throws ParsingException
-    {
+    private double doit(Double x, Character oper, Double y) throws ParsingException {
         switch (oper) {
             case('+'):
                 return y + x;
@@ -38,12 +34,12 @@ public class MyCalculator implements Calculator {
             case('/'):
                 return y / x;
             default:
-                throw new ParsingException("Wrong operator in do_it");
+                throw new ParsingException("Wrong operator in DoIt");
         }
     }
-    private int priority(Character x) throws ParsingException
-    {
-        switch(x) {
+
+    private int priority(Character x) throws ParsingException {
+        switch (x) {
             case '+':
             case '-':
                 return 3;
@@ -58,36 +54,38 @@ public class MyCalculator implements Calculator {
     }
 
 
-    private boolean handler(Character cur_sim) throws ParsingException  //Решает, что нужно делать с функ.символом
-    {
-        if (cur_sim == ')') {
-            if (operands.size() == 0)
+    private boolean handler(Character cursim) throws ParsingException { //Решает, что нужно делать с функ.символом
+        if (cursim == ')') {
+            if (operands.size() == 0) {
                 throw new ParsingException("Too few operands!");
+            }
             while (func.peek() != '(') {
-                if (operands.size() >= 2)
-                    operands.push(do_it(operands.pop(), func.pop(), operands.pop()));
-                else
+                if (operands.size() >= 2) {
+                    operands.push(doit(operands.pop(), func.pop(), operands.pop()));
+                } else {
                     throw new ParsingException("Too few operands!");
+                }
             }
             func.pop();
             return true;
         }
 
-        if (priority(cur_sim) < priority(func.peek()) || cur_sim == '(') {
-            func.push(cur_sim);
+        if (priority(cursim) < priority(func.peek()) || cursim == '(') {
+            func.push(cursim);
             return true;
         }
 
-        if (priority(cur_sim) >= priority(func.peek())) {    //выталкивание
-            if (operands.size() < 2)
+        if (priority(cursim) >= priority(func.peek())) {    //выталкивание
+            if (operands.size() < 2) {
                 throw new ParsingException("Too few operands!");
-            operands.push(do_it(operands.pop(), func.pop(), operands.pop()));
-            func.push(cur_sim);
+            }
+            operands.push(doit(operands.pop(), func.pop(), operands.pop()));
+            func.push(cursim);
 
             Character save;
             save = func.pop();
             while (priority(save) >= priority(func.peek()) && operands.size() > 1) {
-                operands.push(do_it(operands.pop(), func.pop(), operands.pop()));
+                operands.push(doit(operands.pop(), func.pop(), operands.pop()));
             }
             func.push(save);
 
@@ -103,25 +101,25 @@ public class MyCalculator implements Calculator {
     private int seeknum(Integer i, String s, int sign)throws ParsingException {
         //НА ВХОД ПОДАЁТСЯ НАЧАЛО ЧИСЛА
         //проходит по числу, запихивает его в стек и проверяет на точки
-        Integer dot_count = 0;  //считывание числа
+        Integer dotcount = 0;  //считывание числа
         StringBuilder number = new StringBuilder();
         //String number = "";
         number.append(s.charAt(i));
         ++i;
-        while (s.charAt(i) == '.' || isDigit(s.charAt(i))){
-            if (s.charAt(i) == '.'){
-                if (++dot_count > 1)    //с проверкой на кол-во точек
+        while (s.charAt(i) == '.' || isDigit(s.charAt(i))) {
+            if (s.charAt(i) == '.') {
+                if (++dotcount > 1) {    //с проверкой на кол-во точек
                     throw new ParsingException("Wrong input(dots)");
+                }
             }
             number.append(s.charAt(i));
             ++i;
         }
         if (sign == -1 && Double.parseDouble(number.toString()) == 0) {
-
             operands.push(-0.0);
-        }
-        else
+        } else {
             operands.push(Double.parseDouble(number.toString()) * sign);
+        }
         return i;   //Возвращается №позиции после числа
     }
 
@@ -131,43 +129,49 @@ public class MyCalculator implements Calculator {
         String number = "";
         func.push('(');
         String s = '(' + expression.replaceAll("\\s+", "") + ')';
-        int RightBracketSum = 0; //не учитываем искусственные скобки(они могут повлиять на псп выражения
+        int rightbracketsum = 0; //не учитываем искусственные скобки(они могут повлиять на псп выражения
         int i = 1;
         while (s.length() > i) {
-            char save_cur_ch = '?';
-            if (isoper(s.charAt(i-1)) && (s.charAt(i) == '-') && (i+1 < s.length())) {
-                if (s.charAt(i - 1) == '/') {// && s.charAt(i) == '*'){
-                    save_cur_ch = s.charAt(i);  //если cur_ch иниц, то после него стоит "-"
+            char savecurch = '?';
+            if (isoper(s.charAt(i - 1)) && (s.charAt(i) == '-') && (i + 1 < s.length())) {
+                if (s.charAt(i - 1) == '/') { // && s.charAt(i) == '*'){
+                    savecurch = s.charAt(i);  //если cur_ch иниц, то после него стоит "-"
                     ++i;
-                    if (save_cur_ch == '-')
+                    if (savecurch == '-') {
                         i = seeknum(i, s, -1);
-                    else
+                    } else {
                         i = seeknum(i, s, 1);
-                } else
+                    }
+                } else {
                     operands.push(0.0);
+                }
             }
 
-            if (s.charAt(i) == ')' && i != s.length() - 1)  //Не учитывается последяя скобка(искусственная)
-                --RightBracketSum;
-            if (s.charAt(i) == '(')
-                ++RightBracketSum;
-            if (RightBracketSum < 0)
+            if (s.charAt(i) == ')' && i != s.length() - 1) { //Не учитывается последяя скобка(искусственная)
+                --rightbracketsum;
+            }
+            if (s.charAt(i) == '(') {
+                ++rightbracketsum;
+            }
+            if (rightbracketsum < 0) {
                 throw new ParsingException("Wrong count of Bracket!");
-            if (isDigit(s.charAt(i))){
+            }
+            if (isDigit(s.charAt(i))) {
                 i = seeknum(i, s, 1);
                 continue;
             }
             //До этого момента может дойти либо неправильный символ,
             //  либо оператор, либо скобка
-            if (handler(s.charAt(i))){
+            if (handler(s.charAt(i))) {
                 ++i;    //если там был оператор или скобка,
                 // то выполнилось необх. действие,
                 //если нет, то вызвалось исключение;
             }
         }
 
-        if (operands.size() > 1 || func.size() > 0)
+        if (operands.size() > 1 || func.size() > 0) {
             throw new ParsingException("Too much braces!");
+        }
         return operands.pop();
     }
 }
