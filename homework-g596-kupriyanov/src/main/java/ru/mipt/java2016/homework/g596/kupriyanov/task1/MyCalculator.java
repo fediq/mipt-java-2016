@@ -11,7 +11,8 @@ import java.util.Stack;
 import java.util.StringTokenizer;
 
 public class MyCalculator implements Calculator {
-    private static String makeUnOperations(String inputStr) throws ParsingException {
+    private static final String makeUnOperations(String inputStr)
+            throws ParsingException {
         StringBuilder result = new StringBuilder("(");
         StringBuilder correctSymbols = new StringBuilder("01234567890.+-*/()");
         for (int i = 1; i < inputStr.length(); ++i) {
