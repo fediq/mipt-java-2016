@@ -102,16 +102,18 @@ class EvaluatorHelper {
         if (tryCaptureChar('(')) {
             result = processExpression();
             tryCaptureChar(')');
-        } else if ((ch >= '0' && ch <= '9') || ch == '.') {
+        } else if (Character.isDigit(ch) || ch == '.') {
 
-            while ((ch >= '0' && ch <= '9') || ch == '.') {
+            while (Character.isDigit(ch) || ch == '.') {
                 getNextChar();
             }
 
             // Number of points in a string
-            // Dirty hack :)
-            int countPoints = expression.substring(startPos, this.pos).length() -
-                    expression.substring(startPos, this.pos).replace(".", "").length();
+            // Without a hack :(
+            int countPoints = 0;
+            for (int i = startPos; i < this.pos; ++i) {
+                countPoints += expression.charAt(i) == '.' ? 1 : 0;
+            }
 
             if (countPoints > 1) {
                 throw new ParsingException("Number with many points found");

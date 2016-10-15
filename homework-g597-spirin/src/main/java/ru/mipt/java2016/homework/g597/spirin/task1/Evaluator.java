@@ -18,9 +18,7 @@ class Evaluator implements Calculator {
             throw new ParsingException("Incorrect bracket sequence");
         }
 
-        EvaluatorHelper evaluatorHelper = new EvaluatorHelper(expression);
-
-        return evaluatorHelper.evaluate();
+        return new EvaluatorHelper(expression).evaluate();
     }
 
     // Check correctness of bracket sequence
