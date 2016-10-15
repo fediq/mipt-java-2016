@@ -13,7 +13,7 @@ public class MyCalculator implements Calculator
         
         Tokenizer (String expression)
         {
-            expr = expression.replace(" ", "").replace("\n", "").replace("\t", "");
+            expr = expression.replaceAll(" ", "").replaceAll("\n", "").replaceAll("\t", "");
             next();
         }
         
