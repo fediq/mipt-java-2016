@@ -93,19 +93,19 @@ public class MyFirstCalculator implements ru.mipt.java2016.homework.base.task1.C
         for (int i = 0; i < equation.length(); i++) {
             if (equation.charAt(i) == '(') {
                 next = i + 1;
-                while((next < equation.length()) && (Character.isWhitespace(equation.charAt(next)))) {
+                while ((next < equation.length()) && (Character.isWhitespace(equation.charAt(next)))) {
                     next++;
                 }
-                if((next == equation.length()) || ( equation.charAt(next) == ')')) {
+                if ((next == equation.length()) || (equation.charAt(next) == ')')) {
                     ans = true;
                 }
             }
             if (equation.charAt(i) == ')') {
                 next = i + 1;
-                while((next < equation.length()) && ( Character.isWhitespace(equation.charAt(next)))) {
+                while ((next < equation.length()) && (Character.isWhitespace(equation.charAt(next)))) {
                     next++;
                 }
-                if((next < equation.length()) && (equation.charAt(next) == '(')) {
+                if ((next < equation.length()) && (equation.charAt(next) == '(')) {
                     ans = true;
                 }
             }
