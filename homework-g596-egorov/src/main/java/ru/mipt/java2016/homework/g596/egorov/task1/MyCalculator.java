@@ -61,7 +61,6 @@ public class MyCalculator implements Calculator {
     private boolean handler(Character cur_sim) throws ParsingException  //Решает, что нужно делать с функ.символом
     {
         if (cur_sim == ')') {
-            System.out.println("In handler, ')'");
             if (operands.size() == 0)
                 throw new ParsingException("Too few operands!");
             while (func.peek() != '(') {
@@ -97,54 +96,42 @@ public class MyCalculator implements Calculator {
         return false;
     }
 
-    private String del_spaces(String ex){
-        String ans = "";
-        Integer i = 0;
-        while (ex.length() > i){
-            if (Character.isWhitespace(ex.charAt(i))) {
-                ++i;
-                continue;
-            }
-            ans += ex.charAt(i);
-            ++i;
-        }
-        return ans;
-    }
-
     private boolean isoper(Character c) {
         return (c == '+' || c == '-' || c == '*' || c == '/' || c == '(');
     }
 
-    private int seeknum(Integer i, String s, Integer sign)throws ParsingException {
+    private int seeknum(Integer i, String s, int sign)throws ParsingException {
         //НА ВХОД ПОДАЁТСЯ НАЧАЛО ЧИСЛА
         //проходит по числу, запихивает его в стек и проверяет на точки
         Integer dot_count = 0;  //считывание числа
-        String number = "";
-        number += s.charAt(i);
+        StringBuilder number = new StringBuilder();
+        //String number = "";
+        number.append(s.charAt(i));
         ++i;
         while (s.charAt(i) == '.' || isDigit(s.charAt(i))){
             if (s.charAt(i) == '.'){
                 if (++dot_count > 1)    //с проверкой на кол-во точек
                     throw new ParsingException("Wrong input(dots)");
             }
-            number += s.charAt(i);
+            number.append(s.charAt(i));
             ++i;
         }
-        if (sign == -1 && Double.parseDouble(number) == 0) {
+        if (sign == -1 && Double.parseDouble(number.toString()) == 0) {
 
             operands.push(-0.0);
         }
         else
-            operands.push(Double.parseDouble(number) * sign);
+            operands.push(Double.parseDouble(number.toString()) * sign);
         return i;   //Возвращается №позиции после числа
     }
 
     private double solution(String expression) throws ParsingException {
+        func.clear();
+        operands.clear();
         String number = "";
         func.push('(');
-        String s = '(' + del_spaces(expression) + ')';
-        Integer RightBracketSum = 0; //не учитываем искусственные скобки(они могут повлиять на псп выражения)
-        //Scanner scanner = new Scanner(s);
+        String s = '(' + expression.replaceAll("\\s+", "") + ')';
+        int RightBracketSum = 0; //не учитываем искусственные скобки(они могут повлиять на псп выражения
         int i = 1;
         while (s.length() > i) {
             char save_cur_ch = '?';
