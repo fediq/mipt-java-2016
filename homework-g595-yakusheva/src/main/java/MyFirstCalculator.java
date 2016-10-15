@@ -89,12 +89,25 @@ public class MyFirstCalculator implements ru.mipt.java2016.homework.base.task1.C
 
     private boolean doubleBracketError() {
         boolean ans = false;
-        for (int i = 0; i < equation.length() - 1; i++) {
-            if ((equation.charAt(i) == '(') && (equation.charAt(i) == ')')) {
-                ans = true;
+        int j;
+        for (int i = 0; i < equation.length(); i++) {
+            if (equation.charAt(i) == '(') {
+                j = i+1;
+                while((j < equation.length())&&(Character.isWhitespace(equation.charAt(j)))){
+                    j++;
+                }
+                if((j == equation.length())||(equation.charAt(j) == ')')){
+                    ans = true;
+                }
             }
-            if ((equation.charAt(i) == ')') && (equation.charAt(i) == '(')) {
-                ans = true;
+            if (equation.charAt(i) == ')') {
+                j = i+1;
+                while((j < equation.length())&&(Character.isWhitespace(equation.charAt(j)))){
+                    j++;
+                }
+                if((j < equation.length())&&(equation.charAt(j) == '(')){
+                    ans = true;
+                }
             }
         }
         return ans;
