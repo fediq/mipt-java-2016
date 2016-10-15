@@ -14,6 +14,12 @@
         <module>homework-base</module>
         <module>homework-tests</module>
         <module>homework-g000-lavrentyev</module>
+<<<<<<< Updated upstream
+=======
+        <module>homework-g597-vasilyev</module>
+        <module>homework-g597-moiseev</module>
+        <module>homework-g597-kozlov</module>
+>>>>>>> Stashed changes
         <module>homework-g596-kupriyanov</module>
     </modules>
 
