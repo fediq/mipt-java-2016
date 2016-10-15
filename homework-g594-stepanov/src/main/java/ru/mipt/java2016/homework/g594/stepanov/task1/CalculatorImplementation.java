@@ -12,27 +12,19 @@ public class CalculatorImplementation implements Calculator {
         if (expression == null) {
             throw new ParsingException("Null string");
         }
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < expression.length(); ++i) {
-            char curr = expression.charAt(i);
-            if (curr != ' ' && curr != '\n' && curr != '\t') {
-                sb.append(expression.charAt(i));
-            }
-        }
-        s = sb.toString();
-        if (s.equals("")) {
+        str = expression.replaceAll("\\s", "");
+        if (str.equals("")) {
             throw new ParsingException("Empty string");
         }
         boolean valid = true;
         int balance = 0;
-        for (int i = 0; i < s.length(); ++i) {
-            char curr = s.charAt(i);
+        for (int i = 0; i < str.length(); ++i) {
+            char curr = str.charAt(i);
             if (curr == '(') {
                 ++balance;
             } else if (curr == ')') {
                 --balance;
-            } else if (!(curr >= '0' && curr <= '9') && curr != '.'
-                        && curr != '+' && curr != '-' && curr != '*' && curr != '/') {
+            } else if (!Character.isDigit(curr) && curr != '.' && !isOperation(curr)) {
                 valid = false;
                 break;
             }
@@ -49,107 +41,112 @@ public class CalculatorImplementation implements Calculator {
         }
         double result;
         try {
-            result = f(0, s.length() - 1);
+            result = solve(0, str.length() - 1);
         } catch (ParsingException e) {
             throw e;
         }
         return result;
     }
 
-    private String s;
+    private String str;
 
-    private double f(int lf, int rg) throws ParsingException {
-        if (s.charAt(lf) != '-' && !(s.charAt(lf) >= '0' && s.charAt(lf) <= '9') && s.charAt(lf) != '(') {
+    private double solve(int left, int right) throws ParsingException {
+        char curr = str.charAt(left);
+        if (curr != '-' && !Character.isDigit(curr) && curr != '(') {
             throw new ParsingException("Invalid first symbol");
         }
-        boolean one_number = true;
-        int tmp_lf = lf;
-        if (s.charAt(lf) == '-') {
-            ++tmp_lf;
+        boolean oneNumber = true;
+        int tmpLeft = left;
+        if (str.charAt(left) == '-') {
+            ++tmpLeft;
         }
-        if (tmp_lf > rg) {
+        if (tmpLeft > right) {
             throw new ParsingException("Unary minus, but no number");
         }
-        boolean found_dot = false;
-        for (int i = tmp_lf; i <= rg; ++i) {
-            if (s.charAt(i) == '.') {
-                if (found_dot) {
+        boolean foundDot = false;
+        for (int i = tmpLeft; i <= right; ++i) {
+            if (str.charAt(i) == '.') {
+                if (foundDot) {
                     throw new ParsingException("Too many dots");
                 }
-                found_dot = true;
-            } else if (!(s.charAt(i) >= '0' && s.charAt(i) <= '9')) {
-                one_number = false;
+                foundDot = true;
+            } else if (!Character.isDigit(str.charAt(i))) {
+                oneNumber = false;
                 break;
             }
         }
-        if (one_number) {
-            return Double.parseDouble(s.substring(lf, rg + 1));
+        if (oneNumber) {
+            return Double.parseDouble(str.substring(left, right + 1));
         }
         List<Double> values = new ArrayList<>();
         List<Character> operations = new ArrayList<>();
         int balance = 0;
-        int previous_position_of_bracket = -1;
-        int number_start = -1;
-        boolean in_number = false;
-        for (int i = lf; i <= rg; ++i) {
-            if (s.charAt(i) == '(' || s.charAt(i) == ')') {
-                if (s.charAt(i) == '(') {
+        int previousPositionOfBracket = -1;
+        int numberStart = -1;
+        boolean inNumber = false;
+        for (int i = left; i <= right; ++i) {
+            if (str.charAt(i) == '(' || str.charAt(i) == ')') {
+                if (str.charAt(i) == '(') {
                     if (balance == 0) {
-                        previous_position_of_bracket = i;
+                        previousPositionOfBracket = i;
                     }
                     ++balance;
                 } else {
                     if (balance == 1) {
-                        if (in_number) {
-                            values.add(-f(previous_position_of_bracket + 1, i - 1));
+                        if (inNumber) {
+                            values.add(-solve(previousPositionOfBracket + 1, i - 1));
                         } else {
-                            values.add(f(previous_position_of_bracket + 1, i - 1));
+                            values.add(solve(previousPositionOfBracket + 1, i - 1));
                         }
-                        in_number = false;
+                        inNumber = false;
                     }
                     --balance;
                 }
             } else if (balance == 0) {
-                if ((s.charAt(i) >= '0' && s.charAt(i) <= '9') || s.charAt(i) == '.') {
-                    if (!in_number) {
-                        number_start = i;
+                if (Character.isDigit(str.charAt(i)) || str.charAt(i) == '.') {
+                    if (!inNumber) {
+                        numberStart = i;
                     }
-                    in_number = true;
+                    inNumber = true;
                 } else {
-                    if (in_number) {
-                        values.add(Double.parseDouble(s.substring(number_start, i)));
-                        in_number = false;
+                    if (inNumber) {
+                        values.add(Double.parseDouble(str.substring(numberStart, i)));
+                        inNumber = false;
                     }
                     if (operations.size() == values.size()) {
-                        in_number = true;
-                        number_start = i;
+                        inNumber = true;
+                        numberStart = i;
                     } else {
-                        operations.add(s.charAt(i));
+                        operations.add(str.charAt(i));
                     }
                 }
             }
         }
-        if (in_number) {
-            values.add(Double.parseDouble(s.substring(number_start, rg + 1)));
+        if (inNumber) {
+            values.add(Double.parseDouble(str.substring(numberStart, right + 1)));
         }
-        double curr_value = values.get(0);
+        double currValue = values.get(0);
         double ans = 0;
         for (int i = 0; i < operations.size(); ++i) {
             if (operations.get(i) == '-' || operations.get(i) == '+') {
-                ans += curr_value;
+                ans += currValue;
                 if (operations.get(i) == '-') {
-                    curr_value = -values.get(i + 1);
+                    currValue = -values.get(i + 1);
                 } else {
-                    curr_value = values.get(i + 1);
+                    currValue = values.get(i + 1);
                 }
             } else {
                 if (operations.get(i) == '*') {
-                    curr_value *= values.get(i + 1);
+                    currValue *= values.get(i + 1);
                 } else {
-                    curr_value /= values.get(i + 1);
+                    currValue /= values.get(i + 1);
                 }
             }
         }
-        return ans + curr_value;
+        return ans + currValue;
+    }
+
+    private boolean isOperation(Character c) {
+        return c == '+' || c == '-' || c == '*' || c == '/';
     }
 }
