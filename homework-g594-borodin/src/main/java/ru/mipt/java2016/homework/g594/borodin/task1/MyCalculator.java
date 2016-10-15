@@ -65,7 +65,7 @@ public class MyCalculator implements Calculator {
                     throw new ParsingException("Invalid operation");
             }
         }
-
+        // Main function, calculate expression result
         Operand calculate(ArrayList<Operand> arguments) throws ParsingException {
             int argumentsSize = arguments.size();
             switch (symbol) {

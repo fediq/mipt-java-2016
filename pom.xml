@@ -6,7 +6,7 @@
 
     <groupId>ru.mipt.java2016</groupId>
     <artifactId>mipt-java-2016</artifactId>
-    <version>1.1.37-rc.8</version>
+    <version>1.0.0</version>
 
     <packaging>pom</packaging>
 
@@ -16,7 +16,7 @@
         <module>homework-g596-litvinov</module>
         <module>homework-g000-lavrentyev</module>
         <module>homework-g594-borodin</module>
-        <module>homework-g594-shevkunov</module>
+        <!---<module>homework-g594-shevkunov</module>-->
         <module>homework-g596-fattakhetdinov</module>
         <module>homework-g597-vasilyev</module>
         <module>homework-g597-moiseev</module>
