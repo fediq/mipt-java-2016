@@ -11,43 +11,49 @@ import java.util.Stack;
 import java.util.StringTokenizer;
 
 public class MyCalculator implements Calculator {
-    private static String make_unary_operations(String s, char new_symbol_minus) throws ParsingException {
-        String result = "(";
-        String correctSymbols = "01234567890.+-*/()";
-        for (int i = 1; i < s.length(); i++) {
-            char current = s.charAt(i);
-            char previous = s.charAt(i - 1);
-            if (correctSymbols.indexOf(current) == -1)
-                throw new ParsingException("Incorrect symbol in equation");
-            if (current == '-' && previous != ')' && !Character.isDigit(previous))
-                current = new_symbol_minus;
-            if (current == ')' && previous == '(')
-                throw new ParsingException("Empty parenthesis");
-            result = result + current;
+    private static String makeUnOperations(String inputStr) throws ParsingException {
+        StringBuilder result = new StringBuilder("(");
+        StringBuilder correctSymbols = new StringBuilder("01234567890.+-*/()");
+        for (int i = 1; i < inputStr.length(); ++i) {
+            char current = inputStr.charAt(i);
+            char previous = inputStr.charAt(i - 1);
+            if (correctSymbols.indexOf(Character.toString(current)) == -1) {
+                throw new ParsingException("Incorrect symbol");
+            }
+            if (current == '-' && previous != ')' && !Character.isDigit(previous)) {
+                current = '_';
+            }
+            if (current == ')' && previous == '(') {
+                throw new ParsingException("Empty brackets");
+            }
+            result.append(current);
         }
-        return result;
+        return result.toString();
     }
 
-    public double calculate(String input_string) throws ParsingException {
-        if (input_string == null) {
+    public double calculate(String inputStr) throws ParsingException {
+        if (inputStr == null) {
             throw new ParsingException("Null expression");
         }
-        input_string = "(" + input_string.replaceAll("\\s", "") + ")";
-        input_string = make_unary_operations(input_string, '~');
-        StringTokenizer tokenizer = new StringTokenizer(input_string, "+-*/()~", true);
+        StringBuilder builder =  new StringBuilder("(" + inputStr.replaceAll("\\s", "") + ")");
+        builder = new StringBuilder(makeUnOperations(builder.toString()));
+        StringTokenizer tokenizer = new StringTokenizer(builder.toString(), "+-*/()_", true);
         Stack<Number> results = new Stack<Number>();
         Stack<Operation> operations = new Stack<Operation>();
         while (tokenizer.hasMoreTokens()) {
-            String t = tokenizer.nextToken();
-            Operation symb = Operation.fromString(t);
-            symb.add_symbol(results, operations);
+            String token = tokenizer.nextToken();
+            Operation symbol = Operation.fromString(token);
+            symbol.addOperation(results, operations);
         }
-        if (!operations.isEmpty())
-            throw new ParsingException("No parenthesis balance");
-        if (results.isEmpty())
-            throw new ParsingException("No numbers in equations");
-        if (results.size() > 1)
-            throw new ParsingException("Not enough operators for these numbers");
-        return results.peek().value;
+        if (!operations.isEmpty()) {
+            throw new ParsingException("Bracket balance");
+        }
+        if (results.isEmpty()) {
+            throw new ParsingException("No numbers");
+        }
+        if (results.size() > 1) {
+            throw new ParsingException("Not enough operators");
+        }
+        return results.peek().getValue();
     }
 }

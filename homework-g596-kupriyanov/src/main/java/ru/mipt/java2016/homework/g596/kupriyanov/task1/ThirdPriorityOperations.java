@@ -8,35 +8,30 @@ import ru.mipt.java2016.homework.base.task1.ParsingException;
 
 import java.util.Stack;
 
-public final class Number extends Operation {
+public final class ThirdPriorityOperations extends Operation {
 
-    private double value;
+    private char operation;
 
-    public double getValue() {
-        return this.value;
-    }
-
-    public Number(double value) {
-        this.value = value;
-    }
-
-    public Number(String s) {
-        this.value = Double.valueOf(s);
+    public ThirdPriorityOperations(char op) {
+        this.operation = op;
     }
 
     @Override
-    protected int priority() throws ParsingException {
-        throw new ParsingException("Numbers");
+    protected int priority() {
+        return 3;
     }
-
 
     @Override
     protected void makeOperation(Stack<Number> results) throws ParsingException {
-        throw new ParsingException("Numbers");
+        if (results.isEmpty()) {
+            throw new ParsingException("No argument");
+        }
+        Number item = results.pop();
+        results.push(new Number(-item.getValue()));
     }
 
     @Override
     public void addOperation(Stack<Number> results, Stack<Operation> operations) throws ParsingException {
-        results.push(this);
+        operations.push(this);
     }
 }

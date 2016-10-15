@@ -11,54 +11,46 @@ import java.util.Stack;
 
 public abstract class Operation {
 
-    public static String op;
-
-    public static Operation fromString(String s) throws ParsingException {
-        if (s.length() < 1)
-            throw new ParsingException("Empty string is not a lexeme");
-        if (s.charAt(0) == '+') {
-            op = "+";
-            return new Plus();
-        } else if (s.charAt(0) == '-') {
-            op = "-";
-            return new Minus();
-        } else if (s.charAt(0) == '*') {
-            op = "*";
-            return new Multiply();
-        }  else if (s.charAt(0) == '/') {
-            op = "/";
-            return new Div();
-        } else if (s.charAt(0) == '~') {
-            op = "~";
-            return new UMinus();
-        } else if (s.charAt(0) == '(') {
-            op = "(";
-            return new OpenBracket();
-        } else if (s.charAt(0) == ')') {
-            op = ")";
-            return new CloseBracket();
+    public static Operation fromString(String probablyOperation) throws ParsingException {
+        if (probablyOperation.length() < 1) {
+            throw new ParsingException("Empty string");
+        }
+        if (probablyOperation.charAt(0) == '+') {
+            return new FirstPriorityOperations('+');
+        } else if (probablyOperation.charAt(0) == '-') {
+            return new FirstPriorityOperations('-');
+        } else if (probablyOperation.charAt(0) == '*') {
+            return new SecondPriorityOperations('*');
+        }  else if (probablyOperation.charAt(0) == '/') {
+            return new SecondPriorityOperations('/');
+        } else if (probablyOperation.charAt(0) == '_') {
+            return new ThirdPriorityOperations('_');
+        } else if (probablyOperation.charAt(0) == '(') {
+            return new Brackets('(');
+        } else if (probablyOperation.charAt(0) == ')') {
+            return new Brackets(')');
         } else {
             try {
-                return new Number(s);
+                return new Number(probablyOperation);
             } catch (NumberFormatException e) {
-                throw new ParsingException(s + " - incorrect lexeme");
+                throw new ParsingException("incorrect");
             }
         }
     }
 
     protected abstract int priority() throws ParsingException;
 
-    protected abstract void make_operation(Stack<Number> results) throws ParsingException;
+    protected abstract void makeOperation(Stack<Number> results) throws ParsingException;
 
-    public void add_symbol(Stack<Number> results, Stack<Operation> operations) throws ParsingException {
+    public void addOperation(Stack<Number> results, Stack<Operation> operations) throws ParsingException {
         try {
             while (operations.peek().priority() >= this.priority()) {
                 Operation operation = operations.pop();
-                operation.make_operation(results);
+                operation.makeOperation(results);
             }
             operations.push(this);
         } catch (EmptyStackException e) {
-            throw new ParsingException("No parenthesis balance");
+            throw new ParsingException("No bracket balance");
         }
     }
 }
