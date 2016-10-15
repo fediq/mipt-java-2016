@@ -38,6 +38,10 @@ public class MyCalculator implements Calculator {
                 return 2;
             case ('/'):
                 return 2;
+            case ('('):
+                return -1;
+            case (')'):
+                return -1;
             default:
                 throw new ParsingException("Wrong operation");
         }
