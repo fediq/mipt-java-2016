@@ -88,24 +88,24 @@ public class PolishNotation {
         s = s.replaceAll("\\s", "");
         int bracketSummary = 0;
         boolean empty = true;
-        Stack<Double> st = new Stack<Double>();
-        Stack<Character> op = new Stack<Character>();
+        Stack<Double> values = new Stack<Double>();
+        Stack<Character> operations = new Stack<Character>();
         for (int i = 0; i < s.length(); ++i)
         {
             if (s.charAt(i) == '(') {
                     ++bracketSummary;
-                op.push('(');
+                operations.push('(');
             }
             else if (s.charAt(i) == ')') {
                 --bracketSummary;
                 if (bracketSummary < 0)
                     throw new ParsingException("Too many close brackets");
-                while (op.peek() != '(') {
-                    operationProcess(st, op.peek());
-                    op.pop();
+                while (operations.peek() != '(') {
+                    operationProcess(values, operations.peek());
+                    operations.pop();
                 }
 
-                op.pop();
+                operations.pop();
             }
             else if (minusHandler(s.charAt(i - 1), s.charAt(i), s.charAt(i + 1)) || isDigit(s.charAt(i)))
             {
@@ -128,7 +128,7 @@ public class PolishNotation {
                     throw new ParsingException("Too many close points");
                 --i;
                 if (isDigit(operand.charAt(0))) {
-                    st.push(coef * parseDouble(operand.toString()));
+                    values.push(coef * parseDouble(operand.toString()));
                     empty = false;
                 }
                 else
@@ -137,9 +137,9 @@ public class PolishNotation {
             else if (isOperation(s.charAt(i))) {
                 operatorHandler(s.charAt(i - 1), s.charAt(i), s.charAt(i + 1));
                 char currentOp = s.charAt(i);
-                while (!op.isEmpty() && priority(op.peek()) >= priority(s.charAt(i)))
-                    operationProcess(st, op.pop());
-                op.push (currentOp);
+                while (!operations.isEmpty() && priority(operations.peek()) >= priority(s.charAt(i)))
+                    operationProcess(values, operations.pop());
+                operations.push (currentOp);
             }
             else
                 throw new ParsingException("error symbols");
@@ -148,9 +148,9 @@ public class PolishNotation {
             throw new ParsingException ("Too many open brackets");
         if (empty)
             throw new ParsingException("Empty expression");
-        while (!op.isEmpty())
-            operationProcess(st, op.pop());
-        return st.peek();
+        while (!operations.isEmpty())
+            operationProcess(values, operations.pop());
+        return values.peek();
     }
 
 
