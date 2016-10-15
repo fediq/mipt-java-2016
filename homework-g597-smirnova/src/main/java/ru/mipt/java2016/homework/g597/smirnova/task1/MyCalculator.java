@@ -15,12 +15,53 @@ public class MyCalculator implements Calculator {
 
     @Override
     public double calculate(String expression) throws ParsingException {
-        if (expression == null) {
-            throw new ParsingException("NULL EXPRESSION");
+        if (!isExpressionCorrect(expression)) {
+            throw new ParsingException("Wrong expression");
         }
         String postfixExpression = getRPNotation(expression);
         return calculateRPN(postfixExpression);
+    }
 
+    private enum SymbolType {
+        OPENING_BRACKET, CLOSING_BRACKET, NUMBER, OPERATOR, NOTHING
+    }
+
+    private boolean isExpressionCorrect(String expression) {
+        if (expression == null) {
+            return false;
+        }
+        SymbolType prevSymbol;
+        SymbolType currSymbol = SymbolType.NOTHING;
+        for (int i = 0; i < expression.length(); ++i) {
+            char currChar = expression.charAt(i);
+            prevSymbol = currSymbol;
+            if (currChar == ' ' || currChar == '\n' || currChar == '\t') {
+                if (prevSymbol == SymbolType.NUMBER && i != expression.length() - 1
+                        && NUMBERS.indexOf(expression.charAt(i + 1)) != -1) {
+                    return false;
+                }
+            } else {
+                if (NUMBERS.indexOf(currChar) != -1) {
+                    currSymbol = SymbolType.NUMBER;
+                    if (prevSymbol == SymbolType.CLOSING_BRACKET) {
+                        return false;
+                    }
+                } else if (OPERATORS.indexOf(currChar) != -1) {
+                    currSymbol = SymbolType.OPERATOR;
+                } else if (currChar == '(') {
+                    currSymbol = SymbolType.OPENING_BRACKET;
+                    if (prevSymbol == SymbolType.NUMBER || prevSymbol == SymbolType.CLOSING_BRACKET) {
+                        return false;
+                    }
+                } else if (currChar == ')') {
+                    currSymbol = SymbolType.CLOSING_BRACKET;
+                    if (prevSymbol == SymbolType.OPENING_BRACKET || prevSymbol == SymbolType.OPERATOR) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
     }
 
     private static int getPriority(char ch) throws ParsingException {
@@ -33,9 +74,11 @@ public class MyCalculator implements Calculator {
         } else if (ch == '~') {
             return 3;
         } else {
-            throw new ParsingException("WRONG OPERATOR");
+            throw new ParsingException("Wrong operator");
         }
     }
+
+
 
     private String getRPNotation(String expression) throws ParsingException {
         StringBuilder result = new StringBuilder();
@@ -70,7 +113,7 @@ public class MyCalculator implements Calculator {
                     } else if (currChar == '-') {
                         flag = false;
                         while (!operators.empty()) {
-                            if(getPriority(operators.lastElement()) >= 3) { //check check >=3
+                            if(getPriority(operators.lastElement()) == 3) {
                                 result.append(' ');
                                 result.append(operators.pop());
                             } else {
@@ -80,7 +123,7 @@ public class MyCalculator implements Calculator {
                         operators.push('~');
                         result.append(' ');
                     } else {
-                        throw new ParsingException("WRONG EXPRESSION");
+                        throw new ParsingException("Wrong expression");
                     }
                 }
             } else if (currChar == '(') {
@@ -102,10 +145,10 @@ public class MyCalculator implements Calculator {
                     }
                 }
                 if(!openBracket) {
-                    throw new ParsingException("WRONG EXPRESSION");
+                    throw new ParsingException("Wrong expression");
                 }
             } else {
-                throw new ParsingException("WRONG EXPRESSION");
+                throw new ParsingException("Wrong expression");
             }
         }
         while(!operators.empty()) {
@@ -113,7 +156,7 @@ public class MyCalculator implements Calculator {
                 result.append(' ');
                 result.append(operators.pop());
             } else {
-                throw new ParsingException("WRONG EXPRESSION");
+                throw new ParsingException("Wrong expression");
             }
         }
         return result.toString();
@@ -129,7 +172,7 @@ public class MyCalculator implements Calculator {
         } else if(operator == '/') {
             return number1 / number2;
         } else {
-            throw new ParsingException("WRONG EXPRESSION");
+            throw new ParsingException("Wrong operator");
         }
     }
 
@@ -145,21 +188,25 @@ public class MyCalculator implements Calculator {
                         double number2 = numbers.pop();
                         numbers.push(getResultOfOperation(number2, number1, currInput.charAt(0)));
                     } else {
-                        throw new ParsingException("WRONG EXPRESSION");
+                        throw new ParsingException("Parsing error");
                     }
                 } else if(currInput.charAt(0) == '~') {
                     if(numbers.size() >= 1) {
                         double number = numbers.pop();
                         numbers.push(-number);
                     } else {
-                        throw new ParsingException("WRONG EXPRESSION");
+                        throw new ParsingException("Parsing error");
                     }
                 } else if(NUMBERS.indexOf(currInput.charAt(0)) != -1) {
                     Double currNumber;
-                    currNumber = Double.parseDouble(currInput);
-                    numbers.push(currNumber);
+                    try {
+                        currNumber = Double.parseDouble(currInput);
+                        numbers.push(currNumber);
+                    } catch(NumberFormatException e){
+                        throw new ParsingException(e.getMessage(), e.getCause());
+                    }
                 } else {
-                    throw new ParsingException("WRONG EXPRESSION");
+                    throw new ParsingException("Parsing error");
                 }
             } else {
                 Double currNumber;
@@ -175,7 +222,7 @@ public class MyCalculator implements Calculator {
         if(numbers.size() == 1) {
             return numbers.pop();
         } else {
-            throw new ParsingException("Invalid expression");
-        }
+        throw new ParsingException("Parsing error");
+    }
     }
 }
