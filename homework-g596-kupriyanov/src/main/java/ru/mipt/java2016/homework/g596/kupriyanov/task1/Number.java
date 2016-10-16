@@ -16,12 +16,20 @@ public final class Number extends Operation {
         return this.value;
     }
 
-    public Number(double value) {
-        this.value = value;
+    public Number(double value) throws ParsingException {
+        try {
+            this.value = value;
+        } catch (NumberFormatException e) {
+            throw new ParsingException("incorrect");
+        }
     }
 
-    public Number(String s) {
-        this.value = Double.valueOf(s);
+    public Number(String s) throws ParsingException {
+        try {
+            this.value = Double.valueOf(s);
+        } catch (NumberFormatException e) {
+            throw new ParsingException("incorrect");
+        }
     }
 
     @Override
