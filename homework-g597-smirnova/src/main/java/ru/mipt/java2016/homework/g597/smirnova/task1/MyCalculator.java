@@ -222,7 +222,7 @@ public class MyCalculator implements Calculator {
         if(numbers.size() == 1) {
             return numbers.pop();
         } else {
-        throw new ParsingException("Parsing error");
-    }
+            throw new ParsingException("Parsing error");
+        }
     }
 }
