@@ -44,8 +44,7 @@ public class MyCalculator implements Calculator {
         MyOperationFactory operationFactory = new MyOperationFactory();
         while (tokenizer.hasMoreTokens()) {
             String token = tokenizer.nextToken();
-            operationFactory.getOperationInstance(token);
-            Operation symbol = operationFactory.getOperation();
+            Operation symbol = operationFactory.getOperationInstance(token);
             symbol.addOperation(results, operations);
         }
         if (!operations.isEmpty()) {
