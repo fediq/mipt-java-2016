@@ -10,14 +10,14 @@ import java.util.Objects;
  */
 public class MyCalculator implements Calculator {
     @Override
-    public double calculate(String s) throws ParsingException {
-        if (s == null) {
+    public double calculate(String expression) throws ParsingException {
+        if (expression == null) {
             throw new ParsingException("Null pointer");
         }
-        String ss = s.replaceAll("\n", "").replaceAll(" ", "").replaceAll("\t", "");
+        expression = expression.replaceAll("\n", "").replaceAll(" ", "").replaceAll("\t", "");
         int balance = 0;
-        for (int i = 0; i < ss.length(); ++i) {
-            char symbol = ss.charAt(i);
+        for (int i = 0; i < expression.length(); ++i) {
+            char symbol = expression.charAt(i);
             if (!((symbol >= '0' && symbol <= '9')
                     || symbol == '(' || symbol == ')' || symbol == '-' || symbol == '+' || symbol == '/' ||
                     symbol == '*' || symbol == '.')) {
@@ -34,7 +34,7 @@ public class MyCalculator implements Calculator {
             }
             char lastSymbol;
             if (i > 0) {
-                lastSymbol = ss.charAt(i - 1);
+                lastSymbol = expression.charAt(i - 1);
             } else {
                 continue;
             }
@@ -45,98 +45,106 @@ public class MyCalculator implements Calculator {
         if (balance != 0) {
             throw new ParsingException("Incorrect bracket sequence");
         }
-        return getInt(ss);
+        return getInt(expression);
     }
 
     private boolean incorrectString(char last, char next) {
-        //two act neighbor
+        //В этом условном операторе я проверяю, что никакие две операции не идут подряд.
+        //Утверждается, что если предыдущий символ есть операция, и следующий тоже, то у нас есть две операции
+        //подряд, что недопустимо.
         if ((last == '+' || last == '-' || last == '*' || last == '/' || last == '.') &&
                 (next == '+' || next == '.' || next == '*' || next == '/')) {
             return true;
         }
-        //open bracket and act
+        //Здесь я проверяю, что после открывающией скобки не идёт никакой операции, кроме, может быть, унарного
+        //минуса. Я предполагаю, что унарный плюс - запрещённая операция
         if (last == '(' && (next == '+' || next == '*' || next == '/' || next == '.')) {
             return true;
         }
-        //act and close bracket
+        //Тут проверяется, что перед закрывающей скобкой также не идёт никакой операции.
+        //Если такая операция есть, то выражение некорректно.
         if (next == ')' && 
                 (last == '+' || last == '-' || last == '*' || last == '/' || last == '.')) {
             return true;
         }
-        //not act and open bracket
+        //Я утверждаю, что перед открывающей скобкой должна обязательно идти операция, т.е.
+        //цифра или точка недопустимы.
+        //То, что перед открывающей скобкой идёт закрывающая я проверяю в последней проверке.
         if (next == '(' && ((last >= '0' && last <= '9') || last == '.')) {
             return true;
         }
-        //close bracket and not act
+        //Тут аналогично проверяется, что после закрывающей идёт какая-либо операция
+        //Так обернуть последнюю проверку в просто return мне предложила IDEA, и я последовал её совету.
         return last == ')' && ((next >= '0' && next <= '9') || next == '.' || next == '(');
     }
 
-    private double getInt(String s) throws ParsingException {
+    private double getInt(String expression) throws ParsingException {
         int balance = 0;
         boolean isPlus = false;
         double sum = 0.0;
         int lastAct = 0;
-        if (Objects.equals(s, "")) {
+        if (Objects.equals(expression, "")) {
             throw new ParsingException("Empty string");
         }
-        for (int i = 0; i < s.length(); ++i) {
-            if (i == 0 && s.charAt(i) == '-') {
+        for (int i = 0; i < expression.length(); ++i) {
+            if (i == 0 && expression.charAt(i) == '-') {
                 continue;
             }
-            if (s.charAt(i) == '(') {
+            if (expression.charAt(i) == '(') {
                 ++balance;
             }
-            if (s.charAt(i) == ')') {
+            if (expression.charAt(i) == ')') {
                 --balance;
             }
             if (balance != 0) {
                 continue;
             }
-            if (s.charAt(i) == '+') {
-                sum += getInt(s.substring(lastAct, i));
+            if (expression.charAt(i) == '+') {
+                sum += getInt(expression.substring(lastAct, i));
                 lastAct = i + 1;
                 isPlus = true;
             }
-            if (s.charAt(i) == '-' && i > 0 && (s.charAt(i - 1) >= '0' && s.charAt(i - 1) <= '9')) {
-                sum += getInt(s.substring(lastAct, i));
+            if (expression.charAt(i) == '-' && i > 0 &&
+                    (expression.charAt(i - 1) >= '0' && expression.charAt(i - 1) <= '9')) {
+                sum += getInt(expression.substring(lastAct, i));
                 lastAct = i;
                 isPlus = true;
             }
         }
         if (isPlus) {
-            return sum + getInt(s.substring(lastAct, s.length()));
+            return sum + getInt(expression.substring(lastAct, expression.length()));
         }
         boolean isMult = false;
         double res = 1.0;
         char lastMult = '*';
-        for (int i = 0; i < s.length(); ++i) {
-            if (i == 0 && s.charAt(i) == '-') {
+        for (int i = 0; i < expression.length(); ++i) {
+            if (i == 0 && expression.charAt(i) == '-') {
                 continue;
             }
-            if (s.charAt(i) == '(') {
+            if (expression.charAt(i) == '(') {
                 ++balance;
             }
-            if (s.charAt(i) == ')') {
+            if (expression.charAt(i) == ')') {
                 --balance;
             }
             if (balance != 0) {
                 continue;
             }
-            if (s.charAt(i) == '*') {
+            if (expression.charAt(i) == '*') {
                 if (lastMult == '*') {
-                    res *= getInt(s.substring(lastAct, i));
+                    res *= getInt(expression.substring(lastAct, i));
                 } else {
-                    res /= getInt(s.substring(lastAct, i));
+                    res /= getInt(expression.substring(lastAct, i));
                 }
                 lastAct = i + 1;
                 lastMult = '*';
                 isMult = true;
             }
-            if (s.charAt(i) == '/') {
+            if (expression.charAt(i) == '/') {
                 if (lastMult == '*') {
-                    res *= getInt(s.substring(lastAct, i));
+                    res *= getInt(expression.substring(lastAct, i));
                 } else {
-                    res /= getInt(s.substring(lastAct, i));
+                    res /= getInt(expression.substring(lastAct, i));
                 }
                 lastAct = i + 1;
                 lastMult = '/';
@@ -145,22 +153,22 @@ public class MyCalculator implements Calculator {
         }
         if (isMult) {
             if (lastMult == '*') {
-                res *= getInt(s.substring(lastAct, s.length()));
+                res *= getInt(expression.substring(lastAct, expression.length()));
             } else {
-                res /= getInt(s.substring(lastAct, s.length()));
+                res /= getInt(expression.substring(lastAct, expression.length()));
             }
             return res;
         }
-        if (s.charAt(0) == '(') {
-            return getInt(s.substring(1, s.length() - 1));
+        if (expression.charAt(0) == '(') {
+            return getInt(expression.substring(1, expression.length() - 1));
         }
-        if (s.charAt(0) == '-') {
-            return -1.0 * getInt(s.substring(1, s.length()));
+        if (expression.charAt(0) == '-') {
+            return -1.0 * getInt(expression.substring(1, expression.length()));
         }
         int cntPoint = 0;
-        for (int i = 0; i < s.length(); ++i) {
-            char ch = s.charAt(i);
-            if (!((ch >= '0' && ch <= '9') || ch == '.' || ch == '-')) {
+        for (int i = 0; i < expression.length(); ++i) {
+            char ch = expression.charAt(i);
+            if (!(Character.isDigit(ch) || ch == '.' || ch == '-')) {
                 throw new ParsingException("Incorrect");
             }
             if (ch == '.') {
@@ -170,6 +178,6 @@ public class MyCalculator implements Calculator {
         if (cntPoint > 1) {
             throw new ParsingException("Number with more one points");
         }
-        return Double.parseDouble(s);
+        return Double.parseDouble(expression);
     }
 }
