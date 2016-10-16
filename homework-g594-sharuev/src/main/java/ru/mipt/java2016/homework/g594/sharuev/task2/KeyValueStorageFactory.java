@@ -1,11 +1,7 @@
-package ru.mipt.java2016.homework.base.task2;
+package ru.mipt.java2016.homework.g594.sharuev.task2;
 
-/**
- * Фабрика хранилищ.
- *
- * @author Fedor S. Lavrentyev
- * @since 04.10.16
- */
+import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
+
 public interface KeyValueStorageFactory {
     /**
      * Создает новое хранилище в директории, указанной в аргументе path.

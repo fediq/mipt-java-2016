@@ -9,8 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>homework-tests</artifactId>
-    <version>1.0.0</version>
+    <artifactId>homework-g594-petrov</artifactId>
 
     <dependencies>
         <dependency>
@@ -20,15 +19,10 @@
         </dependency>
 
         <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-            <version>2.4</version>
-        </dependency>
-
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.12</version>
+            <groupId>ru.mipt.java2016</groupId>
+            <artifactId>homework-tests</artifactId>
+            <version>1.0.0</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>
