@@ -1,3 +1,4 @@
+<!--suppress ALL -->
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
@@ -13,11 +14,13 @@
     <modules>
         <module>homework-base</module>
         <module>homework-tests</module>
+        <module>homework-g596-kupriyanov</module>
+        <module>homework-g595-kryloff</module>
+        <module>homework-g596-kravets</module>
         <module>homework-g596-litvinov</module>
         <module>homework-g000-lavrentyev</module>
         <module>homework-g594-borodin</module>
         <module>homework-g594-shevkunov</module>
-        <module>homework-g596-fattakhetdinov</module>
         <module>homework-g597-vasilyev</module>
         <module>homework-g594-kozlov</module>
         <module>homework-g597-mashurin</module>
@@ -28,6 +31,9 @@
         <module>homework-g594-vorobeyv</module>
         <module>homework-g596-gerasimov</module>
         <module>homework-g595-romanenko</module>
+        <module>homework-g594-kalinichenko</module>
+        <module>homework-g595-gusarova</module>
+        <module>homework-g596-fattakhetdinov</module>
         <module>homework-g597-moiseev</module>
         <module>homework-g597-shirokova</module>
         <module>homework-g595-belyh</module>
@@ -39,9 +45,12 @@
         <module>homework-g594-petrov</module>
         <module>homework-g597-kozlov</module>
         <module>homework-g597-dmitrieva</module>
+        <module>homework-g595-popovkin</module>
         <module>homework-g594-anukhin</module>
         <module>homework-g597-kasimova</module>
         <module>homework-g596-ivanova</module>
+        <module>homework-g595-turumtaev</module>
+        <module>homework-g595-ulyanin</module>
         <module>homework-g595-iksanov</module>
         <module>homework-g595-nosareva</module>
         <module>homework-g595-proskurin</module>
@@ -50,6 +59,9 @@
         <module>homework-g594-islamov</module>
         <module>homework-g595-rodin</module>
         <module>homework-g595-murzin</module>
+        <module>homework-g595-yakusheva</module>
+        <module>homework-g597-spirin</module>
+        <module>homework-g597-bogdanov</module>
     </modules>
 
     <build>
@@ -211,6 +223,7 @@
                     </checkstyleRules>
                 </configuration>
             </plugin>
+
         </plugins>
     </build>
 
