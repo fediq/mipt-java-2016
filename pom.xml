@@ -19,6 +19,9 @@
         <module>homework-g596-litvinov</module>
         <module>homework-g594-kozlov</module>
         <module>homework-g000-lavrentyev</module>
+<<<<<<< HEAD
+        <module>homework-g595-tkachenko</module>
+=======
         <module>homework-g597-mashurin</module>
         <module>homework-g596-kozlova</module>
         <module>homework-g594-ishkhanyan</module>
@@ -26,6 +29,7 @@
         <module>homework-g595-topilskiy</module>
         <module>homework-g594-vorobeyv</module>
         <module>homework-g596-gerasimov</module>
+>>>>>>> fediq/master
         <module>homework-g594-shevkunov</module>
         <module>homework-g595-romanenko</module>
         <module>homework-g595-gusarova</module>
