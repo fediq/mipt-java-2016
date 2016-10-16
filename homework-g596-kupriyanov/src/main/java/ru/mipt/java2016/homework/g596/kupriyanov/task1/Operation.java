@@ -15,10 +15,7 @@ public abstract class Operation {
         if (probablyOperation.length() < 1) {
             throw new ParsingException("Empty string");
         }
-<<<<<<< HEAD
-=======
 
->>>>>>> origin/master
         if (probablyOperation.charAt(0) == '+') {
             return new FirstPriorityOperations('+');
         } else if (probablyOperation.charAt(0) == '-') {

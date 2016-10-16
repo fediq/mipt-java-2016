@@ -11,16 +11,6 @@ import java.util.Stack;
 import java.util.StringTokenizer;
 
 public class MyCalculator implements Calculator {
-<<<<<<< HEAD
-    private static final String makeUnOperations(String inputStr)
-            throws ParsingException {
-        StringBuilder result = new StringBuilder("(");
-        StringBuilder correctSymbols = new StringBuilder("01234567890.+-*/()");
-        for (int i = 1; i < inputStr.length(); ++i) {
-            char current = inputStr.charAt(i);
-            char previous = inputStr.charAt(i - 1);
-            if (correctSymbols.indexOf(Character.toString(current)) == -1) {
-=======
     private static final String CORRECTSYMBOLS = "01234567890.+-*/()";
 
     private static String makeUnOperations(String inputStr) throws ParsingException {
@@ -29,7 +19,6 @@ public class MyCalculator implements Calculator {
             char current = inputStr.charAt(i);
             char previous = inputStr.charAt(i - 1);
             if (CORRECTSYMBOLS.indexOf(current) == -1) {
->>>>>>> origin/master
                 throw new ParsingException("Incorrect symbol");
             }
             if (current == '-' && previous != ')' && !Character.isDigit(previous)) {
