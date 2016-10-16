@@ -80,70 +80,70 @@ public class UltimateCalc implements Calculator {
 
     @Override
     public double calculate(String expression) throws ParsingException {
-        if (expression == null) {
-            freeResource();
-            throw new ParsingException("wrong");
-        }
-
-        //parse expresion and execute it it at hte same time
-        //Really, why should we make reverse polish notation and only than calculate it?
-        //We can do it both!
-        while (pos < expression.length()) {
-            Symbol s = parseString(expression); //current symbol
-
-
-            switch (getSymbolType(s)) {
-                case NUMBER:
-                    double val = getNumber(expression);
-                    stack.push(val);
-                    break;
-                case OPERATOR:
-                    pushOperationInStack(s);
-                    break;
-                case BRACKET:
-                    if (s == Symbol.OBRACKET) { //open bracket
-                        operations.push(s);
-                    } else if (s == Symbol.CBRACKET) { //close bracket
-                        Symbol tmp = operations.pop();
-                        while (!operations.isEmpty() && tmp != Symbol.OBRACKET) {
-                            calculateOperation(tmp);
-                            tmp = operations.pop();
-                        }
-
-                        if (tmp != Symbol.OBRACKET) {
-                            freeResource();
-                            throw new ParsingException("wrong");
-                        }
-                    }
-
-                    break;
-                case SPACE:
-                    break;
-                default:
-                    break;
-            }
-
-            pos++;
-        }
-
-        //if we parse all expression, and stack isn't empty
-        while (stack.size() != 1 || operations.size() > 0) {
-            if (operations.isEmpty()) {
-                freeResource();
+        try {
+            if (expression == null) {
                 throw new ParsingException("wrong");
-            } else {
-                Symbol s = operations.pop();
-                calculateOperation(s);
             }
-        }
 
-        return stack.pop();
+            //parse expresion and execute it it at hte same time
+            //Really, why should we make reverse polish notation and only than calculate it?
+            //We can do it both!
+            while (pos < expression.length()) {
+                Symbol s = parseString(expression); //current symbol
+
+
+                switch (getSymbolType(s)) {
+                    case NUMBER:
+                        double val = getNumber(expression);
+                        stack.push(val);
+                        break;
+                    case OPERATOR:
+                        pushOperationInStack(s);
+                        break;
+                    case BRACKET:
+                        if (s == Symbol.OBRACKET) { //open bracket
+                            operations.push(s);
+                        } else if (s == Symbol.CBRACKET) { //close bracket
+                            Symbol tmp = operations.pop();
+                            while (!operations.isEmpty() && tmp != Symbol.OBRACKET) {
+                                calculateOperation(tmp);
+                                tmp = operations.pop();
+                            }
+
+                            if (tmp != Symbol.OBRACKET) {
+                                throw new ParsingException("wrong");
+                            }
+                        }
+
+                        break;
+                    case SPACE:
+                        break;
+                    default:
+                        break;
+                }
+
+                pos++;
+            }
+
+            //if we parse all expression, and stack isn't empty
+            while (stack.size() != 1 || operations.size() > 0) {
+                if (operations.isEmpty()) {
+                    throw new ParsingException("wrong");
+                } else {
+                    Symbol s = operations.pop();
+                    calculateOperation(s);
+                }
+            }
+
+            return stack.pop();
+        } finally {
+            freeResource();
+        }
     }
 
     private double getNumber(String expression) throws ParsingException {
         char c = expression.charAt(pos);
         if (c < '0' || c > '9') {
-            freeResource();
             throw new ParsingException("wrong");
         }
 
@@ -163,7 +163,6 @@ public class UltimateCalc implements Calculator {
         if (c == '.') {
             double pow = 0.1;
             if (pos >= expression.length() - 1) {
-                freeResource();
                 throw new ParsingException("wrong");
             }
 
@@ -189,7 +188,6 @@ public class UltimateCalc implements Calculator {
     //execute operation
     private void calculateOperation(Symbol s) throws ParsingException {
         if (stack.size() < 1) {
-            freeResource();
             throw new ParsingException("wrong");
         }
 
@@ -204,7 +202,6 @@ public class UltimateCalc implements Calculator {
             }
         } else {
             if (stack.isEmpty()) {
-                freeResource();
                 throw new ParsingException("wrong");
             }
             double a = stack.pop();
@@ -224,7 +221,6 @@ public class UltimateCalc implements Calculator {
                     stack.push(a / b);
                     break;
                 default:
-                    freeResource();
                     throw new ParsingException("wrong");
             }
         }
@@ -288,7 +284,6 @@ public class UltimateCalc implements Calculator {
         }
 
         //if nothing of that
-        freeResource();
         throw new ParsingException("wrong");
     }
 
