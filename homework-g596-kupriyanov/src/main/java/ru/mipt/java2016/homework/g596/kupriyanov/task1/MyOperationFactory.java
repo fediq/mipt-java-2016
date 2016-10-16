@@ -7,12 +7,11 @@ package ru.mipt.java2016.homework.g596.kupriyanov.task1;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
 public class MyOperationFactory {
+    public Operation getOperation() {
+        return operation;
+    }
 
     private static Operation operation;
-
-    public Operation getOperation() {
-            return operation;
-    }
 
     public static void getOperationInstance(String probablyOperation) throws ParsingException {
         if (probablyOperation.length() < 1) {
