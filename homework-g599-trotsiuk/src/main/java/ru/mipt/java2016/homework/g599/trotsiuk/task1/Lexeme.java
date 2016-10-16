@@ -13,7 +13,7 @@ public abstract class Lexeme {
         if (s.length() < 1) {
             throw new ParsingException("Empty string is not a lexeme");
         }
-        switch(s.charAt(0)){
+        switch (s.charAt(0)) {
             case '+': return new PlusOperator();
             case '-': return new BinaryMinusOperator();
             case '*': return new MultiplyOperator();
