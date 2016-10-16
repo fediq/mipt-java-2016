@@ -15,13 +15,14 @@ public class PolishNotation {
         return c == '+' || c == '-' || c == '*' || c == '/';
     }
 
-    private int priority (char op) {
-        if (op == '+' || op == '-')
+    private int priority(char op) {
+        if (op == '+' || op == '-') {
             return 1;
-        else if (op == '*' || op == '/')
-                return 2;
-        else
+        } else if (op == '*' || op == '/') {
+            return 2;
+        } else {
             return -1;
+        }
     }
 
     private boolean isAllNum(char c) {
@@ -30,38 +31,39 @@ public class PolishNotation {
 
     private boolean minusHandler(char prevChar, char c, char nextChar) throws ParsingException {
         if (c == '-' &&
-                (prevChar == '(' || (isOperation(prevChar) && prevChar != '-')) )
-        {
-            if (nextChar == '(')
+                (prevChar == '(' || (isOperation(prevChar) && prevChar != '-'))) {
+            if (nextChar == '(') {
                 return false;
-            else if (isDigit(nextChar))
+            } else if (isDigit(nextChar)) {
                 return true;
-            else
+            } else {
                 throw new ParsingException("Bad operators");
-        }
-        else
+            }
+        } else {
             return false;
+        }
     }
+
     private void operatorHandler(char prevChar, char c, char nextChar) throws ParsingException {
-        if (c == '-')
-        {
-            if (nextChar == '-') // I don't know
+        if (c == '-') {
+            if (nextChar == '-') {
                 throw new ParsingException("Bad operators");
-        }
-        else if (!((prevChar == ')' || isDigit(prevChar)) &&
-                        (nextChar == '(' || isDigit(nextChar) || nextChar == '-')))
+            }
+        } else if (!((prevChar == ')' || isDigit(prevChar)) &&
+                        (nextChar == '(' || isDigit(nextChar) || nextChar == '-'))) {
             throw new ParsingException("Bad operators");
-    }
-    void operationProcess (Stack<Double> st, char operation) throws ParsingException {
-        double r = st.pop();
-        if (st.isEmpty())
-        {
-            if (operation == '-')
-                st.push(-1 * r);
-            else
-                throw new ParsingException("Bad unary operator");
         }
-        else {
+    }
+
+    void operationProcess(Stack<Double> st, char operation) throws ParsingException {
+        double r = st.pop();
+        if (st.isEmpty()) {
+            if (operation == '-') {
+                st.push(-1 * r);
+            } else {
+                throw new ParsingException("Bad unary operator");
+            }
+        } else {
             double l = st.pop();
             switch (operation) {
                 case '+':
@@ -79,77 +81,78 @@ public class PolishNotation {
                 case '%':
                     st.push(l % r);
                     break;
+                default:
+                    break;
             }
         }
     }
 
-    double calc (String expression) throws ParsingException {
+    double calc(String expression) throws ParsingException {
         String s = "(" + expression + ")";
         s = s.replaceAll("\\s", "");
         int bracketSummary = 0;
         boolean empty = true;
         Stack<Double> values = new Stack<Double>();
         Stack<Character> operations = new Stack<Character>();
-        for (int i = 0; i < s.length(); ++i)
-        {
+        for (int i = 0; i < s.length(); ++i) {
             if (s.charAt(i) == '(') {
-                    ++bracketSummary;
+                ++bracketSummary;
                 operations.push('(');
-            }
-            else if (s.charAt(i) == ')') {
+            } else if (s.charAt(i) == ')') {
                 --bracketSummary;
-                if (bracketSummary < 0)
+                if (bracketSummary < 0) {
                     throw new ParsingException("Too many close brackets");
+                }
                 while (operations.peek() != '(') {
                     operationProcess(values, operations.peek());
                     operations.pop();
                 }
-
                 operations.pop();
-            }
-            else if (minusHandler(s.charAt(i - 1), s.charAt(i), s.charAt(i + 1)) || isDigit(s.charAt(i)))
-            {
+            } else if (minusHandler(s.charAt(i - 1), s.charAt(i), s.charAt(i + 1)) || isDigit(s.charAt(i))) {
                 int points = 0;
                 double coef = 1;
-                if (s.charAt(i) == '-')
-                {
+                if (s.charAt(i) == '-') {
                     coef = -1;
                     ++i;
                 }
                 StringBuilder operand = new StringBuilder();
 
-                while (i < s.length() && isAllNum(s.charAt(i)))
-                {
-                    if (s.charAt(i) == '.')
+                while (i < s.length() && isAllNum(s.charAt(i))) {
+                    if (s.charAt(i) == '.') {
                         ++points;
+                    }
                     operand.append(s.charAt(i++));
                 }
-                if (points > 1)
+                if (points > 1) {
                     throw new ParsingException("Too many close points");
+                }
                 --i;
                 if (isDigit(operand.charAt(0))) {
                     values.push(coef * parseDouble(operand.toString()));
                     empty = false;
-                }
-                else
+                } else {
                     throw new ParsingException("Begin from points");
-            }
-            else if (isOperation(s.charAt(i))) {
+                }
+            } else if (isOperation(s.charAt(i))) {
                 operatorHandler(s.charAt(i - 1), s.charAt(i), s.charAt(i + 1));
                 char currentOp = s.charAt(i);
-                while (!operations.isEmpty() && priority(operations.peek()) >= priority(s.charAt(i)))
+                while (!operations.isEmpty() && priority(operations.peek()) >= priority(s.charAt(i))) {
                     operationProcess(values, operations.pop());
-                operations.push (currentOp);
-            }
-            else
+                }
+                operations.push(currentOp);
+            } else {
                 throw new ParsingException("error symbols");
+            }
         }
-        if (bracketSummary != 0)
-            throw new ParsingException ("Too many open brackets");
-        if (empty)
+        if (bracketSummary != 0) {
+            throw new ParsingException("Too many open brackets");
+        }
+        if (empty) {
             throw new ParsingException("Empty expression");
-        while (!operations.isEmpty())
+        }
+        while (!operations.isEmpty()) {
             operationProcess(values, operations.pop());
+        }
         return values.peek();
     }
 
