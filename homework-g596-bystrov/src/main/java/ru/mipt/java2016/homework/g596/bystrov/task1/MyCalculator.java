@@ -43,12 +43,10 @@ public class MyCalculator implements Calculator {
                 return new Pair<>(-temp.getKey(), temp.getValue());
             }
             return temp;
-        } else if (!Character
-                .isDigit(exp.charAt(i))/*(exp.charAt(i) < '0') || (exp.charAt(i) > '9')*/) {
+        } else if (!Character.isDigit(exp.charAt(i))) {
             throw new ParsingException("Invalid symbol");
         }
-        while ((i < exp.length()) && (Character
-                .isDigit(exp.charAt(i))/*exp.charAt(i) >= '0') && (exp.charAt(i) <= '9')*/)) {
+        while ((i < exp.length()) && (Character.isDigit(exp.charAt(i)))) {
             ans *= 10;
             ans += exp.charAt(i) - '0';
             i++;
@@ -56,8 +54,7 @@ public class MyCalculator implements Calculator {
         if (exp.charAt(i) == '.') {
             i++;
             int ten = 10;
-            while ((i < exp.length()) && (Character
-                    .isDigit(exp.charAt(i)))/*(exp.charAt(i) >= '0') && (exp.charAt(i) <= '9')*/) {
+            while ((i < exp.length()) && (Character.isDigit(exp.charAt(i)))) {
                 ans += ((exp.charAt(i) - '0' + 0.0) / ten);
                 ten *= 10;
                 i++;
@@ -84,8 +81,8 @@ public class MyCalculator implements Calculator {
         }
         double ans = temp.getKey();
         i = temp.getValue();
-        while ((i < exp.length()) && ((exp.charAt(i) == '*') || (exp.charAt(i) == '/') || (
-                exp.charAt(i) == ' '))) {
+        while ((i < exp.length()) && ((exp.charAt(i) == '*') || (exp.charAt(i) == '/')
+                || (exp.charAt(i) == ' '))) {
             while ((exp.charAt(i) == ' ') || (exp.charAt(i) == '\n') || (exp.charAt(i) == '\t')) {
                 i++;
             }
