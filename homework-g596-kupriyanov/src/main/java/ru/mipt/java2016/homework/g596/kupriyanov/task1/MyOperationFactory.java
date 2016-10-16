@@ -6,9 +6,6 @@ package ru.mipt.java2016.homework.g596.kupriyanov.task1;
 
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
-import java.util.EmptyStackException;
-import java.util.Stack;
-
 public class MyOperationFactory {
 
     private static Operation operation;
