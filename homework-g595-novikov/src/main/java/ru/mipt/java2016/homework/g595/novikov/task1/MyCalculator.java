@@ -4,7 +4,7 @@ import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
 public class MyCalculator implements Calculator {
-    static class Tokenizer {
+    private static class Tokenizer {
         private String expr;
         private String current;
         private int pos = 0;
@@ -30,9 +30,9 @@ public class MyCalculator implements Calculator {
             return current;
         }
         
-        boolean isSpecial(char c) {
-            return c == '(' || c == ')' || c == '+' 
-                    || c == '-' || c == '*' || c == '/';
+        private static boolean isSpecial(char symb) {
+            return symb == '(' || symb == ')' || symb == '+' 
+                    || symb == '-' || symb == '*' || symb == '/';
         }
         
         public Tokenizer next() {
@@ -57,7 +57,7 @@ public class MyCalculator implements Calculator {
         }
     }
     
-    static double brackets(Tokenizer tokens) throws ParsingException {
+    private static double brackets(Tokenizer tokens) throws ParsingException {
         if (tokens.hasNext() && tokens.getCurrent().equals("-")) {
             return -brackets(tokens.next());
         }
@@ -81,33 +81,33 @@ public class MyCalculator implements Calculator {
         throw new ParsingException("Error during brackets() : cannot find '(' or number");
     }
     
-    static double mul(Tokenizer tokens) throws ParsingException {
-        double a = brackets(tokens);
+    private static double mul(Tokenizer tokens) throws ParsingException {
+        double res = brackets(tokens);
         while (tokens.hasNext() && (tokens.getCurrent().equals("*")
                 || tokens.getCurrent().equals("/"))) {
             if (tokens.getCurrent().equals("*")) {
-                a = a * brackets(tokens.next());
+                res *= brackets(tokens.next());
             } else {
-                a = a / brackets(tokens.next());
+                res /=  brackets(tokens.next());
             }
         }
-        return a;
+        return res;
     }
     
-    static double add(Tokenizer tokens) throws ParsingException {
-        double a = mul(tokens);
+    private static double add(Tokenizer tokens) throws ParsingException {
+        double res = mul(tokens);
         while (tokens.hasNext() && (tokens.getCurrent().equals("-")
                 || tokens.getCurrent().equals("+"))) {
             if (tokens.getCurrent().equals("+")) {
-                a += mul(tokens.next());
+                res += mul(tokens.next());
             } else {
-                a -= mul(tokens.next());
+                res -= mul(tokens.next());
             }
         }
-        return a;
+        return res;
     }
     
-    static double expr(Tokenizer tokens) throws ParsingException {
+    private static double expr(Tokenizer tokens) throws ParsingException {
         return add(tokens);
     }
     
