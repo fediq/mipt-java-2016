@@ -15,6 +15,7 @@
         <module>homework-base</module>
         <module>homework-tests</module>
 <<<<<<< HEAD
+<<<<<<< HEAD
         <module>homework-g000-lavrentyev</module>
 <<<<<<< Updated upstream
 =======
@@ -24,6 +25,8 @@
 >>>>>>> Stashed changes
         <module>homework-g596-kupriyanov</module>
 =======
+=======
+>>>>>>> fediq/master
         <module>homework-g596-kravets</module>
         <module>homework-g596-litvinov</module>
         <module>homework-g594-kozlov</module>
@@ -61,6 +64,9 @@
         <module>homework-g594-islamov</module>
         <module>homework-g595-rodin</module>
         <module>homework-g595-murzin</module>
+<<<<<<< HEAD
+>>>>>>> fediq/master
+=======
 >>>>>>> fediq/master
     </modules>
 
