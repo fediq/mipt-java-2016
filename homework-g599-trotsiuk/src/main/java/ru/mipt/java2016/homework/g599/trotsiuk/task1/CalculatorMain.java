@@ -1,4 +1,4 @@
-package main.java.ru.mipt.java2016.homework.g599.trotsiuk.task1;
+package ru.mipt.java2016.homework.g599.trotsiuk.task1;
 
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
@@ -25,7 +25,10 @@ public class CalculatorMain implements Calculator {
 
     @Override
     public double calculate(String expression) throws  ParsingException {
-        expression = "(" + expression.replaceAll(" ", "") + ")";
+        if (expression == null) {
+            throw new ParsingException("First argument(expression) expected.");
+        }
+        expression = "(" + expression.replaceAll(" ", "").replaceAll("\n", "").replaceAll("\t","") + ")";
         expression = markUnaryMinuses(expression, '~');
         StringTokenizer tokenizer = new StringTokenizer(expression, "+-*/()~", true);
         Stack<NumberLexeme> results = new Stack<NumberLexeme>();
@@ -62,6 +65,7 @@ public class CalculatorMain implements Calculator {
             if (current == '-' && previous != ')' && !Character.isDigit(previous)) {
                 current = newSymbol;
             }
+
             result = result + current;
         }
         return result;

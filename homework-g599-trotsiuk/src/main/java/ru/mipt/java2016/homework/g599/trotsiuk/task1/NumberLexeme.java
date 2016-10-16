@@ -1,4 +1,4 @@
-package main.java.ru.mipt.java2016.homework.g599.trotsiuk.task1;
+package ru.mipt.java2016.homework.g599.trotsiuk.task1;
 
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
