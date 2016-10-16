@@ -4,42 +4,22 @@ import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
 import java.util.Stack;
-import java.util.regex.*;
 
 /**
- * @author  izaharkin
- * @since   11.10.16
+ * @author izaharkin
+ * @since 11.10.16
  * <p>
  * Implementation using CF-grammatic (КС-грамматика) (syntax analyzator).
- * Any ariphmetical expression can be described by grammatic.
- * The description of grammatic (Stroustrup method):
- * <p>
- * Expression:
- * Term
- * Expression '+' Term
- * Expression '-' Term
- * Term:
- * Primary_expression
- * Term '*' Primary_expression
- * Term '/' Primary_expression
- * Term '%' Primary_expression
- * Primary_expression:
- * Number
- * '('Expression')'
- * '-' Primary_expression
- * '+' Primary_expression
- * Number:
- * Floating_point_literal
- * <p>
- * E.g. this calculator is implemented using syntax analysis
  */
 public class GrammaticCalculator implements Calculator {
-    static final char[] ARITHMETIC_SYMBOLS = {'+', '-', '*', '/', '(', ')'};
 
     @Override
     public double calculate(String expression) throws ParsingException {
         if (expression == null) {
             throw new ParsingException("Null expression");
+        }
+        if (expression.matches("\\d+(\\.\\d+)?\\s+\\d+(\\.\\d+)?")) {
+            throw new ParsingException("Illegal spaces between numbers");
         }
         expression = expression.replaceAll("\\s+", "");
         if (expression.length() == 0) {
@@ -49,14 +29,14 @@ public class GrammaticCalculator implements Calculator {
         return arithmeticalAnalyzer.evaluate(expression);
     }
 
-    private class SyntaxAnalyzer {
-        private TokenStream tokenStream;
+    private static class SyntaxAnalyzer {
+        private static final char[] ARITHMETIC_SYMBOLS = {'+', '-', '*', '/', '(', ')'};
+        private TokenStream tokenStream = new TokenStream();
 
         SyntaxAnalyzer() {
-            tokenStream = new TokenStream();
         }
 
-        public boolean isOperator(Character character) {
+        private static boolean isOperator(Character character) {
             for (char ch : ARITHMETIC_SYMBOLS) {
                 if (character == ch) {
                     return true;
@@ -69,15 +49,12 @@ public class GrammaticCalculator implements Calculator {
             private char symbol;
             private double value;
 
-            Token() {
-            }
-
             Token(char character) {
                 symbol = character;
             }
 
-            Token(char character, double val) {
-                symbol = character;
+            Token(double val) {
+                symbol = 'n';
                 value = val;
             }
 
@@ -93,11 +70,15 @@ public class GrammaticCalculator implements Calculator {
         public double evaluate(String expression) throws ParsingException {
             tokenStream.setParsingExpression(expression);
             checkBracesBalance(expression);
-            return expressionRule();
+            double value = expressionRule();
+            if (!tokenStream.atLastSymbol()) {
+                throw new ParsingException("Illegal expression");
+            }
+            return value;
         }
 
         // throws ParsingException if there is too much or too few braces
-        public void checkBracesBalance(String expression) throws ParsingException {
+        private static void checkBracesBalance(String expression) throws ParsingException {
             Stack<Character> openBraces = new Stack<>();
             for (int i = 0; i < expression.length(); ++i) {
                 if (expression.charAt(i) == '(') {
@@ -123,7 +104,7 @@ public class GrammaticCalculator implements Calculator {
             public void setParsingExpression(String parsingExpression) {
                 expression = parsingExpression;
                 curPos = 0;
-                buffer = new Token();
+                buffer = new Token('#');
                 filled = false;
             }
 
@@ -155,19 +136,26 @@ public class GrammaticCalculator implements Calculator {
                     }
                     String strNumber = stringBuilder.toString();
                     double value = Double.parseDouble(strNumber);
-                    return new Token('n', value);
+                    return new Token(value);
                 } else {
                     throw new ParsingException("Unexpected character");
                 }
             }
 
-            public void putBackToStream(Token token) {
+            public void putBackToStream(Token token) throws ParsingException {
+                if (filled) {
+                    throw new ParsingException("Illegal expression");
+                }
                 buffer = token;
                 filled = true;
             }
+
+            public boolean atLastSymbol() {
+                return curPos == expression.length();
+            }
         }
 
-        // Handle numbers and parentheses
+        // Handle numbers and braces
         private double primaryExprRule() throws ParsingException {
             Token curToken = tokenStream.getCurrentToken();
             switch (curToken.getSymbol()) {
