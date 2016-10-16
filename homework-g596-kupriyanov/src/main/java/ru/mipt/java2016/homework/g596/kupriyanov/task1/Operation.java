@@ -9,35 +9,9 @@ import ru.mipt.java2016.homework.base.task1.ParsingException;
 import java.util.EmptyStackException;
 import java.util.Stack;
 
+
+
 public abstract class Operation {
-
-    public static Operation fromString(String probablyOperation) throws ParsingException {
-        if (probablyOperation.length() < 1) {
-            throw new ParsingException("Empty string");
-        }
-
-        if (probablyOperation.charAt(0) == '+') {
-            return new FirstPriorityOperations('+');
-        } else if (probablyOperation.charAt(0) == '-') {
-            return new FirstPriorityOperations('-');
-        } else if (probablyOperation.charAt(0) == '*') {
-            return new SecondPriorityOperations('*');
-        }  else if (probablyOperation.charAt(0) == '/') {
-            return new SecondPriorityOperations('/');
-        } else if (probablyOperation.charAt(0) == '_') {
-            return new ThirdPriorityOperations('_');
-        } else if (probablyOperation.charAt(0) == '(') {
-            return new Brackets('(');
-        } else if (probablyOperation.charAt(0) == ')') {
-            return new Brackets(')');
-        } else {
-            try {
-                return new Number(probablyOperation);
-            } catch (NumberFormatException e) {
-                throw new ParsingException("incorrect");
-            }
-        }
-    }
 
     protected abstract int priority() throws ParsingException;
 

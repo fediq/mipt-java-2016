@@ -41,9 +41,11 @@ public class MyCalculator implements Calculator {
         StringTokenizer tokenizer = new StringTokenizer(builder.toString(), "+-*/()_", true);
         Stack<Number> results = new Stack<Number>();
         Stack<Operation> operations = new Stack<Operation>();
+        MyOperationFactory operationFactory = new MyOperationFactory();
         while (tokenizer.hasMoreTokens()) {
             String token = tokenizer.nextToken();
-            Operation symbol = Operation.fromString(token);
+            operationFactory.getOperationInstance(token);
+            Operation symbol = operationFactory.getOperation();
             symbol.addOperation(results, operations);
         }
         if (!operations.isEmpty()) {
