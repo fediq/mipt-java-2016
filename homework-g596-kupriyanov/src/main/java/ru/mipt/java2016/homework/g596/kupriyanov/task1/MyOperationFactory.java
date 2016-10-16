@@ -7,7 +7,6 @@ package ru.mipt.java2016.homework.g596.kupriyanov.task1;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
 public class MyOperationFactory {
-
     public static Operation getOperationInstance(String probablyOperation) throws ParsingException {
         if (probablyOperation.length() < 1) {
             throw new ParsingException("Empty string");
