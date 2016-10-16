@@ -8,7 +8,7 @@ import ru.mipt.java2016.homework.base.task1.ParsingException;
 
 import java.util.Stack;
 
-import  static java.lang.Character.isDigit;
+import static java.lang.Character.isDigit;
 
 
 public class MyCalculator implements Calculator {
