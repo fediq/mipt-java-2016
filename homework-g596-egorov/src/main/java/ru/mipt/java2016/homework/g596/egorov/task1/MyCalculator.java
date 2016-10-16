@@ -8,7 +8,7 @@ import ru.mipt.java2016.homework.base.task1.ParsingException;
 
 import java.util.Stack;
 
-import static java.lang.Character.isDigit;
+import  static  java.lang.Character.isDigit;
 
 
 public class MyCalculator implements Calculator {
@@ -23,7 +23,7 @@ public class MyCalculator implements Calculator {
         return (solution(expression));
     }
 
-    private double doit(Double x, Character oper, Double y) throws ParsingException {
+    private double doit(Double x, char oper, Double y) throws ParsingException {
         switch (oper) {
             case('+'):
                 return y + x;
@@ -38,7 +38,7 @@ public class MyCalculator implements Calculator {
         }
     }
 
-    private int priority(Character x) throws ParsingException {
+    private int priority(char x) throws ParsingException {
         switch (x) {
             case '+':
             case '-':
@@ -54,7 +54,7 @@ public class MyCalculator implements Calculator {
     }
 
 
-    private boolean handler(Character cursim) throws ParsingException { //Решает, что нужно делать с функ.символом
+    private boolean handler(char cursim) throws ParsingException { //Решает, что нужно делать с функ.символом
         if (cursim == ')') {
             if (operands.size() == 0) {
                 throw new ParsingException("Too few operands!");
@@ -82,7 +82,7 @@ public class MyCalculator implements Calculator {
             operands.push(doit(operands.pop(), func.pop(), operands.pop()));
             func.push(cursim);
 
-            Character save;
+            char save;
             save = func.pop();
             while (priority(save) >= priority(func.peek()) && operands.size() > 1) {
                 operands.push(doit(operands.pop(), func.pop(), operands.pop()));
@@ -94,33 +94,33 @@ public class MyCalculator implements Calculator {
         return false;
     }
 
-    private boolean isoper(Character c) {
+    private boolean isoper(char c) {
         return (c == '+' || c == '-' || c == '*' || c == '/' || c == '(');
     }
 
-    private int seeknum(Integer i, String s, int sign)throws ParsingException {
+    private int seeknum(int begin, String s, int sign)throws ParsingException {
         //НА ВХОД ПОДАЁТСЯ НАЧАЛО ЧИСЛА
         //проходит по числу, запихивает его в стек и проверяет на точки
-        Integer dotcount = 0;  //считывание числа
-        StringBuilder number = new StringBuilder();
-        //String number = "";
-        number.append(s.charAt(i));
-        ++i;
-        while (s.charAt(i) == '.' || isDigit(s.charAt(i))) {
-            if (s.charAt(i) == '.') {
+        int dotcount = 0;  //считывание числа
+        //StringBuilder number = new StringBuilder();
+        //number.append(s.charAt(i));
+        int currentpos = begin;
+        ++currentpos;
+        while (s.charAt(currentpos) == '.' || isDigit(s.charAt(currentpos))) {
+            if (s.charAt(currentpos) == '.') {
                 if (++dotcount > 1) {    //с проверкой на кол-во точек
                     throw new ParsingException("Wrong input(dots)");
                 }
             }
-            number.append(s.charAt(i));
-            ++i;
+            //number.append(s.charAt(i));
+            ++currentpos;
         }
-        if (sign == -1 && Double.parseDouble(number.toString()) == 0) {
+        if (sign == -1 && Double.parseDouble(s.substring(begin, currentpos).toString()) == 0) {
             operands.push(-0.0);
         } else {
-            operands.push(Double.parseDouble(number.toString()) * sign);
+            operands.push(Double.parseDouble(s.substring(begin, currentpos).toString()) * sign);
         }
-        return i;   //Возвращается №позиции после числа
+        return currentpos;   //Возвращается №позиции после числа
     }
 
     private double solution(String expression) throws ParsingException {
