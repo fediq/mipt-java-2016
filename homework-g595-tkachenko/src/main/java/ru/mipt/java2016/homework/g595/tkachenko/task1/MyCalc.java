@@ -9,151 +9,212 @@ import ru.mipt.java2016.homework.base.task1.ParsingException;
 /**
  * Калькулятор, преобразующий входящую строку в ОПЗ и считающий её значение.
  *
- * by Dmitry Tkachenko, 10.10.2016
+ * by Dmitry Tkachenko and just me and google for now, 10.10.2016
+ *
  */
+
 
 public class MyCalc implements Calculator {
 
-    //Получение приоритета символа.
-    private static int getPriority(char x) throws ParsingException {
-        switch (x) {
-            case '(' : return 0;
-            case ')' : return 0;
-            case '+' : return 1;
-            case '-' : return 1;
-            case '*' : return 2;
-            case '/' : return 2;
-            case '~' : return 3; //Унарный минус
-            default : throw new ParsingException("Illegal symbol!");
-        }
-    }
+    private static class RPN {
 
-    //Разбор выражения и вывод ответа.
-    @Override //Переписываем метод
-    public double calculate(String expression) throws ParsingException {
-        if (expression == null) {
-            throw new ParsingException("Expression is empty!");
+        private static Boolean isOperator(Character c) {
+            return Pattern.matches("(\\+)|(\\-)|(\\/)|(\\*)|(\\~)", c.toString());
         }
-        return calculation(getOPZ(expression.replaceAll("\\s", "")));
-    }
 
-    //Получение ОПЗ по прямой записи.
-    private String getOPZ(String expression) throws ParsingException {
-        Stack<Character> operators = new Stack<>(); //Стек операторов
-        boolean isUnary = true; //Проверка на унарность операции.
-        StringBuilder finalOPZ = new StringBuilder(); //Собственно, ОПЗ.
-        for (Character i : expression.toCharArray()) {
-            if ((Character.isDigit(i)) || (i == '.')) {
-                isUnary = false;
-                finalOPZ.append(i);
-            } else if ((i == '+') || (i == '-') || (i == '*') || (i == '/')) {
-                if (isUnary) {
-                    if (i == '+') {
-                        isUnary = false; // Плюс ничего не меняет, не считаем унарным.
-                    } else if (i == '-') {
-                        operators.push('~');
-                        isUnary = false;
-                    } else {
-                        throw new ParsingException("Illegal expression!");
-                    }
-                } else {
-                    isUnary = true;
-                    finalOPZ.append(' ');
-                    while (!operators.empty()) {
-                        Character tmp = operators.pop();
-                        if (getPriority(i) <= getPriority(tmp)) {
-                            finalOPZ.append(' ').append(tmp).append(' ');
+        private static Boolean isBrace(Character c) {
+            return Pattern.matches("(\\()|(\\))", c.toString());
+        }
+
+        private static Boolean isDelimiter(Character c) {
+            return Pattern.matches("\\s", c.toString());
+        }
+
+        private static Boolean isDigit(Character c) {
+            return Pattern.matches("[0-9]|(\\.)", c.toString());
+        }
+
+        private static Byte getPriority(Character c) {
+            switch (c) {
+                case '(': return 0;
+                case ')': return 0;
+                case '+': return 1;
+                case '-': return 1;
+                case '*': return 2;
+                case '/': return 2;
+                case '^': return 3;
+                default: return -1;
+            }
+        }
+
+        private static String getExpression(String input) throws ParsingException {
+
+            StringBuilder output = new StringBuilder();
+            Stack<Character> operations = new Stack<>();
+            Boolean isUnary = true;
+
+            if (input == null) {
+                throw new ParsingException("Input is null!");
+            }
+
+            for (Character c : input.toCharArray()) {
+
+                if (RPN.isDigit(c)) {
+                    isUnary = false;
+                    output.append(c);
+                    continue;
+                }
+
+                if (RPN.isOperator(c)) {
+
+                    if (isUnary) {
+
+                        if (c.equals('-')) {
+                            operations.push('~');
+                            isUnary = false;
+                            continue;
                         } else {
-                            operators.push(tmp);
-                            break;
+                            if (c.equals('+')) {
+                                isUnary = false;
+                                continue;
+                            } else {
+                                throw new ParsingException("Expression is illegal!");
+                            }
+
                         }
+
                     }
-                    operators.push(i);
+
+                    if (!isUnary) {
+                        isUnary = true;
+                        output.append(' ');
+                        while (!operations.empty()) {
+                            Character top = operations.pop();
+                            if (RPN.getPriority(c) <= RPN.getPriority(top)) {
+                                output.append(' ').append(top).append(' ');
+                            } else {
+                                operations.push(top);
+                                break;
+                            }
+                        }
+                        operations.push(c);
+                        continue;
+                    }
                 }
-            } else if (i == '(') {
-                isUnary = true;
-                finalOPZ.append(' ');
-                operators.push(i);
-            } else if (i == ')') {
-                isUnary = false;
-                boolean firstBrackets = false;
-                while (!operators.empty()) {
-                    Character tmp = operators.pop();
-                    if (tmp == '(') {
-                        firstBrackets = true;
-                        break;
+
+                if (RPN.isBrace(c)) {
+
+                    if (c.equals('(')) {
+                        isUnary = true;
+                        output.append(' ');
+                        operations.push(c);
+                        continue;
+                    }
+
+                    if (c.equals(')')) {
+                        isUnary = false;
+                        boolean bracketBalance = false;
+                        while (!operations.empty()) {
+                            Character top = operations.pop();
+                            if (top.equals('(')) {
+                                bracketBalance = true;
+                                break;
+                            } else {
+                                output.append(' ').append(top).append(' ');
+                            }
+                        }
+                        if (!bracketBalance) {
+                            throw new ParsingException("Brackets balance gone bad.");
+                        }
+                        continue;
+                    }
+                }
+
+                if (RPN.isDelimiter(c)) {
+                    output.append(' ');
+                }
+
+                if (!RPN.isOperator(c) && !RPN.isBrace(c) && !RPN.isDigit(c) && !RPN.isDelimiter(c)) {
+                    throw new ParsingException("Expression is illegal!");
+                }
+            }
+
+            while (!operations.empty()) {
+                Character top = operations.pop();
+                if (RPN.isOperator(top)) {
+                    output.append(' ').append(top).append(' ');
+                } else {
+                    throw new ParsingException("Expression is illegal!");
+                }
+            }
+
+            return output.toString();
+        }
+
+        private static double makeOperation(double d1, double d2, Character op) {
+            switch (op) {
+                case '+' : return d1 + d2;
+                case '-' : return d1 - d2;
+                case '*' : return d1 * d2;
+                case '/' : return d1 / d2;
+                default : return 0.0;
+            }
+        }
+
+        private static double counting(String input) throws ParsingException {
+
+            Scanner sc = new Scanner(input);
+            Stack<Double> operands = new Stack<>();
+
+            while (sc.hasNext()) {
+
+                String s = sc.next();
+
+                if (s.length() == 1 && RPN.isOperator(s.charAt(0)) && (s.charAt(0) != '~')) {
+                    if (operands.size() >= 2) {
+                        double top2 = operands.pop();
+                        double top1 = operands.pop();
+                        double result = makeOperation(top1, top2, s.charAt(0));
+                        operands.push(result);
                     } else {
-                        finalOPZ.append(' ').append(tmp).append(' ');
+                        throw new ParsingException("Expression is invalid!");
+                    }
+                } else if (s.length() == 1 && s.charAt(0) == '~') {
+                    if (operands.size() >= 1) {
+                        double top = operands.pop();
+                        operands.push(-1 * top);
+                    } else {
+                        throw new ParsingException("Expresion is invalid!");
+                    }
+                } else {
+                    try  {
+                        Double number = Double.parseDouble(s);
+                        operands.push(number);
+                    } catch (NumberFormatException nfe) {
+                        throw new ParsingException("Expression is invalid!");
                     }
                 }
-                if (!firstBrackets) {
-                    throw new ParsingException("THe bracket balance is illegal!");
-                }
+            }
+
+            if (operands.size() == 1) {
+                return operands.pop();
             } else {
-                throw new ParsingException("Illegal symbol!");
+                throw new ParsingException("Expression is invalid!");
             }
         }
 
-        while (!operators.empty()) {
-            Character tmp = operators.pop();
-            if ((tmp == '+') || (tmp == '-') || (tmp == '*') || (tmp == '/') || (tmp == '~')) {
-                finalOPZ.append(' ').append(tmp).append(' ');
-            } else {
-                throw new ParsingException("Invalid expression");
-            }
+        public static double Calculate(String input) throws ParsingException {
+            String output;
+            output = RPN.getExpression(input);
+            double result = counting(output);
+            return result;
         }
 
-        return finalOPZ.toString();
     }
 
-    //Применение одного оператора.
-    private static double makeOperation(double op1, double op2, char operation) throws ParsingException {
-        switch (operation) {
-            case '+' : return op1 + op2;
-            case '-' : return op1 - op2;
-            case '*' : return op1 * op2;
-            case '/' : return op1 / op2;
-            default  : throw new ParsingException("Invalid expression");
-        }
+    @Override
+    public double calculate(String expression) throws ParsingException {
+        return RPN.Calculate(expression);
     }
 
-    //Подсчет значения ОПЗ.
-    private static double calculation(String expression) throws ParsingException {
-        Scanner stream = new Scanner(expression);
-        Stack<Double> results = new Stack<>();
-        while (stream.hasNext()) {
-            String s = stream.next();
-            if (s.length() == 1 && ((s.charAt(0) == '+') || (s.charAt(0) == '-')
-                    || (s.charAt(0) == '*') || (s.charAt(0) == '/'))) {
-                if (results.size() > 1) {
-                    double op2 = results.pop();
-                    double op1 = results.pop();
-                    double res = makeOperation(op1, op2, s.charAt(0));
-                    results.push(res);
-                } else {
-                    throw new ParsingException("Invalid expression");
-                }
-            } else if (s.length() == 1 && s.charAt(0) == '~') {
-                if (results.size() > 0) {
-                    double op = results.pop();
-                    results.push(op * -1);
-                } else {
-                    throw new ParsingException("Invalid expression");
-                }
-            } else
-                //? - предшествующий символ не обязателен
-                //* - сколько угодно предшествующих символов
-                //\\. - точка
-                if (Pattern.matches("[-+]?[0-9]*\\.?[0-9]", s)) {
-                    results.push(Double.parseDouble(s));
-                } else {
-                    throw new ParsingException("Invalid expression");
-                }
-        }
-        if (results.size() == 1) {
-            return results.peek();
-        } else {
-            throw new ParsingException("Invalid expression");
-        }
-    }
 }

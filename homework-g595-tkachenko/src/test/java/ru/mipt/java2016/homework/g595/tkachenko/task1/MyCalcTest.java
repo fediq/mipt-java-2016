@@ -5,7 +5,7 @@ import ru.mipt.java2016.homework.tests.task1.AbstractCalculatorTest;
 
 /**
  * Тестировщик калькулятора.
- * <p>
+ *
  * by Dmitry Tkachenko, 10.10.2016
  */
 
