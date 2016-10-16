@@ -66,7 +66,6 @@ public class MyCalculator implements Calculator {
             }
         }
         // Main function, calculate expression result
-
         Operand calculate(ArrayList<Operand> arguments) throws ParsingException {
             int argumentsSize = arguments.size();
             switch (symbol) {
@@ -175,8 +174,6 @@ public class MyCalculator implements Calculator {
         }
     }
 
-    //parsing operations and braces
-
     private Function readFunction(String s, Token previousToken) throws ParsingException {
         if ((s.charAt(pos) == '+' || s.charAt(pos) == '-') &&
                 previousToken.getType() == TokenType.FUNCTION &&
@@ -188,8 +185,6 @@ public class MyCalculator implements Calculator {
             return new Function(s.charAt(pos), 2);
         }
     }
-
-    //parsing operands
 
     private String readDouble(String s) {
         String result = "";
