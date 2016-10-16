@@ -14,12 +14,14 @@
     <modules>
         <module>homework-base</module>
         <module>homework-tests</module>
+        <module>homework-g596-kupriyanov</module>
         <module>homework-g595-kryloff</module>
         <module>homework-g596-kravets</module>
         <module>homework-g596-litvinov</module>
         <module>homework-g594-kozlov</module>
         <module>homework-g000-lavrentyev</module>
         <module>homework-g595-kireev</module>
+        <module>homework-g595-novikov</module>
         <module>homework-g597-mashurin</module>
         <module>homework-g596-kozlova</module>
         <module>homework-g594-ishkhanyan</module>
@@ -60,6 +62,8 @@
         <module>homework-g595-murzin</module>
         <module>homework-g595-yakusheva</module>
         <module>homework-g597-spirin</module>
+        <module>homework-g597-bogdanov</module>
+        <module>homework-g596-egorov</module>
     </modules>
 
     <build>
