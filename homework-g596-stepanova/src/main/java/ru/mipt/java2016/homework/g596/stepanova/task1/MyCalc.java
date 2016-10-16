@@ -103,7 +103,7 @@ public class MyCalc implements Calculator {
     }
 
 
-    private double RPNtoDouble(String[] tokens) {
+    private double rpnToDouble(String[] tokens) {
         Stack<String> stack = new Stack<>();
 
         for (String token : tokens) {
@@ -212,13 +212,12 @@ public class MyCalc implements Calculator {
                 builder.insert(i + 1, ' ');
                 i++;
                 dotsInDouble = 0;
+            } else if (!DOUBLE_DIGITS.contains(curCh) || dotsInDouble > 1) {
+                throw new ParsingException("Wrong symbol");
             }
             // Иначе, если текущий символ не цифра double или
             // если кол-во точек в double превысило одну,
             // то текущий символ некорректный, кидаем исключение
-            else if (!DOUBLE_DIGITS.contains(curCh) || dotsInDouble > 1) {
-                throw new ParsingException("Wrong symbol");
-            }
 
             i++;
         }
@@ -235,6 +234,6 @@ public class MyCalc implements Calculator {
         String[] input = parser(expression);
         String[] output = infixToRPN(input);
 
-        return RPNtoDouble(output);
+        return rpnToDouble(output);
     }
 }
