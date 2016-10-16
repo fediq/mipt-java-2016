@@ -9,26 +9,12 @@ import java.util.StringTokenizer;
 
 public class CalculatorMain implements Calculator {
 
-    /*public static void main(String[] args) {
-        if (args.length < 1) {
-            System.err.println("First argument(expression) expected.");
-            System.exit(1);
-        }
-        try {
-            double result = calculate(args[0]);
-            System.out.println(result);
-        } catch (ParsingException e) {
-            System.err.println(e.getMessage());
-            System.exit(2);
-        }
-    }*/
-
     @Override
-    public double calculate(String expression) throws  ParsingException {
+    public double calculate(String expression) throws ParsingException {
         if (expression == null) {
             throw new ParsingException("First argument(expression) expected.");
         }
-        expression = "(" + expression.replaceAll(" ", "").replaceAll("\n", "").replaceAll("\t","") + ")";
+        expression = "(" + expression.replaceAll(" ", "").replaceAll("\n", "").replaceAll("\t", "") + ")";
         expression = markUnaryMinuses(expression, '~');
         StringTokenizer tokenizer = new StringTokenizer(expression, "+-*/()~", true);
         Stack<NumberLexeme> results = new Stack<NumberLexeme>();

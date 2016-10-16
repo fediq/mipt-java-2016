@@ -31,5 +31,5 @@ public final class NumberLexeme extends Lexeme {
         results.push(this);
     }
 
-    double value;
+    public final double value;
 }
