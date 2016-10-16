@@ -3,27 +3,34 @@ package ru.mipt.java2016.homework.g597.kirilenko.task1;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
-import java.util.Vector;
+import java.util.Stack;
+
 
 public class MyCalculator implements Calculator {
-    private Vector<Double> numbers;
-    private Vector<Character> operations;
+    private Stack<Double> numbers;
+    private Stack<Character> operations;
 
     @Override
     public double calculate(String expression) throws ParsingException {
-        numbers = new Vector<Double>();
-        operations = new Vector<Character>();
-        if (expression == null) {
-            throw new ParsingException("Incorrect expression");
+        numbers = new Stack<>();
+        operations = new Stack<>();
+        try {
+            if (expression == null) {
+                throw new ParsingException("Incorrect expression");
+            }
+            if (!checkForConsequentNumbers(expression)) {
+                throw new ParsingException("Incorrect expression");
+            }
+            expression = deleteSpaces(expression);
+            if (!checkIncorrectExpression(expression)) {
+                throw new ParsingException("Incorrect expression");
+            }
+            return toRPH(expression);
+        } finally {
+            numbers = null;
+            operations = null;
         }
-        if (!checkForConsequentNumbers(expression)) {
-            throw new ParsingException("Incorrect expression");
-        }
-        expression = deleteSpaces(expression);
-        if (!checkIncorrectExpression(expression)) {
-            throw new ParsingException("Incorrect expression");
-        }
-        return toRPH(expression);
+
     }
 
     private boolean checkForConsequentNumbers(String expres) {
@@ -62,42 +69,39 @@ public class MyCalculator implements Calculator {
 
     private void calculationOperator(char c) {
         if (c == 'M') {
-            double a = numbers.lastElement();
-            numbers.removeElementAt(numbers.size() - 1);
-            numbers.add(-a);
+            double a = numbers.pop();
+            numbers.push(-a);
             return;
         }
-        double a = numbers.lastElement();
-        numbers.removeElementAt(numbers.size() - 1);
-        double b = numbers.lastElement();
-        numbers.removeElementAt(numbers.size() - 1);
+        double a = numbers.pop();
+        double b = numbers.pop();
         if (c == '+') {
-            numbers.add(a + b);
+            numbers.push(a + b);
         } else if (c == '-') {
-            numbers.add(b - a);
+            numbers.push(b - a);
         } else if (c == '*') {
-            numbers.add(b * a);
+            numbers.push(b * a);
         } else if (c == '/') {
-            numbers.add(b / a);
+            numbers.push(b / a);
         }
     }
 
-    private double toRPH(String expression) {
+    private double toRPH(String expression) throws ParsingException {
         boolean isUnary = true; //перед унарным минусом стоит либо операция, либо (
         for (int i = 0; i < expression.length(); ++i) {
             char c = expression.charAt(i);
             if (c == '(') {
                 isUnary = true;
-                operations.add(c);
+                operations.push(c);
             } else if (c == ')') {
                 //вычиляем значение в скобках
-                while (operations.lastElement() != '(') {
-                    calculationOperator(operations.lastElement());
-                    operations.removeElementAt(operations.size() - 1);
+                while (operations.peek() != '(') {
+                    calculationOperator(operations.peek());
+                    operations.pop();
                 }
                 isUnary = false;
                 //после ')' не может быть унарного минуса
-                operations.removeElementAt(operations.size() - 1);
+                operations.pop();
 
             } else if (c == '+' || c == '-' || c == '*' || c == '/') {
                 if (isUnary && c == '-') {
@@ -105,12 +109,12 @@ public class MyCalculator implements Calculator {
                 }
                 //сначала выполняем операции с большим приоритетом
                 while (!operations.isEmpty() && ((c != 'M' &&
-                        priority(operations.lastElement()) >= priority(c)) || (c == 'M'
-                        && priority(operations.lastElement()) > priority(c)))) {
-                    calculationOperator(operations.lastElement());
-                    operations.removeElementAt(operations.size() - 1);
+                        priority(operations.peek()) >= priority(c)) || (c == 'M'
+                        && priority(operations.peek()) > priority(c)))) {
+                    calculationOperator(operations.peek());
+                    operations.pop();
                 }
-                operations.add(c);
+                operations.push(c);
                 isUnary = true;
             } else {
                 String operand = "";
@@ -122,18 +126,20 @@ public class MyCalculator implements Calculator {
                     i++;
                 }
                 i--;
-                numbers.add(Double.parseDouble(operand));
+                numbers.push(Double.parseDouble(operand));
                 isUnary = false;
                 //после числа не может стоять унарый минус
             }
         }
         //выполняем оставшиеся операции над получившимися числами из numbers
         while (!operations.isEmpty()) {
-            calculationOperator(operations.lastElement());
-            operations.removeElementAt(operations.size() - 1);
+            calculationOperator(operations.peek());
+            operations.pop();
         }
-        double result = numbers.get(0);
-        return result;
+        if (numbers.size() != 1) {
+            throw new ParsingException("Invalid expression.");
+        }
+        return numbers.peek();
     }
 
     private String deleteSpaces(String expression) {
