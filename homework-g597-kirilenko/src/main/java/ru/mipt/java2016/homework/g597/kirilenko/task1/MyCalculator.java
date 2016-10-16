@@ -6,12 +6,17 @@ import ru.mipt.java2016.homework.base.task1.ParsingException;
 import java.util.Vector;
 
 public class MyCalculator implements Calculator {
-    private Vector<Double> numbers = new Vector<Double>();
-    private Vector<Character> operations = new Vector<Character>();
-    
+    private Vector<Double> numbers;
+    private Vector<Character> operations;
+
     @Override
     public double calculate(String expression) throws ParsingException {
+        numbers = new Vector<Double>();
+        operations = new Vector<Character>();
         if (expression == null) {
+            throw new ParsingException("Incorrect expression");
+        }
+        if (!checkForConsequentNumbers(expression)) {
             throw new ParsingException("Incorrect expression");
         }
         expression = deleteSpaces(expression);
@@ -19,6 +24,28 @@ public class MyCalculator implements Calculator {
             throw new ParsingException("Incorrect expression");
         }
         return toRPH(expression);
+    }
+
+    private boolean checkForConsequentNumbers(String expres) {
+        //между любыми двумя числами должен стоять оператор (тесты вида 1 2, 1(2)
+        boolean opBetween = true;
+        boolean notString = true;
+        for (int i = 0; i < expres.length(); i++) {
+            char c = expres.charAt(i);
+            if (c == '*' || c == '/' || c == '+' || c == '-') {
+                opBetween = true;
+                notString = true;
+            } else if (Character.isDigit(c) || c == '.') {
+                if (notString && !opBetween) {
+                    return false;
+                }
+                notString = false;
+                opBetween = false;
+            } else {
+                notString = true;
+            }
+        }
+        return true;
     }
 
     private int priority(char c) {
