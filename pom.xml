@@ -14,6 +14,7 @@
     <modules>
         <module>homework-base</module>
         <module>homework-tests</module>
+        <module>homework-g596-kupriyanov</module>
         <module>homework-g595-kryloff</module>
         <module>homework-g596-kravets</module>
         <module>homework-g596-litvinov</module>
