@@ -13,7 +13,7 @@ import java.util.Set;
 import java.util.Stack;
 
 
-public class MyCalc implements Calculator {
+class MyCalc implements Calculator {
     private static final Set<Character> DOUBLE_DIGITS = Collections.unmodifiableSet(
             new HashSet<>(Arrays.asList('1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '.')));
 
