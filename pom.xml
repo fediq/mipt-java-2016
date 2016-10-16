@@ -17,6 +17,7 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         <module>homework-g000-lavrentyev</module>
 <<<<<<< Updated upstream
 =======
@@ -31,6 +32,9 @@
 =======
         <module>homework-g596-kupriyanov</module>
 >>>>>>> origin/master
+=======
+        <module>homework-g595-kryloff</module>
+>>>>>>> fediq/master
         <module>homework-g596-kravets</module>
         <module>homework-g596-litvinov</module>
         <module>homework-g594-kozlov</module>
@@ -44,6 +48,7 @@
         <module>homework-g596-gerasimov</module>
         <module>homework-g594-shevkunov</module>
         <module>homework-g595-romanenko</module>
+        <module>homework-g595-gusarova</module>
         <module>homework-g596-fattakhetdinov</module>
         <module>homework-g597-dmitrieva</module>
         <module>homework-g597-moiseev</module>
@@ -57,9 +62,11 @@
         <module>homework-g594-glebov</module>
         <module>homework-g594-petrov</module>
         <module>homework-g597-kozlov</module>
+        <module>homework-g595-popovkin</module>
         <module>homework-g594-anukhin</module>
         <module>homework-g597-kasimova</module>
         <module>homework-g596-ivanova</module>
+        <module>homework-g595-ulyanin</module>
         <module>homework-g595-iksanov</module>
         <module>homework-g595-nosareva</module>
         <module>homework-g595-proskurin</module>
@@ -70,11 +77,16 @@
         <module>homework-g595-murzin</module>
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> fediq/master
 =======
 >>>>>>> fediq/master
 =======
 >>>>>>> origin/master
+=======
+        <module>homework-g595-yakusheva</module>
+        <module>homework-g597-spirin</module>
+>>>>>>> fediq/master
     </modules>
 
     <build>
