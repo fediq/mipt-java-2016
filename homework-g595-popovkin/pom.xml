@@ -9,13 +9,22 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>homework-g594-anukhin</artifactId>
+    <artifactId>homework-g595-popovkin</artifactId>
+    <version>1.0.0</version>
+
     <dependencies>
         <dependency>
             <groupId>ru.mipt.java2016</groupId>
             <artifactId>homework-base</artifactId>
             <version>1.0.0</version>
         </dependency>
+
+        <dependency>
+            <groupId>net.sourceforge.jeval</groupId>
+            <artifactId>jeval</artifactId>
+            <version>0.9.4</version>
+        </dependency>
+
         <dependency>
             <groupId>ru.mipt.java2016</groupId>
             <artifactId>homework-tests</artifactId>
@@ -23,6 +32,5 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
 
 </project>
