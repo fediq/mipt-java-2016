@@ -27,8 +27,6 @@ public abstract class Lexeme {
                 return new DivideOperator();
             case '~':
                 return new UnaryMinusOperator();
-            case '#':
-                return new UnaryPlusOperator();
             case '(':
                 return new OpenParenthesisOperator();
             case ')':

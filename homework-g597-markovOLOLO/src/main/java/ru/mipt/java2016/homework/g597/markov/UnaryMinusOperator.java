@@ -6,7 +6,6 @@ package ru.mipt.java2016.homework.g597.markov;
 
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
-import java.util.EmptyStackException;
 import java.util.Stack;
 
 public final class UnaryMinusOperator extends Lexeme {
@@ -20,7 +19,7 @@ public final class UnaryMinusOperator extends Lexeme {
     protected void makeOperation(Stack<NumberLexeme> results) throws ParsingException {
         if (results.size() != 0) {
             NumberLexeme item = results.pop();
-            results.push(new NumberLexeme(-item.value));
+            results.push(new NumberLexeme(-item.valueOf()));
         } else {
             throw new ParsingException("No argument for unary minus operation");
         }

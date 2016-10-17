@@ -10,7 +10,7 @@ import java.util.Stack;
 
 public final class NumberLexeme extends Lexeme {
 
-    public double value;
+    private double value;
 
     public NumberLexeme(double value) {
         this.value = value;
@@ -33,5 +33,9 @@ public final class NumberLexeme extends Lexeme {
     @Override
     public void addLexeme(Stack<NumberLexeme> results, Stack<Lexeme> operations) throws ParsingException {
         results.push(this);
+    }
+
+    public double valueOf(){
+        return value;
     }
 }

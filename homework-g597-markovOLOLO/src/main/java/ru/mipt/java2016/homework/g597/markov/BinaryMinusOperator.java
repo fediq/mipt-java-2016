@@ -6,7 +6,6 @@ package ru.mipt.java2016.homework.g597.markov;
 
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
-import java.util.EmptyStackException;
 import java.util.Stack;
 
 public final class BinaryMinusOperator extends Lexeme {
@@ -21,7 +20,7 @@ public final class BinaryMinusOperator extends Lexeme {
         if (results.size() >= 2) {
             NumberLexeme second = results.pop();
             NumberLexeme first = results.pop();
-            results.push(new NumberLexeme(first.value - second.value));
+            results.push(new NumberLexeme(first.valueOf() - second.valueOf()));
         } else {
             throw new ParsingException("Not enough arguments for binary minus operation");
         }
