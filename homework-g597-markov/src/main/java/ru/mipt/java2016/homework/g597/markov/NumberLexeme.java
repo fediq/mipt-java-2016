@@ -36,7 +36,7 @@ public final class NumberLexeme extends Lexeme {
         results.push(this);
     }
 
-    public double valueOf(){
+    public double valueOf() {
         return value;
     }
 }
