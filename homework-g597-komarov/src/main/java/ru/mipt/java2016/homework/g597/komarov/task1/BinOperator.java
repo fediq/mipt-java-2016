@@ -1,4 +1,4 @@
-package ru.mipt.java2016.homework.g000.komarov.task1;
+package ru.mipt.java2016.homework.g597.komarov.task1;
 
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 

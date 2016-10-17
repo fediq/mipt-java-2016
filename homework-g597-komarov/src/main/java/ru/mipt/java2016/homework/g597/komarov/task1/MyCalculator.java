@@ -1,9 +1,6 @@
-package ru.mipt.java2016.homework.g000.komarov.task1;
+package ru.mipt.java2016.homework.g597.komarov.task1;
 
-import java.util.EmptyStackException;
-import java.util.LinkedList;
-import java.util.Stack;
-import java.util.List;
+import java.util.*;
 
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
@@ -17,7 +14,7 @@ public class MyCalculator implements Calculator {
         if (expression == null) {
             throw new ParsingException("Null expression");
         }
-        List<Token> resultArray = new LinkedList<>();
+        List<Token> resultArray = new ArrayList<>();
         String digits = "0123456789.";
         for (int i = 0; i < expression.length(); i++) {
             Token bufToken;

@@ -1,4 +1,4 @@
-package ru.mipt.java2016.homework.g000.komarov.task1;
+package ru.mipt.java2016.homework.g597.komarov.task1;
 
 public class Token {
     private double doubleToken;
