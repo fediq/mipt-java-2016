@@ -3,6 +3,7 @@ package ru.mipt.java2016.homework.g599a.kazakova.task1;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
+import java.util.EmptyStackException;
 import java.util.Stack;
 
 
@@ -23,7 +24,7 @@ public class MyCalculator implements Calculator {
             throw new ParsingException("Wrong expression");
         }
 
-        return calculation(expression);
+        return calculation(spacelessExpression);
     }
 
     private boolean isoperation(char c) {
@@ -31,67 +32,102 @@ public class MyCalculator implements Calculator {
     }
 
     private int priority(char c) {
+        if (c == '#')
+            return 3;
+        if (c == '*' || c == '/') {
+            return 2;
+        }
         if (c == '+' || c == '-') {
             return 1;
         }
         else {
-            return 2;
+            return 0;
         }
     }
 
-    private void process_op(Stack<Double> num, char operation) {
-        double r = num.peek();
-        num.pop();
-        double l = num.peek();
-        num.pop();
-        switch (operation) {
-            case '+': num.push(l + r);
-                break;
-            case '-': num.push(l - r);
-                break;
-            case '*': num.push(l * r);
-                break;
-            case '/': num.push(l / r);
-                break;
+    private void process_op(Stack<Double> num, char operation) throws ParsingException {
+        try {
+            double l = num.pop();
+            if (operation == '#') {
+                num.push(-l);
+            } else {
+                double r = num.pop();
+                switch (operation) {
+                    case '+':
+                        num.push(l + r);
+                        break;
+                    case '-':
+                        num.push(r - l);
+                        break;
+                    case '*':
+                        num.push(l * r);
+                        break;
+                    case '/':
+                        num.push(r / l);
+                        break;
+                }
+            }
+        } catch (EmptyStackException e) {
+            throw new ParsingException("Wrong expression");
         }
     }
 
-    private double calculation(String expression) {
+    private double calculation(String expression) throws ParsingException {
         Stack<Double> num = new Stack();
         Stack<Character> op = new Stack();
-        for (int i = 0; i < expression.length(); i++) {
 
+        for (int i = 0; i < expression.length(); i++) {
             if (isoperation(expression.charAt(i))) {
                 char curop = expression.charAt(i);
-                while (!op.empty() && (priority(op.peek()) >= priority(curop))) {
-                    process_op(num, op.pop());
+                if ((curop == '-') && ((i == 0) || (isoperation(expression.charAt(i - 1))) ||
+                        (expression.charAt(i - 1) == '('))) {
+                    op.push('#');
+                } else {
+                    while (!op.empty() && ((curop == '#' && priority(op.peek()) > priority(curop)) ||
+                            (priority(op.peek()) >= priority(curop)))) {
+                        process_op(num, op.pop());
+                    }
+                    op.push(curop);
                 }
-                op.push(curop);
             }
 
             else if (expression.charAt(i) == '(') {
-                op.push('(');
+                 op.push('(');
             }
 
             else if (expression.charAt(i) == ')') {
                 while (op.peek() != '(') {
-                    process_op(num, op.pop());
+                        process_op(num, op.pop());
+                        if (op.empty()) {
+                            throw new ParsingException("Wrong expression");
+                        }
                 }
                 op.pop();
             }
 
             else {
                 int j = i;
-                while (expression.charAt(i) != '(' && expression.charAt(i) != ')' && !isoperation(expression.charAt(i)) && i < expression.length()) {
+                while (i < expression.length() && expression.charAt(i) != '(' && expression.charAt(i) != ')'
+                        && !isoperation(expression.charAt(i))) {
                     i++;
                 }
-                double curnum = Double.parseDouble(expression.substring(j, i));
+                double curnum;
+                try {
+                    curnum = Double.parseDouble(expression.substring(j, i));
+                } catch(NumberFormatException e) {
+                    throw new ParsingException("Wrong expression");
+                }
                 num.push(curnum);
+                i--;
             }
 
         }
-        while (!op.empty())
+        while (!op.empty()) {
             process_op(num, op.pop());
+        }
+        if (num.empty()) {
+            throw new ParsingException("Wrong expression");
+        }
         return num.peek();
     }
 }
