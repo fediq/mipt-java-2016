@@ -39,6 +39,7 @@
         <module>homework-g595-romanenko</module>
         <module>homework-g595-gusarova</module>
         <module>homework-g596-fattakhetdinov</module>
+        <module>homework-g596-lapa</module>
         <module>homework-g597-moiseev</module>
         <module>homework-g597-shirokova</module>
         <module>homework-g595-belyh</module>
@@ -75,7 +76,6 @@
         <module>homework-g597-grishutin</module>
         <module>homework-g595-tkachenko</module>
         <module>homework-g597-miller</module>
-
     </modules>
 
     <build>
