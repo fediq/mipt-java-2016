@@ -8,8 +8,15 @@ public class CalculatorAlpha implements Calculator {
     private int position;
     private String strToCalculate;
 
-    private StringBuilder getNumber() {
+    private void getEps() {
+        while (strToCalculate.charAt(position) == ' ' ||
+                strToCalculate.charAt(position) == '\n' ||
+                strToCalculate.charAt(position) == '\t') {
+            position++;
+        }
+    }
 
+    private StringBuilder getNumber() {
         StringBuilder number = new StringBuilder();
         while (strToCalculate.charAt(position) >= '0' &&
                 strToCalculate.charAt(position) <= '9') {
@@ -19,7 +26,6 @@ public class CalculatorAlpha implements Calculator {
     }
 
     private String getPoint() {
-
         StringBuilder number = getNumber();
         if (strToCalculate.charAt(position) == '.') {
             position++;
@@ -31,6 +37,7 @@ public class CalculatorAlpha implements Calculator {
 
     private double getBrackets() throws ParsingException {
         String number = getPoint();
+        getEps();
         if (number.length() != 0) {
             return Double.parseDouble(number);
         }
@@ -53,9 +60,11 @@ public class CalculatorAlpha implements Calculator {
 
     private double getMul() throws ParsingException {
         double number = getBrackets();
+        getEps();
         while (strToCalculate.charAt(position) == '*' ||
                 strToCalculate.charAt(position) == '/') {
             char operation = strToCalculate.charAt(position++);
+            getEps();
             if (operation == '*') {
                 number *= getBrackets();
             } else if (operation == '/') {
@@ -66,10 +75,12 @@ public class CalculatorAlpha implements Calculator {
     }
 
     private double getSum() throws ParsingException {
+        getEps();
         double number = getMul();
         while (strToCalculate.charAt(position) == '+' ||
                 strToCalculate.charAt(position) == '-') {
             char operation = strToCalculate.charAt(position++);
+            getEps();
             if (operation == '+') {
                 number += getMul();
             } else if (operation == '-') {
@@ -94,8 +105,6 @@ public class CalculatorAlpha implements Calculator {
         if (expression == null) {
             throw new ParsingException("Null expression");
         }
-
-        expression = expression.replaceAll("[ \n\t]", "");
 
         strToCalculate = expression.concat("#");
         return getResult();

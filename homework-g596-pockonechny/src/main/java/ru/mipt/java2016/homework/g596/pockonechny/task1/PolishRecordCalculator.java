@@ -10,75 +10,112 @@ import java.util.Stack;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
-public class PolishRecordCalculator implements Calculator
-{
+public class PolishRecordCalculator implements Calculator {
+
     private static final char RPN_CONTAIN_NUMBER = 1;
 
-    private class MyPair
-    {
-        public double value;
-        public int newPos;
-        MyPair(double _value, int _newPos) { value = _value; newPos = _newPos; }
+    private class MyPair {
+        private double value;
+        private int newPos;
+
+        MyPair(double newValue, int setPos) {
+            value = newValue;
+            newPos = setPos;
+        }
+
+        double getValue() {
+            return value;
+        }
+
+        double getNewPos() {
+            return newPos;
+        }
     }
 
-    private Stack <RpnElement> RPN_stack;
+    private class RpnElement {
+        private char operation;               // Определяет тип содержимого: число или операция
+        private double value;                 // Если число, то чему оно равно
+
+        public char getOp()      {
+            return operation;
+        }
+
+        public double getValue() {
+            return value;
+        }
+
+        RpnElement(char newOperation, double newValue) {
+            operation = newOperation;
+            value = newValue;
+        }
+    }
+
+    private Stack<RpnElement> rpnStack;
 
     PolishRecordCalculator() {
-        RPN_stack = new Stack();
+        rpnStack = new Stack();
     }
 
-    private boolean is_digit_separator(char t) { return t == '.' || t == ','; }
+    private boolean isDigitSeparator(char t) {
+        return t == '.' || t == ',';
+    }
 
-    private boolean is_space_symbol(char t) { return t == ' ' || t == '\t' || t == '\n'; }
+    private boolean isSpaceSymbol(char t) {
+        return t == ' ' || t == '\t' || t == '\n';
+    }
 
-    private boolean is_operation(char t) {
+    private boolean isOperation(char t) {
         return (t == '^' || t == '+' || t == '-' || t == '*' || t == '/');
     }
 
-    private boolean is_right_op(char op) {
+    private boolean isRightOp(char op) {
         return (op == '^' || op == '_');
     }
 
-    private int     get_priority(char op) {
-        if (op == '^' || op == '_')     return 0;
-        if (op == '*' || op == '/')     return 1;
-        if (op == '+' || op == '-')     return 2;
-        if (op == '(' || op == ')')     return 3;
+    private int getPriority(char op) {
+        if (op == '^' || op == '_') {
+            return 0;
+        } else if (op == '*' || op == '/') {
+            return 1;
+        } else if (op == '+' || op == '-') {
+            return 2;
+        } else if (op == '(' || op == ')') {
+            return 3;
+        }
         return -1;
     }
 
     private boolean more(char op1, char op2) {
-        return (get_priority(op1) < get_priority(op2));
+        return (getPriority(op1) < getPriority(op2));
     }
 
-    private boolean more_or_eq(char op1, char op2) {
-        return (get_priority(op1) <= get_priority(op2));
+    private boolean moreOrEq(char op1, char op2) {
+        return (getPriority(op1) <= getPriority(op2));
     }
 
-    private boolean is_uno(char op) {
+    private boolean isUno(char op) {
         return (op == '_');
     }
 
     private MyPair readDoubleFromPos(String s, int pos) throws ParsingException {
         boolean waspoint = false;
-        double beforePoint = 0, afterPoint = 0, order = 10;
-        for (int i = pos; i < s.length(); ++i)
-        {
-            if (is_digit_separator(s.charAt(i)) && waspoint)
+        double beforePoint = 0;
+        double afterPoint = 0;
+        double order = 10;
+        for (int i = pos; i < s.length(); ++i) {
+            if (isDigitSeparator(s.charAt(i)) && waspoint) {
                 throw new ParsingException("Invalid number");
-            else if (is_digit_separator(s.charAt(i)))
+            } else if (isDigitSeparator(s.charAt(i))) {
                 waspoint = true;
-            else if (Character.isDigit(s.charAt(i)))
-            {
-                double c = (double)(s.charAt(i) - '0');
-                if (!waspoint)
+            } else if (Character.isDigit(s.charAt(i))) {
+                double c = (double) (s.charAt(i) - '0');
+                if (!waspoint) {
                     beforePoint = beforePoint * 10 + c;
-                else {
+                } else {
                     afterPoint += c / order;
                     order *= 10;
                 }
-            }
-            else {
+            } else {
                 return new MyPair(beforePoint + 0.0 + afterPoint, i);
             }
         }
@@ -91,151 +128,146 @@ public class PolishRecordCalculator implements Calculator
 
         req = '(' + req + ')';
 
-        Stack <Character> bufferStack = new Stack();         // Стек, в который складываются операции
+        Stack<Character> bufferStack = new Stack();         // Стек, в который складываются операции
         bufferStack.clear();
         int len = req.length();
         boolean canBeUno = true;                    // Флаг - может ли быть сл. операция унарной
 
-        for (int i = 0; i < len; ++i)
-        {
+        for (int i = 0; i < len; ++i) {
             char currChar = req.charAt(i);
-            if (is_space_symbol(currChar))
+            if (isSpaceSymbol(currChar)) {
                 continue;
-            else if (currChar == '(')
-            {
+            } else if (currChar == '(') {
                 bufferStack.push('(');
                 canBeUno = true;
-            }
-            else if (Character.isDigit(currChar))
-            {
+            } else if (Character.isDigit(currChar)) {
                 MyPair newdata = readDoubleFromPos(req, i);
-                RPN_stack.push(new RpnElement(RPN_CONTAIN_NUMBER, newdata.value));
-
+                rpnStack.push(new RpnElement(RPN_CONTAIN_NUMBER, newdata.value));
                 i = newdata.newPos - 1;
                 canBeUno = false;
-            }
-            else if (is_operation(currChar))
-            {
+            } else if (isOperation(currChar)) {
                 char op = currChar;
-                if (op == '-' && canBeUno)
-                {
+                if (op == '-' && canBeUno) {
                     while (!bufferStack.empty()) {
-                        if ( (!is_right_op(bufferStack.peek()) && more_or_eq(bufferStack.peek(), '_')) ||
-                                (is_right_op(bufferStack.peek()) && more (bufferStack.peek(), '_'))) {
-                            RPN_stack.push(new RpnElement(bufferStack.pop(), 0.0));
+                        if ((!isRightOp(bufferStack.peek()) && moreOrEq(bufferStack.peek(), '_')) ||
+                                (isRightOp(bufferStack.peek()) && more(bufferStack.peek(), '_'))) {
+                            rpnStack.push(new RpnElement(bufferStack.pop(), 0.0));
+                        } else {
+                            break;
                         }
-                        else break;
                     }
                     bufferStack.push('_');   // means uno minus
                     continue;
                 }
 
                 while (!bufferStack.empty()) {
-                    if ( (!is_right_op(bufferStack.peek()) && more_or_eq(bufferStack.peek(), op)) ||
-                            (is_right_op(bufferStack.peek()) && more (bufferStack.peek(), op))) {
-                        RPN_stack.push(new RpnElement(bufferStack.pop(), 0.0));
+                    if ((!isRightOp(bufferStack.peek()) && moreOrEq(bufferStack.peek(), op)) ||
+                            (isRightOp(bufferStack.peek()) && more(bufferStack.peek(), op))) {
+                        rpnStack.push(new RpnElement(bufferStack.pop(), 0.0));
+                    } else {
+                        break;
                     }
-                    else break;
                 }
                 bufferStack.push(op);
                 canBeUno = true;
-            }
-            else if (currChar == ')')
-            {
-                if (bufferStack.empty())
+            } else if (currChar == ')') {
+                if (bufferStack.empty()) {
                     throw new ParsingException("Brace balance failed");
-
+                }
                 boolean okFlag = false;
                 while (!bufferStack.empty()) {
                     if (bufferStack.peek() != '(') {
                         char op = bufferStack.pop();
-                        RPN_stack.push(new RpnElement(op, 0.0));
-                    }
-                    else {
+                        rpnStack.push(new RpnElement(op, 0.0));
+                    } else {
                         bufferStack.pop();
                         okFlag = true;
                         break;
                     }
                 }
-                if (!okFlag)
+                if (!okFlag) {
                     throw new ParsingException("Brace balance failed");
+                }
                 canBeUno = false;
-            }
-            else
+            } else {
                 throw new ParsingException("Unknown symbol");
+            }
         }
 
-        if (!bufferStack.empty())
+        if (!bufferStack.empty()) {
             throw new ParsingException("Brace balance failed / Invalid expression");
-
-        Stack <RpnElement> outputResult = new Stack(); // reverting stack
-        while (!RPN_stack.empty()) {
-            outputResult.push(RPN_stack.pop());
         }
-        RPN_stack = outputResult;
+
+        Stack<RpnElement> outputResult = new Stack(); // reverting stack
+        while (!rpnStack.empty()) {
+            outputResult.push(rpnStack.pop());
+        }
+        rpnStack = outputResult;
         return true;
     }
 
-    private double rpn_count() throws ParsingException {
-        Stack <Double> st = new Stack();
-        while (!RPN_stack.empty())
-        {
-            RpnElement el = RPN_stack.peek();
+    private double rpnCount() throws ParsingException {
+        Stack<Double> st = new Stack();
+        while (!rpnStack.empty()) {
+            RpnElement el = rpnStack.peek();
 
-            if (el.getOp() == RPN_CONTAIN_NUMBER)
+            if (el.getOp() == RPN_CONTAIN_NUMBER) {
                 st.push(new Double(el.getValue()));
-            else
-            {
+            } else {
                 char op = el.getOp();
-                double o2 = 0.0, o1 = 0.0;  // operands
+                double o2 = 0.0;
+                double o1 = 0.0;  // operands
                 if (!st.empty()) {
                     o2 = st.pop();
-                }
-                else {
+                } else {
                     throw new ParsingException("Invalid expression");
                 }
-                if (!is_uno(op))
-                {
+                if (!isUno(op)) {
                     if (!st.empty()) {
                         o1 = st.pop();
-                    }
-                    else {
+                    } else {
                         throw new ParsingException("Brace balance failed / Invalid expression");
                     }
                 }
 
-                if      (op == '+') st.push(o1 + o2);
-                else if (op == '-') st.push(o1 - o2);
-                else if (op == '*') st.push(o1 * o2);
-                else if (op == '/') st.push(o1 / o2);
-                else if (op == '^') {
-                    if (o1 > 0.0)
+                if (op == '+') {
+                    st.push(o1 + o2);
+                } else if (op == '-') {
+                    st.push(o1 - o2);
+                } else if (op == '*') {
+                    st.push(o1 * o2);
+                } else if (op == '/') {
+                    st.push(o1 / o2);
+                } else if (op == '^') {
+                    if (o1 > 0.0) {
                         st.push(Math.pow(o1, o2));
-                    else {
+                    } else {
                         throw new ParsingException("Incorrect operation : negative power");
                     }
-                }
-                else if (op == '_') st.push(-o2);
-                else {
+                } else if (op == '_') {
+                    st.push(-o2);
+                } else {
                     throw new ParsingException("Unknown symbols");
                 }
             }
-            RPN_stack.pop();
+            rpnStack.pop();
         }
 
-        if (!RPN_stack.empty())
+        if (!rpnStack.empty()) {
             throw new ParsingException("Brace balance failed / Invalid expression");
+        }
 
-        if (st.empty())
+        if (st.empty()) {
             throw new ParsingException("Empty expresssion");
+        }
 
         return st.peek();
     }
 
     public double calculate(String expression) throws ParsingException {
-        RPN_stack = new Stack();
+        rpnStack = new Stack();
         getRpn(expression);
 
-        return rpn_count();
+        return rpnCount();
     }
 }
