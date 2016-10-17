@@ -32,8 +32,9 @@ public class MyCalculator implements Calculator {
     }
 
     private int priority(char c) {
-        if (c == '#')
+        if (c == '#') {
             return 3;
+        }
         if (c == '*' || c == '/') {
             return 2;
         }
@@ -65,6 +66,8 @@ public class MyCalculator implements Calculator {
                     case '/':
                         num.push(r / l);
                         break;
+                    default:
+                        throw new ParsingException("Wrong expression");
                 }
             }
         } catch (EmptyStackException e) {
@@ -97,10 +100,10 @@ public class MyCalculator implements Calculator {
 
             else if (expression.charAt(i) == ')') {
                 while (op.peek() != '(') {
-                        process_op(num, op.pop());
-                        if (op.empty()) {
-                            throw new ParsingException("Wrong expression");
-                        }
+                    process_op(num, op.pop());
+                    if (op.empty()) {
+                        throw new ParsingException("Wrong expression");
+                    }
                 }
                 op.pop();
             }
