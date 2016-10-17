@@ -12,7 +12,6 @@ public class MyOwnCalculator implements Calculator {
         return stackCalculator(getPostfixExpression(fragmentation(expression)));
     }
 
-
     private double stackCalculator(LinkedList<Element> expression) throws ParsingException {
         Stack<Double> numbers = new Stack<Double>();
         while (!expression.isEmpty()) {
@@ -22,7 +21,6 @@ public class MyOwnCalculator implements Calculator {
                 if (operator.getType() != '#') {
                     if (!numbers.isEmpty()) {
                         double num1 = numbers.pop();
-
                         if (!numbers.isEmpty()) {
                             double num2 = numbers.pop();
                             double result = getResultOfOperation(num2, num1, operator);
@@ -53,9 +51,6 @@ public class MyOwnCalculator implements Calculator {
         return numbers.peek();
     }
 
-
-
-
     private LinkedList<Element> getPostfixExpression(LinkedList<Element> expression) {
         LinkedList<Element> postfixExpression = new LinkedList<Element>();
         Stack<Element> elements = new Stack<Element>();
@@ -63,24 +58,20 @@ public class MyOwnCalculator implements Calculator {
             Element element = expression.removeFirst();
             if (element instanceof Operator) {
                 Operator operator = (Operator) element;
-                while (!elements.isEmpty() && elements.peek() instanceof Operator) {
-                    Operator op = (Operator) elements.peek();
-                    if (op.getPriority() >= operator.getPriority()) {
-                        postfixExpression.add(elements.pop());
-                    }
+                while (!elements.isEmpty() && elements.peek() instanceof Operator
+                && ((Operator) elements.peek()).getPriority() >= operator.getPriority()) {
+                    postfixExpression.add(elements.pop());
                 }
                 elements.push(operator);
             } else {
                 if (element instanceof Number) {
-                    Number number = (Number) element;
-                    postfixExpression.add(number);
-                } else { 
+                    postfixExpression.add(element);
+                } else {
                     if (element instanceof Bracket) {
                         Bracket bracket = (Bracket) element;
                         if (!bracket.opening()) {
                             while (!(elements.peek() instanceof Bracket)) {
-                                Bracket br = (Bracket) elements.pop();
-                                postfixExpression.add(br);
+                                postfixExpression.add(elements.pop());
                             }
                             elements.pop();
                         } else {
@@ -96,76 +87,77 @@ public class MyOwnCalculator implements Calculator {
         return postfixExpression;
     }
 
-
     private LinkedList<Element> fragmentation(String expression) throws ParsingException {
-        LinkedList<Element> fragmentedException = new LinkedList<>();
-        boolean dot;
+        LinkedList<Element> fragmentedExpression = new LinkedList<>();
         int balanceOfBracket = 0;
         if (expression == null || expression.length() == 0) {
             throw new ParsingException("Invalid expression");
         }
-
-        char c;
+        char character;
         for (int i = 0; i != expression.length(); ++i) {
-            c = expression.charAt(i);
-            if (Character.isWhitespace(c)) continue;
+            character = expression.charAt(i);
+            if (Character.isWhitespace(character)) {
+                continue;
+            }
             else {
-                if (Character.isDigit(c)) {
+                if (Character.isDigit(character)) {
                     StringBuilder number = new StringBuilder();
-                    number.append(c);
-                    dot = false;
-                    char next;
-                    while (i < expression.length() - 1) {
-                        next = expression.charAt(i + 1);
-                        if (next != '.' || dot) {
+                    number.append(character);
+                    boolean dot = false;
+                    while (i != expression.length() - 1) {
+                        char next = expression.charAt(i + 1);
+                        if (next == '.' && !dot) {
+                            dot = true;
+                        } else {
                             if (!Character.isDigit(next)) {
                                 break;
                             }
-                        } else {
-                            dot = true;
                         }
                         ++i;
                         number.append(next);
                     }
                     Number num = new Number(Double.parseDouble(number.toString()));
-                    fragmentedException.add(num);
+                    fragmentedExpression.add(num);
+                    number.delete(0, number.length() - 1);
                 } else {
-                    if (c == '+' || c == '-' || c == '*' || c == '/') {
+                    if (character == '+' || character == '-' || character == '*' || character == '/') {
                         if (i == 0) {
-                            if (c == '-')
-                                c = '#';
+                            if (character == '-')
+                                character = '#';
                         } else {
-                            Element prev = fragmentedException.getLast();
-                            if (c == '-') {
+                            Element prev = fragmentedExpression.getLast();
+                            if (character == '-') {
                                 if ((prev instanceof Bracket) && ((Bracket) prev).opening()) {
-                                    c = '#';
+                                    character = '#';
                                 } else {
-                                    if ((prev instanceof Operator) &&
-                                            (((Operator) prev).getType() == '/' || ((Operator) prev).getType() == '*')) {
-                                        c = '#';
+                                    if ((prev instanceof Operator)
+                                            && (((Operator) prev).getType() == '/'
+                                            || ((Operator) prev).getType() == '*')) {
+                                        character = '#';
                                     }
                                 }
-
                             }
-                            if ((prev instanceof Operator) && !(c == '#')) {
+                            if ((prev instanceof Operator) && !(character == '#')) {
                                 throw new ParsingException("Invalid expression");
                             }
                         }
+                        Operator op = new Operator(character);
+                        fragmentedExpression.add(op);
                     } else {
-                        if (c == '(') {
+                        if (character == '(') {
                             balanceOfBracket++;
-                            Bracket bracket = new Bracket(c);
-                            fragmentedException.add(bracket);
+                            Bracket bracket = new Bracket(character);
+                            fragmentedExpression.add(bracket);
                         } else {
-                            if (c == ')') {
+                            if (character == ')') {
                                 if (i > 0) {
-                                    Element prev = fragmentedException.getLast();
+                                    Element prev = fragmentedExpression.getLast();
                                     if (prev instanceof Operator && ((Operator) prev).getType() == '(') {
                                         throw new ParsingException("Invalid expression");
                                     }
                                 }
-                                Bracket bracket = new Bracket(c);
-                                fragmentedException.add(bracket);
+                                Bracket bracket = new Bracket(character);
+                                fragmentedExpression.add(bracket);
                                 --balanceOfBracket;
                                 if (balanceOfBracket < 0) {
                                     throw new ParsingException("Invalid expression");
@@ -180,12 +172,15 @@ public class MyOwnCalculator implements Calculator {
 
         }
 
-        for (Element element : fragmentedException) {
+        if (balanceOfBracket > 0)
+            throw new ParsingException("Invalid expression");
+        // во fragmentedExpression должно быть хотя бы одно число
+        for (Element element : fragmentedExpression) {
             if (element instanceof Number) {
-                return fragmentedException;
+                return fragmentedExpression;
             }
         }
-
+        // если в выражении нет чисел
         throw new ParsingException("Invalid expression");
 
     }
@@ -231,11 +226,7 @@ public class MyOwnCalculator implements Calculator {
     private class Bracket extends Element {
 
         Bracket(char br) {
-            if (br == ')') {
-                type = false;
-            } else {
-                type = true;
-            }
+            type = br != ')';
         }
 
         public boolean opening() {
