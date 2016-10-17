@@ -28,6 +28,10 @@
         <module>homework-g594-shevkunov</module>
         <module>homework-g597-vasilyev</module>
         <module>homework-g594-stepanov</module>
+<<<<<<< HEAD
+=======
+        <module>homework-g599a-kazakova</module>
+>>>>>>> 9c8a961... GOD PLEASE
         <module>homework-g595-kireev</module>
         <module>homework-g595-novikov</module>
         <module>homework-g597-mashurin</module>
@@ -85,6 +89,7 @@
         <module>homework-g595-tkachenko</module>
         <module>homework-g597-miller</module>
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 =======
         <module>homework-g596-bystrov</module>
@@ -94,6 +99,9 @@
 >>>>>>> Lapa homework 1
 =======
 >>>>>>> commit
+=======
+
+>>>>>>> GOD PLEASE
     </modules>
 
     <build>
