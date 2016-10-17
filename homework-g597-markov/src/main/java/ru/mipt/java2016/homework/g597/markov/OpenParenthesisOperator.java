@@ -21,7 +21,8 @@ public final class OpenParenthesisOperator extends Lexeme {
     }
 
     @Override
-    public void addLexeme(Stack<NumberLexeme> results, Stack<Lexeme> operations) throws ParsingException {
+    public void addLexeme(Stack<NumberLexeme> results, Stack<Lexeme> operations)
+            throws ParsingException {
         operations.push(this);
     }
 }

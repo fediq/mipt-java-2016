@@ -44,7 +44,8 @@ public abstract class Lexeme {
 
     protected abstract void makeOperation(Stack<NumberLexeme> results) throws ParsingException;
 
-    public void addLexeme(Stack<NumberLexeme> results, Stack<Lexeme> operations) throws ParsingException {
+    public void addLexeme(Stack<NumberLexeme> results, Stack<Lexeme> operations)
+            throws ParsingException {
         try {
             while (operations.peek().priority() >= this.priority()) {
                 Lexeme operation = operations.pop();

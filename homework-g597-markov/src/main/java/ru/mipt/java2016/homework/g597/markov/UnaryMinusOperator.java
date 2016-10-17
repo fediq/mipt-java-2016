@@ -26,7 +26,8 @@ public final class UnaryMinusOperator extends Lexeme {
     }
 
     @Override
-    public void addLexeme(Stack<NumberLexeme> results, Stack<Lexeme> operations) throws ParsingException {
+    public void addLexeme(Stack<NumberLexeme> results, Stack<Lexeme> operations)
+            throws ParsingException {
         operations.push(this);
     }
 }

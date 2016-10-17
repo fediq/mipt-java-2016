@@ -22,7 +22,8 @@ public final class CloseParenthesisOperator extends Lexeme {
     }
 
     @Override
-    public void addLexeme(Stack<NumberLexeme> results, Stack<Lexeme> operations) throws ParsingException {
+    public void addLexeme(Stack<NumberLexeme> results, Stack<Lexeme> operations)
+            throws ParsingException {
         try {
             while (operations.peek().priority() != 0) {
                 Lexeme operation = operations.pop();

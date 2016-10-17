@@ -31,7 +31,8 @@ public final class NumberLexeme extends Lexeme {
     }
 
     @Override
-    public void addLexeme(Stack<NumberLexeme> results, Stack<Lexeme> operations) throws ParsingException {
+    public void addLexeme(Stack<NumberLexeme> results, Stack<Lexeme> operations)
+            throws ParsingException {
         results.push(this);
     }
 
