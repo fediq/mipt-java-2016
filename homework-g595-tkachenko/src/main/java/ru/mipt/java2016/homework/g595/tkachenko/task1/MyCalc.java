@@ -203,7 +203,7 @@ public class MyCalc implements Calculator {
             }
         }
 
-        public static double Calculate(String input) throws ParsingException {
+        public static double calculate(String input) throws ParsingException {
             String output;
             output = RPN.getExpression(input);
             double result = counting(output);
@@ -214,7 +214,7 @@ public class MyCalc implements Calculator {
 
     @Override
     public double calculate(String expression) throws ParsingException {
-        return RPN.Calculate(expression);
+        return RPN.calculate(expression);
     }
 
 }
