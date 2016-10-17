@@ -11,12 +11,6 @@ import java.util.Stack;
  */
 
 class MillerCalculator implements Calculator {
-
-    // Стек, содержащий постфиксную запись выражения.
-    private Stack<String> postfix;
-    // Стек для промежуточных вычислений.
-    private Stack<Double> numbers;
-
     // Возвращает приоритет операции.
     private static int priority(char symbol) {
         switch (symbol) {
@@ -37,20 +31,12 @@ class MillerCalculator implements Calculator {
         }
     }
 
-    // Проверяет, является ли данный char цифрой.
-    private static boolean isNumber(char symbol) {
-        int ord = symbol;
-        return ((ord >= 48) && (ord <= 57));
-    }
-
     // Проверяет, является ли данный String числом.
     private static boolean isNumber(String str) {
         if ((str == null) || (str.length() == 0)) {
             return false;
         }
         int start = 0;
-        int ord;
-        boolean itIsNumber = true;
         boolean pointFound = false;
         if (str.charAt(0) == '-') {
             if (str.length() == 1) {
@@ -59,66 +45,21 @@ class MillerCalculator implements Calculator {
             start = 1;
         }
         for (int i = start; i < str.length(); ++i) {
-            ord = str.charAt(i);
-            if ((ord >= 48) && (ord <= 57)) {
+            if (Character.isDigit(str.charAt(i))) {
                 continue;
             }
             if ((str.charAt(i) == '.') && !pointFound) {
                 pointFound = true;
-                continue;
             } else {
-                itIsNumber = false;
-                break;
+                return false;
             }
         }
-        return itIsNumber;
-    }
-
-    // Переводит тип String в double.
-    private static double toDouble(String s) {
-        // Целая часть числа.
-        double number = 0;
-        // Дробная часть числа.
-        double toAdd = 0;
-        // Поциферное считывание.
-        int digit;
-        // Позиция точки в записи.
-        int pointPosition;
-        // Точка начала записи числа.
-        int start;
-        // Negative?
-        start = 0;
-        if (s.charAt(0) == '-') {
-            start = 1;
-        }
-        // Where is the point?
-        if (s.contains(".")) {
-            pointPosition = s.indexOf('.');
-        } else {
-            pointPosition = s.length();
-        }
-        // Before point.
-        for (int i = start; i < pointPosition; ++i) {
-            digit = s.charAt(i) - 48;
-            number = 10 * number + digit;
-        }
-        // After point.
-        for (int i = s.length() - 1; i > pointPosition; --i) {
-            digit = s.charAt(i) - 48;
-            toAdd = 0.1 * (toAdd + (double) digit);
-        }
-        number += toAdd;
-        if (start == 1) {
-            number = (-1) * number;
-        }
-        return number;
+        return true;
     }
 
     // Переводит expression в постфиксную запись на стеке.
-    private void toPostfix(String expression) throws ParsingException {
+    private Stack<String> toPostfix(String expression) throws ParsingException {
         char symbol;
-        // Указатель для прохода по expression.
-        int pointer = 0;
         // Позиция последней открывающей скобки.
         int lastOpenBracketPosition = -1;
         // Режим чтения числа.
@@ -133,16 +74,18 @@ class MillerCalculator implements Calculator {
         Stack<Character> symbols = new Stack<>();
         // Строка для запоминания числа.
         StringBuilder number = new StringBuilder("");
+        // Стек, содержащий постфиксную запись выражения.
+        Stack<String> postfix = new Stack<>();
 
-        while (pointer < expression.length()) {
-            symbol = expression.charAt(pointer++);
+        for (int pointer = 0; pointer < expression.length(); ++pointer) {
+            symbol = expression.charAt(pointer);
             if (unaryExpected && (symbol == '-')) {
                 toNegative = true;
                 unaryExpected = false;
                 continue;
             }
             // Чтение числа.
-            if (isNumber(symbol)) {
+            if (Character.isDigit(symbol)) {
                 if (!numberReading) {
                     if (toNegative) {
                         number.append("-");
@@ -229,21 +172,25 @@ class MillerCalculator implements Calculator {
             }
             postfix.push(symbols.pop().toString());
         }
+
+        return postfix;
     }
 
     // Вычисляет значение выражения из стека postfix.
-    private double calculateWithStack() throws ParsingException {
+    private double calculateWithStack(Stack<String> postfix) throws ParsingException {
         char symbol;
         double dValue1;
         double dValue2;
         Stack<String> postfixR = new Stack<>();
+        // Стек для промежуточных вычислений.
+        Stack<Double> numbers = new Stack<>();
 
         while (!postfix.empty()) {
             postfixR.push(postfix.pop());
         }
         while (!postfixR.empty()) {
             if (isNumber(postfixR.peek())) {
-                numbers.push(toDouble(postfixR.pop()));
+                numbers.push(Double.parseDouble(postfixR.pop()));
             } else {
                 symbol = postfixR.pop().charAt(0);
                 if (numbers.size() < 2) {
@@ -277,9 +224,7 @@ class MillerCalculator implements Calculator {
         if (expression == null) {
             throw new ParsingException("Expression is null");
         }
-        postfix = new Stack<>();
-        numbers = new Stack<>();
-        toPostfix(expression);
-        return calculateWithStack();
+        Stack<String> postfix = toPostfix(expression);
+        return calculateWithStack(postfix);
     }
 }
