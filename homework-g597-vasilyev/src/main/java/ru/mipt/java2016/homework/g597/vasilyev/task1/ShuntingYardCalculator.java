@@ -2,7 +2,6 @@ package ru.mipt.java2016.homework.g597.vasilyev.task1;
 
 import java.util.ArrayList;
 import java.util.Stack;
-
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
@@ -58,8 +57,10 @@ class ShuntingYardCalculator implements Calculator {
                 result.add(new OperatorToken(c));
             } else if (c == '(' || c == ')') {
                 if (c == ')' && result.size() > 0 && result.get(result.size() - 1) instanceof BracketToken
-                        && ((BracketToken) result.get(result.size() - 1)).getType() == Bracket.OPENING)
+                        && ((BracketToken) result.get(result.size() - 1)).getType()
+                        == Bracket.OPENING) {
                     throw new ParsingException("Empty brackets");
+                }
                 result.add(new BracketToken(c));
             } else {
                 throw new ParsingException("Illegal character");
@@ -118,8 +119,9 @@ class ShuntingYardCalculator implements Calculator {
                         ++bracketBalance;
                         break;
                     case CLOSING:
-                        if (bracketBalance == 0)
+                        if (bracketBalance == 0) {
                             throw new ParsingException("Bad bracket balance");
+                        }
                         while (operators.peek() instanceof OperatorToken) {
                             ((OperatorToken) operators.pop()).getOperator().apply(numbers);
                         }
@@ -127,13 +129,17 @@ class ShuntingYardCalculator implements Calculator {
                         --bracketBalance;
                         gotOperand = true;
                         break;
+                    default:
+                        throw new IllegalStateException();
                 }
             }
         }
-        if (bracketBalance != 0)
+        if (bracketBalance != 0) {
             throw new ParsingException("Bad bracket balance");
-        if (numbers.size() != 1)
+        }
+        if (numbers.size() != 1) {
             throw new ParsingException("Illegal expression");
+        }
         infix.remove(infix.size() - 1);
 
         return numbers.pop();
@@ -144,7 +150,9 @@ class ShuntingYardCalculator implements Calculator {
         return c == '+' || c == '-' || c == '*' || c == '/';
     }
 
-    private enum Bracket {OPENING, CLOSING}
+    private enum Bracket {
+        OPENING, CLOSING
+    }
 
     private class Token {
     }
@@ -152,8 +160,8 @@ class ShuntingYardCalculator implements Calculator {
     private class NumberToken extends Token {
         private double number;
 
-        private NumberToken(double number_) {
-            number = number_;
+        private NumberToken(double number) {
+            this.number = number;
         }
 
         private double getNumber() {
@@ -189,8 +197,8 @@ class ShuntingYardCalculator implements Calculator {
             this.operator = operator;
         }
 
-        private OperatorToken(char operator_) {
-            switch (operator_) {
+        private OperatorToken(char operatorChar) {
+            switch (operatorChar) {
                 case '+':
                     operator = Operator.ADD;
                     break;

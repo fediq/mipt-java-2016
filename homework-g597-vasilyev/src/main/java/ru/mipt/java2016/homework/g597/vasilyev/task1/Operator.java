@@ -1,7 +1,6 @@
 package ru.mipt.java2016.homework.g597.vasilyev.task1;
 
 import java.util.Stack;
-
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
 /**
@@ -16,6 +15,9 @@ enum Operator {
     UNARY_PLUS(0, 1, false),
     UNARY_MINUS(0, 1, false);
 
+    public final int priority;
+    public final int valency;
+    public final boolean hasLeftAssociativity;
     Operator(int priority, int valency, boolean hasLeftAssociativity) {
         this.priority = priority;
         this.valency = valency;
@@ -29,9 +31,10 @@ enum Operator {
             throw new ParsingException("Too few operands");
         }
 
-        double args[] = new double[valency];
-        for (int i = valency - 1; i >= 0; --i)
+        double[] args = new double[valency];
+        for (int i = valency - 1; i >= 0; --i) {
             args[i] = numbers.pop();
+        }
 
         switch (this) {
             case ADD:
@@ -52,10 +55,8 @@ enum Operator {
             case UNARY_MINUS:
                 numbers.push(-args[0]);
                 break;
+            default:
+                throw new IllegalStateException();
         }
     }
-
-    final int priority;
-    final int valency;
-    final boolean hasLeftAssociativity;
 }
