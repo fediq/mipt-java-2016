@@ -1,3 +1,4 @@
+<!--suppress ALL -->
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
@@ -13,7 +14,6 @@
     <modules>
         <module>homework-base</module>
         <module>homework-tests</module>
-        <module>homework-g596-pockonechny</module>
         <module>homework-g596-kupriyanov</module>
         <module>homework-g595-kryloff</module>
         <module>homework-g596-kravets</module>
@@ -68,6 +68,11 @@
         <module>homework-g597-bogdanov</module>
         <module>homework-g596-egorov</module>
         <module>homework-g597-zakharkin</module>
+        <module>homework-g597-grishutin</module>
+        <module>homework-g595-tkachenko</module>
+        <module>homework-g597-miller</module>
+        <module>homework-g596-pockonechny</module>
+
     </modules>
 
     <build>
@@ -75,11 +80,13 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.5.1</version>
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
                 </configuration>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
@@ -227,6 +234,7 @@
                     </checkstyleRules>
                 </configuration>
             </plugin>
+
         </plugins>
     </build>
 

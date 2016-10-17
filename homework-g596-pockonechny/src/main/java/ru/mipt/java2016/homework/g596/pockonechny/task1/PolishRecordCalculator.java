@@ -124,14 +124,12 @@ public class PolishRecordCalculator implements Calculator {
 
     private boolean getRpn(String req) throws ParsingException {  // Получает обратную польскую запись
 
-        Integer nextpos = -1;
-
         req = '(' + req + ')';
 
-        Stack<Character> bufferStack = new Stack();         // Стек, в который складываются операции
-        bufferStack.clear();
+        Stack<Character> bufferStack = new Stack(); // временный стек, в который складываются операции
+                                                    // потому что потом его надо будет развернуть
         int len = req.length();
-        boolean canBeUno = true;                    // Флаг - может ли быть сл. операция унарной
+        boolean canBeUno = true; // Флаг - может ли быть следующая операция унарной
 
         for (int i = 0; i < len; ++i) {
             char currChar = req.charAt(i);
@@ -212,7 +210,7 @@ public class PolishRecordCalculator implements Calculator {
             RpnElement el = rpnStack.peek();
 
             if (el.getOp() == RPN_CONTAIN_NUMBER) {
-                st.push(new Double(el.getValue()));
+                st.push(el.getValue());
             } else {
                 char op = el.getOp();
                 double o2 = 0.0;
