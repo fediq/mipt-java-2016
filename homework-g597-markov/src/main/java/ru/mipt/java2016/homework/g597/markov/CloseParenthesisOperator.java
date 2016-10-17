@@ -17,7 +17,8 @@ public final class CloseParenthesisOperator extends Lexeme {
     }
 
     @Override
-    protected void makeOperation(Stack<NumberLexeme> results) throws ParsingException {
+    protected void makeOperation(Stack<NumberLexeme> results) throws
+            ParsingException {
         throw new ParsingException("Close parenthesis can't make any operation");
     }
 

@@ -16,7 +16,8 @@ public final class BinaryPlusOperator extends Lexeme {
     }
 
     @Override
-    protected void makeOperation(Stack<NumberLexeme> results) throws ParsingException {
+    protected void makeOperation(Stack<NumberLexeme> results)
+            throws ParsingException {
         if (results.size() >= 2) {
             NumberLexeme second = results.pop();
             NumberLexeme first = results.pop();

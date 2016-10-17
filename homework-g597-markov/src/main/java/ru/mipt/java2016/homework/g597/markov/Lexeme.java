@@ -42,7 +42,8 @@ public abstract class Lexeme {
 
     protected abstract int priority() throws ParsingException;
 
-    protected abstract void makeOperation(Stack<NumberLexeme> results) throws ParsingException;
+    protected abstract void makeOperation(Stack<NumberLexeme> results)
+            throws ParsingException;
 
     public void addLexeme(Stack<NumberLexeme> results, Stack<Lexeme> operations)
             throws ParsingException {
