@@ -23,7 +23,8 @@ public class BinOperator {
         }
         if (operator == '/'){
             return firstArg / secondArg;
+        } else {
+            throw new ParsingException("Wrong expression");
         }
-        else throw new ParsingException("Wrong expression");
     }
 }

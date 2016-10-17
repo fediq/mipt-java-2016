@@ -30,7 +30,7 @@ public abstract class AbstractCalculatorTest {
     protected void tryFail(String expression) throws ParsingException {
         calc().calculate(expression);
     }
-
+    
     @Test
     public void testBasicOps() throws ParsingException {
         test("3 + 4", 7.0);
@@ -56,14 +56,14 @@ public abstract class AbstractCalculatorTest {
         test(" 7.0 \t/   3.5 ", 2.0);
         test(" (6.0  ) + \t( - 4) * (  0.0 +\n 5/2)", -4.0);
     }
-
+       
     @Test
     public void testDivisionByZero() throws ParsingException {
         test("4.5 / 0", Double.POSITIVE_INFINITY);
         test("4.5 / -0.0", Double.NEGATIVE_INFINITY);
     }
 
-    @Test
+    @Test 
     public void testPlainOrdering() throws ParsingException {
         test("2 + 2 * 2", 6.0);
         test("6.0 - 4 * 0.0 + 5/2", 8.5);
@@ -155,4 +155,8 @@ public abstract class AbstractCalculatorTest {
     public void testBadNumber() throws ParsingException {
         tryFail("1.2.3");
     }
+/*<<<<<<< HEAD
+=======
+
+>>>>>>> upstream/master*/
 }
