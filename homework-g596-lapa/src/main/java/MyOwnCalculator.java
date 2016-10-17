@@ -52,14 +52,14 @@ public class MyOwnCalculator implements Calculator {
     }
 
     private LinkedList<Element> getPostfixExpression(LinkedList<Element> expression) {
-        LinkedList<Element> postfixExpression = new LinkedList<Element>();
-        Stack<Element> elements = new Stack<Element>();
+        LinkedList<Element> postfixExpression = new LinkedList<>();
+        Stack<Element> elements = new Stack<>();
         while (!expression.isEmpty()) {
             Element element = expression.removeFirst();
             if (element instanceof Operator) {
                 Operator operator = (Operator) element;
                 while (!elements.isEmpty() && elements.peek() instanceof Operator
-                && ((Operator) elements.peek()).getPriority() >= operator.getPriority()) {
+                    && ((Operator) elements.peek()).getPriority() >= operator.getPriority()) {
                     postfixExpression.add(elements.pop());
                 }
                 elements.push(operator);
@@ -98,8 +98,7 @@ public class MyOwnCalculator implements Calculator {
             character = expression.charAt(i);
             if (Character.isWhitespace(character)) {
                 continue;
-            }
-            else {
+            } else {
                 if (Character.isDigit(character)) {
                     StringBuilder number = new StringBuilder();
                     number.append(character);
@@ -122,8 +121,9 @@ public class MyOwnCalculator implements Calculator {
                 } else {
                     if (character == '+' || character == '-' || character == '*' || character == '/') {
                         if (i == 0) {
-                            if (character == '-')
+                            if (character == '-') {
                                 character = '#';
+                            }
                         } else {
                             Element prev = fragmentedExpression.getLast();
                             if (character == '-') {
@@ -172,8 +172,9 @@ public class MyOwnCalculator implements Calculator {
 
         }
 
-        if (balanceOfBracket > 0)
+        if (balanceOfBracket > 0) {
             throw new ParsingException("Invalid expression");
+        }
         // во fragmentedExpression должно быть хотя бы одно число
         for (Element element : fragmentedExpression) {
             if (element instanceof Number) {
