@@ -18,7 +18,7 @@ public class GrammaticCalculator implements Calculator {
         if (expression == null) {
             throw new ParsingException("Null expression");
         }
-        if (expression.matches("\\d+(\\.\\d+)?\\s+\\d+(\\.\\d+)?")) {
+        if (expression.matches(".*[\\d.]\\s+[\\d.].*")) {
             throw new ParsingException("Illegal spaces between numbers");
         }
         expression = expression.replaceAll("\\s+", "");
@@ -33,10 +33,7 @@ public class GrammaticCalculator implements Calculator {
         private static final char[] ARITHMETIC_SYMBOLS = {'+', '-', '*', '/', '(', ')'};
         private TokenStream tokenStream = new TokenStream();
 
-        SyntaxAnalyzer() {
-        }
-
-        private static boolean isOperator(Character character) {
+        private static boolean isOperator(char character) {
             for (char ch : ARITHMETIC_SYMBOLS) {
                 if (character == ch) {
                     return true;
@@ -104,7 +101,6 @@ public class GrammaticCalculator implements Calculator {
             public void setParsingExpression(String parsingExpression) {
                 expression = parsingExpression;
                 curPos = 0;
-                buffer = new Token('#');
                 filled = false;
             }
 
