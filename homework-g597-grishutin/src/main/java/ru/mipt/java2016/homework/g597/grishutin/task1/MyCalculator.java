@@ -9,6 +9,7 @@ import java.util.Stack;
 
 class MyCalculator implements Calculator {
     static final Calculator INSTANCE = new MyCalculator();
+    private static final String UNARYMINUS = "#";
 
     private enum ParsingCondition { WaitingToken, ReadingNumber }
 
@@ -31,39 +32,24 @@ class MyCalculator implements Calculator {
 
     private static double count(String operator, double op1, double op2) throws InvalidParameterException {
         switch (operator) {
-            case "+":
-                return op1 + op2;
-            case "-":
-                return op1 - op2;
-            case "*":
-                return op1 * op2;
-            case "/":
-                return op1 / op2;
-            case "^":
-                return Math.pow(op1, op2);
-            default:
-                throw new InvalidParameterException(String.format("Invalid operator %s", operator));
+            case "+": return op1 + op2;
+            case "-": return op1 - op2;
+            case "*": return op1 * op2;
+            case "/": return op1 / op2;
+            default: throw new InvalidParameterException(String.format("Invalid operator %s", operator));
         }
     }
 
     private static int getPriority(String operator) throws InvalidParameterException {
         switch (operator) {
-            case "+":
-                return 1;
-            case "-":
-                return 1;
-            case "*":
-                return 2;
-            case "/":
-                return 2;
-            case "(":
-                return 0;
-            case ")":
-                return 0;
-            case "&":
-                return 3;
-            default:
-                throw new InvalidParameterException(
+            case "+": return 1;
+            case "-": return 1;
+            case "*": return 2;
+            case "/": return 2;
+            case "(": return 0;
+            case ")": return 0;
+            case UNARYMINUS: return 3;
+            default : throw new InvalidParameterException(
                         String.format("Invalid operator: %s", operator));
         }
     }
@@ -72,7 +58,7 @@ class MyCalculator implements Calculator {
         Stack<Double> operands = new Stack<>();
         Double operand1;
         Double operand2;
-        Double result = 0.;
+        Double result = 0.0;
         String token;
         try (Scanner sc = new Scanner(postfix)) {
             while (sc.hasNext()) {
@@ -91,7 +77,7 @@ class MyCalculator implements Calculator {
                         operands.push(result);
                     }
 
-                } else if (token.equals("#")) {
+                } else if (token.equals(UNARYMINUS)) {
                     if (operands.size() < 1) {
                         throw new ParsingException("Invalid expression: expected number near unary -");
                     } else {
@@ -179,7 +165,7 @@ class MyCalculator implements Calculator {
                 if (unary) {
                     switch (c.toString()) {
                         case "-":
-                            operators.push("#");
+                            operators.push(UNARYMINUS);
                         case "+":
                             if (prevUnary.equals("+")) {
                                 throw new ParsingException("Invalid expression: unexpected+");
@@ -208,7 +194,7 @@ class MyCalculator implements Calculator {
         }
         while (!operators.empty()) {
             String curOperator = operators.pop();
-            if (OPERATORS.contains(curOperator) || curOperator.equals("#")) {
+            if (OPERATORS.contains(curOperator) || curOperator.equals(UNARYMINUS)) {
                 answer.append(String.format(" %s ", curOperator));
             } else {
                 throw new ParsingException(String.format("Invalid expression: unexpected %s", curOperator));
