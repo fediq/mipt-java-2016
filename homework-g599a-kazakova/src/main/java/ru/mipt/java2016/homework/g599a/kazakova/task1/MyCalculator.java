@@ -40,13 +40,12 @@ public class MyCalculator implements Calculator {
         }
         if (c == '+' || c == '-') {
             return 1;
-        }
-        else {
+        } else {
             return 0;
         }
     }
 
-    private void process_op(Stack<Double> num, char operation) throws ParsingException {
+    private void processOperation(Stack<Double> num, char operation) throws ParsingException {
         try {
             double l = num.pop();
             if (operation == '#') {
@@ -88,27 +87,21 @@ public class MyCalculator implements Calculator {
                 } else {
                     while (!op.empty() && ((curop == '#' && priority(op.peek()) > priority(curop)) ||
                             (priority(op.peek()) >= priority(curop)))) {
-                        process_op(num, op.pop());
+                        processOperation(num, op.pop());
                     }
                     op.push(curop);
                 }
-            }
-
-            else if (expression.charAt(i) == '(') {
+            } else if (expression.charAt(i) == '(') {
                  op.push('(');
-            }
-
-            else if (expression.charAt(i) == ')') {
+            } else if (expression.charAt(i) == ')') {
                 while (op.peek() != '(') {
-                    process_op(num, op.pop());
+                    processOperation(num, op.pop());
                     if (op.empty()) {
                         throw new ParsingException("Wrong expression");
                     }
                 }
                 op.pop();
-            }
-
-            else {
+            } else {
                 int j = i;
                 while (i < expression.length() && expression.charAt(i) != '(' && expression.charAt(i) != ')'
                         && !isoperation(expression.charAt(i))) {
@@ -117,7 +110,7 @@ public class MyCalculator implements Calculator {
                 double curnum;
                 try {
                     curnum = Double.parseDouble(expression.substring(j, i));
-                } catch(NumberFormatException e) {
+                } catch (NumberFormatException e) {
                     throw new ParsingException("Wrong expression");
                 }
                 num.push(curnum);
@@ -126,7 +119,7 @@ public class MyCalculator implements Calculator {
 
         }
         while (!op.empty()) {
-            process_op(num, op.pop());
+            processOperation(num, op.pop());
         }
         if (num.empty()) {
             throw new ParsingException("Wrong expression");
