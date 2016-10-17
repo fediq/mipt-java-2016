@@ -69,6 +69,8 @@
         <module>homework-g597-bogdanov</module>
         <module>homework-g596-egorov</module>
         <module>homework-g597-zakharkin</module>
+        <module>homework-g597-grishutin</module>
+
     </modules>
 
     <build>
