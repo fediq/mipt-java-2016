@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-<!--suppress ALL -->
-=======
->>>>>>> Minor fixes
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
@@ -54,6 +50,7 @@
         <module>homework-g594-glebov</module>
         <module>homework-g594-petrov</module>
         <module>homework-g597-kozlov</module>
+        <module>homework-g597-smirnova</module>
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
