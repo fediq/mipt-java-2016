@@ -22,14 +22,18 @@ public class MyCalc implements Calculator {
     private static final int RIGHT_ASSOC = 1;
 
 
-    private static final Map<String, int[]> OPERATORS = new HashMap<>();
+    private static final Map<String, int[]> OPERATORS;
 
     static {
+        Map<String, int[]> tempMap = new HashMap<>();
+
         // Map<"token", []{приоритет, ассоциативность}>
-        OPERATORS.put("+", new int[] {0, LEFT_ASSOC});
-        OPERATORS.put("-", new int[] {0, LEFT_ASSOC});
-        OPERATORS.put("*", new int[] {5, LEFT_ASSOC});
-        OPERATORS.put("/", new int[] {5, LEFT_ASSOC});
+        tempMap.put("+", new int[] {0, LEFT_ASSOC});
+        tempMap.put("-", new int[] {0, LEFT_ASSOC});
+        tempMap.put("*", new int[] {5, LEFT_ASSOC});
+        tempMap.put("/", new int[] {5, LEFT_ASSOC});
+
+        OPERATORS = Collections.unmodifiableMap(tempMap);
     }
 
 
@@ -56,9 +60,9 @@ public class MyCalc implements Calculator {
             if (isOperator(token)) {
                 while (!stack.empty() && isOperator(stack.peek())) {
                     if ((isAssociative(token, LEFT_ASSOC)
-                            && cmpPrecedence(token, stack.peek()) <= 0) || (
-                            isAssociative(token, RIGHT_ASSOC)
-                                    && cmpPrecedence(token, stack.peek()) < 0)) {
+                            && cmpPrecedence(token, stack.peek()) <= 0)
+                            || (isAssociative(token, RIGHT_ASSOC)
+                            && cmpPrecedence(token, stack.peek()) < 0)) {
                         out.add(stack.pop());
                         continue;
                     }
@@ -110,10 +114,10 @@ public class MyCalc implements Calculator {
             if (!isOperator(token)) {
                 stack.push(token);
             } else {
-                Double d2 = Double.valueOf(stack.pop());
-                Double d1 = Double.valueOf(stack.pop());
+                double d2 = Double.parseDouble(stack.pop());
+                double d1 = Double.parseDouble(stack.pop());
 
-                Double result = token.compareTo("+") == 0 ?
+                double result = token.compareTo("+") == 0 ?
                         d1 + d2 :
                         token.compareTo("-") == 0 ?
                                 d1 - d2 :
@@ -123,7 +127,7 @@ public class MyCalc implements Calculator {
             }
         }
 
-        return Double.valueOf(stack.pop());
+        return Double.parseDouble(stack.pop());
     }
 
 
