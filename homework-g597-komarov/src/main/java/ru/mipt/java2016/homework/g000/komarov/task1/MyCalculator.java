@@ -38,7 +38,7 @@ public class MyCalculator implements Calculator {
                         resultArray.add(new Token(0));
                         resultArray.add(bufToken);
                         break;
-                    } else if (!resultArray.get(resultArray.size() - 1).type) {
+                    } else if (!resultArray.get(resultArray.size() - 1).getType()) {
                         String bufString = "-";
                         String concatenatedString = "";
                         while (digits.contains(bufString) || (expression.charAt(i) == ' ') || (bufString.equals("-"))) {
@@ -51,7 +51,9 @@ public class MyCalculator implements Calculator {
                             i++;
                             if (i < expression.length()) {
                                 bufString = Character.toString(expression.charAt(i));
-                            } else break;
+                            } else {
+                                break;
+                            }
                         }
                         i--;
                         Double someDouble = Double.valueOf(concatenatedString);
@@ -90,7 +92,9 @@ public class MyCalculator implements Calculator {
                             i++;
                             if (i < expression.length()) {
                                 bufString = Character.toString(expression.charAt(i));
-                            } else break;
+                            } else {
+                                break;
+                            }
                         }
                         i--;
                         int checkDoubts = 0;
@@ -116,10 +120,10 @@ public class MyCalculator implements Calculator {
         Stack<Double> operands = new Stack<>();
         Stack<Character> functions = new Stack<>();
         for (Token currentToken : expression) {
-            if (currentToken.type) {
-                operands.push(currentToken.doubleToken);
+            if (currentToken.getType()) {
+                operands.push(currentToken.getDouble());
             } else {
-                switch (currentToken.charToken) {
+                switch (currentToken.getChar()) {
                     case '+':
                         if (!functions.empty() && ((functions.peek() == '*') || (functions.peek() == '/'))) {
                             char popedOperator = functions.pop();
@@ -166,17 +170,21 @@ public class MyCalculator implements Calculator {
                                     if (operands.size() < 2) {
                                         throw new ParsingException("Wrong expression");
                                     }
-                                    double secondOperand = operands.pop();
-                                    double firstOperand = operands.pop();
-                                    BinOperator someOperator = new BinOperator(firstOperand, secondOperand, popedOperator);
+                                    double second = operands.pop();
+                                    double first = operands.pop();
+                                    BinOperator someOperator = new BinOperator(first, second, popedOperator);
                                     operands.push(someOperator.run());
                                 }
                                 functions.pop();
                             } catch (EmptyStackException e) {
                                 throw new ParsingException("Wrong expression");
                             }
-                        } else throw new ParsingException("Wrong expression");
+                        } else {
+                            throw new ParsingException("Wrong expression");
+                        }
                         break;
+                    default:
+                        throw new ParsingException("Wrong expression");
                 }
             }
         }
