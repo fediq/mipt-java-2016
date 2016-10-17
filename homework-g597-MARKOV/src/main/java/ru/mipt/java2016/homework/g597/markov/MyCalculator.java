@@ -9,14 +9,11 @@ import ru.mipt.java2016.homework.base.task1.ParsingException;
 
 import java.util.Stack;
 import java.util.StringTokenizer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 
 public class MyCalculator implements Calculator {
 
     private static String markUnaryOperations(String s, char newSymbolMinus, char newSymbolPlus) throws ParsingException {
-        String result = "(";
+        StringBuilder result = new StringBuilder("(");
         String correctSymbols = "01234567890.+-*/()";
         for (int i = 1; i < s.length(); i++) {
             char current = s.charAt(i);
@@ -33,9 +30,9 @@ public class MyCalculator implements Calculator {
             if (current == '+' && previous != ')' && !Character.isDigit(previous)) {
                 current = newSymbolPlus;
             }
-            result = result + current;
+            result.append(current);
         }
-        return result;
+        return result.toString();
     }
 
     @Override
