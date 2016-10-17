@@ -7,17 +7,6 @@ import ru.mipt.java2016.homework.base.task1.ParsingException;
  * Created by AlexBystrov.
  */
 
-class StringParser {
-    final double result;
-    final int position;
-
-    StringParser(double res, int pos) {
-        this.result = res;
-        this.position = pos;
-    }
-}
-
-
 public class MyCalculator implements Calculator {
     @Override
     public double calculate(String expression) throws ParsingException {
@@ -31,6 +20,16 @@ public class MyCalculator implements Calculator {
             return answer.result;
         } catch (ParsingException p) {
             throw new ParsingException("Invalid expression", p.getCause());
+        }
+    }
+
+    class StringParser {
+        final double result;
+        final int position;
+
+        StringParser(double res, int pos) {
+            this.result = res;
+            this.position = pos;
         }
     }
 
