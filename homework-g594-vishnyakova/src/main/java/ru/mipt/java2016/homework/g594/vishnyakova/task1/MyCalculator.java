@@ -12,8 +12,8 @@ import static java.lang.Character.*;
  */
 public class MyCalculator implements Calculator {
 
-    private LinkedList<Character> operations = new<Character> LinkedList();
-    private LinkedList<Double> numbers = new<Double> LinkedList();
+    private LinkedList<Character> operations = new <Character>LinkedList();
+    private LinkedList<Double> numbers = new <Double>LinkedList();
 
     @Override
     public double calculate(String expression) throws ParsingException {

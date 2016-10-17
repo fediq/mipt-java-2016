@@ -6,29 +6,28 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.Stack;
 import java.util.Vector;
+
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 
 /**
- *
- *
  * @author Gregory Kryloff
  * @since 09.10.2016
  */
 public class JMyCalculator implements Calculator {
 
-    private static final Set<Character> ACCEPTABLE_SYMBOLS 
+    private static final Set<Character> ACCEPTABLE_SYMBOLS
             = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
-                '(', ')', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '.', '+', '-', '*', '/')));
+            '(', ')', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '.', '+', '-', '*', '/')));
     private static final Set<Character> NUMBER_SYMBOLS
             = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
-                    '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '.')));
+            '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '.')));
     private static final Set<Character> OPERATORS_AND_BRACES
             = Collections.unmodifiableSet(new HashSet(Arrays.asList(
-                    '+', '-', '*', '/', '(', ')')));
+            '+', '-', '*', '/', '(', ')')));
     private static final Set<Character> OPERATORS
             = Collections.unmodifiableSet(new HashSet(Arrays.asList(
-                    '+', '-', '*', '/')));
+            '+', '-', '*', '/')));
     private static final Set<String> ACCEPTABLE_OPERATORS_TOGETHER
             = Collections.unmodifiableSet(new HashSet(Arrays.asList(
             "--", "*-", "/-", "+-")));
@@ -152,11 +151,11 @@ public class JMyCalculator implements Calculator {
                 isNextUnary = false;
             } else if (isOperator(lexem)) {
                 switch (lexem) {
-                    case "(": 
+                    case "(":
                         operators.add(lexem);
                         isNextUnary = true;
                         break;
-                    
+
                     case "-":
                         if (!isNextUnary) {
                             while (!operators.empty() && operators.peek().charAt(0) != '(') {
@@ -168,7 +167,7 @@ public class JMyCalculator implements Calculator {
                         }
                         isNextUnary = true;
                         break;
-                    case "+": 
+                    case "+":
                         if (!isNextUnary) {
                             while (!operators.empty() && operators.peek().charAt(0) != '(') {
                                 result.add(operators.pop());
@@ -179,32 +178,32 @@ public class JMyCalculator implements Calculator {
                         }
                         isNextUnary = true;
                         break;
-                    
-                    case "*": 
+
+                    case "*":
                         if (isNextUnary) {
                             throw new ParsingException("Unary dividion / multiply");
                         }
-                        while (!operators.empty() 
+                        while (!operators.empty()
                                 && (operators.peek().charAt(0) == '*' || operators.peek().charAt(0) == '/')) {
                             result.add(operators.pop());
                         }
                         operators.add(lexem);
                         isNextUnary = true;
                         break;
-                    
-                    case "/": 
+
+                    case "/":
                         if (isNextUnary) {
                             throw new ParsingException("Unary dividion / multiply");
                         }
-                        while (!operators.empty() 
+                        while (!operators.empty()
                                 && (operators.peek().charAt(0) == '*' || operators.peek().charAt(0) == '/')) {
                             result.add(operators.pop());
                         }
                         operators.add(lexem);
                         isNextUnary = true;
                         break;
-                    
-                    case ")": 
+
+                    case ")":
                         while (!operators.empty() && operators.peek().charAt(0) != '(') {
                             result.add(operators.pop());
                         }
@@ -233,23 +232,23 @@ public class JMyCalculator implements Calculator {
                 switch (lexem) {
                     case "!":
                         break;
-                    case "?": 
+                    case "?":
                         operands.add(operands.pop() * (-1));
                         break;
-                    
-                    case "+": 
+
+                    case "+":
                         operands.add(operands.pop() + operands.pop());
                         break;
-                    
-                    case "-": 
+
+                    case "-":
                         operands.add(-(operands.pop() - operands.pop()));
                         break;
-                    
-                    case "*": 
+
+                    case "*":
                         operands.add(operands.pop() * operands.pop());
                         break;
-                    
-                    case "/": 
+
+                    case "/":
                         operands.add(1 / (operands.pop() / operands.pop()));
                         break;
                     default:
@@ -259,10 +258,10 @@ public class JMyCalculator implements Calculator {
         }
         if (operands.empty()) {
             throw new ParsingException("Invalid expression");
-        } else { 
+        } else {
             return operands.pop();
         }
-        
+
 
     }
 

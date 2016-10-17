@@ -101,26 +101,26 @@ class KrokhalevsCalculator implements Calculator {
     }
 
     private Integer mPos = 0;
-    private String  mExpression;
+    private String mExpression;
 
     private boolean isOperand() {
-        return ((mExpression .charAt(mPos) >= '0' && mExpression .charAt(mPos) <= '9')
-                || mExpression .charAt(mPos) == '.');
+        return ((mExpression.charAt(mPos) >= '0' && mExpression.charAt(mPos) <= '9')
+                || mExpression.charAt(mPos) == '.');
     }
 
     private boolean isFunction() {
-        return (mExpression .charAt(mPos) == '+' || mExpression .charAt(mPos) == '-'
-                || mExpression .charAt(mPos) == '/' || mExpression .charAt(mPos) == '*');
+        return (mExpression.charAt(mPos) == '+' || mExpression.charAt(mPos) == '-'
+                || mExpression.charAt(mPos) == '/' || mExpression.charAt(mPos) == '*');
     }
 
     private boolean isBrace() {
-        return (mExpression .charAt(mPos) == '(' || mExpression .charAt(mPos) == ')');
+        return (mExpression.charAt(mPos) == '(' || mExpression.charAt(mPos) == ')');
     }
 
     private boolean isSpace() {
 
-        return mExpression .charAt(mPos) == ' ' || mExpression .charAt(mPos) == '\n'
-                || mExpression .charAt(mPos) == '\t';
+        return mExpression.charAt(mPos) == ' ' || mExpression.charAt(mPos) == '\n'
+                || mExpression.charAt(mPos) == '\t';
     }
 
     private boolean isRegistred() {
@@ -128,12 +128,12 @@ class KrokhalevsCalculator implements Calculator {
     }
 
     private boolean isInExpression() {
-        return mPos < mExpression .length();
+        return mPos < mExpression.length();
     }
 
     private char readNextChar() {
         if (isInExpression()) {
-            return mExpression .charAt(mPos++);
+            return mExpression.charAt(mPos++);
         }
         return '\0';
     }
@@ -234,7 +234,7 @@ class KrokhalevsCalculator implements Calculator {
 
     @Override
     public double calculate(String expression) throws ParsingException {
-        mExpression  = '(' + expression + ')';
+        mExpression = '(' + expression + ')';
 
         Block curr;
         Block prev = new Element('(', 0);

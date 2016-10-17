@@ -36,7 +36,7 @@ public class MyCalculator implements Calculator {
         if (inputStr == null) {
             throw new ParsingException("Null expression");
         }
-        StringBuilder builder =  new StringBuilder("(" + inputStr.replaceAll("\\s", "") + ")");
+        StringBuilder builder = new StringBuilder("(" + inputStr.replaceAll("\\s", "") + ")");
         builder = new StringBuilder(makeUnOperations(builder.toString()));
         StringTokenizer tokenizer = new StringTokenizer(builder.toString(), "+-*/()_", true);
         Stack<Number> results = new Stack<Number>();

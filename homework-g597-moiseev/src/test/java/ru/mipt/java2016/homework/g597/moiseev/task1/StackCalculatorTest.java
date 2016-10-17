@@ -11,8 +11,8 @@ import ru.mipt.java2016.homework.tests.task1.AbstractCalculatorTest;
  */
 
 public class StackCalculatorTest extends AbstractCalculatorTest {
-  @Override
-  protected Calculator calc() {
-    return new StackCalculator();
-  }
+    @Override
+    protected Calculator calc() {
+        return new StackCalculator();
+    }
 }

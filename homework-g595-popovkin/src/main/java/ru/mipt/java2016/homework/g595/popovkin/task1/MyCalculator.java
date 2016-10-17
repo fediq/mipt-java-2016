@@ -10,7 +10,7 @@ import java.util.*;
 
 public class MyCalculator implements ru.mipt.java2016.homework.base.task1.Calculator {
     //private Map<Character, Integer> priority;
-    private static final Character[] SET_VALUES = new Character[]{'(', ')', '*', '/', '+', '-' };
+    private static final Character[] SET_VALUES = new Character[]{'(', ')', '*', '/', '+', '-'};
     private static final Set<Character> ALONE_SYMBOL_LEXEMS = new HashSet<Character>(Arrays.asList(SET_VALUES));
     private List<LexicalUnit> lexicalUnits;
     private static final String UNARY_MINUS = "M";
@@ -136,5 +136,6 @@ public class MyCalculator implements ru.mipt.java2016.homework.base.task1.Calcul
         return parceAndCalc(0, lexicalUnits.size());
     }
 
-    public MyCalculator() { }
+    public MyCalculator() {
+    }
 }

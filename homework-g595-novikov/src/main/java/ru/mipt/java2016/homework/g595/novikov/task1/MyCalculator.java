@@ -9,32 +9,32 @@ public class MyCalculator implements Calculator {
         private String current;
         private int pos = 0;
         private boolean next = true;
-        
+
         Tokenizer(String expression) {
             expr = expression.replaceAll(" ", "").replaceAll("\n", "").replaceAll("\t", "");
             next();
         }
-        
+
         Tokenizer(Tokenizer tk) {
             expr = tk.expr;
             pos = tk.pos;
             current = tk.current;
             next = tk.next;
         }
-        
+
         public boolean hasNext() {
             return next;
         }
-        
+
         public String getCurrent() {
             return current;
         }
-        
+
         private static boolean isSpecial(char symb) {
-            return symb == '(' || symb == ')' || symb == '+' 
+            return symb == '(' || symb == ')' || symb == '+'
                     || symb == '-' || symb == '*' || symb == '/';
         }
-        
+
         public Tokenizer next() {
             if (pos == expr.length()) {
                 next = false;
@@ -47,21 +47,21 @@ public class MyCalculator implements Calculator {
                 do {
                     sb.append(expr.charAt(pos));
                     pos += 1;
-                    
-                } while (pos != expr.length() 
+
+                } while (pos != expr.length()
                         && !isSpecial(expr.charAt(pos)));
                 current = sb.toString();
             }
-            
+
             return this;
         }
     }
-    
+
     private static double brackets(Tokenizer tokens) throws ParsingException {
         if (tokens.hasNext() && tokens.getCurrent().equals("-")) {
             return -brackets(tokens.next());
         }
-        
+
         if (tokens.hasNext() && tokens.getCurrent().equals("(")) {
             double res = expr(tokens.next());
             if (tokens.hasNext() && tokens.getCurrent().equals(")")) {
@@ -80,7 +80,7 @@ public class MyCalculator implements Calculator {
         }
         throw new ParsingException("Error during brackets() : cannot find '(' or number");
     }
-    
+
     private static double mul(Tokenizer tokens) throws ParsingException {
         double res = brackets(tokens);
         while (tokens.hasNext() && (tokens.getCurrent().equals("*")
@@ -88,12 +88,12 @@ public class MyCalculator implements Calculator {
             if (tokens.getCurrent().equals("*")) {
                 res *= brackets(tokens.next());
             } else {
-                res /=  brackets(tokens.next());
+                res /= brackets(tokens.next());
             }
         }
         return res;
     }
-    
+
     private static double add(Tokenizer tokens) throws ParsingException {
         double res = mul(tokens);
         while (tokens.hasNext() && (tokens.getCurrent().equals("-")
@@ -106,11 +106,11 @@ public class MyCalculator implements Calculator {
         }
         return res;
     }
-    
+
     private static double expr(Tokenizer tokens) throws ParsingException {
         return add(tokens);
     }
-    
+
     @Override
     public double calculate(String expression) throws ParsingException {
         if (expression == null) {

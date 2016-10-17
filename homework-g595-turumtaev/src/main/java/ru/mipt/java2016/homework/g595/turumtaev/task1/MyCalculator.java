@@ -10,12 +10,11 @@ import java.util.Stack;
  *
  * @author Galim Turumtaev
  * @since 10.10.2016
-
  */
 
 public class MyCalculator implements Calculator {
     public double calculate(String expression) throws ParsingException {
-        if (expression ==  null) {
+        if (expression == null) {
             throw new ParsingException("Expression is null");
         }
         StringBuilder polishExpression; //StringBuider удобнее, потому что я постоянно добавляю в конец строки
@@ -45,7 +44,7 @@ public class MyCalculator implements Calculator {
     }
 
     private boolean isSpace(char letter) {
-        return (letter == ' ' || letter ==  '\n' || letter == '\t');
+        return (letter == ' ' || letter == '\n' || letter == '\t');
     } //на эти знаки не обращаем внимания
 
     private StringBuilder getPostfixLine(String expression) throws ParsingException {
@@ -57,7 +56,7 @@ public class MyCalculator implements Calculator {
             char letter = expression.charAt(i); // берем очередной знак
             if (isOperator(letter)) { //если он оператор
                 resultExpression.append(' '); // добавим вместо оператора пробел, чтобы числа не склеились
-                if  (isUnary) { //если оператор унарный
+                if (isUnary) { //если оператор унарный
                     if (letter == '+') { //если унарный плюс, то просто убираем его
                         isUnary = false;
                     } else if (letter == '-') { //если унарный минус, то:
@@ -81,7 +80,7 @@ public class MyCalculator implements Calculator {
                     }
                     operators.push(letter); // Помещаем оператор в стек
                 }
-            } else  if (letter == '(') { //скобку просто помещаем в стек
+            } else if (letter == '(') { //скобку просто помещаем в стек
                 operators.push(letter);
                 isUnary = true;
             } else if (letter == ')') { //если закрывающая скобка, то ищем открывающую
@@ -135,13 +134,13 @@ public class MyCalculator implements Calculator {
                     }
                     double firstNumber = numbers.pop(); //первый операнд
                     double secondNumber = numbers.pop(); //второй операнд
-                    if (letter ==  '-') { //далее проделываем операцию
+                    if (letter == '-') { //далее проделываем операцию
                         numbers.push(secondNumber - firstNumber);
-                    } else if (letter ==  '+') {
+                    } else if (letter == '+') {
                         numbers.push(secondNumber + firstNumber);
-                    } else if (letter ==  '/') {
+                    } else if (letter == '/') {
                         numbers.push(secondNumber / firstNumber);
-                    } else if (letter ==  '*') {
+                    } else if (letter == '*') {
                         numbers.push(secondNumber * firstNumber);
                     }
                 }
@@ -169,7 +168,7 @@ public class MyCalculator implements Calculator {
                 numbers.push(result); //в стек
             }
         }
-        if (numbers.size() ==  1) { //в конце в стеке должен остаться только конечный ответ
+        if (numbers.size() == 1) { //в конце в стеке должен остаться только конечный ответ
             return numbers.pop();
         } else {
             throw new ParsingException("Invalid expression"); //операторов оказалось слишком мало или слишком много

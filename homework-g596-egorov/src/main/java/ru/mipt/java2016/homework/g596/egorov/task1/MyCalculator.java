@@ -25,13 +25,13 @@ public class MyCalculator implements Calculator {
 
     private double doit(Double x, char oper, Double y) throws ParsingException {
         switch (oper) {
-            case('+'):
+            case ('+'):
                 return y + x;
-            case('-'):
+            case ('-'):
                 return y - x;
-            case('*'):
+            case ('*'):
                 return y * x;
-            case('/'):
+            case ('/'):
                 return y / x;
             default:
                 throw new ParsingException("Wrong operator in DoIt");
@@ -98,7 +98,7 @@ public class MyCalculator implements Calculator {
         return (c == '+' || c == '-' || c == '*' || c == '/' || c == '(');
     }
 
-    private int seeknum(int begin, String s, int sign)throws ParsingException {
+    private int seeknum(int begin, String s, int sign) throws ParsingException {
         //НА ВХОД ПОДАЁТСЯ НАЧАЛО ЧИСЛА
         //проходит по числу, запихивает его в стек и проверяет на точки
         int dotcount = 0;  //считывание числа

@@ -17,7 +17,7 @@ public class MyOperationFactory {
             return new FirstPriorityOperations('-');
         } else if (probablyOperation.charAt(0) == '*') {
             return new SecondPriorityOperations('*');
-        }  else if (probablyOperation.charAt(0) == '/') {
+        } else if (probablyOperation.charAt(0) == '/') {
             return new SecondPriorityOperations('/');
         } else if (probablyOperation.charAt(0) == '_') {
             return new ThirdPriorityOperations('_');

@@ -183,25 +183,38 @@ public class SuperCalculator implements Calculator {
     private int getPriority(char operator) throws ParsingException {
         // оперделение приоритета данного оператора operator - алгоритм из wikipedia
         switch (operator) {
-            case '(': return 0;
-            case ')': return 0;
-            case '+': return 1;
-            case '-': return 1;
-            case '*': return 2;
-            case '/': return 2;
-            case '&': return 3;
-            default: throw new ParsingException("This is invalid symbol");
+            case '(':
+                return 0;
+            case ')':
+                return 0;
+            case '+':
+                return 1;
+            case '-':
+                return 1;
+            case '*':
+                return 2;
+            case '/':
+                return 2;
+            case '&':
+                return 3;
+            default:
+                throw new ParsingException("This is invalid symbol");
         }
     }
 
     private double calculateSingle(double operand1, double operand2, char operator) throws ParsingException {
         // результат действия одного оператора и его операндов
         switch (operator) {
-            case '+': return operand1 + operand2;
-            case '-': return operand1 - operand2;
-            case '*': return operand1 * operand2;
-            case '/': return operand1 / operand2;
-            default: throw new ParsingException("This is invalid symbol");
+            case '+':
+                return operand1 + operand2;
+            case '-':
+                return operand1 - operand2;
+            case '*':
+                return operand1 * operand2;
+            case '/':
+                return operand1 / operand2;
+            default:
+                throw new ParsingException("This is invalid symbol");
         }
     }
 

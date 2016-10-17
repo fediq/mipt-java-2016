@@ -8,7 +8,6 @@ import java.util.Stack;
 import java.util.StringTokenizer;
 
 
-
 public class CStackCalculator implements Calculator {
     private final String operators = "+*/_";
     /*
@@ -150,7 +149,7 @@ public class CStackCalculator implements Calculator {
             leftOperand = leftOperand * rightOperand;
         }
         if (operator.equals("/")) {
-            leftOperand =  leftOperand / rightOperand;
+            leftOperand = leftOperand / rightOperand;
         }
         return leftOperand;
     }

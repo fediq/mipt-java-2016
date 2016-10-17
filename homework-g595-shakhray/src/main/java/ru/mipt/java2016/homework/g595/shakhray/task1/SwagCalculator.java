@@ -10,7 +10,7 @@ import java.util.Vector;
  * Created by Vlad Shakhray on 12/10/2016.
  */
 // The implementation follows Dijkstra's algorithm with two stacks
-public class SwagCalculator implements Calculator  {
+public class SwagCalculator implements Calculator {
 
     private Stack<Double> stack = new Stack<>();
     private Vector<Character> operations = new Vector<>();
@@ -38,7 +38,7 @@ public class SwagCalculator implements Calculator  {
 
         // Checking for the correctness of the bracket balance
         if (bracketBalance(expression) != 0) {
-            throw  new ParsingException("Incorrect bracket balance.");
+            throw new ParsingException("Incorrect bracket balance.");
         }
 
         // Checking for incorrect lexems, such as .45 or 1.4.5

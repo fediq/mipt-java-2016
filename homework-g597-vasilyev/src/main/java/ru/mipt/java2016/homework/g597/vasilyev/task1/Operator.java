@@ -1,6 +1,7 @@
 package ru.mipt.java2016.homework.g597.vasilyev.task1;
 
 import java.util.Stack;
+
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
 /**
@@ -18,6 +19,7 @@ enum Operator {
     public final int priority;
     public final int valency;
     public final boolean hasLeftAssociativity;
+
     Operator(int priority, int valency, boolean hasLeftAssociativity) {
         this.priority = priority;
         this.valency = valency;
