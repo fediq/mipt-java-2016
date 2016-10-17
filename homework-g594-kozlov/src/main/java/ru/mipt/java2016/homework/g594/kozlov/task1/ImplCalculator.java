@@ -27,7 +27,7 @@ public class ImplCalculator implements Calculator {
         }
         String workSt = work.replaceAll("[+]-", "-").replaceAll("[-]-", "+")
                 .replaceAll("[(]-", "(!").replaceAll("/-", "/!").replaceAll("[*]-", "*!");
-                //replace unary minuses with !
+        //replace unary minuses with !
         if (workSt.charAt(0) == '-') {
             return -calcSubstr(workSt, 1, workSt.length());
         }
@@ -37,11 +37,16 @@ public class ImplCalculator implements Calculator {
     //do action from string at index between too values
     private double combine(char operator, double val1, double val2) throws ParsingException {
         switch (operator) {
-            case '*': return val1 * val2;
-            case '/': return val1 / val2;
-            case '+': return val1 + val2;
-            case '-': return val1 - val2;
-            default: throw new ParsingException("Parsing failed");
+            case '*':
+                return val1 * val2;
+            case '/':
+                return val1 / val2;
+            case '+':
+                return val1 + val2;
+            case '-':
+                return val1 - val2;
+            default:
+                throw new ParsingException("Parsing failed");
         }
     }
 
@@ -150,7 +155,7 @@ public class ImplCalculator implements Calculator {
             if (index == to) {
                 throw new ParsingException("Too much actions");
             }
-                //if string ends with function symbol
+            //if string ends with function symbol
 
             nextBracket = string.indexOf('(', index);
             nextAdd = max(string.lastIndexOf('+', nextBracket),

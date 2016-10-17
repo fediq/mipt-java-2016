@@ -180,7 +180,7 @@ public class EvalCalculator implements Calculator {
         result *= sign;
         currentPosition = skipSpaces(expression, currentPosition, endPosition);
         while (currentPosition < endPosition && (expression.charAt(currentPosition) == '*'
-                    || expression.charAt(currentPosition) == '/')) {
+                || expression.charAt(currentPosition) == '/')) {
             char operation = expression.charAt(currentPosition);
             currentPosition = skipSpaces(expression, currentPosition + 1, endPosition);
             if (operation == '*') {

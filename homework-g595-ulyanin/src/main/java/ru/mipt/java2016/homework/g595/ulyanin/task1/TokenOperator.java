@@ -8,7 +8,7 @@ import ru.mipt.java2016.homework.base.task1.ParsingException;
 
 public class TokenOperator extends Token {
 
-    public enum Associativity { LEFT, RIGHT }
+    public enum Associativity {LEFT, RIGHT}
 
     private boolean unary = false;
 

@@ -322,7 +322,7 @@ public class UltimateCalc implements Calculator {
         operations.clear();
     }
 
-    private enum Symbol { DIGIT, ADD, UNOADD, SUB, UNOSUB, MUL, DIV, OBRACKET, CBRACKET, SPACE }
+    private enum Symbol {DIGIT, ADD, UNOADD, SUB, UNOSUB, MUL, DIV, OBRACKET, CBRACKET, SPACE}
 
-    private enum SymbolType { OPERATOR, NUMBER, BRACKET, SPACE, NONE }
+    private enum SymbolType {OPERATOR, NUMBER, BRACKET, SPACE, NONE}
 }

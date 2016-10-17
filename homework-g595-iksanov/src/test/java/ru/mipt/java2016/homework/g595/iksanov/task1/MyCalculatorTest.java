@@ -6,7 +6,7 @@ import ru.mipt.java2016.homework.tests.task1.AbstractCalculatorTest;
 /**
  * Created by Emil Iksanov.
  */
-public class MyCalculatorTest extends AbstractCalculatorTest{
+public class MyCalculatorTest extends AbstractCalculatorTest {
 
     @Override
     protected Calculator calc() {

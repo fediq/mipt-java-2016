@@ -2,16 +2,20 @@ package ru.mipt.java2016.homework.g594.kalinichenko.task1;
 
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
+
 import java.util.*;
 
 import static java.lang.Character.*;
 
 class MyCalculator implements Calculator {
-    private interface StackItem { }
+    private interface StackItem {
+    }
 
-    private interface CalcItem { }
+    private interface CalcItem {
+    }
 
-    private class Bracket implements StackItem { }
+    private class Bracket implements StackItem {
+    }
 
     private class Number implements CalcItem {
         private double value;
@@ -25,7 +29,7 @@ class MyCalculator implements Calculator {
         }
     }
 
-    private enum Operation { ADD, SUB, MUL, DIV }
+    private enum Operation {ADD, SUB, MUL, DIV}
 
     private class Operator implements CalcItem, StackItem {
         private int priority;
@@ -73,7 +77,7 @@ class MyCalculator implements Calculator {
 
     private ArrayList<CalcItem> getPolishNotation(String expression) throws ParsingException {
         ArrayList<CalcItem> polishNotation = new ArrayList<>();
-        Stack<StackItem> stack  = new Stack<>();
+        Stack<StackItem> stack = new Stack<>();
         boolean unary = true;
         double curNumber = 0;
         double sign = 1;
@@ -186,7 +190,7 @@ class MyCalculator implements Calculator {
 
     private double getValue(ArrayList<CalcItem> polishNotation) throws ParsingException {
         Stack<Number> stack = new Stack<>();
-        for (CalcItem cur:polishNotation) {
+        for (CalcItem cur : polishNotation) {
             if (cur instanceof Number) {
                 stack.push((Number) cur);
             } else {

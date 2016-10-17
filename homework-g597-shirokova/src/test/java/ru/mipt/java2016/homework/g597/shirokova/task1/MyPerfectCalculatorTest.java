@@ -6,5 +6,9 @@ import ru.mipt.java2016.homework.tests.task1.AbstractCalculatorTest;
 public class MyPerfectCalculatorTest extends AbstractCalculatorTest {
 
     @Override
-    public Calculator calc() { return MyPerfectCalculator.INSTANCE; };
+    public Calculator calc() {
+        return MyPerfectCalculator.INSTANCE;
+    }
+
+    ;
 }

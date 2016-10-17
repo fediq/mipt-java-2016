@@ -43,7 +43,7 @@ public class MegaCalculator implements Calculator {
 
     private String getPostfixNotation(String expression) throws ParsingException {
         boolean flag = true;
-        Stack<Character> operatorStack  = new Stack<>();
+        Stack<Character> operatorStack = new Stack<>();
         StringBuilder postfixNotation = new StringBuilder();
         for (Character c : expression.toCharArray()) {
             if (Character.isWhitespace(c)) {

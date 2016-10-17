@@ -30,7 +30,7 @@ public abstract class AbstractCalculatorTest {
     protected void tryFail(String expression) throws ParsingException {
         calc().calculate(expression);
     }
-    
+
     @Test
     public void testBasicOps() throws ParsingException {
         test("3 + 4", 7.0);
@@ -56,7 +56,7 @@ public abstract class AbstractCalculatorTest {
         test(" 7.0 \t/   3.5 ", 2.0);
         test(" (6.0  ) + \t( - 4) * (  0.0 +\n 5/2)", -4.0);
     }
-       
+
     @Test
     public void testDivisionByZero() throws ParsingException {
         test("4.5 / 0", Double.POSITIVE_INFINITY);

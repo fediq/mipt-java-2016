@@ -301,9 +301,9 @@ class SimpleCalculator implements Calculator {
      * and replace the block with the result of the operations
      * (shorten [x] [+] [y] ... [-] [z] to [x+y...-z] for example)
      *
-     * @param calculationStack - Stack to be unravelled
+     * @param calculationStack  - Stack to be unravelled
      * @param endOperationToken - OperationToken whose priority is different
-     *                                       from the block being calculated
+     *                          from the block being calculated
      */
     private void unravelCalculationStack(Stack<CalculationToken> calculationStack,
                                          OperationToken endOperationToken) {
@@ -325,7 +325,7 @@ class SimpleCalculator implements Calculator {
 
             doubleTokenNumber = readNextNumber(calculationStack);
             calculation = completeOperation(calculation, doubleTokenNumber,
-                                                         operationToken.getOperation());
+                    operationToken.getOperation());
         }
 
         calculationStack.push(new DoubleToken(calculation));

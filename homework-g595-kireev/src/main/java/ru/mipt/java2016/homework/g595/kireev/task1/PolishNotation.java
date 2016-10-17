@@ -50,7 +50,7 @@ public class PolishNotation {
                 throw new ParsingException("Bad operators");
             }
         } else if (!((prevChar == ')' || isDigit(prevChar)) &&
-                        (nextChar == '(' || isDigit(nextChar) || nextChar == '-'))) {
+                (nextChar == '(' || isDigit(nextChar) || nextChar == '-'))) {
             throw new ParsingException("Bad operators");
         }
     }

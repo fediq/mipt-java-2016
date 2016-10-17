@@ -10,7 +10,6 @@ import java.util.EmptyStackException;
 import java.util.Stack;
 
 
-
 public abstract class Operation {
 
     protected abstract int priority() throws ParsingException;

@@ -6,6 +6,7 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.Stack;
 import java.util.regex.Pattern;
+
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
@@ -22,7 +23,7 @@ public class StackCalculator implements Calculator {
             new HashSet<>(Arrays.asList('+', '-', '*', '/')); // Операторы
     private static final Set<Character> DIGITS_AND_DOT =
             new HashSet<>(Arrays.asList('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.'));
-            // Элементы числа
+    // Элементы числа
 
     @Override
     public double calculate(String expression) throws ParsingException {
