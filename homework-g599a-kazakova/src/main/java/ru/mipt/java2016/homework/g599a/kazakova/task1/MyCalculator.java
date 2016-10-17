@@ -92,7 +92,7 @@ public class MyCalculator implements Calculator {
                     op.push(curop);
                 }
             } else if (expression.charAt(i) == '(') {
-                 op.push('(');
+                op.push('(');
             } else if (expression.charAt(i) == ')') {
                 while (op.peek() != '(') {
                     processOperation(num, op.pop());
