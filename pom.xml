@@ -73,6 +73,7 @@
         <module>homework-g596-stepanova</module>
         <module>homework-g597-spirin</module>
         <module>homework-g597-bogdanov</module>
+<<<<<<< HEAD
         <module>homework-g596-egorov</module>
         <module>homework-g597-zakharkin</module>
         <module>homework-g597-grishutin</module>
@@ -82,6 +83,9 @@
 =======
         <module>homework-g596-bystrov</module>
 >>>>>>> homework-g596-bystrov module added
+=======
+        <module>homework-g596-lapa</module>
+>>>>>>> Lapa homework 1
     </modules>
 
     <build>
