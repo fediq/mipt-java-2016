@@ -87,17 +87,17 @@ public class MyCalculator implements Calculator {
 
         for (int i = 0; i < expression.length(); ++i) {
             char currChar = expression.charAt(i);
-            if(currChar == ' ' || currChar == '\n' || currChar == '\t') {
+            if (currChar == ' ' || currChar == '\n' || currChar == '\t') {
                 continue;
             }
-            if(NUMBERS.indexOf(currChar) != -1) {
+            if (NUMBERS.indexOf(currChar) != -1) {
                 flag = false;
                 result.append(currChar);
-            } else if(OPERATORS.indexOf(currChar) != -1) {
+            } else if (OPERATORS.indexOf(currChar) != -1) {
                 if (!flag) {
                     flag = true;
                     while (!operators.empty()) {
-                        if(getPriority(currChar) <= getPriority(operators.lastElement())) {
+                        if (getPriority(currChar) <= getPriority(operators.lastElement())) {
                             result.append(' ');
                             result.append(operators.pop());
                         } else {
@@ -113,7 +113,7 @@ public class MyCalculator implements Calculator {
                     } else if (currChar == '-') {
                         flag = false;
                         while (!operators.empty()) {
-                            if(getPriority(operators.lastElement()) == 3) {
+                            if (getPriority(operators.lastElement()) == 3) {
                                 result.append(' ');
                                 result.append(operators.pop());
                             } else {
@@ -134,9 +134,9 @@ public class MyCalculator implements Calculator {
                 boolean openBracket = false;
                 flag = false;
                 result.append(' ');
-                while(!operators.empty()) {
+                while (!operators.empty()) {
                     char tempChar = operators.pop();
-                    if(tempChar == '(') {
+                    if (tempChar == '(') {
                         openBracket = true;
                         break;
                     } else {
@@ -144,15 +144,15 @@ public class MyCalculator implements Calculator {
                         result.append(tempChar);
                     }
                 }
-                if(!openBracket) {
+                if (!openBracket) {
                     throw new ParsingException("Wrong expression");
                 }
             } else {
                 throw new ParsingException("Wrong expression");
             }
         }
-        while(!operators.empty()) {
-            if(OPERATORS.indexOf(operators.lastElement()) != -1 || operators.lastElement().equals('~')) {
+        while (!operators.empty()) {
+            if (OPERATORS.indexOf(operators.lastElement()) != -1 || operators.lastElement().equals('~')) {
                 result.append(' ');
                 result.append(operators.pop());
             } else {
@@ -163,13 +163,13 @@ public class MyCalculator implements Calculator {
     }
 
     private double getResultOfOperation(double number1, double number2, char operator) throws ParsingException {
-        if(operator == '+') {
+        if (operator == '+') {
             return number1 + number2;
-        } else if(operator == '-') {
+        } else if (operator == '-') {
             return number1 - number2;
-        } else if(operator == '*') {
+        } else if (operator == '*') {
             return number1 * number2;
-        } else if(operator == '/') {
+        } else if (operator == '/') {
             return number1 / number2;
         } else {
             throw new ParsingException("Wrong operator");
@@ -179,30 +179,30 @@ public class MyCalculator implements Calculator {
     private double calculateRPN(String expression) throws ParsingException {
         Scanner in = new Scanner(expression);
         Stack<Double> numbers = new Stack<>();
-        while(in.hasNext()) {
+        while (in.hasNext()) {
             String currInput = in.next();
-            if(currInput.length() == 1) {
+            if (currInput.length() == 1) {
                 if (OPERATORS.indexOf(currInput.charAt(0)) != -1) {
-                    if(numbers.size() >= 2) {
+                    if (numbers.size() >= 2) {
                         double number1 = numbers.pop();
                         double number2 = numbers.pop();
                         numbers.push(getResultOfOperation(number2, number1, currInput.charAt(0)));
                     } else {
                         throw new ParsingException("Parsing error");
                     }
-                } else if(currInput.charAt(0) == '~') {
-                    if(numbers.size() >= 1) {
+                } else if (currInput.charAt(0) == '~') {
+                    if (numbers.size() >= 1) {
                         double number = numbers.pop();
                         numbers.push(-number);
                     } else {
                         throw new ParsingException("Parsing error");
                     }
-                } else if(NUMBERS.indexOf(currInput.charAt(0)) != -1) {
+                } else if (NUMBERS.indexOf(currInput.charAt(0)) != -1) {
                     Double currNumber;
                     try {
                         currNumber = Double.parseDouble(currInput);
                         numbers.push(currNumber);
-                    } catch(NumberFormatException e){
+                    } catch (NumberFormatException e) {
                         throw new ParsingException(e.getMessage(), e.getCause());
                     }
                 } else {
@@ -213,13 +213,13 @@ public class MyCalculator implements Calculator {
                 try {
                     currNumber = Double.parseDouble(currInput);
                     numbers.push(currNumber);
-                } catch(NumberFormatException e){
+                } catch (NumberFormatException e) {
                     throw new ParsingException(e.getMessage(), e.getCause());
                 }
 
             }
         }
-        if(numbers.size() == 1) {
+        if (numbers.size() == 1) {
             return numbers.pop();
         } else {
             throw new ParsingException("Parsing error");
