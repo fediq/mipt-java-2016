@@ -14,7 +14,7 @@ class MyCalculator implements Calculator {
     private enum ParsingCondition { WaitingToken, ReadingNumber }
 
     private static final HashSet<String> OPERATORS = new HashSet<>(Arrays.asList(
-            "+", "-", "*", "/", "^"
+            "+", "-", "*", "/"
     ));
 
     private boolean isOperator(String s) {
