@@ -1,19 +1,28 @@
 package ru.mipt.java2016.homework.g596.proskurina.task1;
 
+
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
-import java.util.*;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.StringTokenizer;
+import java.util.ArrayDeque;
+
 
 import static java.lang.Double.parseDouble;
 
 class MyCalculator implements Calculator {
-    private String operators = "+_*/";
-    private String digits = "0123456789.";
+    private static final String OPERATORS = "+_*/";
+    private static final String DIGITS = "0123456789.";
+
+    private Integer bracketsNum = 0;
 
     @Override
     public double calculate(String expression) throws ParsingException {
-        return gettingValue(transformToPolishNatation(stringToParts(expression)));
+        return gettingValue(transformToPolishNotation(stringToParts(expression)));
     }
 
     private StringTokenizer stringToParts(String startingString) throws ParsingException {
@@ -29,13 +38,13 @@ class MyCalculator implements Calculator {
         }
         startingString = startingString.replaceAll("\\(-", "(_").replaceAll("/-", "/_")
                 .replaceAll("-", "+_");
-        return new StringTokenizer(startingString, operators + '(' + ')', true);
+        return new StringTokenizer(startingString, OPERATORS + '(' + ')', true);
     }
 
     private static final Map<String, Integer> OPERATOR_PRIORITY;
 
     static {
-        Map<String, Integer> operPrior = new HashMap<String, Integer>();
+        Map<String, Integer> operPrior = new HashMap<>();
         operPrior.put("_", 2);
         operPrior.put("/", 1);
         operPrior.put("*", 1);
@@ -43,17 +52,15 @@ class MyCalculator implements Calculator {
         OPERATOR_PRIORITY = Collections.unmodifiableMap(operPrior);
     }
 
-    private Integer bracketsNum = 0;
+    private ArrayDeque<String> transformToPolishNotation(StringTokenizer tokenizer) throws ParsingException {
 
-    private ArrayDeque<String> transformToPolishNatation(StringTokenizer tokenizer) throws ParsingException {
+        ArrayDeque<String> polishNotation = new ArrayDeque<>();
 
-        ArrayDeque<String> polishNatation = new ArrayDeque<String>();
-
-        ArrayDeque<String> stackOfOperators = new ArrayDeque<String>();
+        ArrayDeque<String> stackOfOperators = new ArrayDeque<>();
         while (tokenizer.hasMoreTokens()) {
             String token = tokenizer.nextToken();
             if (isNumber(token)) {
-                polishNatation.push(token);
+                polishNotation.push(token);
                 continue;
             }
 
@@ -77,7 +84,7 @@ class MyCalculator implements Calculator {
                 } else {
                     while (!stackOfOperators.isEmpty()
                             && OPERATOR_PRIORITY.get(stackOfOperators.peekFirst()) >= OPERATOR_PRIORITY.get(token)) {
-                        polishNatation.push(stackOfOperators.peekFirst());
+                        polishNotation.push(stackOfOperators.peekFirst());
                         stackOfOperators.pop();
                     }
                     stackOfOperators.push(token);
@@ -97,7 +104,7 @@ class MyCalculator implements Calculator {
                     throw new ParsingException("Incorrect input");
                 }
                 while (!isOpenBracket(stackOfOperators.peekFirst())) {
-                    polishNatation.push(stackOfOperators.peekFirst());
+                    polishNotation.push(stackOfOperators.peekFirst());
                     stackOfOperators.pop();
                 }
                 stackOfOperators.pop();
@@ -109,9 +116,9 @@ class MyCalculator implements Calculator {
             if (stackOfOperators.peekFirst().equalsIgnoreCase("(")) {
                 throw new ParsingException("Incorrect input");
             }
-            polishNatation.push(stackOfOperators.pop());
+            polishNotation.push(stackOfOperators.pop());
         }
-        return polishNatation;
+        return polishNotation;
     }
 
 
@@ -125,7 +132,7 @@ class MyCalculator implements Calculator {
             if (s.charAt(i) == '.') {
                 ++count;
             }
-            if (!digits.contains(s.substring(i, i + 1))) {
+            if (DIGITS.indexOf(s.charAt(i)) == -1) {
                 return false;
             }
 
@@ -136,7 +143,7 @@ class MyCalculator implements Calculator {
     }
 
     private boolean isOperator(String s) {
-        return operators.contains(s);
+        return OPERATORS.contains(s);
     }
 
 
@@ -149,29 +156,29 @@ class MyCalculator implements Calculator {
     }
 
 
-    private double gettingValue(ArrayDeque<String> polishNatation) throws ParsingException {
+    private double gettingValue(ArrayDeque<String> polishNotation) throws ParsingException {
 
-        ArrayDeque<Double> stackOfValues = new ArrayDeque<Double>();
-        while (!polishNatation.isEmpty()) {
-            if (isNumber(polishNatation.peekLast())) {
+        ArrayDeque<Double> stackOfValues = new ArrayDeque<>();
+        while (!polishNotation.isEmpty()) {
+            if (isNumber(polishNotation.peekLast())) {
                 try {
-                    stackOfValues.push(parseDouble(polishNatation.pollLast()));
+                    stackOfValues.push(parseDouble(polishNotation.pollLast()));
                 } catch (NumberFormatException error) {
                     throw new ParsingException("Incorrect input");
                 }
                 continue;
             }
-            if (polishNatation.peekLast().equalsIgnoreCase("_")) {
-                polishNatation.pollLast();
+            if (isUnaryMinus(polishNotation)) {
+                polishNotation.pollLast();
                 if (stackOfValues.isEmpty()) {
                     throw new ParsingException("Incorrect input");
                 }
                 stackOfValues.push(-1 * stackOfValues.pop());
                 continue;
             }
-            if (isOperator(polishNatation.peekLast())) {
+            if (isOperator(polishNotation.peekLast())) {
                 if (stackOfValues.size() >= 2) {
-                    stackOfValues.push(calc(stackOfValues.pop(), stackOfValues.pop(), polishNatation.pollLast()));
+                    stackOfValues.push(calc(stackOfValues.pop(), stackOfValues.pop(), polishNotation.pollLast()));
                 } else {
                     throw new ParsingException("Incorrect input");
                 }
@@ -183,6 +190,9 @@ class MyCalculator implements Calculator {
         return stackOfValues.pollLast();
     }
 
+    private boolean isUnaryMinus(ArrayDeque<String> polishNotation) {
+        return polishNotation.peekLast().equalsIgnoreCase("_");
+    }
 
     private Double calc(Double a, Double b, String operat) {
         if (operat.equalsIgnoreCase("+")) {
