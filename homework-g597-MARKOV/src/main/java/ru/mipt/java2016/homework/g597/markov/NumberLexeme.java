@@ -22,12 +22,12 @@ public final class NumberLexeme extends Lexeme {
 
     @Override
     protected int priority() throws ParsingException {
-        throw new ParsingException("Logical error: Numbers don't have any priority");
+        throw new ParsingException("Numbers don't have any priority");
     }
 
     @Override
     protected void makeOperation(Stack<NumberLexeme> results) throws ParsingException {
-        throw new ParsingException("Logical error: NumberLexeme can't make any operation");
+        throw new ParsingException("NumberLexeme can't make any operation");
     }
 
     @Override

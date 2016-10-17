@@ -18,11 +18,11 @@ public final class BinaryMinusOperator extends Lexeme {
 
     @Override
     protected void makeOperation(Stack<NumberLexeme> results) throws ParsingException {
-        try {
+        if (results.size() >= 2) {
             NumberLexeme second = results.pop();
             NumberLexeme first = results.pop();
             results.push(new NumberLexeme(first.value - second.value));
-        } catch (EmptyStackException e) {
+        } else {
             throw new ParsingException("Not enough arguments for binary minus operation");
         }
     }

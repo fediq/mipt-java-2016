@@ -18,10 +18,10 @@ public final class UnaryPlusOperator extends Lexeme {
 
     @Override
     protected void makeOperation(Stack<NumberLexeme> results) throws ParsingException {
-        try {
+        if (results.size() != 0) {
             NumberLexeme item = results.pop();
             results.push(new NumberLexeme(item.value));
-        } catch (EmptyStackException e) {
+        } else {
             throw new ParsingException("No arguments for unary plus operation");
         }
     }

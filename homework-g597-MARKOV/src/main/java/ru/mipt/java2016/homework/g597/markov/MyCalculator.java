@@ -21,19 +21,24 @@ public class MyCalculator implements Calculator {
         for (int i = 1; i < s.length(); i++) {
             char current = s.charAt(i);
             char previous = s.charAt(i - 1);
-            if (correctSymbols.indexOf(current) == -1)
+            if (correctSymbols.indexOf(current) == -1) {
                 throw new ParsingException("Incorrect symbol in equation");
-            if (current == ')' && previous == '(')
+            }
+            if (current == ')' && previous == '(') {
                 throw new ParsingException("Empty parenthesis");
-            if (current == '-' && previous != ')' && !Character.isDigit(previous))
+            }
+            if (current == '-' && previous != ')' && !Character.isDigit(previous)) {
                 current = newSymbolMinus;
-            if (current == '+' && previous != ')' && !Character.isDigit(previous))
+            }
+            if (current == '+' && previous != ')' && !Character.isDigit(previous)) {
                 current = newSymbolPlus;
+            }
             result = result + current;
         }
         return result;
     }
 
+    @Override
     public double calculate(String inputString) throws ParsingException {
         if (inputString == null) {
             throw new ParsingException("Null expression");
@@ -44,28 +49,44 @@ public class MyCalculator implements Calculator {
         inputString = "(" + inputString.replaceAll("\\s", "") + ")";
         inputString = markUnaryOperations(inputString, '~', '#');
         StringTokenizer tokenizer = new StringTokenizer(inputString, "+-*/()~#", true);
-        Stack<NumberLexeme> results = new Stack<NumberLexeme>();
-        Stack<Lexeme> operations = new Stack<Lexeme>();
+        Stack<NumberLexeme> results = new Stack<>();
+        Stack<Lexeme> operations = new Stack<>();
         while (tokenizer.hasMoreTokens()) {
-            String t = tokenizer.nextToken();
-            Lexeme lex = Lexeme.fromString(t);
+            Lexeme lex = Lexeme.fromString(tokenizer.nextToken());
             lex.addLexeme(results, operations);
         }
-        if (!operations.isEmpty())
+        if (!operations.isEmpty()) {
             throw new ParsingException("No parenthesis balance");
-        if (results.isEmpty())
+        }
+        if (results.isEmpty()) {
             throw new ParsingException("No numbers in equations");
-        if (results.size() > 1)
+        }
+        if (results.size() > 1) {
             throw new ParsingException("Not enough operators for these numbers");
+        }
         return results.peek().value;
     }
 
     private boolean validateString(String inputString) {
-        boolean flag = true;
-        Pattern p = Pattern.compile("^\\d.?\\s+\\d$");
-        Matcher m = p.matcher(inputString);
-        if (m.matches())
-            flag = false;
-        return flag;
+        boolean expectation = false;
+        boolean validator = true;
+        for (int i = 0; i < inputString.length(); i++) {
+            if (expectation && Character.isDigit(inputString.charAt(i))) {
+                validator = false;
+            }
+
+            if (expectation && !(Character.isDigit(inputString.charAt(i))
+                    | Character.isSpaceChar(inputString.charAt(i)))) {
+                expectation = false;
+            }
+
+            if ((Character.isDigit(inputString.charAt(i)) | inputString.charAt(i) == '.')
+                    && i != inputString.length() - 1) {
+                if (Character.isSpaceChar(inputString.charAt(i + 1))) {
+                    expectation = true;
+                }
+            }
+        }
+        return validator;
     }
 }

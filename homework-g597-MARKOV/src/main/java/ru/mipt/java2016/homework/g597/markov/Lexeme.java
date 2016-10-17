@@ -13,8 +13,9 @@ import java.util.Stack;
 public abstract class Lexeme {
 
     public static Lexeme fromString(String s) throws ParsingException {
-        if (s.length() < 1)
+        if (s.length() < 1) {
             throw new ParsingException("Empty string is not a lexeme");
+        }
         switch (s.charAt(0)) {
             case '+':
                 return new BinaryPlusOperator();

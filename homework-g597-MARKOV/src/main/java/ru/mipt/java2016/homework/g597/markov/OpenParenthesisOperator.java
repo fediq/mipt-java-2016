@@ -17,7 +17,7 @@ public final class OpenParenthesisOperator extends Lexeme {
 
     @Override
     protected void makeOperation(Stack<NumberLexeme> results) throws ParsingException {
-        throw new ParsingException("Logical error: open parenthesis can't make any operation");
+        throw new ParsingException("Open parenthesis can't make any operation");
     }
 
     @Override
