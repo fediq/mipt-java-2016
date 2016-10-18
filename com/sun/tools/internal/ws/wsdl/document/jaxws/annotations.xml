@@ -1,5 +1,0 @@
-<root>
-    <item name='com.sun.tools.internal.ws.wsdl.document.jaxws.Exception'>
-        <annotation name='java.lang.Deprecated'/>
-    </item>
-</root>
