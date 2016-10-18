@@ -7,8 +7,8 @@ import ru.mipt.java2016.homework.tests.task1.AbstractCalculatorTest;
  * Created by Ivan on 14.10.2016.
  */
 public class Calculator3000Test extends AbstractCalculatorTest {
-       @Override
-       protected Calculator calc() {
+    @Override
+    protected Calculator calc() {
         return new Calculator3000();
     }
 }

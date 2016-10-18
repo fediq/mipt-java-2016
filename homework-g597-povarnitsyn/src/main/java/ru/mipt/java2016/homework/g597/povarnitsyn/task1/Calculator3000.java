@@ -3,16 +3,15 @@ package ru.mipt.java2016.homework.g597.povarnitsyn.task1;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
-import java.util.Arrays;
-import java.util.Set;
-import java.util.Stack;
-import java.util.TreeSet;
+import java.util.*;
+
 /**
  * Created by Ivan on 14.10.2016.
  */
 public class Calculator3000  implements Calculator {
 
-    public double calculate(final String expression) throws ParsingException {
+    @Override
+    public double calculate(String expression) throws ParsingException {
         if (expression == null) {
             throw new ParsingException("expression is null");
         }
@@ -21,18 +20,20 @@ public class Calculator3000  implements Calculator {
         return makeOperations(posfixNotation);
     }
 
-    private static Set<Character> NUMBERS =
-            new TreeSet<Character>(Arrays.asList('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.'));
+    private static Set<Character> NUMBERS = Collections.unmodifiableSet(
+            new TreeSet<Character>(Arrays.asList('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.')));
 
-    private static Set<Character> OPERATORS =
-            new TreeSet<Character>(Arrays.asList('+', '-', '*', '/'));
+    private static Set<Character> OPERATORS = Collections.unmodifiableSet(
+            new TreeSet<Character>(Arrays.asList('+', '-', '*', '/')));
 
     private String transformToPosfixNotation(String expression) throws ParsingException {
         if (expression.length() == 0) {
             throw new ParsingException("expression is empty");
         }
 
-        char previos = 3; //0 - число, 1 - оператор, 2 - открывающаяся скобка
+        int numbersCounter = 0;
+        int operatorsCounter = 0;
+        char previos = 3; //0 - число, 1 - оператор, 2 - открывающаяся скобка, 3 - иначе
         char curr;
 
         StringBuilder postfix = new StringBuilder();
@@ -46,16 +47,19 @@ public class Calculator3000  implements Calculator {
 
             if (NUMBERS.contains(curr)) {
                 postfix.append(curr);
+                if (previos != 0) {
+                    numbersCounter++;
+                    if (numbersCounter - operatorsCounter > 1) {
+                        throw new ParsingException("wrong expression");
+                    }
+                }
                 previos = 0;
-            }
-
-            else if (curr == '(') {
+            } else if (curr == '(') {
                 stack.push(curr);
                 postfix.append(' ');
                 previos = 2;
-            }
-
-            else if (OPERATORS.contains(curr)) {
+            } else if (OPERATORS.contains(curr)) {
+                operatorsCounter++;;
                 if (previos == 1 && curr == '-') {
                     postfix.append(' ').append(' ');
                     stack.push('&');
@@ -75,8 +79,7 @@ public class Calculator3000  implements Calculator {
                 postfix.append(' ');
                 stack.push(curr);
                 previos = 1;
-            }
-            else if (curr == ')') {
+            } else if (curr == ')') {
                 boolean isOpens = false;
 
                 while (!stack.empty() && !(stack.lastElement().equals('('))) {
@@ -94,8 +97,7 @@ public class Calculator3000  implements Calculator {
 
                 stack.pop();
                 previos = 3;
-            }
-            else {
+            } else {
                 throw new ParsingException("wrong symbol");
             }
         }
@@ -142,9 +144,7 @@ public class Calculator3000  implements Calculator {
 
             if (NUMBERS.contains(curr)) {
                 number.append(curr);
-            }
-
-            else {
+            } else {
                 if (i > 0 && curr.equals(' ') && NUMBERS.contains(expression.charAt(i - 1))) {
                     try {
                         stack.push(Double.parseDouble(number.toString()));
@@ -153,17 +153,13 @@ public class Calculator3000  implements Calculator {
                         throw new ParsingException("wrong number");
                     }
                     number.delete(0, number.length());
-                }
-                else if (OPERATORS.contains(curr)) {
-                    if (stack.size() == 0)
-                    {
+                } else if (OPERATORS.contains(curr)) {
+                    if (stack.size() == 0) {
                         throw new ParsingException("wrong operator");
-                    }
-                    else if (stack.size() == 1) {
+                    } else if (stack.size() == 1) {
                         double result = -stack.pop();
                         stack.push(result);
-                    }
-                    else {
+                    } else {
                         Double rez;
                         Double left = stack.pop();
                         Double right = stack.pop();
