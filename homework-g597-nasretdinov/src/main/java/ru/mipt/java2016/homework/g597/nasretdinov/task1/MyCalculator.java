@@ -10,23 +10,31 @@ public class MyCalculator implements Calculator {
     private String expression;     // исходная строка
     private int currentPosition;   // текущая позиция символа
 
+    @Override
     public double calculate(String calculateExpression) throws ParsingException {
-        if (calculateExpression == null) {
-            throw new ParsingException("Null expression");
-        }
+        double result;
 
-        expression = calculateExpression;
-        currentPosition = 0;
+        try {
+            if (calculateExpression == null) {
+                throw new ParsingException("Null expression");
+            }
 
-        double result = parseException();
+            expression = calculateExpression;
+            currentPosition = 0;
 
-        // проверяю на корректность ответа
-        if (currentPosition < expression.length()) {
-            throw new ParsingException("incorrect symbol");
+            result = parseException();
+
+            // проверяю на корректность ответа
+            if (currentPosition < expression.length()) {
+                throw new ParsingException("incorrect symbol");
+            }
+        } finally {
+            expression = null;
         }
 
         return result;
     }
+
 
     private double parseFactor() throws ParsingException {
         if (currentPosition == expression.length()) {
