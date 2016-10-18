@@ -16,17 +16,17 @@ public final class UnaryMinusO extends Operations {
     }
 
     @Override
-    protected void makeOperation(Stack<CNumber> results) throws ParsingException {
+    protected void makeOperation(Stack<Number> results) throws ParsingException {
         try {
-            CNumber item = results.pop();
-            results.push(new CNumber(-item.value));
+            Number item = results.pop();
+            results.push(new Number(-item.getValue()));
         } catch (EmptyStackException e) {
             throw new ParsingException("No argument for unary minus operation");
         }
     }
 
     @Override
-    public void addLexeme(Stack<CNumber> results, Stack<Operations> operations) throws ParsingException {
+    public void addLexeme(Stack<Number> results, Stack<Operations> operations) throws ParsingException {
         operations.push(this);
     }
 }

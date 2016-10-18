@@ -2,7 +2,6 @@ package ru.mipt.java2016.homework.g594.plahtinskiy.task1;
 
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
-import java.text.ParseException;
 import java.util.EmptyStackException;
 import java.util.Stack;
 
@@ -17,11 +16,11 @@ public final class BinaryMinusO extends Operations {
     }
 
     @Override
-    protected void makeOperation(Stack<CNumber> results) throws ParsingException {
+    protected void makeOperation(Stack<Number> results) throws ParsingException {
         try {
-            CNumber second = results.pop();
-            CNumber first = results.pop();
-            results.push(new CNumber(first.value - second.value));
+            Number second = results.pop();
+            Number first = results.pop();
+            results.push(new Number(first.getValue() - second.getValue()));
         } catch (EmptyStackException e) {
             throw new ParsingException("Not enough arguments for binary minus operation");
         }

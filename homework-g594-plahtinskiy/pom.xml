@@ -25,15 +25,5 @@
             <version>1.0.0</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>ru.mipt.java2016</groupId>
-            <artifactId>homework-g594-plahtinskiy</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>ru.mipt.java2016</groupId>
-            <artifactId>homework-g594-plahtinskiy</artifactId>
-            <version>1.0.0</version>
-        </dependency>
     </dependencies>
 </project>
