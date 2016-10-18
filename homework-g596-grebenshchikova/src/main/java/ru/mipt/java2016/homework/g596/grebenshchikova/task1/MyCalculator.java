@@ -11,13 +11,13 @@ import ru.mipt.java2016.homework.base.task1.ParsingException;
 
 public class MyCalculator implements Calculator {
 
-    private static final Set<Character> operator = new HashSet<>(Arrays.asList('+', '-', '*', '/'));
+    private static final Set<Character> OPERATOR = new HashSet<>(Arrays.asList('+', '-', '*', '/'));
 
 
-    private enum ParsingCondition {waiting_for_token, reading_number}
+    private enum ParsingCondition { waiting_for_token, reading_number }
 
 
-    private int operator_priority(char symb) throws ParsingException {
+    private int operatorPriority(char symb) throws ParsingException {
         switch (symb) {
             case '(':
                 return 0;
@@ -38,7 +38,7 @@ public class MyCalculator implements Calculator {
         }
     }
 
-    private double operator_calculation(char operation, double operand1, double operand2)
+    private double operatorCalculation(char operation, double operand1, double operand2)
             throws ParsingException {
         switch (operation) {
             case '+':
@@ -54,18 +54,17 @@ public class MyCalculator implements Calculator {
         }
     }
 
-    private void close_bracket(boolean unary, Stack<Character> operators, StringBuilder result)
+    private void closeBracket(Stack<Character> operators, StringBuilder result)
             throws ParsingException {
-        unary = false;
         boolean hasOpeningBracket = false;
         while (!operators.empty()) {
-            Character curr_char = operators.pop();
-            if (curr_char.equals('(')) {
+            Character currChar = operators.pop();
+            if (currChar.equals('(')) {
                 hasOpeningBracket = true;
                 break;
             } else {
                 result.append(' ');
-                result.append(curr_char);
+                result.append(currChar);
                 result.append(' ');
             }
         }
@@ -74,12 +73,12 @@ public class MyCalculator implements Calculator {
         }
     }
 
-    private String to_postfix(String expression) throws ParsingException {
+    private String toPostfix(String expression) throws ParsingException {
         if (expression.length() == 0) {
             throw new ParsingException("Expression is empty");
         }
         StringBuilder result = new StringBuilder();
-        Stack<Character> operators = new Stack<>();// стек для хранения операторов
+        Stack<Character> operators = new Stack<>(); // стек для хранения операторов
         Character symb;
         boolean unary = true; // унарность оператора
         ParsingCondition cond = ParsingCondition.waiting_for_token;
@@ -99,9 +98,10 @@ public class MyCalculator implements Calculator {
                         operators.push(symb);
                         cond = ParsingCondition.waiting_for_token;
                     } else if (symb.equals(')')) {
-                        close_bracket(unary, operators, result);
+                        closeBracket(operators, result);
                         cond = ParsingCondition.waiting_for_token;
-                    } else if (operator.contains(symb)) {
+                        unary = false;
+                    } else if (OPERATOR.contains(symb)) {
                         if (unary) {
                             if (symb.equals('-')) {
                                 operators.push('%');
@@ -115,11 +115,11 @@ public class MyCalculator implements Calculator {
                             unary = true;
                             result.append(' ');
                             while (!operators.empty()) {
-                                Character curr_char = operators.pop();
-                                if (operator_priority(curr_char) >= operator_priority(symb)) {
-                                    result.append(' ').append(curr_char).append(' ');
+                                Character currChar = operators.pop();
+                                if (operatorPriority(currChar) >= operatorPriority(symb)) {
+                                    result.append(' ').append(currChar).append(' ');
                                 } else {
-                                    operators.push(curr_char);
+                                    operators.push(currChar);
                                     break;
                                 }
                             }
@@ -141,20 +141,21 @@ public class MyCalculator implements Calculator {
                     } else if (symb.equals('(')) {
                         throw new ParsingException("Wrong expression 4");
                     } else if (symb.equals(')')) {
-                        close_bracket(unary, operators, result);
+                        closeBracket(operators, result);
                         cond = ParsingCondition.waiting_for_token;
-                    } else if (operator.contains(symb)) {
+                        unary = false;
+                    } else if (OPERATOR.contains(symb)) {
                         if (unary) {
                             throw new ParsingException("Wrong expression 6");
                         } else {
                             unary = true;
                             result.append(' ');
                             while (!operators.empty()) {
-                                Character curr_char = operators.pop();
-                                if (operator_priority(curr_char) >= operator_priority(symb)) {
-                                    result.append(' ').append(curr_char).append(' ');
+                                Character currChar = operators.pop();
+                                if (operatorPriority(currChar) >= operatorPriority(symb)) {
+                                    result.append(' ').append(currChar).append(' ');
                                 } else {
-                                    operators.push(curr_char);
+                                    operators.push(currChar);
                                     break;
                                 }
                             }
@@ -171,9 +172,9 @@ public class MyCalculator implements Calculator {
             }
         }
         while (!operators.empty()) {
-            Character curr_char = operators.pop();
-            if (operator.contains(curr_char) || curr_char.equals('%')) {
-                result.append(' ').append(curr_char).append(' ');
+            Character currChar = operators.pop();
+            if (OPERATOR.contains(currChar) || currChar.equals('%')) {
+                result.append(' ').append(currChar).append(' ');
             } else {
                 throw new ParsingException("Wrong expression 8");
             }
@@ -181,31 +182,31 @@ public class MyCalculator implements Calculator {
         return result.toString();
     }
 
-    private double calculate_postfix_expression(String expression)
+    private double calculatePostfixExpression(String expression)
             throws ParsingException, ArithmeticException {
         Scanner scan = new Scanner(expression);
-        Stack<Double> tmp_results = new Stack<>();
-        double tmp_result;
+        Stack<Double> tmpResults = new Stack<>();
+        double tmpResult;
         double operand1;
         double operand2;
         double tmp;
         while (scan.hasNext()) {
-            String curr_str = scan.next();
-            if ((operator.contains(curr_str.charAt(0)))) {
-                if (tmp_results.size() >= 2) {
-                    operand2 = tmp_results.pop();
-                    operand1 = tmp_results.pop();
-                    tmp_result = operator_calculation(curr_str.charAt(0), operand1, operand2);
-                    tmp_results.push(tmp_result);
+            String currStr = scan.next();
+            if ((OPERATOR.contains(currStr.charAt(0)))) {
+                if (tmpResults.size() >= 2) {
+                    operand2 = tmpResults.pop();
+                    operand1 = tmpResults.pop();
+                    tmpResult = operatorCalculation(currStr.charAt(0), operand1, operand2);
+                    tmpResults.push(tmpResult);
                 } else {
                     throw new ParsingException("Wrong expression 9");
                 }
 
-            } else if ((curr_str.charAt(0) == '%')) {
-                if (tmp_results.size() >= 1) {
-                    operand1 = tmp_results.pop();
+            } else if ((currStr.charAt(0) == '%')) {
+                if (tmpResults.size() >= 1) {
+                    operand1 = tmpResults.pop();
                     operand1 = operand1 * (-1);
-                    tmp_results.push(operand1);
+                    tmpResults.push(operand1);
 
                 } else {
                     throw new ParsingException("Wrong expression 10");
@@ -213,15 +214,15 @@ public class MyCalculator implements Calculator {
 
             } else {
                 try {
-                    tmp = Double.parseDouble(curr_str);
+                    tmp = Double.parseDouble(currStr);
                 } catch (NumberFormatException e) {
                     throw new ParsingException("Wrong expression 11");
                 }
-                tmp_results.push(tmp);
+                tmpResults.push(tmp);
             }
         }
-        if (tmp_results.size() == 1) {
-            return tmp_results.pop();
+        if (tmpResults.size() == 1) {
+            return tmpResults.pop();
         } else {
             throw new ParsingException("Wrong expression 12");
         }
@@ -233,7 +234,7 @@ public class MyCalculator implements Calculator {
         if (expression == null) {
             throw new ParsingException("Expression is null");
         }
-        String postfix_expression = to_postfix(expression.replaceAll("\\s", ""));
-        return calculate_postfix_expression(postfix_expression);
+        String postfixExpression = toPostfix(expression.replaceAll("\\s", ""));
+        return calculatePostfixExpression(postfixExpression);
     }
 }
