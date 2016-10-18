@@ -14,13 +14,10 @@
     <modules>
         <module>homework-base</module>
         <module>homework-tests</module>
-<<<<<<< HEAD
         <module>homework-g597-povarnitsyn</module>
-=======
         <module>homework-g596-kupriyanov</module>
         <module>homework-g595-kryloff</module>
         <module>homework-g596-kravets</module>
->>>>>>> upstream_/master
         <module>homework-g596-litvinov</module>
         <module>homework-g594-kozlov</module>
         <module>homework-g596-proskurina</module>
