@@ -26,7 +26,7 @@ public abstract class AbstractSingleFileStorageTest {
     public void testReadWrite() {
         doInTempDirectory(path -> {
             KeyValueStorage<String, String> storage = buildStringsStorage(path);
-            storage.write("foo", "barr");
+            storage.write("foo", "bar");
             Assert.assertEquals("bar", storage.read("foo"));
             storage.close();
         });
