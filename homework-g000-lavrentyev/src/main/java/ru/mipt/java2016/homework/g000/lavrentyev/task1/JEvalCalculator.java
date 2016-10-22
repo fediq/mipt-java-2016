@@ -1,4 +1,4 @@
-package ru.mipt.java2016.homework.g595.topilskiy.task1;
+package ru.mipt.java2016.homework.g000.lavrentyev.task1;
 
 import net.sourceforge.jeval.EvaluationConstants;
 import net.sourceforge.jeval.EvaluationException;
@@ -8,7 +8,6 @@ import ru.mipt.java2016.homework.base.task1.Calculator;
 
 /**
  * Пример реализации калькулятора средствами JEval.
- *
  *
  * @author Fedor S. Lavrentyev
  * @since 28.09.16

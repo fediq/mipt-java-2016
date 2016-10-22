@@ -1,4 +1,4 @@
-package ru.mipt.java2016.homework.g595.topilskiy.task1;
+package ru.mipt.java2016.homework.g000.lavrentyev.task1;
 
 import net.sourceforge.jeval.Evaluator;
 import ru.mipt.java2016.homework.base.task1.Calculator;
