@@ -1,8 +1,7 @@
 package ru.mipt.java2016.homework.g595.romanenko.task2;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+
+import java.io.*;
 
 /**
 * Стратегия сериализации
@@ -16,9 +15,13 @@ interface SerializationStrategy<Value> {
     /**
      * Вернуть сериализованное значение в виде массива байт
      */
-    byte[] serializeToBytes(Value value);
+    default byte[] serializeToBytes(Value value) throws IOException {
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        serializeToStream(value, byteArrayOutputStream);
+        return byteArrayOutputStream.toByteArray();
+    }
 
-    /**1
+    /**
      * Записать сериализованное значение в поток
      */
     void serializeToStream(Value value, OutputStream outputStream) throws IOException;
@@ -31,12 +34,15 @@ interface SerializationStrategy<Value> {
     /**
      * Прочесть сериализованное значение из массива байт, начиная с нулевого байта
      */
-    default Value deserialize(byte[] bytes) {
+    default Value deserialize(byte[] bytes) throws IOException {
         return deserialize(bytes, 0);
     }
 
     /**
      * Прочесть сериализованное значение из массива байт, начиная с указанного смещения
      */
-    Value deserialize(byte[] bytes, int offset);
+    default Value deserialize(byte[] bytes, int offset) throws IOException {
+        ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes, offset, bytes.length - offset);
+        return deserializeFromStream(byteArrayInputStream);
+    }
 }
