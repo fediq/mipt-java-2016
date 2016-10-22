@@ -21,6 +21,8 @@ public class StorageTestUtils {
             try {
                 path = Files.createTempDirectory("test_task_2");
                 callback.doInPath(path.toString());
+            } catch (Exception e) {
+                e.printStackTrace();
             } finally {
                 if (path != null) {
                     FileUtils.deleteDirectory(path.toFile());
@@ -33,6 +35,6 @@ public class StorageTestUtils {
 
     @FunctionalInterface
     public interface PathCallback {
-        void doInPath(String path) throws IOException;
+        void doInPath(String path) throws Exception;
     }
 }
