@@ -14,6 +14,7 @@
     <modules>
         <module>homework-base</module>
         <module>homework-tests</module>
+        <module>homework-g597-povarnitsyn</module>
         <module>homework-g596-kupriyanov</module>
         <module>homework-g595-kryloff</module>
         <module>homework-g596-kravets</module>
@@ -84,6 +85,7 @@
         <module>homework-g597-miller</module>
         <module>homework-g597-smirnova</module>
         <module>homework-g596-grebenshchikova</module>
+        <module>homework-g597-kochukov</module>
 
     </modules>
 
