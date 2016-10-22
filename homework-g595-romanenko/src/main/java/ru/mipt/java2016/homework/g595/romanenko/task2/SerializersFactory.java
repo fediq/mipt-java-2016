@@ -21,9 +21,10 @@ class SerializersFactory {
         return (value + 256) % 256;
     }
 
-    private static abstract class SimpleIntegralTypeSerializer<IntegralType> implements SerializationStrategy<IntegralType> {
+    private abstract static class SimpleIntegralTypeSerializer<IntegralType>
+            implements SerializationStrategy<IntegralType> {
 
-        int BYTES = 0;
+        protected int cntBYTES = 0;
 
         protected Long getLongRepresentation(IntegralType value) {
             return 0L;
@@ -35,21 +36,26 @@ class SerializersFactory {
 
         @Override
         public void serializeToStream(IntegralType value, OutputStream outputStream) throws IOException {
-            byte[] binaryRepresentation = new byte[BYTES];
+            byte[] binaryRepresentation = new byte[cntBYTES];
             Long longValue = getLongRepresentation(value);
-            for (int i = 0; i < BYTES; i++) {
-                binaryRepresentation[BYTES - i - 1] = longValue.byteValue();
+            for (int i = 0; i < cntBYTES; i++) {
+                binaryRepresentation[cntBYTES - i - 1] = longValue.byteValue();
                 longValue >>= 8;
             }
             outputStream.write(binaryRepresentation);
         }
 
         @Override
+        public int getBytesSize(IntegralType value) {
+            return cntBYTES;
+        }
+
+        @Override
         public IntegralType deserializeFromStream(InputStream inputStream) throws IOException {
-            byte[] bytes = new byte[BYTES];
+            byte[] bytes = new byte[cntBYTES];
             inputStream.read(bytes);
             long value = 0;
-            for (int i = 0; i < BYTES; i++) {
+            for (int i = 0; i < cntBYTES; i++) {
                 value = (value << 8) + getAbsoluteValueOfByte(bytes[i]);
             }
             return convertFromLong(value);
@@ -58,14 +64,14 @@ class SerializersFactory {
 
     static class IntegerSerializer extends SimpleIntegralTypeSerializer<Integer> {
 
-        private static final IntegerSerializer serializer = new IntegerSerializer();
+        private static final IntegerSerializer INTEGER_SERIALIZER = new IntegerSerializer();
 
         static IntegerSerializer getInstance() {
-            return serializer;
+            return INTEGER_SERIALIZER;
         }
 
         IntegerSerializer() {
-            super.BYTES = Integer.BYTES;
+            super.cntBYTES = Integer.BYTES;
         }
 
         protected Long getLongRepresentation(Integer value) {
@@ -80,14 +86,14 @@ class SerializersFactory {
 
     static class LongSerializer extends SimpleIntegralTypeSerializer<Long> {
 
-        private static final LongSerializer serializer = new LongSerializer();
+        private static final LongSerializer LONG_SERIALIZER = new LongSerializer();
 
         static LongSerializer getInstance() {
-            return serializer;
+            return LONG_SERIALIZER;
         }
 
         LongSerializer() {
-            super.BYTES = Long.BYTES;
+            super.cntBYTES = Long.BYTES;
         }
 
         protected Long getLongRepresentation(Long value) {
@@ -101,14 +107,14 @@ class SerializersFactory {
 
     static class DoubleSerializer extends SimpleIntegralTypeSerializer<Double> {
 
-        private final static DoubleSerializer serializer = new DoubleSerializer();
+        private static final DoubleSerializer DOUBLE_SERIALIZER = new DoubleSerializer();
 
         public static DoubleSerializer getInstance() {
-            return serializer;
+            return DOUBLE_SERIALIZER;
         }
 
         DoubleSerializer() {
-            super.BYTES = Double.BYTES;
+            super.cntBYTES = Double.BYTES;
         }
 
         protected Long getLongRepresentation(Double value) {
@@ -122,14 +128,14 @@ class SerializersFactory {
 
     static class DateSerializer extends SimpleIntegralTypeSerializer<Date> {
 
-        static final DateSerializer serializer = new DateSerializer();
+        private static final DateSerializer DATE_SERIALIZER = new DateSerializer();
 
         public static DateSerializer getInstance() {
-            return serializer;
+            return DATE_SERIALIZER;
         }
 
         DateSerializer() {
-            super.BYTES = Long.BYTES;
+            super.cntBYTES = Long.BYTES;
         }
 
         protected Long getLongRepresentation(Date value) {
@@ -143,16 +149,21 @@ class SerializersFactory {
 
     static class StringSerializer implements SerializationStrategy<String> {
 
-        private final static StringSerializer serializer = new StringSerializer();
+        private static final StringSerializer STRING_SERIALIZER = new StringSerializer();
 
         public static StringSerializer getInstance() {
-            return serializer;
+            return STRING_SERIALIZER;
         }
 
         @Override
         public void serializeToStream(String s, OutputStream outputStream) throws IOException {
             IntegerSerializer.getInstance().serializeToStream(s.length(), outputStream);
             outputStream.write(s.getBytes());
+        }
+
+        @Override
+        public int getBytesSize(String s) {
+            return s.length();
         }
 
         @Override
@@ -166,10 +177,10 @@ class SerializersFactory {
 
     static class StudentKeySerializer implements SerializationStrategy<StudentKey> {
 
-        private final static StudentKeySerializer serializer = new StudentKeySerializer();
+        private static final StudentKeySerializer STUDENT_KEY_SERIALIZER = new StudentKeySerializer();
 
         public static StudentKeySerializer getInstance() {
-            return serializer;
+            return STUDENT_KEY_SERIALIZER;
         }
 
 
@@ -177,6 +188,12 @@ class SerializersFactory {
         public void serializeToStream(StudentKey studentKey, OutputStream outputStream) throws IOException {
             IntegerSerializer.getInstance().serializeToStream(studentKey.getGroupId(), outputStream);
             StringSerializer.getInstance().serializeToStream(studentKey.getName(), outputStream);
+        }
+
+        @Override
+        public int getBytesSize(StudentKey studentKey) {
+            return IntegerSerializer.getInstance().getBytesSize(studentKey.getGroupId()) +
+                    StringSerializer.getInstance().getBytesSize(studentKey.getName());
         }
 
         @Override
@@ -189,10 +206,10 @@ class SerializersFactory {
 
     static class StudentSerializer implements SerializationStrategy<Student> {
 
-        private final static StudentSerializer serializer = new StudentSerializer();
+        private static final StudentSerializer STUDENT_SERIALIZER = new StudentSerializer();
 
         public static StudentSerializer getInstance() {
-            return serializer;
+            return STUDENT_SERIALIZER;
         }
 
         @Override
@@ -211,6 +228,16 @@ class SerializersFactory {
         }
 
         @Override
+        public int getBytesSize(Student student) {
+            return IntegerSerializer.getInstance().getBytesSize(student.getGroupId()) +
+                    StringSerializer.getInstance().getBytesSize(student.getName()) +
+                    StringSerializer.getInstance().getBytesSize(student.getHometown()) +
+                    DateSerializer.getInstance().getBytesSize(student.getBirthDate()) +
+                    1 + //one byte for boolean value
+                    DoubleSerializer.getInstance().getBytesSize(student.getAverageScore());
+        }
+
+        @Override
         public Student deserializeFromStream(InputStream inputStream) throws IOException {
             StudentKey studentKey = StudentKeySerializer.getInstance().deserializeFromStream(inputStream);
 
@@ -222,7 +249,8 @@ class SerializersFactory {
 
             Double averageScore = DoubleSerializer.getInstance().deserializeFromStream(inputStream);
 
-            return new Student(studentKey.getGroupId(), studentKey.getName(), hometown, birthDate, isHasDormitory, averageScore);
+            return new Student(studentKey.getGroupId(), studentKey.getName(),
+                    hometown, birthDate, isHasDormitory, averageScore);
         }
     }
 }

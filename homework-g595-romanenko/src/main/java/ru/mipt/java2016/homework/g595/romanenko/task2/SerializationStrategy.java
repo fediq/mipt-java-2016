@@ -27,6 +27,11 @@ interface SerializationStrategy<Value> {
     void serializeToStream(Value value, OutputStream outputStream) throws IOException;
 
     /**
+     * Получить размер в байтах после сериализации
+     */
+    int getBytesSize(Value value);
+
+    /**
      * Прочесть сериализованное значение из текущего места в потоке
      */
     Value deserializeFromStream(InputStream inputStream) throws IOException;
