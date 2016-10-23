@@ -30,7 +30,7 @@ public interface Calculator {
         }
     }
 
-    public static float count(String s) throws Exception {
+    public static float calculate(String s) throws Parsing Exception {
         String buffer;
         float num_1 = 0;
         float num_2 = 0;
