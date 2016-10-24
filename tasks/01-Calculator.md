@@ -1,4 +1,3 @@
-
 ## 1. Калькулятор
 
 Реализуйте [калькулятор](../homework-base/src/main/java/ru/mipt/java2016/homework/base/task1/Calculator.java).

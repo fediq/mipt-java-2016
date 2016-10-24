@@ -4,210 +4,201 @@ import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
 import java.util.ArrayDeque;
-import java.util.Queue;
 import java.util.Stack;
 import java.util.StringTokenizer;
 
-/**
- * Created by Дмитрий on 09.10.16.
- */
-public class CStackCalculator implements Calculator
-{
-    private final String OPERATORS = "+-*/_";
-    private final String BRACKETS = "()";
-    private final String SYMBOLS = "0123456789.";
 
-    private ArrayDeque< String > targetNotation = new ArrayDeque<>();
-    private ArrayDeque< Integer > targetValence = new ArrayDeque<>();
+public class CStackCalculator implements Calculator {
+    private final String operators = "+*/_";
+    /*
+     * Operators list
+     * +,*,/ - binary operators
+     * _ - unary operator
+     */
+    private final String brackets = "()";
+    private final String symbols = "0123456789.";
+    /*
+     * List of allowed symbols in numbers
+     * and list of operator valencies,assuming,that
+     * number is an operator with valency 0
+     */
 
-    public double calculate (String expression) throws ParsingException
-    {
-        return calculations(expression);
+    private final ArrayDeque<String> targetNotation = new ArrayDeque<>();
+    private final ArrayDeque<Integer> targetValence = new ArrayDeque<>();
+
+    /*
+     * Target expression in reversed polish notation
+     */
+
+    @Override
+    public double calculate(String expression) throws ParsingException {
+        Double result = this.calculations(expression);
+        this.clear();
+        return result;
     }
 
-    private double calculations(String expression) throws ParsingException
-    {
-        getPolishNotation(prepareExpression(expression));
-        Stack< Double > calculationsStack = new Stack<>();
-        while(!targetNotation.isEmpty())
-        {
-            String token = targetNotation.remove();
-            Integer tokenValence = targetValence.remove();
-            if(tokenValence == 0)
-            {
+    private void clear() {
+        this.targetNotation.clear();
+        this.targetValence.clear();
+    }
+
+    private double calculations(String expression) throws ParsingException {
+        this.getPolishNotation(this.prepareExpression(expression));
+        Stack<Double> calculationsStack = new Stack<>();
+
+        while (!this.targetNotation.isEmpty()) {
+            String token = this.targetNotation.removeLast();
+            Integer tokenValence = this.targetValence.removeLast();
+            if (calculationsStack.size() < tokenValence) {
+                throw new ParsingException("Invalid Expression");
+            }
+            if (tokenValence == 0) {
                 calculationsStack.push(Double.parseDouble(token));
                 continue;
             }
-            if(tokenValence == 1)
-            {
-                Double item = calculationsStack.pop();
-                calculationsStack.push(-1*item);
+            if (tokenValence == 1) {
+                Double operand = calculationsStack.pop();
+                calculationsStack.push(-1 * operand);
+                continue;
             }
-            if(tokenValence == 2)
-            {
-                if(calculationsStack.size() < 2)
-                {
-                    throw new ParsingException("Invalid Expression");
-                }
+            if (tokenValence == 2) {
                 Double rightOperand = calculationsStack.pop();
                 Double leftOperand = calculationsStack.pop();
-                calculationsStack.push(Operate(leftOperand,rightOperand,token));
+                calculationsStack.push(this.operate(leftOperand, rightOperand, token));
             }
 
         }
-        if(calculationsStack.size() != 1)
-        {
+        if (calculationsStack.size() != 1) {
             throw new ParsingException("Invalid Expression");
         }
         return calculationsStack.pop();
     }
 
-    private StringTokenizer prepareExpression(String expression)
-    {
-        expression = expression.replace(" ","").replace("(-","(0-");
-        if(expression.charAt(0) == '-')
-        {
+    private StringTokenizer prepareExpression(String expression) throws ParsingException {
+        if (expression == null) {
+            throw new ParsingException("Invalid Expression");
+        }
+        expression = expression.replaceAll("\\s", "");
+        if (expression.isEmpty()) {
+            throw new ParsingException("Invalid Expression");
+            /*
+             * Expression consists only of space symbols.
+             */
+        }
+        expression = expression.replace("(-", "(_").replace("/-", "/_").replace("*-", "*_");
+        if (expression.charAt(0) == '-') {
             expression = "0" + expression;
         }
-        StringTokenizer tokenList = new StringTokenizer(expression
-                ,OPERATORS + BRACKETS,true);
-        return tokenList;
+        expression = expression.replace("-", "+_");
+        /*
+         * Replacing binary minus signs with unary ones.
+         */
+        return new StringTokenizer(expression, this.operators + this.brackets, true);
     }
 
-    private void getPolishNotation(StringTokenizer tokenList) throws ParsingException
-    {
-
-        Stack< String > stackOperators = new Stack<>();
-        String prevToken = "";
-        while( tokenList.hasMoreTokens())
-        {
+    private void getPolishNotation(StringTokenizer tokenList) throws ParsingException {
+        Stack<String> stackOperators = new Stack<>();
+        while (tokenList.hasMoreTokens()) {
             String token = tokenList.nextToken();
-            if(isNumber(token))
-            {
-                targetNotation.push(token);
-                targetValence.push(getValence(token));
+            if (this.isNumber(token)) {
+                this.targetNotation.push(token);
+                this.targetValence.push(this.getValence(token));
             }
-            if(isOperator(token))
-            {
-                if(isOperator(prevToken) && isOperatorMinus(token))
-                {
-                    token = "_";
-                }
-                if(getPrecedence(stackOperators.peek()) >= getPrecedence(token))
-                {
-                    targetValence.push(getValence(stackOperators.peek()));
-                    targetNotation.push(stackOperators.pop());
+            if (this.isOperator(token)) {
+                if (!stackOperators.empty()) {
+                    if (!this.isOpenBracket(stackOperators.peek())) {
+                        if (CStackCalculator.getPrecedence(stackOperators.peek())
+                                >= CStackCalculator.getPrecedence(token)) {
+                            this.targetValence.push(this.getValence(stackOperators.peek()));
+                            this.targetNotation.push(stackOperators.pop());
+                        }
+                    }
                 }
                 stackOperators.push(token);
             }
-            if(isOpenBracket(token))
-            {
+            if (this.isOpenBracket(token)) {
                 stackOperators.push(token);
             }
-            if(isCloseBracket(token))
-            {
-                while(!stackOperators.empty() && !isOpenBracket(stackOperators.peek()))
-                {
-                    targetValence.push(getValence(stackOperators.peek()));
-                    targetNotation.push(stackOperators.pop());
+            if (this.isCloseBracket(token)) {
+                while (!stackOperators.empty()
+                        && !this.isOpenBracket(stackOperators.peek())) {
+                    this.targetValence.push(this.getValence(stackOperators.peek()));
+                    this.targetNotation.push(stackOperators.pop());
                 }
-                if(stackOperators.empty())
-                {
+                if (stackOperators.empty()) {
                     throw new ParsingException("Invalid Expression");
-                } else
-                {
+                } else {
                     stackOperators.pop();
                 }
             }
-            prevToken = token;
         }
-        while(!stackOperators.empty())
-        {
-            if(isOpenBracket(stackOperators.peek()))
-            {
+        while (!stackOperators.empty()) {
+            if (this.isOpenBracket(stackOperators.peek())) {
                 throw new ParsingException("Invalid Expression");
             }
-            targetValence.push(getValence(stackOperators.peek()));
-            targetNotation.push(stackOperators.peek());
+            this.targetValence.push(this.getValence(stackOperators.peek()));
+            this.targetNotation.push(stackOperators.pop());
         }
     }
 
-    private Double Operate(Double leftOperand,Double rightOperand,String Operator)
-    {
-        if(Operator.equals("+"))
-        {
+    private Double operate(Double leftOperand, Double rightOperand, String operator) {
+        if (operator.equals("+")) {
             leftOperand = leftOperand + rightOperand;
         }
-        if(Operator.equals("-"))
-        {
-            leftOperand =  leftOperand - rightOperand;
-        }
-        if(Operator.equals("*"))
-        {
+        if (operator.equals("*")) {
             leftOperand = leftOperand * rightOperand;
         }
-        if(Operator.equals("/"))
-        {
+        if (operator.equals("/")) {
             leftOperand =  leftOperand / rightOperand;
         }
         return leftOperand;
     }
 
-    private boolean isNumber (String token)
-    {
-        for(int i = 0;i<token.length();++i)
-        {
-            if(!SYMBOLS.contains(String.valueOf(token.charAt(i))))
-            {
+    private boolean isNumber(String token) {
+        Integer delimiterCounter = 0;
+        for (int i = 0; i < token.length(); ++i) {
+            if (!symbols.contains(String.valueOf(token.charAt(i)))) {
                 return false;
+            }
+            if (token.charAt(i) == '.') {
+                delimiterCounter++;
+                if (delimiterCounter > 1) {
+                    return false;
+                }
             }
         }
         return true;
     }
 
-    private boolean isOpenBracket(String token)
-    {
+    private boolean isOpenBracket(String token) {
         return token.equals("(");
     }
 
-    private boolean isCloseBracket(String token)
-    {
+    private boolean isCloseBracket(String token) {
         return token.equals(")");
     }
 
-    private boolean isOperator(String token)
-    {
-        return OPERATORS.contains(token);
+    private boolean isOperator(String token) {
+        return this.operators.contains(token);
     }
 
-    private boolean isOperatorMinus (String token)
-    {
-        return token.equals("-");
-    }
-
-    private byte getPrecedence(String token)
-    {
-        if (token.equals("+") || token.equals("-"))
-        {
-            return 1;
-        }
-        if(token.equals("_"))
-        {
-            return 3;
-        }
-        return 2;
-    }
-    private int getValence(String token)
-    {
-        if(isNumber(token))
-        {
+    private static byte getPrecedence(String token) {
+        if (token.equals("+")) {
             return 0;
         }
-        if(token.equals("_"))
-        {
+        if (token.equals("_")) {
+            return 2;
+        }
+        return 1;
+    }
+
+    private int getValence(String token) {
+        if (this.isNumber(token)) {
+            return 0;
+        }
+        if (token.equals("_")) {
             return 1;
         }
         return 2;
     }
-
 }

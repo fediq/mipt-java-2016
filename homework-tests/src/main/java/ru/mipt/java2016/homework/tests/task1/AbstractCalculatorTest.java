@@ -30,7 +30,7 @@ public abstract class AbstractCalculatorTest {
     protected void tryFail(String expression) throws ParsingException {
         calc().calculate(expression);
     }
-
+    
     @Test
     public void testBasicOps() throws ParsingException {
         test("3 + 4", 7.0);
@@ -56,14 +56,14 @@ public abstract class AbstractCalculatorTest {
         test(" 7.0 \t/   3.5 ", 2.0);
         test(" (6.0  ) + \t( - 4) * (  0.0 +\n 5/2)", -4.0);
     }
-
+       
     @Test
     public void testDivisionByZero() throws ParsingException {
         test("4.5 / 0", Double.POSITIVE_INFINITY);
         test("4.5 / -0.0", Double.NEGATIVE_INFINITY);
     }
 
-    @Test
+    @Test 
     public void testPlainOrdering() throws ParsingException {
         test("2 + 2 * 2", 6.0);
         test("6.0 - 4 * 0.0 + 5/2", 8.5);
@@ -74,6 +74,21 @@ public abstract class AbstractCalculatorTest {
         test("(2 + (2)) * 2", 8.0);
         test("6.0 - 4 * (0.0 + 5/2)", -4.0);
         test("6.0 + (-4) * (0.0 + 5/2)", -4.0);
+    }
+
+    @Test
+    public void testOver9k() throws ParsingException {
+        test("9000 + 1", 9001);
+    }
+
+    @Test
+    public void testDivisionAssociativity() throws ParsingException {
+        test("1/2/3/4/5", 1.0 / 2 / 3 / 4 / 5);
+    }
+
+    @Test
+    public void testMinus() throws ParsingException {
+        test("-(-1)", 1);
     }
 
     @Test(expected = ParsingException.class)
@@ -125,4 +140,23 @@ public abstract class AbstractCalculatorTest {
     public void testTooFewBraces() throws ParsingException {
         tryFail("6.0 + (-4)) * (0.0 + 5/2)");
     }
+
+    @Test(expected = ParsingException.class)
+    public void testPlusPlus() throws ParsingException {
+        tryFail("++1");
+    }
+
+    @Test(expected = ParsingException.class)
+    public void testUnaryMultiply() throws ParsingException {
+        tryFail("(*10)");
+    }
+
+    @Test(expected = ParsingException.class)
+    public void testBadNumber() throws ParsingException {
+        tryFail("1.2.3");
+    }
+/*<<<<<<< HEAD
+=======
+
+>>>>>>> upstream/master*/
 }
