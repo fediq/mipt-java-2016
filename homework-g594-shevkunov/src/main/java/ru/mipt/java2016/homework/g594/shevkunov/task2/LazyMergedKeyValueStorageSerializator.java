@@ -34,7 +34,7 @@ class LazyMergedKeyValueStorageSerializator<K> {
         this.type = type;
     }
 
-    public byte[] serialize(K obj) {
+    byte[] serialize(K obj) {
         switch (type) {
             case "String":
                 return toBytes((String) obj);
@@ -51,7 +51,7 @@ class LazyMergedKeyValueStorageSerializator<K> {
         }
     }
 
-    public K deSerialize(byte[] bytes) {
+    K deSerialize(byte[] bytes) {
         switch (type) {
             case "String":
                 return (K) toString(bytes);
@@ -130,13 +130,13 @@ class LazyMergedKeyValueStorageSerializator<K> {
         }
     }
 
-    public static byte[] toBytes(long val) {
+    static byte[] toBytes(long val) {
         byte[] bytes = new byte[8];
         ByteBuffer.wrap(bytes).putLong(val);
         return bytes;
     }
 
-    public static long toLong(byte[] bytes) {
+    static long toLong(byte[] bytes) {
         if (bytes.length != 8) {
             throw new RuntimeException("Invalid Conversion");
         } else {
@@ -155,7 +155,6 @@ class LazyMergedKeyValueStorageSerializator<K> {
     private static byte[] toBytes(StudentKey sk) {
         byte[] groupId = toBytes(sk.getGroupId());
         byte[] name = toBytes(sk.getName());
-        byte[] ret = new byte[groupId.length + name.length];
         return concatenateArrays(groupId, name);
     }
 
@@ -203,7 +202,7 @@ class LazyMergedKeyValueStorageSerializator<K> {
         i = i + 1;
 
         byte[] averageScore = subArray(b, i, i + 8);
-        i = i + 8;
+        //i = i + 8;
 
         return new Student(toInteger(groupId), toString(name), toString(hometown),
                 toDate(birthDate), toBoolean(hasDormitory), toDouble(averageScore));
@@ -216,10 +215,9 @@ class LazyMergedKeyValueStorageSerializator<K> {
         }
         byte[] ret = new byte[len];
         int retIndex = 0;
-        for (int i = 0; i < arrays.length; ++i) {
-            for (int j = 0; j < arrays[i].length; ++j, ++retIndex) {
-                ret[retIndex] = arrays[i][j];
-            }
+        for (byte[] array : arrays) {
+            System.arraycopy(array, 0, ret, retIndex, array.length);
+            retIndex += array.length;
         }
         return ret;
     }
@@ -228,9 +226,7 @@ class LazyMergedKeyValueStorageSerializator<K> {
         if ((0 <= l) && (0 <= r) && (l <= bytes.length)
                 && (r <= bytes.length) && (l <= r)) {
             byte[] ret = new byte[r - l];
-            for (int i = l; i < r; ++i) {
-                ret[i - l] = bytes[i];
-            }
+            System.arraycopy(bytes, l, ret, 0, r - l);
             return ret;
         } else {
             throw new RuntimeException("Illegal subArray");
