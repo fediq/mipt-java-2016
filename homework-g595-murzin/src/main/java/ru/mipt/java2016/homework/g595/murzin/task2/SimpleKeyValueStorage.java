@@ -12,6 +12,8 @@ import java.util.Map;
  */
 public class SimpleKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
+    private static String VALIDATION_STRING = "This is a SimpleKeyValueStorage, v1.0";
+
     private HashMap<K, V> map = new HashMap<>();
     private File storage;
     private SerializationStrategy<K> keySerializationStrategy;
@@ -35,6 +37,10 @@ public class SimpleKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private void readFromStorage() {
         try (DataInputStream input = new DataInputStream(new FileInputStream(storage))) {
+            String validationString = input.readUTF();
+            if (!VALIDATION_STRING.equals(validationString)) {
+                throw new RuntimeException("Storage file " + storage + " does not look like a SimpleKeyValueStorage");
+            }
             int n = input.readInt();
             for (int i = 0; i < n; i++) {
                 K key = keySerializationStrategy.deserializeFromStream(input);
@@ -48,6 +54,7 @@ public class SimpleKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private void writeToStorage() throws IOException {
         try (DataOutputStream output = new DataOutputStream(new FileOutputStream(storage))) {
+            output.writeUTF(VALIDATION_STRING);
             output.writeInt(map.size());
             for (Map.Entry<K, V> entry : map.entrySet()) {
                 keySerializationStrategy.serializeToStream(entry.getKey(), output);
