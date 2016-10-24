@@ -16,7 +16,7 @@
 ### Домашние задания
 
 1. [Калькулятор](tasks/01-Calculator.md) - дедлайн 14.10.2016 23:59 MSK
-2. [Key-value storage](tasks/02-KeyValueStorage.md) - дедлайн 31.10.2016 23:59 MSK (**Тесты дорабатываются**)
+2. [Key-value storage](tasks/02-KeyValueStorage.md) - дедлайн 31.10.2016 23:59 MSK
 3. [Оптимизация производительности](tasks/03-Performance.md) - дедлайн 31.11.2016 23:59 MSK (**ЧЕРНОВИК!**)
 
 #### Как оценивается
@@ -34,6 +34,7 @@
 3. [Классы](http://www.slideshare.net/FedorLavrentyev/programming-java-lection-03-classes-lavrentyev-fedor)
 4. [Обобщения и лямбды](http://www.slideshare.net/FedorLavrentyev/programmning-java-lection-04-generics-and-lambdas-lavrentyev-fedor)
 5. [Проектирование](http://www.slideshare.net/FedorLavrentyev/programmning-java-lection-05-software-design-lavrentyev-fedor)
+6. [Многопоточность](http://www.slideshare.net/FedorLavrentyev/programming-java-lection-06-multithreading-lavrentyev-fedor)
 
 #### Рекомендуемая литература
 
