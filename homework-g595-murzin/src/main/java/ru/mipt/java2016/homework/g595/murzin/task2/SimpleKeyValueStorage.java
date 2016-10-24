@@ -1,12 +1,8 @@
 package ru.mipt.java2016.homework.g595.murzin.task2;
 
-import com.google.gson.*;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -18,12 +14,14 @@ public class SimpleKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private HashMap<K, V> map = new HashMap<>();
     private File storage;
-    private Class<K> classK;
-    private Class<V> classV;
+    private SerializationStrategy<K> keySerializationStrategy;
+    private SerializationStrategy<V> valueSerializationStrategy;
 
-    public SimpleKeyValueStorage(String path, Class<K> classK, Class<V> classV) {
-        this.classK = classK;
-        this.classV = classV;
+    public SimpleKeyValueStorage(String path,
+                                 SerializationStrategy<K> keySerializationStrategy,
+                                 SerializationStrategy<V> valueSerializationStrategy) {
+        this.keySerializationStrategy = keySerializationStrategy;
+        this.valueSerializationStrategy = valueSerializationStrategy;
 
         File directory = new File(path);
         if (!directory.isDirectory() || !directory.exists()) {
@@ -36,38 +34,28 @@ public class SimpleKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void readFromStorage() {
-        try (FileReader reader = new FileReader(storage)) {
-            Gson gson = new Gson();
-            JsonArray root = (JsonArray) new JsonParser().parse(reader);
-            if (root.size() % 2 != 0) {
-                throw new RuntimeException("File " + storage + "is not a valid storage file, there is odd number of objects in top-level array");
-            }
-            for (int i = 0; i < root.size(); i += 2) {
-                K key = gson.fromJson(root.get(i), classK);
-                V value = gson.fromJson(root.get(i + 1), classV);
+        try (DataInputStream input = new DataInputStream(new FileInputStream(storage))) {
+            int n = input.readInt();
+            for (int i = 0; i < n; i++) {
+                K key = keySerializationStrategy.deserializeFromStream(input);
+                V value = valueSerializationStrategy.deserializeFromStream(input);
                 map.put(key, value);
             }
-        } catch (JsonIOException | IOException e) {
-            throw new RuntimeException("Can't read from file " + storage, e);
-        } catch (JsonParseException e) {
-            throw new RuntimeException("File " + storage + "is not a valid storage file", e);
+        } catch (IOException e) {
+            throw new RuntimeException("Can't read from storage file " + storage, e);
         }
     }
 
     private void writeToStorage() throws IOException {
-        Gson gson = new Gson();
-        JsonArray array = new JsonArray();
-        for (Map.Entry<K, V> entry : map.entrySet()) {
-            JsonElement key = gson.toJsonTree(entry.getKey(), classK);
-            JsonElement value = gson.toJsonTree(entry.getValue(), classV);
-            array.add(key);
-            array.add(value);
-        }
-
-        try (FileWriter writer = new FileWriter(storage)) {
-            writer.write(array.toString());
+        try (DataOutputStream output = new DataOutputStream(new FileOutputStream(storage))) {
+            output.writeInt(map.size());
+            for (Map.Entry<K, V> entry : map.entrySet()) {
+                keySerializationStrategy.serializeToStream(entry.getKey(), output);
+                valueSerializationStrategy.serializeToStream(entry.getValue(), output);
+            }
+            output.close();
         } catch (IOException e) {
-            throw new IOException("Can't write to file " + storage, e);
+            throw new IOException("Can't write to storage file " + storage, e);
         }
     }
 
