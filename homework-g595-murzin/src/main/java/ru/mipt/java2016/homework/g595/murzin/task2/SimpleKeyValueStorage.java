@@ -12,7 +12,7 @@ import java.util.Map;
  */
 public class SimpleKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
-    private static String VALIDATION_STRING = "This is a SimpleKeyValueStorage, v1.0";
+    private static String validationString = "This is a SimpleKeyValueStorage, v1.0";
 
     private HashMap<K, V> map = new HashMap<>();
     private File storage;
@@ -38,7 +38,7 @@ public class SimpleKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private void readFromStorage() {
         try (DataInputStream input = new DataInputStream(new FileInputStream(storage))) {
             String validationString = input.readUTF();
-            if (!VALIDATION_STRING.equals(validationString)) {
+            if (!SimpleKeyValueStorage.validationString.equals(validationString)) {
                 throw new RuntimeException("Storage file " + storage + " does not look like a SimpleKeyValueStorage");
             }
             int n = input.readInt();
@@ -54,7 +54,7 @@ public class SimpleKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private void writeToStorage() throws IOException {
         try (DataOutputStream output = new DataOutputStream(new FileOutputStream(storage))) {
-            output.writeUTF(VALIDATION_STRING);
+            output.writeUTF(validationString);
             output.writeInt(map.size());
             for (Map.Entry<K, V> entry : map.entrySet()) {
                 keySerializationStrategy.serializeToStream(entry.getKey(), output);
