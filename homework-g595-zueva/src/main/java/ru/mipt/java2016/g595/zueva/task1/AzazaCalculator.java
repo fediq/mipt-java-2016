@@ -13,7 +13,7 @@ class AzazaCalculator implements Calculator {
 
     @Override
     public double calculate(String s) throws ParsingException {
-        if (s == null) {
+        /*if (s == null) {
             throw new ParsingException("null");
         }
         if (s == ""){
@@ -50,7 +50,7 @@ class AzazaCalculator implements Calculator {
             if(s.charAt(i) == '/' && s.charAt(i + 2) == '0' && s.charAt(i + 1) == '-') {
                 return Double.NEGATIVE_INFINITY;
             }
-        }
+        }*/
         s = to_polish(s);
         String buffer;
         double num_1 = 0;
@@ -60,6 +60,7 @@ class AzazaCalculator implements Calculator {
         while (tok.hasMoreTokens()) try {
             buffer = tok.nextToken().trim();
             if (oper(buffer.charAt(0)) && buffer.length() == 1) {
+                System.out.println(buffer.charAt(0));
                 num_1 = stack.pop();
                 num_2 = stack.pop();
                 switch (buffer.charAt(0)) {
@@ -90,6 +91,7 @@ class AzazaCalculator implements Calculator {
             }
         } catch (Exception error) {
             throw new ParsingException("\nIndefinite symbol\n");
+
         }
 
 
