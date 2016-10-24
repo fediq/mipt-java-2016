@@ -12,16 +12,28 @@ import ru.mipt.java2016.homework.tests.task2.StudentKey;
 public class LazyMergedKeyValueStorageTest extends AbstractSingleFileStorageTest {
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String path) {
-        return new LazyMergedKeyValueStorage(path);
+        try {
+            return new LazyMergedKeyValueStorage<String, String>("String", "String", path);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     @Override
     protected KeyValueStorage<Integer, Double> buildI2DStorage(String path) {
-        return new LazyMergedKeyValueStorage(path);
+        try {
+            return new LazyMergedKeyValueStorage<Integer, Double>("Integer", "Double", path);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     @Override
     protected KeyValueStorage<StudentKey, Student> buildStudentsStorage(String path) {
-        return new LazyMergedKeyValueStorage(path);
+        try {
+            return new LazyMergedKeyValueStorage<StudentKey, Student>("StudentKey", "Student", path);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }
