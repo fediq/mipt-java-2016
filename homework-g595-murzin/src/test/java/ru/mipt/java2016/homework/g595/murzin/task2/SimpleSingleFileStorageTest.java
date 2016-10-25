@@ -57,26 +57,26 @@ public class SimpleSingleFileStorageTest extends AbstractSingleFileStorageTest {
     }
 
     @Override
-    protected KeyValueStorage<Integer, Double> buildI2DStorage(String path) {
+    protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) {
         return new SimpleKeyValueStorage<>(path,
                 SerializationStrategy.FOR_INTEGER,
                 SerializationStrategy.FOR_DOUBLE);
     }
 
     @Override
-    protected KeyValueStorage<StudentKey, Student> buildStudentsStorage(String path) {
+    protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) {
         return new SimpleKeyValueStorage<>(path, FOR_STUDENT_KEY, FOR_STUDENT);
     }
 
     @Test
     public void testStudents() {
         doInTempDirectory(path -> {
-            KeyValueStorage<StudentKey, Student> storage = buildStudentsStorage(path);
+            KeyValueStorage<StudentKey, Student> storage = buildPojoStorage(path);
             storage.write(new StudentKey(595, "murzin"), new Student(595, "murzin", "chel", new GregorianCalendar(1998, 8, 20).getTime(), true, 77));
             System.out.println(storage);
             storage.close();
 
-            KeyValueStorage<StudentKey, Student> storage2 = buildStudentsStorage(path);
+            KeyValueStorage<StudentKey, Student> storage2 = buildPojoStorage(path);
             Student student = storage2.read(new StudentKey(595, "murzin"));
             System.out.println(student.toString());
             System.out.println(student.getAverageScore());
