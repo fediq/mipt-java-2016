@@ -10,7 +10,7 @@ public class MyKeyValueStorageFactory implements KeyValueStorageFactory {
                                              SerializationStrategy<V> valueSerializationStrategy) {
         try {
             return new MyKeyValueStorage<K, V>(path, keySerializationStrategy, valueSerializationStrategy);
-        } catch (LSMTreeException e) {
+        } catch (KeyValueStorageException e) {
             return null;
         }
     }
