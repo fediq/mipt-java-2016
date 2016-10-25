@@ -18,14 +18,14 @@ public class MySingleFileStorageTest extends AbstractSingleFileStorageTest {
     }
 
     @Override
-    protected KeyValueStorage<Integer, Double> buildI2DStorage(String path) {
+    protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) {
         return new MyKeyValueStorage<Integer, Double>(path,
                 new IntSerialization(),
                 new DoubleSerialization());
     }
 
     @Override
-    protected KeyValueStorage<StudentKey, Student> buildStudentsStorage(String path) {
+    protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) {
         return new MyKeyValueStorage<StudentKey, Student>(path,
                 new StudentKeySerialization(),
                 new StudentSerialization());

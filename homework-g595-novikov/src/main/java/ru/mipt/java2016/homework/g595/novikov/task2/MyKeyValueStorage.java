@@ -9,7 +9,7 @@ import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.ParseException;
-import java.util.TreeMap;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -20,7 +20,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private MySerialization<K> keySerialization;
     private MySerialization<V> valueSerialization;
     private MySerialization<Integer> intSerialization;
-    private Map<K, V> objects = new TreeMap<K, V>();
+    private Map<K, V> objects = new HashMap<K, V>();
 
     private void update() throws IOException, ParseException {
         file.seek(0);
@@ -38,6 +38,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             try {
                 K key = keySerialization.deserialize(file);
                 V value = valueSerialization.deserialize(file);
+                objects.putIfAbsent(key, value);
             } catch (IOException error) {
                 throw new ParseException("Invalid database", (int) file.getFilePointer());
             }
@@ -45,11 +46,11 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     public MyKeyValueStorage(String directoryName,
-                             MySerialization<K> keySerializationIn,
-                             MySerialization<V> valueSerializationIn) {
+                             MySerialization<K> keySerializationInp,
+                             MySerialization<V> valueSerializationInp) {
         try {
-            keySerialization = keySerializationIn;
-            valueSerialization = valueSerializationIn;
+            keySerialization = keySerializationInp;
+            valueSerialization = valueSerializationInp;
             intSerialization = new IntSerialization();
 
             if (Files.notExists(Paths.get(directoryName))) {
@@ -61,9 +62,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             if (!isNewFile) {
                 update();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (ParseException e) {
+        } catch (IOException | ParseException e) {
             e.printStackTrace();
         }
     }
@@ -80,7 +79,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public void write(K key, V value) {
-        objects.putIfAbsent(key, value);
+        objects.put(key, value);
     }
 
     @Override

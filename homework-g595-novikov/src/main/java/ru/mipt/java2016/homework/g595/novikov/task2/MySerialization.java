@@ -14,13 +14,14 @@ public abstract class MySerialization<T> {
     public abstract T deserialize(RandomAccessFile file) throws IOException;
 
     protected void serializeString(RandomAccessFile file, String str) throws IOException {
-        file.writeInt(str.length());
-        file.write(str.getBytes("UTF-16"));
+        byte[] strBytes = str.getBytes("UTF-16");
+        file.writeInt(strBytes.length);
+        file.write(strBytes);
     }
 
     protected String deserializeString(RandomAccessFile file) throws IOException {
         int strLength = file.readInt();
-        byte[] strBytes = new byte[strLength * 2];
+        byte[] strBytes = new byte[strLength];
         file.readFully(strBytes);
         return new String(strBytes, Charset.forName("UTF-16"));
     }
