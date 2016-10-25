@@ -13,27 +13,28 @@ public class LazyMergedKeyValueStorageTest extends AbstractSingleFileStorageTest
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String path) {
         try {
-            return new LazyMergedKeyValueStorage<String, String>("String", "String", path);
+            return new LazyMergedKeyValueStorage<>("String", "String", path);
         } catch (Exception e) {
             return null;
         }
     }
 
     @Override
-    protected KeyValueStorage<Integer, Double> buildI2DStorage(String path) {
+    protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) {
         try {
-            return new LazyMergedKeyValueStorage<Integer, Double>("Integer", "Double", path);
+            return new LazyMergedKeyValueStorage<>("Integer", "Double", path);
         } catch (Exception e) {
             return null;
         }
     }
 
     @Override
-    protected KeyValueStorage<StudentKey, Student> buildStudentsStorage(String path) {
+    protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) {
         try {
-            return new LazyMergedKeyValueStorage<StudentKey, Student>("StudentKey", "Student", path);
+            return new LazyMergedKeyValueStorage<>("StudentKey", "Student", path);
         } catch (Exception e) {
             return null;
         }
     }
+
 }
