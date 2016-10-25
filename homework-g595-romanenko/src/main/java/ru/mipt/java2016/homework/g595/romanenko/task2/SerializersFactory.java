@@ -163,7 +163,8 @@ class SerializersFactory {
 
         @Override
         public int getBytesSize(String s) {
-            return s.length();
+            return s.length() +
+                    IntegerSerializer.getInstance().getBytesSize(s.length()); //for serialize length of string
         }
 
         @Override

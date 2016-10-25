@@ -64,9 +64,12 @@ class SSTable<Key, Value> {
         if (cachedValues.containsKey(key)) {
             return cachedValues.get(key);
         }
+        if (!indexes.containsKey(key)) {
+            return null;
+        }
         Integer offset = indexes.get(key);
+        storage.seek(0);
         InputStream stream = Channels.newInputStream(storage.getChannel());
-        stream.reset();
         stream.skip(offset);
         Value value = valueSerializationStrategy.deserializeFromStream(stream);
         cachedValues.put(key, value);
@@ -93,14 +96,13 @@ class SSTable<Key, Value> {
             storage.setLength(0);
             storage.seek(0);
             SerializersFactory.IntegerSerializer integerSerializer = SerializersFactory.IntegerSerializer.getInstance();
-            SerializersFactory.LongSerializer longSerializer = SerializersFactory.LongSerializer.getInstance();
 
             OutputStream outputStream = Channels.newOutputStream(storage.getChannel());
 
             integerSerializer.serializeToStream(cachedValues.size(), outputStream);
 
-            ArrayList<Long> offsets = new ArrayList<>();
-            long totalLength = integerSerializer.getBytesSize(cachedValues.size());
+            ArrayList<Integer> offsets = new ArrayList<>();
+            Integer totalLength = integerSerializer.getBytesSize(cachedValues.size());
 
             ArrayList<Key> cachedKeys = new ArrayList<>(cachedValues.keySet());
 
@@ -116,7 +118,7 @@ class SSTable<Key, Value> {
 
             for (int i = 0; i < cachedKeys.size(); i++) {
                 keySerializationStrategy.serializeToStream(cachedKeys.get(i), outputStream);
-                longSerializer.serializeToStream(offsets.get(i), outputStream);
+                integerSerializer.serializeToStream(offsets.get(i), outputStream);
             }
 
             for (Key key : cachedKeys) {

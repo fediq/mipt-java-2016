@@ -22,7 +22,7 @@ public class KeyValueStorageTest extends AbstractSingleFileStorageTest {
     }
 
     @Override
-    protected KeyValueStorage<Integer, Double> buildI2DStorage(String path) {
+    protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) {
         return new MyKeyValueStorage<>(
                 path,
                 SerializersFactory.IntegerSerializer.getInstance(),
@@ -30,7 +30,7 @@ public class KeyValueStorageTest extends AbstractSingleFileStorageTest {
     }
 
     @Override
-    protected KeyValueStorage<StudentKey, Student> buildStudentsStorage(String path) {
+    protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) {
         return new MyKeyValueStorage<>(
                 path,
                 SerializersFactory.StudentKeySerializer.getInstance(),
