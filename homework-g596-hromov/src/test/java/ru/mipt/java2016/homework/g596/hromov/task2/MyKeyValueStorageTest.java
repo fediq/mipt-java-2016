@@ -10,18 +10,19 @@ import ru.mipt.java2016.homework.g596.hromov.task2.MyKeyValueStorage;
  * Created by igorhromov on 15.10.16.
  */
 public class MyKeyValueStorageTest extends AbstractSingleFileStorageTest{
+
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String path) {
-        return new MyKeyValueStorage<String, String>(path);
+        return null;
     }
 
     @Override
     protected KeyValueStorage<Integer, Double> buildI2DStorage(String path) {
-        return new MyKeyValueStorage<Integer, Double>(path);
+        return null;
     }
 
     @Override
     protected KeyValueStorage<StudentKey, Student> buildStudentsStorage(String path) {
-        return new MyKeyValueStorage<StudentKey, Student>(path);
+        return null;
     }
 }

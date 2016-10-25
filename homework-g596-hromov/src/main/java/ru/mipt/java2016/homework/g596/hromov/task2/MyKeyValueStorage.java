@@ -2,7 +2,11 @@ package ru.mipt.java2016.homework.g596.hromov.task2;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 
-import java.io.*;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -20,41 +24,8 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private Map<K, V> dataBase;
     private File dataBaseFile;
     private Path dataBasePath;
-    int numberOfChanges;
+    private int numberOfChanges;
 
-
-    private class MyIterator implements Iterator<Map.Entry<K, V>> {
-            private Iterator<Map.Entry<K, V>> iterator;
-            private int numberOfIteratorChanges;
-
-            MyIterator() {
-                iterator = dataBase.entrySet().iterator();
-                numberOfIteratorChanges = numberOfChanges;
-            };
-
-            @Override
-            public boolean hasNext() {
-                if (numberOfIteratorChanges != numberOfChanges)
-                    throw new ConcurrentModificationException();
-                return iterator.hasNext();
-            }
-
-            @Override
-            public Map.Entry<K, V> next() {
-                if (numberOfIteratorChanges != numberOfChanges)
-                    throw new ConcurrentModificationException();
-                return iterator.next();
-            }
-
-            @Override
-            public void remove() {
-                if (numberOfIteratorChanges != numberOfChanges)
-                    throw new ConcurrentModificationException();
-                delete(this.next().getKey());
-                numberOfChanges++;
-                numberOfIteratorChanges++;
-            }
-    }
 
     private void readDataBaseFromDisk() throws IOException {
         DataInputStream inputStream;
@@ -101,29 +72,22 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public V read(K key) {
-        if (exists(key)) {
-            return dataBase.get(key);
-        } else
-            return null;
+        return dataBase.get(key);
     }
 
     @Override
     public void write(K key, V value) {
         dataBase.put(key, value);
-        numberOfChanges++;
     }
 
     @Override
     public void delete(K key) {
-        if (exists(key)) {
             dataBase.remove(key);
-        }
-        numberOfChanges++;
     }
 
     @Override
     public Iterator readKeys() throws ConcurrentModificationException {
-        return new MyIterator();
+        return dataBase.entrySet().iterator();
     }
 
     @Override
