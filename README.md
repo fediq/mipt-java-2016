@@ -38,7 +38,10 @@
 2. [Паттерны проектирования](https://yadi.sk/d/Clpl7NfhwuYod)  
 Доп. литература: [Head First Паттерны проектирования](https://www.ozon.ru/context/detail/id/20216992/)
 
-3. [Строки и обёртки над примитивными типами в Java. Антипаттерны](https://yadi.sk/d/nhdo_dFsx7JnZ)
+3. [Строки и обёртки над примитивными типами в Java. Антипаттерны](https://yadi.sk/d/nhdo_dFsx7JnZ)  
+Доп. литература: [Чистый код](http://www.ozon.ru/context/detail/id/21916535/)
+
+4. [Повторное использование кода в Java. Многопоточность в Java](https://yadi.sk/d/nitO2OJuxcMAw)
 
 #### Рекомендуемая литература
 
