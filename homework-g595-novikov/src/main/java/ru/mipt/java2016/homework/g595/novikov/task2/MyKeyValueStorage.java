@@ -64,59 +64,77 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             }
         } catch (IOException | ParseException e) {
             e.printStackTrace();
+            throw new IllegalStateException("Error during opening database");
+        }
+    }
+
+    private void checkIsNotClosed() {
+        if (isClosed) {
+            throw new IllegalStateException("Cannot access to closed database");
         }
     }
 
     @Override
     public V read(K key) {
+        checkIsNotClosed();
         return objects.get(key);
     }
 
     @Override
     public boolean exists(K key) {
+        checkIsNotClosed();
         return objects.containsKey(key);
     }
 
     @Override
     public void write(K key, V value) {
+        checkIsNotClosed();
         objects.put(key, value);
     }
 
     @Override
     public void delete(K key) {
+        checkIsNotClosed();
         objects.remove(key);
     }
 
     private class KVSIterator implements Iterator<K> {
         private Iterator<K> iterator;
+        private MyKeyValueStorage kvs;
 
-        KVSIterator(Iterator<K> iter) {
+        KVSIterator(Iterator<K> iter, MyKeyValueStorage myKvs) {
+            kvs = myKvs;
             iterator = iter;
         }
 
         @Override
         public boolean hasNext() {
+            kvs.checkIsNotClosed();
             return iterator.hasNext();
         }
 
         @Override
         public K next() {
+            kvs.checkIsNotClosed();
             return iterator.next();
         }
     }
 
     @Override
     public Iterator<K> readKeys() {
-        return new KVSIterator(objects.keySet().iterator());
+        checkIsNotClosed();
+        return new KVSIterator(objects.keySet().iterator(), this);
     }
 
     @Override
     public int size() {
+        checkIsNotClosed();
         return objects.size();
     }
 
     @Override
     public void close() throws IOException {
+        checkIsNotClosed();
         file.setLength(0);
         file.seek(0);
         intSerialization.serialize(file, objects.size());
