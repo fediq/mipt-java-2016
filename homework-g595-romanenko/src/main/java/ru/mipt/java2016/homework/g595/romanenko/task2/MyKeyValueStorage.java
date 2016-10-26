@@ -105,6 +105,9 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
 
         private void getNext() {
+            if (currentEpochNumber != epochNumber) {
+                throw new ConcurrentModificationException();
+            }
             nextValue = null;
             if (cacheIterator.hasNext()) {
                 nextValue = cacheIterator.next();
