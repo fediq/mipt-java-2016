@@ -1,14 +1,11 @@
 package ru.mipt.java2016.homework.g595.rodin.task2;
 
 /**
- * Created by Dmitry on 24.10.16.
+ * Created by Dmitry on 26.10.16.
  */
-
-
-public class CSerializeInteger implements ISerialize<Integer>{
-
+public class CSerializeBoolean implements ISerialize<Boolean> {
     @Override
-    public String serialize(Integer argument) throws IllegalArgumentException {
+    public String serialize(Boolean argument) throws IllegalArgumentException {
         if(argument == null){
             throw new IllegalArgumentException("Null Argument");
         }
@@ -16,17 +13,16 @@ public class CSerializeInteger implements ISerialize<Integer>{
     }
 
     @Override
-    public Integer deserialize(String argument) throws IllegalArgumentException{
+    public Boolean deserialize(String argument) throws IllegalArgumentException {
         if(argument == null){
             throw new IllegalArgumentException("Null Argument");
         }
-        Integer result = 0;
+        Boolean result;
         try{
-            result = Integer.parseInt(argument);
+            result = Boolean.parseBoolean(argument);
         } catch (NumberFormatException exception){
             throw new IllegalArgumentException("Invalid Argument");
         }
         return result;
     }
-
 }
