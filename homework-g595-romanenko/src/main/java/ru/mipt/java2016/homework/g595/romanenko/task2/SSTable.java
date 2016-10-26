@@ -1,10 +1,13 @@
 package ru.mipt.java2016.homework.g595.romanenko.task2;
 
+import ru.mipt.java2016.homework.g595.romanenko.task2.serialization.IntegerSerializer;
+import ru.mipt.java2016.homework.g595.romanenko.task2.serialization.SerializationStrategy;
+
 import java.io.*;
 import java.nio.channels.Channels;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.HashMap;
+import java.util.Iterator;
 
 /**
  * Sorted strings table
@@ -27,10 +30,12 @@ class SSTable<Key, Value> {
     private final SerializationStrategy<Key> keySerializationStrategy;
     private final SerializationStrategy<Value> valueSerializationStrategy;
 
+    private boolean isClosed = false;
+
     private void readIndexes() throws IOException {
         int totalAmount = storage.readInt();
         InputStream stream = Channels.newInputStream(storage.getChannel());
-        SerializersFactory.IntegerSerializer serializer = SerializersFactory.IntegerSerializer.getInstance();
+        IntegerSerializer serializer = IntegerSerializer.getInstance();
         for (int i = 0; i < totalAmount; i++) {
             Key key = keySerializationStrategy.deserializeFromStream(stream);
             Integer offset = serializer.deserializeFromStream(stream);
@@ -40,7 +45,7 @@ class SSTable<Key, Value> {
 
     SSTable(String path,
             SerializationStrategy<Key> keySerializationStrategy,
-            SerializationStrategy<Value> valueSerializationStrategy) {
+            SerializationStrategy<Value> valueSerializationStrategy) throws IOException {
 
         this.keySerializationStrategy = keySerializationStrategy;
         this.valueSerializationStrategy = valueSerializationStrategy;
@@ -49,20 +54,18 @@ class SSTable<Key, Value> {
         if (tryFile.exists() && tryFile.isDirectory()) {
             path += "//storage.db";
         }
-
-        try {
-            storage = new RandomAccessFile(path, "rw");
+        storage = new RandomAccessFile(path, "rw");
+        if (storage.length() != 0) {
             readIndexes();
-        } catch (IOException exp) {
-            System.out.println(exp.getMessage());
         }
     }
 
     void rewrite(HashMap<Key, Value> toFlip) {
+        checkClosed();
+
         try {
             storage.setLength(0);
-            storage.seek(0);
-            SerializersFactory.IntegerSerializer integerSerializer = SerializersFactory.IntegerSerializer.getInstance();
+            IntegerSerializer integerSerializer = IntegerSerializer.getInstance();
 
             OutputStream outputStream = Channels.newOutputStream(storage.getChannel());
 
@@ -93,43 +96,64 @@ class SSTable<Key, Value> {
             }
 
             outputStream.flush();
-        } catch (IOException exp) {
-            System.out.println(exp.getMessage());
+        } catch (IOException e) {
+            throw new IllegalStateException();
         }
     }
 
-    Value getValue(Key key) throws IOException {
+    private void checkClosed() {
+        if (isClosed) {
+            throw new IllegalStateException("File is closed");
+        }
+    }
+
+    Value getValue(Key key) {
+        checkClosed();
         if (!indexes.containsKey(key)) {
             return null;
         }
         Integer offset = indexes.get(key);
-        storage.seek(0);
-        InputStream stream = Channels.newInputStream(storage.getChannel());
-        stream.skip(offset);
-        return valueSerializationStrategy.deserializeFromStream(stream);
+        Value result;
+        try {
+            storage.seek(0);
+            InputStream stream = Channels.newInputStream(storage.getChannel());
+            stream.skip(offset);
+            result = valueSerializationStrategy.deserializeFromStream(stream);
+        } catch (IOException e) {
+            throw new IllegalStateException();
+        }
+        return result;
     }
 
     void close() {
+        if (isClosed) {
+            return;
+        }
+        isClosed = true;
         try {
             storage.close();
-        } catch (IOException ex) {
-            System.out.println(ex.getMessage());
+        } catch (IOException e) {
+            throw new IllegalStateException();
         }
     }
 
     int size() {
+        checkClosed();
         return indexes.size();
     }
 
     void removeKeyFromIndexes(Key key) {
+        checkClosed();
         indexes.remove(key);
     }
 
     boolean exists(Key key) {
+        checkClosed();
         return indexes.containsKey(key);
     }
 
     Iterator<Key> readKeys() {
+        checkClosed();
         return indexes.keySet().iterator();
     }
 }

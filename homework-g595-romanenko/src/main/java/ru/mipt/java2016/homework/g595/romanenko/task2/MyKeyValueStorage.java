@@ -1,6 +1,7 @@
 package ru.mipt.java2016.homework.g595.romanenko.task2;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
+import ru.mipt.java2016.homework.g595.romanenko.task2.serialization.SerializationStrategy;
 
 import java.io.IOException;
 import java.util.ConcurrentModificationException;
@@ -19,27 +20,25 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private SSTable<K, V> table;
     private final HashMap<K, V> cachedValues = new HashMap<>();
     private int epochNumber = 0;
+    private int totalAmount = 0;
 
     MyKeyValueStorage(String path,
                       SerializationStrategy<K> keySerializationStrategy,
-                      SerializationStrategy<V> valueSerializationStrategy) {
+                      SerializationStrategy<V> valueSerializationStrategy) throws IOException {
 
         table = new SSTable<>(path, keySerializationStrategy, valueSerializationStrategy);
+        totalAmount = table.size();
     }
 
     @Override
     public V read(K key) {
-        V value = null;
+        V value;
         if (cachedValues.containsKey(key)) {
             return cachedValues.get(key);
         }
-        try {
-            value = table.getValue(key);
-            if (value != null) {
-                cachedValues.put(key, value);
-            }
-        } catch (IOException exp) {
-            System.out.println(exp.getMessage());
+        value = table.getValue(key);
+        if (value != null) {
+            cachedValues.put(key, value);
         }
         return value;
     }
@@ -55,6 +54,9 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             cachedValues.replace(key, value);
         } else {
             cachedValues.put(key, value);
+            if (!table.exists(key)) {
+                totalAmount += 1;
+            }
             epochNumber += 1;
         }
     }
@@ -62,6 +64,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public void delete(K key) {
         epochNumber += 1;
+        totalAmount -= 1;
         if (cachedValues.containsKey(key)) {
             cachedValues.remove(key);
         }
@@ -70,16 +73,16 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public Iterator<K> readKeys() {
-        return new KVSIterator<K>(table.readKeys(), cachedValues);
+        return new KVSIterator<>(table.readKeys(), cachedValues);
     }
 
     @Override
     public int size() {
-        return table.size();
+        return totalAmount;
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         Iterator<K> keySet = table.readKeys();
         while (keySet.hasNext()) {
             read(keySet.next());
@@ -88,15 +91,15 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         table.close();
     }
 
-    public class KVSIterator<K> implements Iterator<K> {
+    public class KVSIterator<IteratorKey> implements Iterator<IteratorKey> {
 
-        private final Iterator<K> indexIterator;
-        private final Iterator<K> cacheIterator;
-        private final HashMap<K, V> cachedKeys;
+        private final Iterator<IteratorKey> indexIterator;
+        private final Iterator<IteratorKey> cacheIterator;
+        private final HashMap<IteratorKey, V> cachedKeys;
         private final int currentEpochNumber;
-        private K nextValue = null;
+        private IteratorKey nextValue = null;
 
-        private KVSIterator(Iterator<K> indexesKeys, HashMap<K, V> cachedKeys) {
+        private KVSIterator(Iterator<IteratorKey> indexesKeys, HashMap<IteratorKey, V> cachedKeys) {
             this.indexIterator = indexesKeys;
             this.cachedKeys = cachedKeys;
             this.cacheIterator = cachedKeys.keySet().iterator();
@@ -111,6 +114,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             nextValue = null;
             if (cacheIterator.hasNext()) {
                 nextValue = cacheIterator.next();
+                return;
             }
             while (indexIterator.hasNext()) {
                 nextValue = indexIterator.next();
@@ -132,8 +136,8 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
 
         @Override
-        public K next() {
-            K result = nextValue;
+        public IteratorKey next() {
+            IteratorKey result = nextValue;
             getNext();
             return result;
         }

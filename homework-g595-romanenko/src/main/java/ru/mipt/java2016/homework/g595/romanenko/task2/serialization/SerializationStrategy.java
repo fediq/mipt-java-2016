@@ -1,4 +1,4 @@
-package ru.mipt.java2016.homework.g595.romanenko.task2;
+package ru.mipt.java2016.homework.g595.romanenko.task2.serialization;
 
 
 import java.io.*;
@@ -10,7 +10,7 @@ import java.io.*;
  * @since 04.10.16
  **/
 
-interface SerializationStrategy<Value> {
+public interface SerializationStrategy<Value> {
 
     /**
      * Вернуть сериализованное значение в виде массива байт
