@@ -3,10 +3,12 @@ package ru.mipt.java2016.homework.g595.romanenko.task2;
 import java.io.*;
 import java.nio.channels.Channels;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.HashMap;
 
 /**
  * Sorted strings table
+ * P.S. unsorted
  *
  * @author Ilya I. Romanenko
  * @since 21.10.16
@@ -20,17 +22,13 @@ Values
 class SSTable<Key, Value> {
 
     private RandomAccessFile storage;
-    private HashMap<Key, Integer> indexes;
-    private final HashMap<Key, Value> cachedValues = new HashMap<>();
-    private int totalAmount = 0;
+    private final HashMap<Key, Integer> indexes = new HashMap<>();
 
-    private SerializationStrategy<Key> keySerializationStrategy;
-    private SerializationStrategy<Value> valueSerializationStrategy;
-    private boolean isClosed = false;
+    private final SerializationStrategy<Key> keySerializationStrategy;
+    private final SerializationStrategy<Value> valueSerializationStrategy;
 
     private void readIndexes() throws IOException {
-        indexes = new HashMap<>();
-        totalAmount = storage.readInt();
+        int totalAmount = storage.readInt();
         InputStream stream = Channels.newInputStream(storage.getChannel());
         SerializersFactory.IntegerSerializer serializer = SerializersFactory.IntegerSerializer.getInstance();
         for (int i = 0; i < totalAmount; i++) {
@@ -41,8 +39,8 @@ class SSTable<Key, Value> {
     }
 
     SSTable(String path,
-                   SerializationStrategy<Key> keySerializationStrategy,
-                   SerializationStrategy<Value> valueSerializationStrategy) {
+            SerializationStrategy<Key> keySerializationStrategy,
+            SerializationStrategy<Value> valueSerializationStrategy) {
 
         this.keySerializationStrategy = keySerializationStrategy;
         this.valueSerializationStrategy = valueSerializationStrategy;
@@ -60,51 +58,20 @@ class SSTable<Key, Value> {
         }
     }
 
-    Value getValue(Key key) throws IOException {
-        if (cachedValues.containsKey(key)) {
-            return cachedValues.get(key);
-        }
-        if (!indexes.containsKey(key)) {
-            return null;
-        }
-        Integer offset = indexes.get(key);
-        storage.seek(0);
-        InputStream stream = Channels.newInputStream(storage.getChannel());
-        stream.skip(offset);
-        Value value = valueSerializationStrategy.deserializeFromStream(stream);
-        cachedValues.put(key, value);
-        return value;
-    }
-
-    void addKeyValue(Key key, Value value) {
-        if (cachedValues.containsKey(key)) {
-            cachedValues.replace(key, value);
-        } else {
-            cachedValues.put(key, value);
-            totalAmount += 1;
-        }
-    }
-
-    void close() {
-        if (isClosed) {
-            return;
-        }
+    void rewrite(HashMap<Key, Value> toFlip) {
         try {
-            for (Key key : indexes.keySet()) {
-                getValue(key);
-            }
             storage.setLength(0);
             storage.seek(0);
             SerializersFactory.IntegerSerializer integerSerializer = SerializersFactory.IntegerSerializer.getInstance();
 
             OutputStream outputStream = Channels.newOutputStream(storage.getChannel());
 
-            integerSerializer.serializeToStream(cachedValues.size(), outputStream);
+            integerSerializer.serializeToStream(toFlip.size(), outputStream);
 
             ArrayList<Integer> offsets = new ArrayList<>();
-            Integer totalLength = integerSerializer.getBytesSize(cachedValues.size());
+            Integer totalLength = integerSerializer.getBytesSize(toFlip.size());
 
-            ArrayList<Key> cachedKeys = new ArrayList<>(cachedValues.keySet());
+            ArrayList<Key> cachedKeys = new ArrayList<>(toFlip.keySet());
 
             for (Key key : cachedKeys) {
                 totalLength += keySerializationStrategy.getBytesSize(key);
@@ -113,7 +80,7 @@ class SSTable<Key, Value> {
 
             for (Key key : cachedKeys) {
                 offsets.add(totalLength);
-                totalLength += valueSerializationStrategy.getBytesSize(cachedValues.get(key));
+                totalLength += valueSerializationStrategy.getBytesSize(toFlip.get(key));
             }
 
             for (int i = 0; i < cachedKeys.size(); i++) {
@@ -122,40 +89,47 @@ class SSTable<Key, Value> {
             }
 
             for (Key key : cachedKeys) {
-                valueSerializationStrategy.serializeToStream(cachedValues.get(key), outputStream);
+                valueSerializationStrategy.serializeToStream(toFlip.get(key), outputStream);
             }
 
             outputStream.flush();
+        } catch (IOException exp) {
+            System.out.println(exp.getMessage());
+        }
+    }
+
+    Value getValue(Key key) throws IOException {
+        if (!indexes.containsKey(key)) {
+            return null;
+        }
+        Integer offset = indexes.get(key);
+        storage.seek(0);
+        InputStream stream = Channels.newInputStream(storage.getChannel());
+        stream.skip(offset);
+        return valueSerializationStrategy.deserializeFromStream(stream);
+    }
+
+    void close() {
+        try {
             storage.close();
         } catch (IOException ex) {
             System.out.println(ex.getMessage());
         }
-
-        isClosed = true;
     }
 
     int size() {
-        return totalAmount;
+        return indexes.size();
     }
 
-    void removeKey(Key key) {
-        boolean inCachedValues = cachedValues.containsKey(key);
-        boolean inIndexes = indexes.containsKey(key);
-        if (inCachedValues) {
-            cachedValues.remove(key);
-            if (!inIndexes) {
-                totalAmount -= 1;
-            }
-        }
-        if (inIndexes) {
-            indexes.remove(key);
-            totalAmount -= 1;
-        }
+    void removeKeyFromIndexes(Key key) {
+        indexes.remove(key);
     }
 
     boolean exists(Key key) {
-        boolean inCachedValues = cachedValues.containsKey(key);
-        boolean inIndexes = indexes.containsKey(key);
-        return inCachedValues || inIndexes;
+        return indexes.containsKey(key);
+    }
+
+    Iterator<Key> readKeys() {
+        return indexes.keySet().iterator();
     }
 }

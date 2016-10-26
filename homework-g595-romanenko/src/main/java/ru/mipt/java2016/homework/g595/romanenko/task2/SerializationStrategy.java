@@ -4,11 +4,11 @@ package ru.mipt.java2016.homework.g595.romanenko.task2;
 import java.io.*;
 
 /**
-* Стратегия сериализации
-*
-* @author Fedor S. Lavrentyev
-* @since 04.10.16
-**/
+ * Стратегия сериализации
+ *
+ * @author Fedor S. Lavrentyev
+ * @since 04.10.16
+ **/
 
 interface SerializationStrategy<Value> {
 
