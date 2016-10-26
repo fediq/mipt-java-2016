@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
+import static org.junit.Assert.assertEquals;
 import static ru.mipt.java2016.homework.tests.task2.StorageTestUtils.doInTempDirectory;
 
 /**
@@ -73,15 +74,24 @@ public class SimpleSingleFileStorageTest extends AbstractSingleFileStorageTest {
         doInTempDirectory(path -> {
             KeyValueStorage<StudentKey, Student> storage = buildPojoStorage(path);
             storage.write(new StudentKey(595, "murzin"), new Student(595, "murzin", "chel", new GregorianCalendar(1998, 8, 20).getTime(), true, 77));
-            System.out.println(storage);
             storage.close();
 
             KeyValueStorage<StudentKey, Student> storage2 = buildPojoStorage(path);
             Student student = storage2.read(new StudentKey(595, "murzin"));
-            System.out.println(student.toString());
-            System.out.println(student.getAverageScore());
-            System.out.println(student.getBirthDate());
-            System.out.println(student.getHometown());
+            assertEquals(student, new Student(595, "murzin", "chel", new GregorianCalendar(1998, 8, 20).getTime(), true, 77));
+        });
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testAccessToClosed() throws Exception {
+        doInTempDirectory(path -> {
+            KeyValueStorage<Integer, Double> storage = buildNumbersStorage(path);
+            storage.write(1, 7.0);
+            storage.write(2, .123);
+            storage.write(3, 15.0);
+            assertEquals((Double) .123, storage.read(2));
+            storage.close();
+            storage.read(2);
         });
     }
 }

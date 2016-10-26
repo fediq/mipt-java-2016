@@ -18,6 +18,7 @@ public class SimpleKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private File storage;
     private SerializationStrategy<K> keySerializationStrategy;
     private SerializationStrategy<V> valueSerializationStrategy;
+    private boolean isClosed;
 
     public SimpleKeyValueStorage(String path,
                                  SerializationStrategy<K> keySerializationStrategy,
@@ -67,43 +68,58 @@ public class SimpleKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
+    private void checkForClosed() {
+        if (isClosed) {
+            throw new RuntimeException("Access to closed storage");
+        }
+    }
+
     @Override
     public V read(K key) {
+        checkForClosed();
         return map.get(key);
     }
 
     @Override
     public boolean exists(K key) {
+        checkForClosed();
         return map.containsKey(key);
     }
 
     @Override
     public void write(K key, V value) {
+        checkForClosed();
         map.put(key, value);
     }
 
     @Override
     public void delete(K key) {
+        checkForClosed();
         map.remove(key);
     }
 
     @Override
     public Iterator<K> readKeys() {
+        checkForClosed();
         return map.keySet().iterator();
     }
 
     @Override
     public int size() {
+        checkForClosed();
         return map.size();
     }
 
     @Override
     public void close() throws IOException {
+        checkForClosed();
         writeToStorage();
+        isClosed = true;
     }
 
     @Override
     public String toString() {
+        checkForClosed();
         return map.toString();
     }
 }
