@@ -1,10 +1,6 @@
 package ru.mipt.java2016.homework.g594.kozlov.task2.serializer;
 
 import ru.mipt.java2016.homework.g594.kozlov.task2.StorageException;
-
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
@@ -39,7 +35,7 @@ public class SerializerUtil {
         int result;
         try {
             result = Integer.parseInt(token);
-        } catch (NumberFormatException except){
+        } catch (NumberFormatException except) {
             throw new StorageException("Reading error");
         }
         return result;
@@ -49,7 +45,7 @@ public class SerializerUtil {
         double result;
         try {
             result = Double.parseDouble(token);
-        } catch (NumberFormatException except){
+        } catch (NumberFormatException except) {
             throw new StorageException("Reading error");
         }
         return result;
@@ -70,7 +66,7 @@ public class SerializerUtil {
         Boolean result;
         try {
             result = Boolean.parseBoolean(token);
-        } catch (IllegalArgumentException except){
+        } catch (IllegalArgumentException except) {
             throw new StorageException("Reading error");
         }
         return result;

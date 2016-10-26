@@ -25,7 +25,7 @@ public class FileWorker {
     }
 
     public boolean exists() throws FileNotFoundException {
-        if (!file.exists()){
+        if (!file.exists()) {
             throw new FileNotFoundException(file.getName());
         }
         return true;
@@ -50,7 +50,7 @@ public class FileWorker {
         StringBuilder sb = new StringBuilder();
         exists();
         try {
-            BufferedReader in = new BufferedReader(new FileReader( file.getAbsoluteFile()));
+            BufferedReader in = new BufferedReader(new FileReader(file.getAbsoluteFile()));
             try {
                 String s;
                 while ((s = in.readLine()) != null) {
@@ -60,7 +60,7 @@ public class FileWorker {
             } finally {
                 in.close();
             }
-        } catch(IOException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
         return sb.toString();

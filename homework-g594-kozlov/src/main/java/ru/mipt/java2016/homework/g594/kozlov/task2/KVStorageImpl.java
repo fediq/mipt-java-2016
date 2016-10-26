@@ -13,6 +13,22 @@ import java.util.Map;
  */
 public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
 
+    private final FileWorker fileWorker;
+
+    private final SerializerInterface<K> keySerializer;
+
+    private final SerializerInterface<V> valueSerializer;
+
+    private final String keyName;
+
+    private final String valueName;
+
+    private final HashMap<K, V> tempStorage = new HashMap<K, V>();
+
+    private static final String VALIDATE_STRING = "itismyawesomestoragedontfakeit";
+
+    private Boolean flag = false;
+
     public KVStorageImpl(String dirPath, SerializerInterface<K> keySerializer,
                          SerializerInterface<V> valueSerializer, String keyName, String valueName) {
         this.keySerializer = keySerializer;
@@ -25,10 +41,10 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
 
             if (fileWorker.exists()) {
                 if (!validateFile()) {
-                    //throw new RuntimeException("priehali");
+                    throw new RuntimeException("Invalid File");
                 }
             }
-        } catch (FileNotFoundException except){
+        } catch (FileNotFoundException except) {
             fileWorker.createFile();
             flushTemp();
         }
@@ -37,7 +53,7 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
     private boolean validateFile() throws FileNotFoundException {
         String inputString = fileWorker.read();
         String[] tokens = inputString.split("\n");
-        if (!tokens[0].equals(validateString)) {
+        if (!tokens[0].equals(VALIDATE_STRING)) {
             return false;
         }
         if (!tokens[1].equals(keyName)) {
@@ -60,59 +76,63 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
         return true;
     }
 
-    private final FileWorker fileWorker;
-
-    private final SerializerInterface<K> keySerializer;
-
-    private final SerializerInterface<V> valueSerializer;
-
-    private final String keyName;
-
-    private final String valueName;
-
-    private final HashMap<K, V> tempStorage = new HashMap<K,V>();
-
-    private final static String validateString = "itismyawesomestoragedontfakeit";
-
     @Override
     public V read(K key) {
+        if (flag) {
+            throw new RuntimeException("storage closed");
+        }
         return tempStorage.get(key);
     }
 
     @Override
-    public boolean exists(K key){
+    public boolean exists(K key) {
+        if (flag) {
+            throw new RuntimeException("storage closed");
+        }
         return tempStorage.containsKey(key);
     }
 
     @Override
-    public void write(K key, V value){
+    public void write(K key, V value) {
+        if (flag) {
+            throw new RuntimeException("storage closed");
+        }
         tempStorage.put(key, value);
         flushTemp();
     }
 
     @Override
     public void delete(K key) {
+        if (flag) {
+            throw new RuntimeException("storage closed");
+        }
         tempStorage.remove(key);
         flushTemp();
     }
 
     @Override
     public Iterator<K> readKeys() {
+        if (flag) {
+            throw new RuntimeException("storage closed");
+        }
         return tempStorage.keySet().iterator();
     }
 
     @Override
     public int size() {
+        if (flag) {
+            throw new RuntimeException("storage closed");
+        }
         return tempStorage.size();
     }
 
     @Override
     public void close() {
-        // do nothing
+        flag = true;
     }
 
     void flushTemp() {
-        StringBuilder text = new StringBuilder(validateString + "\n");
+        StringBuilder text = new StringBuilder(VALIDATE_STRING + "\n");
         text.append(keyName).append('\n').append(valueName).append('\n');
         text.append(tempStorage.size()).append('\n');
         for (Map.Entry<K, V> entry : tempStorage.entrySet()) {
