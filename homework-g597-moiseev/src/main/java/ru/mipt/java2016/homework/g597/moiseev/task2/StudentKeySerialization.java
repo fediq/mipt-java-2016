@@ -11,7 +11,7 @@ import java.io.RandomAccessFile;
  * @author Fedor Moiseev
  * @since 26.10.2016
  */
-public class StudentKeySerialization implements SerializationStrategy<StudentKey> {
+public class StudentKeySerialization implements Serialization<StudentKey> {
     private static StudentKeySerialization instance = new StudentKeySerialization();
 
     private IntegerSerialization integerSerialization = IntegerSerialization.getInstance();

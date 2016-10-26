@@ -10,7 +10,7 @@ import java.util.Date;
  * @author Fedor Moiseev
  * @since 26.10.2016
  */
-public class DateSerialization implements SerializationStrategy<Date> {
+public class DateSerialization implements Serialization<Date> {
     private static DateSerialization ourInstance = new DateSerialization();
 
     public static DateSerialization getInstance() {

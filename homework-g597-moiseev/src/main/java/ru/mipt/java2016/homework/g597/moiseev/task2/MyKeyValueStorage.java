@@ -20,16 +20,16 @@ import java.util.Map;
  */
 
 public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V>, AutoCloseable {
-    private SerializationStrategy<K> keySerialization;
-    private SerializationStrategy<V> valueSerialization;
+    private Serialization<K> keySerialization;
+    private Serialization<V> valueSerialization;
     private IntegerSerialization integerSerialization;
     private String name;
     private RandomAccessFile file;
     private File lock;
     private HashMap<K, V> elements;
 
-    public MyKeyValueStorage(String path, String name, SerializationStrategy<K> keySerialization,
-                             SerializationStrategy<V> valueSerialization) throws IOException{
+    public MyKeyValueStorage(String path, String name, Serialization<K> keySerialization,
+                             Serialization<V> valueSerialization) throws IOException {
         if (Files.notExists(Paths.get(path))) {
             throw new FileNotFoundException("Directory not exist");
         }
@@ -62,14 +62,14 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V>, AutoClose
         elements.clear();
         int size = integerSerialization.read(file);
 
-        if(size < 0) {
+        if (size < 0) {
             throw new IOException("Invalid database");
         }
 
-        for(int i = 0; i < size; i++) {
+        for (int i = 0; i < size; i++) {
             K key = keySerialization.read(file);
             V value = valueSerialization.read(file);
-            if(elements.containsKey(key)) {
+            if (elements.containsKey(key)) {
                 throw new IOException("Invalid database");
             } else {
                 elements.put(key, value);
@@ -100,7 +100,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V>, AutoClose
     private class KeyIterator implements Iterator<K> {
         private Iterator<K> iterator;
 
-        public KeyIterator(Iterator<K> iterator) {
+        KeyIterator(Iterator<K> iterator) {
             this.iterator = iterator;
         }
 
@@ -130,7 +130,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V>, AutoClose
         file.setLength(0);
         file.seek(0);
         integerSerialization.write(file, size());
-        for(Map.Entry<K, V> entry : elements.entrySet()) {
+        for (Map.Entry<K, V> entry : elements.entrySet()) {
             keySerialization.write(file, entry.getKey());
             valueSerialization.write(file, entry.getValue());
         }

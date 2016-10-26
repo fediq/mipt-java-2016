@@ -9,7 +9,7 @@ import java.io.RandomAccessFile;
  * @author Fedor Moiseev
  * @since 26.10.2016
  */
-public class BooleanSerialization implements SerializationStrategy<Boolean> {
+public class BooleanSerialization implements Serialization<Boolean> {
     private static BooleanSerialization ourInstance = new BooleanSerialization();
 
     public static BooleanSerialization getInstance() {

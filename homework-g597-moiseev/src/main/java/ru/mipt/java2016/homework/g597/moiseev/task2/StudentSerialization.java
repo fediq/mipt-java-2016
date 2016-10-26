@@ -12,7 +12,7 @@ import java.util.Date;
  * @author Fedor Moiseev
  * @since 26.10.2016
  */
-public class StudentSerialization implements SerializationStrategy<Student> {
+public class StudentSerialization implements Serialization<Student> {
     private static StudentSerialization instance = new StudentSerialization();
 
     private IntegerSerialization integerSerialization = IntegerSerialization.getInstance();

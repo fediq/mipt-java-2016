@@ -10,7 +10,8 @@ import java.io.RandomAccessFile;
  * @since 26.10.2016
  */
 
-public interface SerializationStrategy<V> {
+public interface Serialization<V> {
     void write(RandomAccessFile file, V object) throws IOException;
+
     V read(RandomAccessFile file) throws IOException;
 }

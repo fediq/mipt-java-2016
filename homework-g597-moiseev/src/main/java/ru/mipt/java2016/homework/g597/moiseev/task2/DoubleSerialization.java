@@ -10,7 +10,7 @@ import java.io.RandomAccessFile;
  * @since 26.10.2016
  */
 
-public class DoubleSerialization implements SerializationStrategy<Double> {
+public class DoubleSerialization implements Serialization<Double> {
     private static DoubleSerialization instance = new DoubleSerialization();
 
     public static DoubleSerialization getInstance() {

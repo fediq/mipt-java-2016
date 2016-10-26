@@ -10,7 +10,7 @@ import java.io.RandomAccessFile;
  * @since 26.10.2016
  */
 
-public class StringSerialization implements SerializationStrategy<String> {
+public class StringSerialization implements Serialization<String> {
     private static StringSerialization instance = new StringSerialization();
 
     public static StringSerialization getInstance() {

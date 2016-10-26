@@ -10,7 +10,7 @@ import java.io.RandomAccessFile;
  * @since 26.10.2016
  */
 
-public class IntegerSerialization implements SerializationStrategy<Integer> {
+public class IntegerSerialization implements Serialization<Integer> {
     private static IntegerSerialization instance = new IntegerSerialization();
 
     public static IntegerSerialization getInstance() {
