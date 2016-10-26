@@ -35,12 +35,12 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V>, AutoClose
         }
 
         String lockPath = path + "/" + name + ".lock";
-        File lock = new File(lockPath);
+        lock = new File(lockPath);
         if (!lock.createNewFile()) {
             throw new IOException("Database already open");
         }
 
-        elements = new HashMap();
+        elements = new HashMap<>();
         this.name = name;
         this.keySerialization = keySerialization;
         this.valueSerialization = valueSerialization;

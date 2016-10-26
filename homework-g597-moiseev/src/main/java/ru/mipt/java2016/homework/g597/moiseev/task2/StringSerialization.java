@@ -27,6 +27,6 @@ public class StringSerialization implements SerializationStrategy<String> {
 
     @Override
     public String read(RandomAccessFile file) throws IOException {
-        return file.readLine();
+        return file.readUTF();
     }
 }
