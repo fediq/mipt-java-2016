@@ -1,7 +1,6 @@
 package ru.mipt.java2016.homework.base.task2;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.util.Iterator;
 
 /**
@@ -45,7 +44,7 @@ public interface KeyValueStorage<K, V> extends Closeable {
      * Итератор должен бросать {@link java.util.ConcurrentModificationException},
      * если данные в хранилище были изменены в процессе итерирования.
      */
-    Iterator<K> readKeys() throws IOException;
+    Iterator<K> readKeys();
 
     /**
      * Возвращает число ключей, которые сейчас в хранилище.
