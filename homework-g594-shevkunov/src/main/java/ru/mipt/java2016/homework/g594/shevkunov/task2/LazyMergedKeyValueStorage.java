@@ -17,7 +17,7 @@ import java.util.Map;
 class LazyMergedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private static final String HEADER_NAME = "/storage.db";
     private static final String DATA_NAME = "/storage_0.db";
-    private int timer = 0;
+    private boolean open = true;
 
     private final String path;
     private final LazyMergedKeyValueStorageHeader header;
@@ -44,37 +44,51 @@ class LazyMergedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public V read(K key) {
+        checkClosed();
         return chache.get(key);
     }
 
     @Override
     public boolean exists(K key) {
+        checkClosed();
         return chache.containsKey(key);
     }
 
     @Override
     public void write(K key, V value) {
+        checkClosed();
         chache.put(key, value);
     }
 
     @Override
     public void delete(K key) {
+        checkClosed();
         chache.remove(key);
     }
 
     @Override
     public Iterator<K> readKeys() {
+        checkClosed();
         return chache.keySet().iterator();
     }
 
     @Override
     public int size() {
+        checkClosed();
         return chache.size();
     }
 
     @Override
     public void close() throws IOException {
+        checkClosed();
         writeChache();
+        open = false;
+    }
+
+    private void checkClosed() {
+        if (!open) {
+            throw new RuntimeException("Storage already closed.");
+        }
     }
 
     private void loadChache() throws IOException {
