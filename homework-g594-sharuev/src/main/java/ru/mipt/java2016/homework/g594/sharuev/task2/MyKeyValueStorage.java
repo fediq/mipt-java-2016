@@ -11,10 +11,21 @@ import java.util.Map;
 public class MyKeyValueStorage<K, V> implements
         ru.mipt.java2016.homework.base.task2.KeyValueStorage {
 
+    private Map<K, V> memHashMap;
+    private RandomAccessFile databaseFile;
+    private SerializationStrategy<K> keySerializationStrategy;
+    private SerializationStrategy<V> valueSerializationStrategy;
+    private boolean isOpen;
+    private static final String HEADER = "Simple Database v0.1";
+
     public MyKeyValueStorage(String path, SerializationStrategy<K> keySerializationStrategyVal,
                              SerializationStrategy<V> valueSerializationStrategyVal) {
-        File fil = Paths.get(path, "storage.db").toFile();
+        memHashMap = new HashMap<>();
+        keySerializationStrategy = keySerializationStrategyVal;
+        valueSerializationStrategy = valueSerializationStrategyVal;
+
         boolean isNew = false;
+        File fil = Paths.get(path, "storage.db").toFile();
         if (!fil.exists()) {
             try {
                 if (!fil.createNewFile()) {
@@ -28,9 +39,12 @@ public class MyKeyValueStorage<K, V> implements
         }
         try {
             databaseFile = new RandomAccessFile(fil, "rw");
-            if (isNew) {
-                databaseFile.writeLong(0);
-                databaseFile.seek(0);
+            if (!isNew) {
+                try {
+                    readFromDisk();
+                } catch (SerializationException e) {
+                    throw new RuntimeException("Failed to load database from file", e);
+                }
             }
         } catch (FileNotFoundException e) {
             throw new RuntimeException("File not found", e);
@@ -38,14 +52,7 @@ public class MyKeyValueStorage<K, V> implements
             throw new RuntimeException("Can't write to file", e);
         }
 
-        memHashMap = new HashMap<>();
-        keySerializationStrategy = keySerializationStrategyVal;
-        valueSerializationStrategy = valueSerializationStrategyVal;
-        try {
-            readFromDisk();
-        } catch (SerializationException e) {
-            throw new RuntimeException("Failed to load database from file", e);
-        }
+
         isOpen = true;
     }
 
@@ -93,6 +100,10 @@ public class MyKeyValueStorage<K, V> implements
             ArrayList<K> keys = new ArrayList<K>();
             DataInputStream dataInputStream = new DataInputStream(
                     Channels.newInputStream(databaseFile.getChannel()));
+            String header = databaseFile.readUTF();
+            if (!header.equals(HEADER)) {
+                throw new SerializationException("Database is inconsistent");
+            }
             long numberOfEntries = databaseFile.readLong();
 
             // Считываем ключи и оффсеты соответствующих значений
@@ -132,14 +143,15 @@ public class MyKeyValueStorage<K, V> implements
         ArrayList<Long> keyEnds = new ArrayList<>();
         ArrayList<Long> valueBegins = new ArrayList<>();
         databaseFile.seek(0);
+        databaseFile.writeUTF(HEADER);
         databaseFile.writeLong(size());
-        DataOutputStream os = new DataOutputStream(
+        DataOutputStream dataOutputStream = new DataOutputStream(
                 Channels.newOutputStream(databaseFile.getChannel()));
 
         // Пишем ключи и оставляем место под сдвиги.
         for (K entry : memHashMap.keySet()) {
             try {
-                keySerializationStrategy.serializeToStream(entry, os);
+                keySerializationStrategy.serializeToStream(entry, dataOutputStream);
                 keyEnds.add(databaseFile.getFilePointer());
                 databaseFile.seek(databaseFile.getFilePointer() + Long.BYTES);
                 //valueBegins.add(valueBegins[valueBegins.size()-1] + entry.getValue().size());
@@ -152,7 +164,7 @@ public class MyKeyValueStorage<K, V> implements
         for (V value : memHashMap.values()) {
             try {
                 valueBegins.add(databaseFile.getFilePointer());
-                valueSerializationStrategy.serializeToStream(value, os);
+                valueSerializationStrategy.serializeToStream(value, dataOutputStream);
             } catch (SerializationException e) {
                 throw new IOException("Serialization error");
             }
@@ -169,11 +181,5 @@ public class MyKeyValueStorage<K, V> implements
             throw new RuntimeException("Can't access closed storage");
         }
     }
-
-    private Map<K, V> memHashMap;
-    private RandomAccessFile databaseFile;
-    private SerializationStrategy<K> keySerializationStrategy;
-    private SerializationStrategy<V> valueSerializationStrategy;
-    private boolean isOpen;
 
 }

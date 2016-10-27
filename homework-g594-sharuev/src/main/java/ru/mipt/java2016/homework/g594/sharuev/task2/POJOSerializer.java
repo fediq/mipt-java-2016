@@ -2,7 +2,9 @@ package ru.mipt.java2016.homework.g594.sharuev.task2;
 
 import org.objenesis.ObjenesisStd;
 
-import java.io.*;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.rmi.activation.UnknownObjectException;
 import java.util.ArrayList;
@@ -15,20 +17,21 @@ import java.util.Date;
  * String, Date и классы, содержащие поля только из этих типов. Поля предков тоже сериализуются.
  * Подклассов - нет.
  */
-public class PODSerializer<Value> implements SerializationStrategy<Value> {
+public class POJOSerializer<Value> implements SerializationStrategy<Value> {
 
-    public PODSerializer(Class clazzVal) {
+    private Class clazz;
+
+    public POJOSerializer(Class clazzVal) {
         clazz = clazzVal;
     }
 
     public void serializeToStream(Value value,
-                                  OutputStream outputStream) throws SerializationException {
-        DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
+                                  DataOutputStream dataOutputStream) throws SerializationException {
 
         try {
-            serializePOD(value, dataOutputStream);
+            serializeAtom(value, dataOutputStream);
         } catch (UnknownObjectException e) {
-            // Это не тип, который сериализует serializePOD. Может, это класс с такими полями?
+            // Это не тип, который сериализует serializeAtom. Может, это класс с такими полями?
             //Field[] fields = value.getClass().getDeclaredFields();
             ArrayList<Field> fields = new ArrayList<>();
             Class classToSerialize = clazz;
@@ -40,7 +43,7 @@ public class PODSerializer<Value> implements SerializationStrategy<Value> {
             for (Field field : fields) {
                 field.setAccessible(true);
                 try {
-                    serializePOD(field.get(value), dataOutputStream);
+                    serializeAtom(field.get(value), dataOutputStream);
                 } catch (UnknownObjectException | SerializationException | IllegalAccessException e2) {
                     throw new SerializationException("Can't access member to serialize it", e2);
                 }
@@ -49,10 +52,10 @@ public class PODSerializer<Value> implements SerializationStrategy<Value> {
 
     }
 
-    public Value deserializeFromStream(InputStream inputStream) throws SerializationException {
-        DataInputStream dataInputStream = new DataInputStream(inputStream);
+    public Value deserializeFromStream(
+            DataInputStream dataInputStream) throws SerializationException {
         try {
-            return (Value) deserializePOD(clazz, dataInputStream);
+            return (Value) deserializeAtom(clazz, dataInputStream);
         } catch (UnknownObjectException e) {
             //Field[] fields = clazz.getDeclaredFields();
             ArrayList<Field> fields = new ArrayList<>();
@@ -66,7 +69,7 @@ public class PODSerializer<Value> implements SerializationStrategy<Value> {
             for (Field field : fields) {
                 field.setAccessible(true);
                 try {
-                    field.set(ret, deserializePOD(field.getType(), dataInputStream));
+                    field.set(ret, deserializeAtom(field.getType(), dataInputStream));
                 } catch (IllegalAccessException | UnknownObjectException e2) {
                     throw new SerializationException("Can't access member to serialize it", e2);
                 }
@@ -76,7 +79,7 @@ public class PODSerializer<Value> implements SerializationStrategy<Value> {
 
     }
 
-    private void serializePOD(Object o, DataOutputStream dataOutputStream)
+    private void serializeAtom(Object o, DataOutputStream dataOutputStream)
             throws SerializationException, UnknownObjectException {
         try {
             if (o instanceof Integer) {
@@ -97,7 +100,7 @@ public class PODSerializer<Value> implements SerializationStrategy<Value> {
         }
     }
 
-    private Object deserializePOD(Class o, DataInputStream dataInputStream)
+    private Object deserializeAtom(Class o, DataInputStream dataInputStream)
             throws SerializationException, UnknownObjectException {
         try {
             if (o == Integer.class || o == int.class) {
@@ -117,7 +120,5 @@ public class PODSerializer<Value> implements SerializationStrategy<Value> {
             throw new SerializationException("IO POD serialization error", e);
         }
     }
-
-    private Class clazz;
 
 }

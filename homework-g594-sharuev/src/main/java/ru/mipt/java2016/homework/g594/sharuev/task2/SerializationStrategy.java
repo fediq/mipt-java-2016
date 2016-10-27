@@ -1,7 +1,7 @@
 package ru.mipt.java2016.homework.g594.sharuev.task2;
 
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 
 /**
  * Стратегия сериализации
@@ -14,11 +14,12 @@ public interface SerializationStrategy<Value> {
     /**
      * Записать сериализованное значение в поток
      */
-    void serializeToStream(Value value, OutputStream outputStream) throws SerializationException;
+    void serializeToStream(Value value,
+                           DataOutputStream outputStream) throws SerializationException;
 
     /**
      * Прочесть сериализованное значение из текущего места в потоке
      */
-    Value deserializeFromStream(InputStream inputStream) throws SerializationException;
+    Value deserializeFromStream(DataInputStream inputStream) throws SerializationException;
 
 }
