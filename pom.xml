@@ -86,6 +86,7 @@
         <module>homework-g597-smirnova</module>
         <module>homework-g596-grebenshchikova</module>
         <module>homework-g597-kochukov</module>
+        <module>workshop-materials</module>
 
     </modules>
 
@@ -214,7 +215,7 @@
                                     <property name="ignoreSetter" value="true"/>
                                     <property name="ignoreConstructorParameter" value="true"/>
                                 </module>
-                                <module name="IllegalCatch"/>
+                                <module name="IllegalThrows"/>
                                 <module name="IllegalInstantiation"/>
                                 <module name="InnerAssignment"/>
                                 <module name="MissingSwitchDefault"/>
