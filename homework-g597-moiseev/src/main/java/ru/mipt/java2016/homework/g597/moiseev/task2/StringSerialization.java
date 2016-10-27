@@ -13,6 +13,8 @@ import java.io.RandomAccessFile;
 public class StringSerialization implements Serialization<String> {
     private static StringSerialization instance = new StringSerialization();
 
+    private IntegerSerialization integerSerialization = IntegerSerialization.getInstance();
+
     public static StringSerialization getInstance() {
         return instance;
     }
@@ -22,11 +24,16 @@ public class StringSerialization implements Serialization<String> {
 
     @Override
     public void write(RandomAccessFile file, String object) throws IOException {
-        file.writeUTF(object);
+        byte[] bytes = object.getBytes();
+        integerSerialization.write(file, bytes.length);
+        file.write(bytes);
     }
 
     @Override
     public String read(RandomAccessFile file) throws IOException {
-        return file.readUTF();
+        int length = integerSerialization.read(file);
+        byte[] bytes = new byte[length];
+        file.readFully(bytes);
+        return new String(bytes);
     }
 }
