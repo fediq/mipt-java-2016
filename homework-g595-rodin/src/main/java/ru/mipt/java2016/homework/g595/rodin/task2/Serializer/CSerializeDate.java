@@ -1,4 +1,6 @@
-package ru.mipt.java2016.homework.g595.rodin.task2;
+package ru.mipt.java2016.homework.g595.rodin.task2.Serializer;
+
+import ru.mipt.java2016.homework.g595.rodin.task2.Serializer.ISerialize;
 
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -16,7 +18,8 @@ public class CSerializeDate implements ISerialize<Date> {
         if(argument == null){
             throw new IllegalArgumentException("Null Argument");
         }
-        return String.valueOf(argument);
+        CSerializeLong serializer = new CSerializeLong();
+        return serializer.serialize(argument.getTime());
     }
 
     @Override
@@ -24,13 +27,8 @@ public class CSerializeDate implements ISerialize<Date> {
         if(argument == null){
             throw new IllegalArgumentException("Null Argument");
         }
-        DateFormat format = new SimpleDateFormat("MMMM d, YYYY", Locale.ENGLISH);
-        Date result;
-        try{
-            result = format.parse(argument);
-        } catch (ParseException exception){
-            throw new IllegalArgumentException("Invalid Argument");
-        }
+        CSerializeLong serializer = new CSerializeLong();
+        Date result = new Date(serializer.deserialize(argument));
         return result;
     }
 

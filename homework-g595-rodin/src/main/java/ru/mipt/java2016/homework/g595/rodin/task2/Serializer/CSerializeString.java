@@ -1,4 +1,6 @@
-package ru.mipt.java2016.homework.g595.rodin.task2;
+package ru.mipt.java2016.homework.g595.rodin.task2.Serializer;
+
+import ru.mipt.java2016.homework.g595.rodin.task2.Serializer.ISerialize;
 
 /**
  * Created by Dmitry on 26.10.16.
@@ -18,11 +20,7 @@ public class CSerializeString implements ISerialize<String> {
         if(argument == null){
             throw new IllegalArgumentException("Null Argument");
         }
-        return null;
-    }
-
-    CSerializeString getInstance(){
-        return this;
+        return argument;
     }
 
 }

@@ -1,4 +1,4 @@
-package ru.mipt.java2016.homework.g595.rodin.task2;
+package ru.mipt.java2016.homework.g595.rodin.task2.Serializer;
 
 /**
  * Created by Dmitry on 24.10.16.
