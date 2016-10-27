@@ -11,16 +11,16 @@ import ru.mipt.java2016.homework.tests.task2.StudentKey;
 public class KrokhalevsKeyValueStorageTest extends AbstractSingleFileStorageTest {
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String path) {
-        return new KrokhalevsKeyValueStorage<String, String>(path);
+        return new KrokhalevsKeyValueStorage<String, String>(path, String.class, String.class);
     }
 
     @Override
     protected KeyValueStorage<Integer, Double> buildI2DStorage(String path) {
-        return new KrokhalevsKeyValueStorage<Integer, Double>(path);
+        return new KrokhalevsKeyValueStorage<Integer, Double>(path, Integer.class, Double.class);
     }
 
     @Override
     protected KeyValueStorage<StudentKey, Student> buildStudentsStorage(String path) {
-        return new KrokhalevsKeyValueStorage<StudentKey, Student>(path);
+        return new KrokhalevsKeyValueStorage<StudentKey, Student>(path, StudentKey.class, Student.class);
     }
 }
