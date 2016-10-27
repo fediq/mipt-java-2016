@@ -7,21 +7,19 @@ import java.io.IOException;
 /**
  * Created by Карим on 26.10.2016.
  */
-public class MyBinaryWriter <T> {
+public class MyBinaryHandler<T> {
     private MySerializator<T> tSerializator;
-    MyBinaryWriter(String type)
+    MyBinaryHandler(String type)
     {
         tSerializator = new MySerializator<T>(type);
     }
-    public T getFromInput(FileInputStream in, Integer offset) throws IOException {
-        Integer n = 4; // integer size in byte;
+    public T getFromInput(FileInputStream in) throws IOException {
+        Integer n = 8; // integer size in byte; maybe long
         byte[] lenByte = new byte[n];
-        in.read(lenByte, offset, n);
-        offset += n;
-        Integer len = tSerializator.toInteger(lenByte);
-        byte[] obj = new byte[len];
-        in.read(obj, offset, len);
-        offset += len;
+        in.read(lenByte);
+        long len = tSerializator.toLong(lenByte);
+        byte[] obj = new byte[(int)len];
+        in.read(obj);
         return tSerializator.deserialize(obj);
     }
     public void putToOutput(FileOutputStream out, T obj) throws IOException {
