@@ -1,39 +1,58 @@
 package ru.mipt.java2016.homework.g594.sharuev.task2;
 
+import org.objenesis.ObjenesisStd;
+
 import java.io.*;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.*;
+import java.rmi.activation.UnknownObjectException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 
 /*
  * Сериализатор для простых данных.
- * Простыми считаются Integer, Long, Boolean, Double, String, Date и классы, содержащие поля только из этих типов.
+ * Простыми считаются Integer/int, Long/long, Boolean/boolean, Double/double,
+ * String, Date и классы, содержащие поля только из этих типов. Поля предков тоже сериализуются.
+ * Подклассов - нет.
  */
 public class PODSerializer<Value> implements SerializationStrategy<Value> {
 
     private Class clazz;
-    PODSerializer(Class clazz_) {clazz = clazz_;}
-    
-    public void serializeToStream(Value value, OutputStream outputStream) throws SerializationException {
-        DataOutputStream dos = new DataOutputStream(outputStream);
-        Field[] fields = value.getClass().getDeclaredFields();
 
-        for (Field field : fields) {
-            field.setAccessible(true);
-            try {
-                serializePOD(field.get(value), dos);
-            } catch (IllegalAccessException e) {
-                throw new SerializationException("Can't access member to serialize it", e);
-            }
-        }
+    public PODSerializer(Class clazzVal) {
+        clazz = clazzVal;
     }
 
-    private void serializePOD(Object o, DataOutputStream outputStream) throws SerializationException
-    {
+    public void serializeToStream(Value value,
+                                  OutputStream outputStream) throws SerializationException {
+        DataOutputStream dos = new DataOutputStream(outputStream);
+
+        try {
+            serializePOD(value, dos);
+        } catch (UnknownObjectException e) {
+            // Это не тип, который сериализует serializePOD. Может, это класс с такими полями?
+            //Field[] fields = value.getClass().getDeclaredFields();
+            ArrayList<Field> fields = new ArrayList<>();
+            Class aClass = clazz;
+            do {
+                Collections.addAll(fields, aClass.getDeclaredFields());
+                aClass = aClass.getSuperclass();
+            } while (aClass != null);
+
+            for (Field field : fields) {
+                field.setAccessible(true);
+                try {
+                    serializePOD(field.get(value), dos);
+                } catch (UnknownObjectException | SerializationException | IllegalAccessException e2) {
+                    throw new SerializationException("Can't access member to serialize it", e2);
+                }
+            }
+        }
+
+    }
+
+    private void serializePOD(Object o, DataOutputStream outputStream)
+            throws SerializationException, UnknownObjectException {
         try {
             if (o instanceof Integer) {
                 outputStream.writeInt(((Integer) o));
@@ -42,98 +61,77 @@ public class PODSerializer<Value> implements SerializationStrategy<Value> {
             } else if (o instanceof Boolean) {
                 outputStream.writeBoolean((Boolean) o);
             } else if (o instanceof String) {
+                /*byte[] bytes = ((String)o).getBytes("UTF-8");
+                outputStream.writeInt(bytes.length);
+                outputStream.write(bytes);*/
                 outputStream.writeUTF((String) o);
             } else if (o instanceof Date) {
-                outputStream.writeUTF(new SimpleDateFormat(dateFormat).format((Date) o));
+                //serializePOD((new SimpleDateFormat()).format((Date) o), outputStream);
+                outputStream.writeLong(((Date) o).getTime());
             } else {
-                throw new SerializationException("Unknown POD type");
+                throw new UnknownObjectException("Unknown POD type");
             }
-        }catch (IOException e) {
+        } catch (IOException e) {
             throw new SerializationException("IO POD serialization error", e);
         }
     }
 
-    private Object deserializePOD(Object o, DataInputStream inputStream) throws SerializationException
-    {
+    private Object deserializePOD(Class o, DataInputStream inputStream)
+            throws SerializationException, UnknownObjectException {
         try {
-            if (o instanceof Integer) {
+            if (o == Integer.class || o == int.class) {
                 return inputStream.readInt();
-            } else if (o instanceof Double) {
+            } else if (o == Double.class || o == double.class) {
                 return inputStream.readDouble();
-            } else if (o instanceof Boolean) {
+            } else if (o == Boolean.class || o == boolean.class) {
                 return inputStream.readBoolean();
-            } else if (o instanceof String) {
+            } else if (o == String.class) {
+                /*int size = inputStream.readInt();
+                byte[] bytes = new byte[size];
+                inputStream.readFully(bytes);
+                return new String(bytes, "UTF-8");*/
                 return inputStream.readUTF();
-            } else if (o instanceof Date) {
-                try {
-                    return new SimpleDateFormat(dateFormat).parse(inputStream.readUTF());
+            } else if (o == Date.class) {
+                /*try {
+                    return new SimpleDateFormat().parse(inputStream.readUTF());
                 } catch (ParseException e) {
                     throw new IOException("Date parse failed");
-                }
+                }*/
+                return new Date(inputStream.readLong());
             } else {
-                throw new SerializationException("Unknown POD type");
+                throw new UnknownObjectException("Unknown POD type");
             }
-        }catch (IOException e) {
+        } catch (IOException e) {
             throw new SerializationException("IO POD serialization error", e);
         }
     }
 
     public Value deserializeFromStream(InputStream inputStream) throws SerializationException {
+        DataInputStream dis = new DataInputStream(inputStream);
         try {
-            DataInputStream dos = new DataInputStream(inputStream);
-            Field[] fields = value.getClass().getDeclaredFields();
+            return (Value) deserializePOD(clazz, dis);
+        } catch (UnknownObjectException e) {
+            //Field[] fields = clazz.getDeclaredFields();
+            ArrayList<Field> fields = new ArrayList<>();
+            Class aClass = clazz;
+            do {
+                Collections.addAll(fields, aClass.getDeclaredFields());
+                aClass = aClass.getSuperclass();
+            } while (aClass != null);
 
+            Value ret = (Value) (new ObjenesisStd()).getInstantiatorOf(clazz).newInstance();
             for (Field field : fields) {
                 field.setAccessible(true);
                 try {
-                    field.getGenericType() value = deserializePOD(field.get(value), dos);
-                } catch (IllegalAccessException e) {
-                    throw new SerializationException("Can't access member to serialize it", e);
+                    field.set(ret, deserializePOD(field.getType(), dis));
+                } catch (IllegalAccessException | UnknownObjectException e2) {
+                    throw new SerializationException("Can't access member to serialize it", e2);
                 }
             }
-        } catch ()
+            return ret;
+        }
+
     }
 
-    /**
-     * Сериализация класса.
-     * Сериализованное значение пишется побайтово: класс и все его поля, в том числе - рекурсивно поля родителя.
-     *
-     * @param value Значение, которое нужно сериализовать.
-     * @return ByteArrayOutputStream с записанным сериализованным значением.
-     * @throws SerializationException Если всё накрылось.
-     */
-    private ByteArrayOutputStream serializeToBOS(Value value) throws SerializationException {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ObjectOutputStream oos;
-        try {
-            oos = new ObjectOutputStream(bos);
-        } catch (IOException e) {
-            throw new SerializationException("Can't open serialization stream", e);
-        }
-        try {
-            oos.writeObject(value.getClass());
-        } catch (IOException e) {
-            throw new SerializationException("Can't write to serialization stream", e);
-        }
-        ArrayList<Field> fields = new ArrayList<>();
-        Class aClass = value.getClass();
-        do {
-            Collections.addAll(fields, aClass.getDeclaredFields());
-            aClass = aClass.getSuperclass();
-        } while (aClass != null);
-        for (Field field : fields) {
-            field.setAccessible(true);
-            try {
-                oos.writeObject(field.get(value));
-            } catch (IllegalAccessException e) {
-                throw new SerializationException("Can't access member to serialize it", e);
-            } catch (IOException e) {
-                throw new SerializationException("Can't write to serialization stream", e);
-            }
-        }
-        return bos;
-    }
-
-
-    final static String dateFormat = "yyyy-MM-dd";
+    //private final static String dateFormat = "yyyy-MM-dd ";
 }
