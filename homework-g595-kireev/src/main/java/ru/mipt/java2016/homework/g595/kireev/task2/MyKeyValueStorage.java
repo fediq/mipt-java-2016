@@ -17,7 +17,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private MyBinaryHandler<V> valueHandler;
     private MyBinaryHandler<Integer> lengthHandler;
     private String path;
-    private Integer realSize = 0;
+    private boolean isClosed = false;
 
     MyKeyValueStorage(String keyType, String valueType, String path) throws IOException {
         this.path = path;
@@ -34,39 +34,51 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public V read(K key) {
+        checkClose();
         return chache.get(key);
     }
 
     @Override
     public boolean exists(K key) {
+        checkClose();
         return chache.containsKey(key);
     }
 
     @Override
     public void write(K key, V value) {
+        checkClose();
         chache.put(key, value);
-        ++realSize;
     }
 
     @Override
     public void delete(K key) {
+        checkClose();
         chache.remove(key);
-        --realSize;
     }
 
     @Override
     public Iterator<K> readKeys() {
+        checkClose();
         return chache.keySet().iterator();
     }
 
     @Override
     public int size() {
+        checkClose();
         return chache.size();
     }
 
     @Override
     public void close() throws IOException {
+        isClosed = true;
         writeToFile();
+    }
+
+    private void checkClose()
+    {
+        if (isClosed) {
+            throw new RuntimeException("Operation after closing");
+        }
     }
 
     private void writeToFile() throws IOException {
