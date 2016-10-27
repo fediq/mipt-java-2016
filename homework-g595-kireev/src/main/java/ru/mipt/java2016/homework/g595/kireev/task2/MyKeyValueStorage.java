@@ -74,8 +74,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         writeToFile();
     }
 
-    private void checkClose()
-    {
+    private void checkClose() {
         if (isClosed) {
             throw new RuntimeException("Operation after closing");
         }
