@@ -1,14 +1,14 @@
-package ru.mipt.java2016.homework.g595.rodin.task2;
+package ru.mipt.java2016.homework.g595.rodin.task2.Serializer;
+
+import ru.mipt.java2016.homework.g595.rodin.task2.Serializer.ISerialize;
 
 /**
- * Created by Dmitry on 24.10.16.
+ * Created by Dmitry on 26.10.16.
  */
 
-
-public class CSerializeInteger implements ISerialize<Integer>{
-
+public class CSerializeDouble implements ISerialize<Double> {
     @Override
-    public String serialize(Integer argument) throws IllegalArgumentException {
+    public String serialize(Double argument) throws IllegalArgumentException {
         if(argument == null){
             throw new IllegalArgumentException("Null Argument");
         }
@@ -16,17 +16,16 @@ public class CSerializeInteger implements ISerialize<Integer>{
     }
 
     @Override
-    public Integer deserialize(String argument) throws IllegalArgumentException{
+    public Double deserialize(String argument) throws IllegalArgumentException {
         if(argument == null){
             throw new IllegalArgumentException("Null Argument");
         }
-        Integer result = 0;
+        Double result;
         try{
-            result = Integer.parseInt(argument);
+            result = Double.parseDouble(argument);
         } catch (NumberFormatException exception){
             throw new IllegalArgumentException("Invalid Argument");
         }
         return result;
     }
-
 }

@@ -1,4 +1,6 @@
-package ru.mipt.java2016.homework.g595.rodin.task2;
+package ru.mipt.java2016.homework.g595.rodin.task2.Serializer;
+
+import ru.mipt.java2016.homework.g595.rodin.task2.Serializer.ISerialize;
 
 import java.text.DateFormat;
 import java.text.ParseException;
