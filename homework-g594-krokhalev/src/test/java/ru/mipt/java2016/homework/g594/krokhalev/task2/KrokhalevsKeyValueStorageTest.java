@@ -15,12 +15,12 @@ public class KrokhalevsKeyValueStorageTest extends AbstractSingleFileStorageTest
     }
 
     @Override
-    protected KeyValueStorage<Integer, Double> buildI2DStorage(String path) {
+    protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) {
         return new KrokhalevsKeyValueStorage<Integer, Double>(path, Integer.class, Double.class);
     }
 
     @Override
-    protected KeyValueStorage<StudentKey, Student> buildStudentsStorage(String path) {
+    protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) {
         return new KrokhalevsKeyValueStorage<StudentKey, Student>(path, StudentKey.class, Student.class);
     }
 }
