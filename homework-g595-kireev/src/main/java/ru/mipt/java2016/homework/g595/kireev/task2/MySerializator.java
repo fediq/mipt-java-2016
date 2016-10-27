@@ -38,15 +38,15 @@ public class MySerializator<T> {
     byte[] serialize(T obj) {
         switch (type) {
             case "String":
-                return toBytes((String) obj);
+                return toByteArray((String) obj);
             case "Integer":
-                return toBytes((Integer) obj);
+                return toByteArray((Integer) obj);
             case "Double":
-                return toBytes((Double) obj);
+                return toByteArray((Double) obj);
             case "StudentKey":
-                return toBytes((StudentKey) obj);
+                return toByteArray((StudentKey) obj);
             case "Student":
-                return toBytes((Student) obj);
+                return toByteArray((Student) obj);
             default:
                 throw new RuntimeException("Fatal Error : unknown class");
         }
@@ -55,32 +55,67 @@ public class MySerializator<T> {
     T deserialize(byte[] bytes) {
         switch (type) {
             case "String":
-                return (T) toString(bytes);
+                return (T) bytesToString(bytes);
             case "Integer":
-                return (T) toInteger(bytes);
+                return (T) bytesToInteger(bytes);
             case "Double":
-                return (T) toDouble(bytes);
+                return (T) bytesToDouble(bytes);
             case "StudentKey":
-                return (T) toStudentKey(bytes);
+                return (T) bytesToStudentKey(bytes);
             case "Student":
-                return (T) toStudent(bytes);
+                return (T) bytesToStudent(bytes);
             default:
                 throw new RuntimeException("Fatal Error : unknown class");
         }
     }
 
-
-    private static byte[] toBytes(String str) {
-        byte[] strBytes = str.getBytes();
-        byte[] len = toBytes(strBytes.length);
-        return concatenateArrays(len, strBytes);
+    static Integer bytesToInteger(byte[] bytes) {
+        if (bytes.length != 4) {
+            throw new RuntimeException("Invalid Conversion");
+        } else {
+            return ByteBuffer.wrap(bytes).getInt();
+        }
     }
 
-    private static String toString(byte[] bytes) {
+    private static byte[] toByteArray(int val) {
+        byte[] bytes = new byte[4];
+        ByteBuffer.wrap(bytes).putInt(val);
+        return bytes;
+    }
+
+    static long bytesToLong(byte[] bytes) {
+        if (bytes.length != 8) {
+            throw new RuntimeException("Invalid Conversion");
+        } else {
+            return ByteBuffer.wrap(bytes).getLong();
+        }
+    }
+
+    static byte[] toByteArray(long val) {
+        byte[] bytes = new byte[8];
+        ByteBuffer.wrap(bytes).putLong(val);
+        return bytes;
+    }
+    
+    private static Double bytesToDouble(byte[] bytes) {
+        if (bytes.length != 8) {
+            throw new RuntimeException("Invalid Conversion");
+        } else {
+            return ByteBuffer.wrap(bytes).getDouble();
+        }
+    }
+
+    private static byte[] toByteArray(Double val) {
+        byte[] bytes = new byte[8];
+        ByteBuffer.wrap(bytes).putDouble(val);
+        return bytes;
+    }
+
+    private static String bytesToString(byte[] bytes) {
         if (bytes.length < 4) {
             throw new RuntimeException("Invalid Conversion");
         } else {
-            int len = toInteger(subArray(bytes, 0, 4));
+            int len = bytesToInteger(subArray(bytes, 0, 4));
             if (bytes.length != len + 4) {
                 throw new RuntimeException("Invalid Conversion");
             } else {
@@ -89,41 +124,14 @@ public class MySerializator<T> {
         }
     }
 
-    private static byte[] toBytes(int val) {
-        byte[] bytes = new byte[4];
-        ByteBuffer.wrap(bytes).putInt(val);
-        return bytes;
+    private static byte[] toByteArray(String str) {
+        byte[] strBytes = str.getBytes();
+        byte[] len = toByteArray(strBytes.length);
+        return arraysSum(len, strBytes);
     }
 
-    static Integer toInteger(byte[] bytes) {
-        if (bytes.length != 4) {
-            throw new RuntimeException("Invalid Conversion");
-        } else {
-            return ByteBuffer.wrap(bytes).getInt();
-        }
-    }
 
-    private static byte[] toBytes(Double val) {
-        byte[] bytes = new byte[8];
-        ByteBuffer.wrap(bytes).putDouble(val);
-        return bytes;
-    }
-
-    private static Double toDouble(byte[] bytes) {
-        if (bytes.length != 8) {
-            throw new RuntimeException("Invalid Conversion");
-        } else {
-            return ByteBuffer.wrap(bytes).getDouble();
-        }
-    }
-
-    private static byte[] toBytes(boolean b) {
-        byte[] ret = new byte[1];
-        ret[0] = b ? (byte) 1 : (byte) 0;
-        return ret;
-    }
-
-    private static boolean toBoolean(byte[] bytes) {
+    private static boolean bytesToBoolean(byte[] bytes) {
         if (bytes.length != 1) {
             throw new RuntimeException("Invalid Conversion");
         } else {
@@ -131,96 +139,91 @@ public class MySerializator<T> {
         }
     }
 
-    static byte[] toBytes(long val) {
-        byte[] bytes = new byte[8];
-        ByteBuffer.wrap(bytes).putLong(val);
-        return bytes;
+    private static byte[] toByteArray(boolean b) {
+        byte[] ret = new byte[1];
+        ret[0] = b ? (byte) 1 : (byte) 0;
+        return ret;
     }
 
-    static long toLong(byte[] bytes) {
-        if (bytes.length != 8) {
-            throw new RuntimeException("Invalid Conversion");
-        } else {
-            return ByteBuffer.wrap(bytes).getLong();
-        }
+    private static Date bytesToDate(byte[] bytes) {
+        return new Date(bytesToLong(bytes));
     }
 
-    private static byte[] toBytes(Date d) {
-        return toBytes(d.getTime());
+    private static byte[] toByteArray(Date d) {
+        return toByteArray(d.getTime());
     }
 
-    private static Date toDate(byte[] bytes) {
-        return new Date(toLong(bytes));
+    private static byte[] toByteArray(StudentKey tmp) {
+        byte[] groupId = toByteArray(tmp.getGroupId());
+        byte[] name = toByteArray(tmp.getName());
+        return arraysSum(groupId, name);
     }
 
-    private static byte[] toBytes(StudentKey sk) {
-        byte[] groupId = toBytes(sk.getGroupId());
-        byte[] name = toBytes(sk.getName());
-        return concatenateArrays(groupId, name);
-    }
-
-    private static StudentKey toStudentKey(byte[] b) {
-        if (b.length < 4) {
+    private static StudentKey bytesToStudentKey(byte[] b) {
+        if (b.length < 8) { //4 for group and 4 for string length
             throw new RuntimeException("Invalid Conversion");
         } else {
             byte[] groupId = subArray(b, 0, 4);
             byte[] name = subArray(b, 4, b.length);
-            return new StudentKey(toInteger(groupId), toString(name));
+            return new StudentKey(bytesToInteger(groupId), bytesToString(name));
         }
     }
 
-    private static byte[] toBytes(Student obj) {
-        byte[] groupId = toBytes(obj.getGroupId());
-        byte[] name = toBytes(obj.getName());
-        byte[] hometown = toBytes(obj.getHometown());
-        byte[] birthDate = toBytes(obj.getBirthDate());
-        byte[] hasDormitory = toBytes(obj.isHasDormitory());
-        byte[] averageScore = toBytes(obj.getAverageScore());
+    private static byte[] toByteArray(Student obj) {
+        byte[] groupId = toByteArray(obj.getGroupId());
+        byte[] name = toByteArray(obj.getName());
+        byte[] hometown = toByteArray(obj.getHometown());
+        byte[] birthDate = toByteArray(obj.getBirthDate());
+        byte[] hasDormitory = toByteArray(obj.isHasDormitory());
+        byte[] averageScore = toByteArray(obj.getAverageScore());
 
-        return concatenateArrays(groupId, name, hometown, birthDate, hasDormitory, averageScore);
+        return arraysSum(groupId, name, hometown, birthDate, hasDormitory, averageScore);
     }
 
-    private static Student toStudent(byte[] b) {
-        int i = 0;
-        int len1;
-        int len2;
+    private static Student bytesToStudent(byte[] b) {
+        if (b.length < 8) {
+            throw new RuntimeException("Invalid Conversion");
+        } else {
+            int i = 0;
+            int nameLength;
+            int hometownLength;
 
-        byte[] groupId = subArray(b, i, i + 4);
-        i = i + 4;
+            byte[] groupId = subArray(b, i, i += 4);
 
-        len1 = 4 + toInteger(subArray(b, i, i + 4));
-        byte[] name = subArray(b, i, i + len1);
-        i = i + len1;
+            nameLength = 4 + bytesToInteger(subArray(b, i, i + 4));
+            byte[] name = subArray(b, i, i += nameLength);
 
-        len2 = 4 + toInteger(subArray(b, i, i + 4));
-        byte[] hometown = subArray(b, i, i + len2);
-        i = i + len2;
+            hometownLength = 4 + bytesToInteger(subArray(b, i, i + 4));
+            byte[] hometown = subArray(b, i, i += hometownLength);
 
-        byte[] birthDate = subArray(b, i, i + 8);
-        i = i + 8;
+            byte[] birthDate = subArray(b, i, i += 8);
 
-        byte[] hasDormitory = subArray(b, i, i + 1);
-        i = i + 1;
+            byte[] hasDormitory = subArray(b, i, i += 1);
 
-        byte[] averageScore = subArray(b, i, i + 8);
-        //i = i + 8;
+            byte[] averageScore = subArray(b, i, i += 8);
 
-        return new Student(toInteger(groupId), toString(name), toString(hometown),
-                toDate(birthDate), toBoolean(hasDormitory), toDouble(averageScore));
+            return new Student(bytesToInteger(groupId), bytesToString(name), bytesToString(hometown),
+                    bytesToDate(birthDate), bytesToBoolean(hasDormitory), bytesToDouble(averageScore));
+        }
     }
 
-    private static byte[] concatenateArrays(byte[]... arrays) {
+    byte[] prepareToDeserialize (byte[] b, Integer i, Integer len)
+    {
+        return subArray(b, i, i += len);
+    }
+
+    private static byte[] arraysSum(byte[]... arrays) {
         int len = 0;
         for (byte[] array : arrays) {
             len += array.length;
         }
-        byte[] ret = new byte[len];
-        int retIndex = 0;
+        byte[] completeArray = new byte[len];
+        int offset = 0;
         for (byte[] array : arrays) {
-            System.arraycopy(array, 0, ret, retIndex, array.length);
-            retIndex += array.length;
+            System.arraycopy(array, 0, completeArray, offset, array.length);
+            offset += array.length;
         }
-        return ret;
+        return completeArray;
     }
 
     private static byte[] subArray(byte[] bytes, int l, int r) {

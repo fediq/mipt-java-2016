@@ -13,18 +13,20 @@ public class MyBinaryHandler<T> {
     {
         tSerializator = new MySerializator<T>(type);
     }
+
     public T getFromInput(FileInputStream in) throws IOException {
-        Integer n = 8; // integer size in byte; maybe long
-        byte[] lenByte = new byte[n];
+        byte[] lenByte = new byte[8];
         in.read(lenByte);
-        long len = tSerializator.toLong(lenByte);
+        long len = tSerializator.bytesToLong(lenByte);
+
         byte[] obj = new byte[(int)len];
         in.read(obj);
         return tSerializator.deserialize(obj);
     }
+
     public void putToOutput(FileOutputStream out, T obj) throws IOException {
         byte[] serT = tSerializator.serialize(obj);
-        byte[] serTLen = tSerializator.toBytes(serT.length);
+        byte[] serTLen = tSerializator.toByteArray(serT.length);
         out.write(serTLen);
         out.write(serT);
     }
