@@ -11,12 +11,6 @@ import java.util.Map;
 public class MyKeyValueStorage<K, V> implements
         ru.mipt.java2016.homework.base.task2.KeyValueStorage {
 
-    private Map<K, V> memTable;
-
-    private RandomAccessFile raf;
-    private SerializationStrategy<K> keySerializationStrategy;
-    private SerializationStrategy<V> valueSerializationStrategy;
-
     public MyKeyValueStorage(String path, SerializationStrategy<K> keySerializationStrategyVal,
                              SerializationStrategy<V> valueSerializationStrategyVal) throws KeyValueStorageException {
         File fil = Paths.get(path, "storage.db").toFile();
@@ -33,10 +27,10 @@ public class MyKeyValueStorage<K, V> implements
             }
         }
         try {
-            raf = new RandomAccessFile(fil, "rw");
+            databaseFile = new RandomAccessFile(fil, "rw");
             if (isNew) {
-                raf.writeLong(0);
-                raf.seek(0);
+                databaseFile.writeLong(0);
+                databaseFile.seek(0);
             }
         } catch (FileNotFoundException e) {
             throw new KeyValueStorageException("File not found", e);
@@ -44,7 +38,7 @@ public class MyKeyValueStorage<K, V> implements
             throw new KeyValueStorageException("Can't write to file", e);
         }
 
-        memTable = new HashMap<>();
+        memHashMap = new HashMap<>();
         keySerializationStrategy = keySerializationStrategyVal;
         valueSerializationStrategy = valueSerializationStrategyVal;
         try {
@@ -55,32 +49,32 @@ public class MyKeyValueStorage<K, V> implements
     }
 
     public Object read(Object key) {
-        return memTable.get(key);
+        return memHashMap.get(key);
     }
 
     public boolean exists(Object key) {
-        return memTable.containsKey(key);
+        return memHashMap.containsKey(key);
     }
 
     public void write(Object key, Object value) {
-        memTable.put((K) key, (V) value);
+        memHashMap.put((K) key, (V) value);
     }
 
     public void delete(Object key) {
-        memTable.remove(key);
+        memHashMap.remove(key);
     }
 
     public Iterator readKeys() {
-        return memTable.keySet().iterator();
+        return memHashMap.keySet().iterator();
     }
 
     public int size() {
-        return memTable.size();
+        return memHashMap.size();
     }
 
     public void close() throws IOException {
         dumpToDisk();
-        raf.close();
+        databaseFile.close();
     }
 
     // Формат файла: long количество ключей, K ключ, long сдвиг, ..., V значение, ...
@@ -88,14 +82,14 @@ public class MyKeyValueStorage<K, V> implements
         try {
             ArrayList<Long> valueBegins = new ArrayList<>();
             ArrayList<K> keys = new ArrayList<K>();
-            DataInputStream in = new DataInputStream(Channels.newInputStream(raf.getChannel()));
-            long numEntries = raf.readLong();
+            DataInputStream dataInputStream = new DataInputStream(Channels.newInputStream(databaseFile.getChannel()));
+            long numberOfEntries = databaseFile.readLong();
 
             // Считываем ключи и оффсеты соответствующих значений
-            for (long i = 0; i < numEntries; ++i) {
+            for (long i = 0; i < numberOfEntries; ++i) {
                 try {
-                    keys.add(keySerializationStrategy.deserializeFromStream(in));
-                    long offset = raf.readLong();
+                    keys.add(keySerializationStrategy.deserializeFromStream(dataInputStream));
+                    long offset = databaseFile.readLong();
                     valueBegins.add(offset);
 
                 } catch (SerializationException e) {
@@ -103,17 +97,17 @@ public class MyKeyValueStorage<K, V> implements
                 }
             }
 
-            if (numEntries != valueBegins.size()) {
+            if (numberOfEntries != valueBegins.size()) {
                 throw new SerializationException("Mismatching count and actual amount of entries");
             }
 
             // Считываем значения и пушим в хранилище в памяти.
-            for (int i = 0; i < numEntries; ++i) {
+            for (int i = 0; i < numberOfEntries; ++i) {
                 try {
-                    raf.seek(valueBegins.get(i));
+                    databaseFile.seek(valueBegins.get(i));
 
-                    V value = valueSerializationStrategy.deserializeFromStream(in);
-                    memTable.put(keys.get(i), value);
+                    V value = valueSerializationStrategy.deserializeFromStream(dataInputStream);
+                    memHashMap.put(keys.get(i), value);
                 } catch (SerializationException e) {
                     throw new IOException("Serialization error");
                 }
@@ -127,16 +121,16 @@ public class MyKeyValueStorage<K, V> implements
 
         ArrayList<Long> keyEnds = new ArrayList<>();
         ArrayList<Long> valueBegins = new ArrayList<>();
-        raf.seek(0);
-        raf.writeLong(size());
-        DataOutputStream os = new DataOutputStream(Channels.newOutputStream(raf.getChannel()));
+        databaseFile.seek(0);
+        databaseFile.writeLong(size());
+        DataOutputStream os = new DataOutputStream(Channels.newOutputStream(databaseFile.getChannel()));
 
         // Пишем ключи и оставляем место под сдвиги.
-        for (K entry : memTable.keySet()) {
+        for (K entry : memHashMap.keySet()) {
             try {
                 keySerializationStrategy.serializeToStream(entry, os);
-                keyEnds.add(raf.getFilePointer());
-                raf.seek(raf.getFilePointer() + Long.BYTES);
+                keyEnds.add(databaseFile.getFilePointer());
+                databaseFile.seek(databaseFile.getFilePointer() + Long.BYTES);
                 //valueBegins.add(valueBegins[valueBegins.size()-1] + entry.getValue().size());
 
             } catch (SerializationException e) {
@@ -144,9 +138,9 @@ public class MyKeyValueStorage<K, V> implements
             }
         }
         // Пишем значения подряд, заполняем массив адресов.
-        for (V value : memTable.values()) {
+        for (V value : memHashMap.values()) {
             try {
-                valueBegins.add(raf.getFilePointer());
+                valueBegins.add(databaseFile.getFilePointer());
                 valueSerializationStrategy.serializeToStream(value, os);
             } catch (SerializationException e) {
                 throw new IOException("Serialization error");
@@ -154,9 +148,14 @@ public class MyKeyValueStorage<K, V> implements
         }
         // Дописываем в пропуски адреса значений.
         for (int i = 0; i < keyEnds.size(); ++i) {
-            raf.seek(keyEnds.get(i));
-            raf.writeLong(valueBegins.get(i));
+            databaseFile.seek(keyEnds.get(i));
+            databaseFile.writeLong(valueBegins.get(i));
         }
     }
+
+    private Map<K, V> memHashMap;
+    private RandomAccessFile databaseFile;
+    private SerializationStrategy<K> keySerializationStrategy;
+    private SerializationStrategy<V> valueSerializationStrategy;
 
 }

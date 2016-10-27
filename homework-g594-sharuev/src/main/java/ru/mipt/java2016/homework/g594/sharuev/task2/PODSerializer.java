@@ -17,32 +17,30 @@ import java.util.Date;
  */
 public class PODSerializer<Value> implements SerializationStrategy<Value> {
 
-    private Class clazz;
-
     public PODSerializer(Class clazzVal) {
         clazz = clazzVal;
     }
 
     public void serializeToStream(Value value,
                                   OutputStream outputStream) throws SerializationException {
-        DataOutputStream dos = new DataOutputStream(outputStream);
+        DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
 
         try {
-            serializePOD(value, dos);
+            serializePOD(value, dataOutputStream);
         } catch (UnknownObjectException e) {
             // Это не тип, который сериализует serializePOD. Может, это класс с такими полями?
             //Field[] fields = value.getClass().getDeclaredFields();
             ArrayList<Field> fields = new ArrayList<>();
-            Class aClass = clazz;
+            Class classToSerialize = clazz;
             do {
-                Collections.addAll(fields, aClass.getDeclaredFields());
-                aClass = aClass.getSuperclass();
-            } while (aClass != null);
+                Collections.addAll(fields, classToSerialize.getDeclaredFields());
+                classToSerialize = classToSerialize.getSuperclass();
+            } while (classToSerialize != null);
 
             for (Field field : fields) {
                 field.setAccessible(true);
                 try {
-                    serializePOD(field.get(value), dos);
+                    serializePOD(field.get(value), dataOutputStream);
                 } catch (UnknownObjectException | SerializationException | IllegalAccessException e2) {
                     throw new SerializationException("Can't access member to serialize it", e2);
                 }
@@ -51,79 +49,24 @@ public class PODSerializer<Value> implements SerializationStrategy<Value> {
 
     }
 
-    private void serializePOD(Object o, DataOutputStream outputStream)
-            throws SerializationException, UnknownObjectException {
-        try {
-            if (o instanceof Integer) {
-                outputStream.writeInt(((Integer) o));
-            } else if (o instanceof Double) {
-                outputStream.writeDouble((Double) o);
-            } else if (o instanceof Boolean) {
-                outputStream.writeBoolean((Boolean) o);
-            } else if (o instanceof String) {
-                /*byte[] bytes = ((String)o).getBytes("UTF-8");
-                outputStream.writeInt(bytes.length);
-                outputStream.write(bytes);*/
-                outputStream.writeUTF((String) o);
-            } else if (o instanceof Date) {
-                //serializePOD((new SimpleDateFormat()).format((Date) o), outputStream);
-                outputStream.writeLong(((Date) o).getTime());
-            } else {
-                throw new UnknownObjectException("Unknown POD type");
-            }
-        } catch (IOException e) {
-            throw new SerializationException("IO POD serialization error", e);
-        }
-    }
-
-    private Object deserializePOD(Class o, DataInputStream inputStream)
-            throws SerializationException, UnknownObjectException {
-        try {
-            if (o == Integer.class || o == int.class) {
-                return inputStream.readInt();
-            } else if (o == Double.class || o == double.class) {
-                return inputStream.readDouble();
-            } else if (o == Boolean.class || o == boolean.class) {
-                return inputStream.readBoolean();
-            } else if (o == String.class) {
-                /*int size = inputStream.readInt();
-                byte[] bytes = new byte[size];
-                inputStream.readFully(bytes);
-                return new String(bytes, "UTF-8");*/
-                return inputStream.readUTF();
-            } else if (o == Date.class) {
-                /*try {
-                    return new SimpleDateFormat().parse(inputStream.readUTF());
-                } catch (ParseException e) {
-                    throw new IOException("Date parse failed");
-                }*/
-                return new Date(inputStream.readLong());
-            } else {
-                throw new UnknownObjectException("Unknown POD type");
-            }
-        } catch (IOException e) {
-            throw new SerializationException("IO POD serialization error", e);
-        }
-    }
-
     public Value deserializeFromStream(InputStream inputStream) throws SerializationException {
-        DataInputStream dis = new DataInputStream(inputStream);
+        DataInputStream dataInputStream = new DataInputStream(inputStream);
         try {
-            return (Value) deserializePOD(clazz, dis);
+            return (Value) deserializePOD(clazz, dataInputStream);
         } catch (UnknownObjectException e) {
             //Field[] fields = clazz.getDeclaredFields();
             ArrayList<Field> fields = new ArrayList<>();
-            Class aClass = clazz;
+            Class toSerialize = clazz;
             do {
-                Collections.addAll(fields, aClass.getDeclaredFields());
-                aClass = aClass.getSuperclass();
-            } while (aClass != null);
+                Collections.addAll(fields, toSerialize.getDeclaredFields());
+                toSerialize = toSerialize.getSuperclass();
+            } while (toSerialize != null);
 
             Value ret = (Value) (new ObjenesisStd()).getInstantiatorOf(clazz).newInstance();
             for (Field field : fields) {
                 field.setAccessible(true);
                 try {
-                    field.set(ret, deserializePOD(field.getType(), dis));
+                    field.set(ret, deserializePOD(field.getType(), dataInputStream));
                 } catch (IllegalAccessException | UnknownObjectException e2) {
                     throw new SerializationException("Can't access member to serialize it", e2);
                 }
@@ -133,5 +76,48 @@ public class PODSerializer<Value> implements SerializationStrategy<Value> {
 
     }
 
-    //private final static String dateFormat = "yyyy-MM-dd ";
+    private void serializePOD(Object o, DataOutputStream dataOutputStream)
+            throws SerializationException, UnknownObjectException {
+        try {
+            if (o instanceof Integer) {
+                dataOutputStream.writeInt(((Integer) o));
+            } else if (o instanceof Double) {
+                dataOutputStream.writeDouble((Double) o);
+            } else if (o instanceof Boolean) {
+                dataOutputStream.writeBoolean((Boolean) o);
+            } else if (o instanceof String) {
+                dataOutputStream.writeUTF((String) o);
+            } else if (o instanceof Date) {
+                dataOutputStream.writeLong(((Date) o).getTime());
+            } else {
+                throw new UnknownObjectException("Unknown POD type");
+            }
+        } catch (IOException e) {
+            throw new SerializationException("IO POD serialization error", e);
+        }
+    }
+
+    private Object deserializePOD(Class o, DataInputStream dataInputStream)
+            throws SerializationException, UnknownObjectException {
+        try {
+            if (o == Integer.class || o == int.class) {
+                return dataInputStream.readInt();
+            } else if (o == Double.class || o == double.class) {
+                return dataInputStream.readDouble();
+            } else if (o == Boolean.class || o == boolean.class) {
+                return dataInputStream.readBoolean();
+            } else if (o == String.class) {
+                return dataInputStream.readUTF();
+            } else if (o == Date.class) {
+                return new Date(dataInputStream.readLong());
+            } else {
+                throw new UnknownObjectException("Unknown POD type");
+            }
+        } catch (IOException e) {
+            throw new SerializationException("IO POD serialization error", e);
+        }
+    }
+
+    private Class clazz;
+
 }
