@@ -5,7 +5,7 @@ import java.io.RandomAccessFile;
 import java.util.Date;
 
 /**
- * Стратегия сериализации для Double
+ * Стратегия сериализации для Date
  *
  * @author Fedor Moiseev
  * @since 26.10.2016
