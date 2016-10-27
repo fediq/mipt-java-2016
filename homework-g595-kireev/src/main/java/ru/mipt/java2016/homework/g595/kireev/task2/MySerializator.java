@@ -16,7 +16,7 @@ import java.util.Set;
  */
 public class MySerializator<T> {
     private final String type;
-    private static final Set<String> usableTypes;
+    private static final Set<String> USABLE_TYPES;
 
     static {
         Set<String> set = new HashSet<>();
@@ -25,11 +25,11 @@ public class MySerializator<T> {
         set.add("String");
         set.add("StudentKey");
         set.add("Student");
-        usableTypes = Collections.unmodifiableSet(set);
+        USABLE_TYPES = Collections.unmodifiableSet(set);
     }
 
     MySerializator(String type) {
-        if (!usableTypes.contains(type)) {
+        if (!USABLE_TYPES.contains(type)) {
             throw new RuntimeException("Wrong type");
         }
         this.type = type;
@@ -130,7 +130,6 @@ public class MySerializator<T> {
         return arraysSum(len, strBytes);
     }
 
-
     private static boolean bytesToBoolean(byte[] bytes) {
         if (bytes.length != 1) {
             throw new RuntimeException("Invalid Conversion");
@@ -188,29 +187,29 @@ public class MySerializator<T> {
             int nameLength;
             int hometownLength;
 
-            byte[] groupId = subArray(b, i, i += 4);
+            byte[] groupId = subArray(b, i, i + 4);
+            i += 4;
 
             nameLength = 4 + bytesToInteger(subArray(b, i, i + 4));
-            byte[] name = subArray(b, i, i += nameLength);
+            byte[] name = subArray(b, i, i + nameLength);
+            i += nameLength;
 
             hometownLength = 4 + bytesToInteger(subArray(b, i, i + 4));
-            byte[] hometown = subArray(b, i, i += hometownLength);
+            byte[] hometown = subArray(b, i, i + hometownLength);
+            i += hometownLength;
 
-            byte[] birthDate = subArray(b, i, i += 8);
+            byte[] birthDate = subArray(b, i, i + 8);
+            i += 8;
 
-            byte[] hasDormitory = subArray(b, i, i += 1);
+            byte[] hasDormitory = subArray(b, i, i + 1);
+            i += 1;
 
-            byte[] averageScore = subArray(b, i, i += 8);
-
+            byte[] averageScore = subArray(b, i, i + 8);
             return new Student(bytesToInteger(groupId), bytesToString(name), bytesToString(hometown),
                     bytesToDate(birthDate), bytesToBoolean(hasDormitory), bytesToDouble(averageScore));
         }
     }
 
-    byte[] prepareToDeserialize (byte[] b, Integer i, Integer len)
-    {
-        return subArray(b, i, i += len);
-    }
 
     private static byte[] arraysSum(byte[]... arrays) {
         int len = 0;
@@ -227,8 +226,7 @@ public class MySerializator<T> {
     }
 
     private static byte[] subArray(byte[] bytes, int l, int r) {
-        if ((0 <= l) && (0 <= r) && (l <= bytes.length)
-                && (r <= bytes.length) && (l <= r)) {
+        if ((0 <= l) && (0 <= r) && (l <= r) && (r <= bytes.length)) {
             byte[] ret = new byte[r - l];
             System.arraycopy(bytes, l, ret, 0, r - l);
             return ret;

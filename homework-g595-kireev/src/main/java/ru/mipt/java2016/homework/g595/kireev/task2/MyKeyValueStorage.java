@@ -12,7 +12,7 @@ import java.util.Map;
  */
 public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private final String dataName = "/storage.db";
-    private HashMap <K, V> chache = new HashMap<K, V>();
+    private HashMap<K, V> chache = new HashMap<K, V>();
     private MyBinaryHandler<K> keyHandler;
     private MyBinaryHandler<V> valueHandler;
     private MyBinaryHandler<Integer> lengthHandler;
@@ -81,19 +81,20 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private void takeChacheFromFile() throws IOException {
         File inFile = new File(path + dataName);
-        if (!inFile.exists())
+        if (!inFile.exists()) {
             inFile.createNewFile();
+        }
         FileInputStream in = new FileInputStream(path + dataName);
-        if (!chache.isEmpty())
+        if (!chache.isEmpty()) {
             chache.clear();
+        }
         Integer n;
         if (in.available() == 0) {
             n = 0;
         } else {
             n = lengthHandler.getFromInput(in);
         }
-        for (int i = 0; i < n; ++i)
-        {
+        for (int i = 0; i < n; ++i) {
             chache.put(keyHandler.getFromInput(in),
                     valueHandler.getFromInput(in));
         }

@@ -9,8 +9,8 @@ import java.io.IOException;
  */
 public class MyBinaryHandler<T> {
     private MySerializator<T> tSerializator;
-    MyBinaryHandler(String type)
-    {
+
+    MyBinaryHandler(String type) {
         tSerializator = new MySerializator<T>(type);
     }
 
@@ -19,7 +19,7 @@ public class MyBinaryHandler<T> {
         in.read(lenByte);
         long len = tSerializator.bytesToLong(lenByte);
 
-        byte[] obj = new byte[(int)len];
+        byte[] obj = new byte[ (int) len];
         in.read(obj);
         return tSerializator.deserialize(obj);
     }
