@@ -8,10 +8,6 @@ public class MyKeyValueStorageFactory implements KeyValueStorageFactory {
     public <K, V> KeyValueStorage<K, V> open(String path,
                                              SerializationStrategy<K> keySerializationStrategy,
                                              SerializationStrategy<V> valueSerializationStrategy) {
-        try {
-            return new MyKeyValueStorage<K, V>(path, keySerializationStrategy, valueSerializationStrategy);
-        } catch (KeyValueStorageException e) {
-            return null;
-        }
+        return new MyKeyValueStorage<K, V>(path, keySerializationStrategy, valueSerializationStrategy);
     }
 }

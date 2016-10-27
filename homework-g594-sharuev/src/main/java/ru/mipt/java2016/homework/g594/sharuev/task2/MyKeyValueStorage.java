@@ -12,18 +12,18 @@ public class MyKeyValueStorage<K, V> implements
         ru.mipt.java2016.homework.base.task2.KeyValueStorage {
 
     public MyKeyValueStorage(String path, SerializationStrategy<K> keySerializationStrategyVal,
-                             SerializationStrategy<V> valueSerializationStrategyVal) throws KeyValueStorageException {
+                             SerializationStrategy<V> valueSerializationStrategyVal) {
         File fil = Paths.get(path, "storage.db").toFile();
         boolean isNew = false;
         if (!fil.exists()) {
             try {
                 if (!fil.createNewFile()) {
-                    throw new KeyValueStorageException(
+                    throw new RuntimeException(
                             "File was created by somebody when we tried to create it");
                 }
                 isNew = true;
             } catch (IOException e) {
-                throw new KeyValueStorageException("Failed to create file", e);
+                throw new RuntimeException("Failed to create file", e);
             }
         }
         try {
@@ -33,9 +33,9 @@ public class MyKeyValueStorage<K, V> implements
                 databaseFile.seek(0);
             }
         } catch (FileNotFoundException e) {
-            throw new KeyValueStorageException("File not found", e);
+            throw new RuntimeException("File not found", e);
         } catch (IOException e) {
-            throw new KeyValueStorageException("Can't write to file", e);
+            throw new RuntimeException("Can't write to file", e);
         }
 
         memHashMap = new HashMap<>();
@@ -44,37 +44,46 @@ public class MyKeyValueStorage<K, V> implements
         try {
             readFromDisk();
         } catch (SerializationException e) {
-            throw new KeyValueStorageException("Failed to load database from file", e);
+            throw new RuntimeException("Failed to load database from file", e);
         }
+        isOpen = true;
     }
 
     public Object read(Object key) {
+        checkOpen();
         return memHashMap.get(key);
     }
 
     public boolean exists(Object key) {
+        checkOpen();
         return memHashMap.containsKey(key);
     }
 
     public void write(Object key, Object value) {
+        checkOpen();
         memHashMap.put((K) key, (V) value);
     }
 
     public void delete(Object key) {
+        checkOpen();
         memHashMap.remove(key);
     }
 
     public Iterator readKeys() {
+        checkOpen();
         return memHashMap.keySet().iterator();
     }
 
     public int size() {
+        checkOpen();
         return memHashMap.size();
     }
 
     public void close() throws IOException {
+        checkOpen();
         dumpToDisk();
         databaseFile.close();
+        isOpen = false;
     }
 
     // Формат файла: long количество ключей, K ключ, long сдвиг, ..., V значение, ...
@@ -82,7 +91,8 @@ public class MyKeyValueStorage<K, V> implements
         try {
             ArrayList<Long> valueBegins = new ArrayList<>();
             ArrayList<K> keys = new ArrayList<K>();
-            DataInputStream dataInputStream = new DataInputStream(Channels.newInputStream(databaseFile.getChannel()));
+            DataInputStream dataInputStream = new DataInputStream(
+                    Channels.newInputStream(databaseFile.getChannel()));
             long numberOfEntries = databaseFile.readLong();
 
             // Считываем ключи и оффсеты соответствующих значений
@@ -123,7 +133,8 @@ public class MyKeyValueStorage<K, V> implements
         ArrayList<Long> valueBegins = new ArrayList<>();
         databaseFile.seek(0);
         databaseFile.writeLong(size());
-        DataOutputStream os = new DataOutputStream(Channels.newOutputStream(databaseFile.getChannel()));
+        DataOutputStream os = new DataOutputStream(
+                Channels.newOutputStream(databaseFile.getChannel()));
 
         // Пишем ключи и оставляем место под сдвиги.
         for (K entry : memHashMap.keySet()) {
@@ -153,9 +164,16 @@ public class MyKeyValueStorage<K, V> implements
         }
     }
 
+    private void checkOpen() {
+        if (!isOpen) {
+            throw new RuntimeException("Can't access closed storage");
+        }
+    }
+
     private Map<K, V> memHashMap;
     private RandomAccessFile databaseFile;
     private SerializationStrategy<K> keySerializationStrategy;
     private SerializationStrategy<V> valueSerializationStrategy;
+    private boolean isOpen;
 
 }
