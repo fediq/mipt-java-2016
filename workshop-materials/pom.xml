@@ -9,7 +9,8 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>homework-g595-romanenko</artifactId>
+    <artifactId>workshop-materials</artifactId>
+
     <dependencies>
         <dependency>
             <groupId>ru.mipt.java2016</groupId>
@@ -22,7 +23,13 @@
             <artifactId>homework-tests</artifactId>
             <version>1.0.0</version>
         </dependency>
-        
+
+        <dependency>
+            <groupId>com.googlecode.json-simple</groupId>
+            <artifactId>json-simple</artifactId>
+            <version>RELEASE</version>
+        </dependency>
     </dependencies>
+
 
 </project>
