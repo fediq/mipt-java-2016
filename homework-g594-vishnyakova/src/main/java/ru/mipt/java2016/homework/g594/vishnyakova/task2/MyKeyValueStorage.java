@@ -16,6 +16,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private HashMap<K, V> map;
     private SerializationStrategy<K> keySerializator;
     private SerializationStrategy<V> valSerializator;
+    private boolean opened;
 
     public MyKeyValueStorage(String typ, String path, SerializationStrategy sKey, SerializationStrategy sVal) {
         type = typ;
@@ -23,6 +24,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         keySerializator = sKey;
         valSerializator = sVal;
         map = new HashMap<K, V>();
+        opened = true;
         File file = new File(fileName);
 
         if (!file.exists()) {
@@ -59,36 +61,43 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public V read(K key) {
+        checkIfNotOpened();
         return map.get(key);
     }
 
     @Override
     public boolean exists(K key) {
+        checkIfNotOpened();
         return map.keySet().contains(key);
     }
 
     @Override
     public void write(K key, V value) {
+        checkIfNotOpened();
         map.put(key, value);
     }
 
     @Override
     public void delete(K key) {
+        checkIfNotOpened();
         map.remove(key);
     }
 
     @Override
     public Iterator readKeys() {
+        checkIfNotOpened();
         return map.keySet().iterator();
     }
 
     @Override
     public int size() {
+        checkIfNotOpened();
         return map.size();
     }
 
     @Override
     public void close() {
+        checkIfNotOpened();
         try (DataOutputStream wr = new DataOutputStream(new FileOutputStream(fileName))) {
             wr.writeUTF(type);
             wr.writeInt(map.size());
@@ -99,8 +108,15 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 valSerializator.write(wr, entry.getValue());
                 wr.writeChar('\n');
             }
+            opened = false;
         } catch (IOException e) {
             throw new IllegalStateException("Couldn't write storage to file");
+        }
+    }
+
+    private void checkIfNotOpened() {
+        if (!opened) {
+            throw new IllegalStateException("Couldn't work with closed storage");
         }
     }
 }
