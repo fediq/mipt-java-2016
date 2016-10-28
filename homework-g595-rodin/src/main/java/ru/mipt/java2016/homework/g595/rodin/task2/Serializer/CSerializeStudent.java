@@ -1,8 +1,6 @@
 package ru.mipt.java2016.homework.g595.rodin.task2.Serializer;
 
-import ru.mipt.java2016.homework.g595.rodin.task2.Serializer.*;
 import ru.mipt.java2016.homework.tests.task2.Student;
-
 import java.util.Date;
 import java.util.StringTokenizer;
 
@@ -12,7 +10,7 @@ import java.util.StringTokenizer;
 public class CSerializeStudent implements ISerialize<Student> {
     @Override
     public String serialize(Student argument) throws IllegalArgumentException {
-        if(argument == null){
+        if (argument == null) {
             throw new IllegalArgumentException("Null Argument");
         }
         CSerializeString serializeString = new CSerializeString();
@@ -21,23 +19,23 @@ public class CSerializeStudent implements ISerialize<Student> {
         CSerializeBoolean serializeBoolean = new CSerializeBoolean();
         CSerializeDouble serializeDouble = new CSerializeDouble();
         StringBuilder stringBuilder = new StringBuilder();
-        return stringBuilder.append("\"groupId\" : ")
+        return stringBuilder.append("\"groupId\":")
                 .append(serializeInteger.serialize(argument.getGroupId())).append(",")
-                .append("\"name\" :").append(serializeString.serialize(argument.getName()))
-                .append(",").append("\"hometown\" :")
+                .append("\"name\":").append(serializeString.serialize(argument.getName()))
+                .append(",").append("\"hometown\":")
                 .append(serializeString.serialize(argument.getHometown())).append(",")
-                .append("\"birthDate\" : ")
+                .append("\"birthDate\":")
                 .append(serializeDate.serialize(argument.getBirthDate())).append(",")
-                .append("\"hasDormitory\" : ")
+                .append("\"hasDormitory\":")
                 .append(serializeBoolean.serialize(argument.isHasDormitory())).append(",")
-                .append("\"averageScore\" : ")
+                .append("\"averageScore\":")
                 .append(serializeDouble.serialize(argument.getAverageScore())).toString();
 
     }
 
     @Override
     public Student deserialize(String argument) throws IllegalArgumentException {
-        if(argument == null){
+        if (argument == null) {
             throw new IllegalArgumentException("Null Argument");
         }
         CSerializeString serializeString = new CSerializeString();
@@ -45,60 +43,54 @@ public class CSerializeStudent implements ISerialize<Student> {
         CSerializeDate serializeDate = new CSerializeDate();
         CSerializeBoolean serializeBoolean = new CSerializeBoolean();
         CSerializeDouble serializeDouble = new CSerializeDouble();
-        StringTokenizer tokenizer = new StringTokenizer(argument,"\",:",false);
-
-        Integer groupId;
-        String name;
-        String hometown;
-        Date birthdate;
-        Boolean hasDormitory;
-        Double averageScore;
+        StringTokenizer tokenizer = new StringTokenizer(argument, "\",:", false);
 
         String token = tokenizer.nextToken();
-        if(token != "groupId"){
+
+        if (!token.equals("groupId")) {
             throw new IllegalArgumentException("Invalid Argument");
         }
         token = tokenizer.nextToken();
-        groupId = serializeInteger.deserialize(token);
+
+        Integer groupId = serializeInteger.deserialize(token);
+        token = tokenizer.nextToken();
+        if (!token.equals("name")) {
+            throw new IllegalArgumentException("Invalid Argument");
+        }
+        token = tokenizer.nextToken();
+        String name = serializeString.deserialize(token);
 
         token = tokenizer.nextToken();
-        if(token != "name"){
+        if (!token.equals("hometown")) {
             throw new IllegalArgumentException("Invalid Argument");
         }
         token = tokenizer.nextToken();
-        name = serializeString.deserialize(token);
+        String hometown = serializeString.deserialize(token);
 
         token = tokenizer.nextToken();
-        if(token != "hometown"){
+        if (!token.equals("birthDate")) {
             throw new IllegalArgumentException("Invalid Argument");
         }
-        token = tokenizer.nextToken();
-        hometown = serializeString.deserialize(token);
 
         token = tokenizer.nextToken();
-        if(token != "birthDate"){
-            throw new IllegalArgumentException("Invalid Argument");
-        }
-        token = tokenizer.nextToken();
-        birthdate = serializeDate.deserialize(token);
+        Date birthDate = serializeDate.deserialize(token);
 
         token = tokenizer.nextToken();
-        if(token != "hasDormitory"){
+        if (!token.equals("hasDormitory")) {
             throw new IllegalArgumentException("Invalid Argument");
         }
         token = tokenizer.nextToken();
-        hasDormitory = serializeBoolean.deserialize(token);
+        Boolean hasDormitory = serializeBoolean.deserialize(token);
 
         token = tokenizer.nextToken();
-        if(token != "averageScore"){
+        if (!token.equals("averageScore")) {
             throw new IllegalArgumentException("Invalid Argument");
         }
         token = tokenizer.nextToken();
-        averageScore = serializeDouble.deserialize(token);
-        if(tokenizer.hasMoreTokens())
-        {
+        Double averageScore = serializeDouble.deserialize(token);
+        if (tokenizer.hasMoreTokens()) {
             throw new IllegalArgumentException("Invalid Argument");
         }
-        return new Student(groupId,name,hometown,birthdate,hasDormitory,averageScore);
+        return new Student(groupId, name, hometown, birthDate, hasDormitory, averageScore);
     }
 }

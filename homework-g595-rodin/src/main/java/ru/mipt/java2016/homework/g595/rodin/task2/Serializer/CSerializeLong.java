@@ -7,7 +7,7 @@ public class CSerializeLong implements ISerialize<Long> {
 
     @Override
     public String serialize(Long argument) throws IllegalArgumentException {
-        if(argument == null){
+        if (argument == null) {
             throw new IllegalArgumentException("Null Argument");
         }
         return String.valueOf(argument);
@@ -15,13 +15,13 @@ public class CSerializeLong implements ISerialize<Long> {
 
     @Override
     public Long deserialize(String argument) throws IllegalArgumentException {
-        if(argument == null){
+        if (argument == null) {
             throw new IllegalArgumentException("Null Argument");
         }
         Long result;
-        try{
+        try {
             result = Long.parseLong(argument);
-        } catch (NumberFormatException exception){
+        } catch (NumberFormatException exception) {
             throw new IllegalArgumentException("Invalid Argument");
         }
         return result;

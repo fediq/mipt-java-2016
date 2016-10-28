@@ -1,12 +1,7 @@
 package ru.mipt.java2016.homework.g595.rodin.task2.Serializer;
 
-import ru.mipt.java2016.homework.g595.rodin.task2.Serializer.ISerialize;
-
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Locale;
+
 
 /**
  * Created by Dmitry on 26.10.16.
@@ -15,7 +10,7 @@ public class CSerializeDate implements ISerialize<Date> {
 
     @Override
     public String serialize(Date argument) throws IllegalArgumentException {
-        if(argument == null){
+        if (argument == null) {
             throw new IllegalArgumentException("Null Argument");
         }
         CSerializeLong serializer = new CSerializeLong();
@@ -24,7 +19,7 @@ public class CSerializeDate implements ISerialize<Date> {
 
     @Override
     public Date deserialize(String argument) throws IllegalArgumentException {
-        if(argument == null){
+        if (argument == null) {
             throw new IllegalArgumentException("Null Argument");
         }
         CSerializeLong serializer = new CSerializeLong();
