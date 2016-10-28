@@ -1,6 +1,5 @@
 package ru.mipt.java2016.homework.g595.rodin.task2.Serializer;
 
-import ru.mipt.java2016.homework.g595.rodin.task2.Serializer.*;
 import ru.mipt.java2016.homework.tests.task2.Student;
 import java.util.Date;
 import java.util.StringTokenizer;
