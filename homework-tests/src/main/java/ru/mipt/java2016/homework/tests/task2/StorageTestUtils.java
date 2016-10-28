@@ -4,8 +4,7 @@ import org.apache.commons.io.FileUtils;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Calendar;
-import java.util.Date;
+import java.util.*;
 
 /**
  * @author Fedor S. Lavrentyev
@@ -37,7 +36,7 @@ public class StorageTestUtils {
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
-            throw new IllegalStateException("Unexpected IOException", e);
+            throw new IllegalStateException("Unexpected Exception", e);
         }
     }
 
@@ -50,5 +49,24 @@ public class StorageTestUtils {
         Calendar calendar = CALENDAR.get();
         calendar.set(year, month, day);
         return calendar.getTime();
+    }
+
+    public static <T> void assertFullyMatch(Iterator<T> iterator, T... items) {
+        assertFullyMatch(iterator, new HashSet<T>(Arrays.<T>asList(items)));
+    }
+
+    public static <T> void assertFullyMatch(Iterator<T> iterator, Set<T> set) {
+        int count = 0;
+        while (iterator.hasNext()) {
+            T t = iterator.next();
+            ++count;
+            if (!set.contains(t)) {
+                throw new AssertionError("Collections doesn't match");
+            }
+        }
+
+        if (count != set.size()) {
+            throw new AssertionError("Collections doesn't match");
+        }
     }
 }
