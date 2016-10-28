@@ -5,17 +5,15 @@ import java.io.*;
 /**
  * Created by Софья on 27.10.2016.
  */
-public class MyDoubleSerializer implements MyFirstSerializerInterface <Double>  {
+public class MyDoubleSerializer implements MyFirstSerializerInterface<Double> {
 
     @Override
-    public void serializeToStream(OutputStream outputStream, Double o) throws IOException {
-        DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
+    public void serializeToStream(DataOutputStream dataOutputStream, Double o) throws IOException {
         dataOutputStream.writeDouble(o);
     }
 
     @Override
-    public Double deserializeFromStream(InputStream inputStream) throws IOException {
-        DataInputStream dataInputStream = new DataInputStream(inputStream);
+    public Double deserializeFromStream(DataInputStream dataInputStream) throws IOException {
         return dataInputStream.readDouble();
     }
 

@@ -7,14 +7,12 @@ import java.io.*;
  */
 public class MyStringSerializer implements MyFirstSerializerInterface<String> {
     @Override
-    public void serializeToStream(OutputStream outputStream, String o) throws IOException {
-        DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
+    public void serializeToStream(DataOutputStream dataOutputStream, String o) throws IOException {
         dataOutputStream.writeUTF(o);
     }
 
     @Override
-    public String deserializeFromStream(InputStream inputStream) throws IOException {
-        DataInputStream dataInputStream = new DataInputStream(inputStream);
+    public String deserializeFromStream(DataInputStream dataInputStream) throws IOException {
         return dataInputStream.readUTF();
     }
 }
