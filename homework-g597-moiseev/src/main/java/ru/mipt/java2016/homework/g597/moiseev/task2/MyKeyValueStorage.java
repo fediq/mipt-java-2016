@@ -97,27 +97,9 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V>, AutoClose
         elements.remove(key);
     }
 
-    private class KeyIterator implements Iterator<K> {
-        private Iterator<K> iterator;
-
-        KeyIterator(Iterator<K> iterator) {
-            this.iterator = iterator;
-        }
-
-        @Override
-        public boolean hasNext() {
-            return iterator.hasNext();
-        }
-
-        @Override
-        public K next() {
-            return iterator.next();
-        }
-    }
-
     @Override
     public Iterator<K> readKeys() {
-        return new KeyIterator(elements.keySet().iterator());
+        return elements.keySet().iterator();
     }
 
     @Override
