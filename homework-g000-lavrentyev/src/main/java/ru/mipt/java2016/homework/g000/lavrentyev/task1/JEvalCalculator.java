@@ -9,7 +9,6 @@ import ru.mipt.java2016.homework.base.task1.Calculator;
 /**
  * Пример реализации калькулятора средствами JEval.
  *
- *
  * @author Fedor S. Lavrentyev
  * @since 28.09.16
  */
