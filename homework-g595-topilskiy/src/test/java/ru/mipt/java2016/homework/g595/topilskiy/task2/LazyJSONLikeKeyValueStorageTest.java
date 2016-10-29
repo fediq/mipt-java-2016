@@ -12,16 +12,16 @@ import ru.mipt.java2016.homework.tests.task2.StudentKey;
 public class LazyJSONLikeKeyValueStorageTest extends AbstractSingleFileStorageTest {
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String path) {
-        return null;
+        return new LazyJSONLikeKeyValueStorage<>(path);
     }
 
     @Override
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) {
-        return null;
+        return new LazyJSONLikeKeyValueStorage<>(path);
     }
 
     @Override
     protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) {
-        return null;
+        return new LazyJSONLikeKeyValueStorage<>(path);
     }
 }

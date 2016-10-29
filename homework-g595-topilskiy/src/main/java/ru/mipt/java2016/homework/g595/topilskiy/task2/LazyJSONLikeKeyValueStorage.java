@@ -6,46 +6,119 @@ import java.io.IOException;
 import java.util.Iterator;
 
 /**
- * A KeyValueStorage implementation that uses
+ * A KeyValueStorage implementation for <KeyType, ValueType> pair that uses
  * - a JSON-like format for persistent Storage
  * - a HashMap for buffered use of the Storage
  *
  * @author Artem K. Topilskiy
  * @since 28.10.16
  */
-public class LazyJSONLikeKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
-    public LazyJSONLikeKeyValueStorage() {
+class  LazyJSONLikeKeyValueStorage<KeyType, ValueType>
+        implements KeyValueStorage<KeyType, ValueType> {
+
+    private final LazyJSONLikeKeyValueStorageHashMapBuffer<KeyType, ValueType> storageBuffer;
+
+    private Boolean isClosed;
+
+    LazyJSONLikeKeyValueStorage(String pathToStorageDirectory) {
+        storageBuffer = new LazyJSONLikeKeyValueStorageHashMapBuffer<>(pathToStorageDirectory);
+        isClosed = false;
     }
 
+    /**
+     * Return the Value with the corresponding Key from Storage
+     *
+     * @param  key - Key of the Value being read
+     * @return Value with the corresponding Key from Storage
+     * @throws IllegalStateException if the Storage is closed
+     */
     @Override
-    public V read(K key) {
-        return null;
+    public ValueType read(KeyType key) throws IllegalStateException {
+        checkNotClosed();
+        return storageBuffer.read(key);
     }
 
+    /**
+     * Return whether a Value with Key exists in Storage
+     *
+     * @param key - Key of the Value being Found
+     * @return Boolean == Value with Key exists in Storage
+     * @throws IllegalStateException if the Storage is closed
+     */
     @Override
-    public boolean exists(K key) {
-        return false;
+    public boolean exists(KeyType key) throws IllegalStateException {
+        checkNotClosed();
+        return storageBuffer.exists(key);
     }
 
+    /**
+     * Write into Storage the pair <key, value>
+     *
+     * @param key   - Key of the element inserted
+     * @param value - Value of the element inserted
+     * @throws IllegalStateException if the Storage is closed
+     */
     @Override
-    public void write(K key, V value) {
+    public void write(KeyType key, ValueType value) throws IllegalStateException {
+        checkNotClosed();
+        storageBuffer.write(key, value);
     }
 
+    /**
+     * Delete Value with Key from Storage
+     *
+     * @param key - Key of Value to be deleted
+     * @throws IllegalStateException if the Storage is closed
+     */
     @Override
-    public void delete(K key) {
+    public void delete(KeyType key) throws IllegalStateException {
+        checkNotClosed();
+        storageBuffer.delete(key);
     }
 
+    /**
+     * Return an Iterator for Keys in Storage
+     *
+     * @return Iterator of the Keys in Storage
+     * @throws IllegalStateException if the Storage is closed
+     */
     @Override
-    public Iterator<K> readKeys() {
-        return null;
+    public Iterator<KeyType> readKeys() throws IllegalStateException {
+        checkNotClosed();
+        return storageBuffer.readKeys();
     }
 
+    /**
+     * Return in the size (number on elements) in Storage
+     *
+     * @return Size of Storage
+     * @throws IllegalStateException if the Storage is closed
+     */
     @Override
-    public int size() {
-        return 0;
+    public int size() throws IllegalStateException {
+        checkNotClosed();
+        return storageBuffer.size();
     }
 
     @Override
     public void close() throws IOException {
+        isClosed = true;
+    }
+
+
+    /**
+     * Check whether Storage is closed
+     * Throw an exception if it is
+     *
+     * @throws IllegalStateException if the Storage is closed
+     */
+    private void checkNotClosed() throws IllegalStateException {
+        if (isClosed) {
+            throw new IllegalStateException("Storage is Closed.");
+        }
+    }
+
+    public String getPathToStorage() {
+        return storageBuffer.getPathToStorage();
     }
 }
