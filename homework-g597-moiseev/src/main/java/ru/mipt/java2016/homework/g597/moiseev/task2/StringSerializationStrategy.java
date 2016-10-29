@@ -10,28 +10,28 @@ import java.io.RandomAccessFile;
  * @since 26.10.2016
  */
 
-public class StringSerialization implements Serialization<String> {
-    private static StringSerialization instance = new StringSerialization();
+public class StringSerializationStrategy implements SerializationStrategy<String> {
+    private static StringSerializationStrategy instance = new StringSerializationStrategy();
 
-    private IntegerSerialization integerSerialization = IntegerSerialization.getInstance();
+    private IntegerSerializationStrategy integerSerializationStrategy = IntegerSerializationStrategy.getInstance();
 
-    public static StringSerialization getInstance() {
+    public static StringSerializationStrategy getInstance() {
         return instance;
     }
 
-    private StringSerialization() {
+    private StringSerializationStrategy() {
     }
 
     @Override
     public void write(RandomAccessFile file, String object) throws IOException {
         byte[] bytes = object.getBytes();
-        integerSerialization.write(file, bytes.length);
+        integerSerializationStrategy.write(file, bytes.length);
         file.write(bytes);
     }
 
     @Override
     public String read(RandomAccessFile file) throws IOException {
-        int length = integerSerialization.read(file);
+        int length = integerSerializationStrategy.read(file);
         byte[] bytes = new byte[length];
         file.readFully(bytes);
         return new String(bytes);

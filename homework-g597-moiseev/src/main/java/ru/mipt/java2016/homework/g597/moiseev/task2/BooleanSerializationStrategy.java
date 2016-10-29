@@ -9,14 +9,14 @@ import java.io.RandomAccessFile;
  * @author Fedor Moiseev
  * @since 26.10.2016
  */
-public class BooleanSerialization implements Serialization<Boolean> {
-    private static BooleanSerialization ourInstance = new BooleanSerialization();
+public class BooleanSerializationStrategy implements SerializationStrategy<Boolean> {
+    private static BooleanSerializationStrategy ourInstance = new BooleanSerializationStrategy();
 
-    public static BooleanSerialization getInstance() {
+    public static BooleanSerializationStrategy getInstance() {
         return ourInstance;
     }
 
-    private BooleanSerialization() {
+    private BooleanSerializationStrategy() {
     }
 
     @Override

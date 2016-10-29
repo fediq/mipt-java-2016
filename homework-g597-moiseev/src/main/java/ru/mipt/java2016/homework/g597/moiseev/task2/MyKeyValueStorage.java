@@ -20,21 +20,21 @@ import java.util.Map;
  */
 
 public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V>, AutoCloseable {
-    private Serialization<K> keySerialization;
-    private Serialization<V> valueSerialization;
-    private IntegerSerialization integerSerialization;
+    private SerializationStrategy<K> keySerializationStrategy;
+    private SerializationStrategy<V> valueSerializationStrategy;
+    private IntegerSerializationStrategy integerSerializationStrategy;
     private String name;
     private RandomAccessFile file;
     private File lock;
     private HashMap<K, V> elements;
 
-    public MyKeyValueStorage(String path, String name, Serialization<K> keySerialization,
-                             Serialization<V> valueSerialization) throws IOException {
+    public MyKeyValueStorage(String path, String name, SerializationStrategy<K> keySerializationStrategy,
+                             SerializationStrategy<V> valueSerializationStrategy) throws IOException {
         if (Files.notExists(Paths.get(path))) {
             throw new FileNotFoundException("Directory not exist");
         }
 
-        String lockPath = path + "/" + name + ".lock";
+        String lockPath = path + File.separator + name + ".lock";
         lock = new File(lockPath);
         if (!lock.createNewFile()) {
             throw new IOException("Database already open");
@@ -42,11 +42,11 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V>, AutoClose
 
         elements = new HashMap<>();
         this.name = name;
-        this.keySerialization = keySerialization;
-        this.valueSerialization = valueSerialization;
-        integerSerialization = IntegerSerialization.getInstance();
+        this.keySerializationStrategy = keySerializationStrategy;
+        this.valueSerializationStrategy = valueSerializationStrategy;
+        integerSerializationStrategy = IntegerSerializationStrategy.getInstance();
 
-        String databasePath = path + "/" + this.name;
+        String databasePath = path + File.separator + this.name;
         File database = new File(databasePath);
 
         if (!database.createNewFile()) {
@@ -60,15 +60,15 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V>, AutoClose
     private void loadFromFile() throws IOException {
         file.seek(0);
         elements.clear();
-        int size = integerSerialization.read(file);
+        int size = integerSerializationStrategy.read(file);
 
         if (size < 0) {
             throw new IOException("Invalid database");
         }
 
         for (int i = 0; i < size; i++) {
-            K key = keySerialization.read(file);
-            V value = valueSerialization.read(file);
+            K key = keySerializationStrategy.read(file);
+            V value = valueSerializationStrategy.read(file);
             if (elements.containsKey(key)) {
                 throw new IOException("Invalid database");
             } else {
@@ -111,10 +111,10 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V>, AutoClose
     public void close() throws IOException {
         file.setLength(0);
         file.seek(0);
-        integerSerialization.write(file, size());
+        integerSerializationStrategy.write(file, size());
         for (Map.Entry<K, V> entry : elements.entrySet()) {
-            keySerialization.write(file, entry.getKey());
-            valueSerialization.write(file, entry.getValue());
+            keySerializationStrategy.write(file, entry.getKey());
+            valueSerializationStrategy.write(file, entry.getValue());
         }
         elements.clear();
         file.close();

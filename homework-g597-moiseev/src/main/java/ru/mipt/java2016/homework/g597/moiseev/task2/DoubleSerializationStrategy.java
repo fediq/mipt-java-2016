@@ -10,14 +10,14 @@ import java.io.RandomAccessFile;
  * @since 26.10.2016
  */
 
-public class DoubleSerialization implements Serialization<Double> {
-    private static DoubleSerialization instance = new DoubleSerialization();
+public class DoubleSerializationStrategy implements SerializationStrategy<Double> {
+    private static DoubleSerializationStrategy instance = new DoubleSerializationStrategy();
 
-    public static DoubleSerialization getInstance() {
+    public static DoubleSerializationStrategy getInstance() {
         return instance;
     }
 
-    private DoubleSerialization() {
+    private DoubleSerializationStrategy() {
     }
 
     @Override

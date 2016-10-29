@@ -10,14 +10,14 @@ import java.util.Date;
  * @author Fedor Moiseev
  * @since 26.10.2016
  */
-public class DateSerialization implements Serialization<Date> {
-    private static DateSerialization ourInstance = new DateSerialization();
+public class DateSerializationStrategy implements SerializationStrategy<Date> {
+    private static DateSerializationStrategy ourInstance = new DateSerializationStrategy();
 
-    public static DateSerialization getInstance() {
+    public static DateSerializationStrategy getInstance() {
         return ourInstance;
     }
 
-    private DateSerialization() {
+    private DateSerializationStrategy() {
     }
 
     @Override

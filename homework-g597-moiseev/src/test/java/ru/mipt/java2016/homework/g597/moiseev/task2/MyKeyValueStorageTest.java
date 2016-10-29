@@ -18,8 +18,8 @@ public class MyKeyValueStorageTest extends AbstractSingleFileStorageTest {
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String path) {
         try {
-            return new MyKeyValueStorage<String, String>(path, "storage.db", StringSerialization.getInstance(),
-                    StringSerialization.getInstance());
+            return new MyKeyValueStorage<String, String>(path, "storage.db", StringSerializationStrategy.getInstance(),
+                    StringSerializationStrategy.getInstance());
         } catch (IOException e) {
             e.printStackTrace();
             return null;
@@ -29,7 +29,7 @@ public class MyKeyValueStorageTest extends AbstractSingleFileStorageTest {
     @Override
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) {
         try {
-            return new MyKeyValueStorage(path, "storage.db", IntegerSerialization.getInstance(), DoubleSerialization.getInstance());
+            return new MyKeyValueStorage(path, "storage.db", IntegerSerializationStrategy.getInstance(), DoubleSerializationStrategy.getInstance());
         } catch (IOException e) {
             e.printStackTrace();
             return null;
@@ -39,7 +39,7 @@ public class MyKeyValueStorageTest extends AbstractSingleFileStorageTest {
     @Override
     protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) {
         try {
-            return new MyKeyValueStorage(path, "storage.db", StudentKeySerialization.getInstance(), StudentSerialization.getInstance());
+            return new MyKeyValueStorage(path, "storage.db", StudentKeySerializationStrategy.getInstance(), StudentSerializationStrategy.getInstance());
         } catch (IOException e) {
             e.printStackTrace();
             return null;

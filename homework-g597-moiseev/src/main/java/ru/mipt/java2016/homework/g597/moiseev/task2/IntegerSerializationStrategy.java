@@ -10,14 +10,14 @@ import java.io.RandomAccessFile;
  * @since 26.10.2016
  */
 
-public class IntegerSerialization implements Serialization<Integer> {
-    private static IntegerSerialization instance = new IntegerSerialization();
+public class IntegerSerializationStrategy implements SerializationStrategy<Integer> {
+    private static IntegerSerializationStrategy instance = new IntegerSerializationStrategy();
 
-    public static IntegerSerialization getInstance() {
+    public static IntegerSerializationStrategy getInstance() {
         return instance;
     }
 
-    private IntegerSerialization() {
+    private IntegerSerializationStrategy() {
     }
 
     @Override
