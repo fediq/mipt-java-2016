@@ -25,7 +25,7 @@ public class Calcul implements Calculator {
     }
     // Если это +|- => то унарная, *,/=> false
     boolean UnaryOp( char c ){
-        return  c =='+' || c=='-';
+        return  c =='+';
     }
     boolean decimal( char c ){  return c == ' ' || c == '\n' || c == '\t';}
     public class Token{}
