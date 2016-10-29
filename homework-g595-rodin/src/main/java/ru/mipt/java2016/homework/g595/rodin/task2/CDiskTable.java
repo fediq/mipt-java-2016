@@ -25,9 +25,9 @@ public class CDiskTable {
         }
     }
 
-    public boolean exists() throws FileNotFoundException {
+    public boolean exists() {
         if (!file.exists()) {
-            throw new FileNotFoundException(file.getName());
+            return false;
         }
         return true;
     }
@@ -35,7 +35,9 @@ public class CDiskTable {
     public void write(String text) {
 
         try {
-            exists();
+            if (!exists()) {
+                throw new RuntimeException("File not found");
+            }
             FileWriter out = new FileWriter(file.getAbsoluteFile());
             try {
                 out.write(text);
@@ -49,7 +51,9 @@ public class CDiskTable {
 
     public String read() throws FileNotFoundException {
         StringBuilder stringBuilder = new StringBuilder();
-        exists();
+        if (!exists()) {
+            throw new RuntimeException("File not found");
+        }
         try {
             BufferedReader reader = new BufferedReader(new FileReader(file.getAbsoluteFile()));
             try {

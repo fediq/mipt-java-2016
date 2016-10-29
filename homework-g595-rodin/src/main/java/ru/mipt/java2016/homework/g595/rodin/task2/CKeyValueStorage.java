@@ -42,11 +42,9 @@ public class CKeyValueStorage<KeyType, ValueType> implements KeyValueStorage<Key
         this.valueName = valueName;
         this.closeFlag = false;
         diskWriter = new CDiskTable(directoryPath + "/storage.db");
-        try {
-            if (diskWriter.exists()) {
-                scanFile();
-            }
-        } catch (FileNotFoundException exception) {
+        if (diskWriter.exists()) {
+            scanFile();
+        } else {
             diskWriter.createFile();
         }
     }
@@ -117,12 +115,12 @@ public class CKeyValueStorage<KeyType, ValueType> implements KeyValueStorage<Key
         diskWriter.write(stringBuilder.toString());
     }
 
-    private Boolean scanFile() throws FileNotFoundException {
+    private Boolean scanFile() {
         String fileText;
         try {
             fileText = diskWriter.read();
         } catch (FileNotFoundException e) {
-            throw new FileNotFoundException(e.getMessage());
+            throw new RuntimeException(e.getMessage());
         }
         StringTokenizer tokenizer = new StringTokenizer(fileText, ";\n", false);
         String token = tokenizer.nextToken();
