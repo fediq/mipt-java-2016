@@ -1,9 +1,6 @@
-package task2;
+package ru.mipt.java2016.homework.g595.yakusheva.task2;
 
 import java.io.*;
-
-import com.sun.org.apache.bcel.internal.generic.NEW;
-import ru.mipt.java2016.homework.tests.task2.Student;
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
 
 /**
@@ -12,8 +9,8 @@ import ru.mipt.java2016.homework.tests.task2.StudentKey;
 public class MyStudentKeySerializer implements MyFirstSerializerInterface<StudentKey> {
     @Override
     public void serializeToStream(DataOutputStream dataOutputStream, StudentKey o) throws IOException {
-        dataOutputStream.writeInt(o.getGroupId());//
-        dataOutputStream.writeUTF(o.getName());//
+        dataOutputStream.writeInt(o.getGroupId());
+        dataOutputStream.writeUTF(o.getName());
     }
 
     @Override

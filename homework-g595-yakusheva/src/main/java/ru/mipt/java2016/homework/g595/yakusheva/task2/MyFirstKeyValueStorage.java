@@ -1,4 +1,4 @@
-package task2;
+package ru.mipt.java2016.homework.g595.yakusheva.task2;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 
@@ -8,6 +8,7 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+
 /**
  * Created by Софья on 26.10.2016.
  */
@@ -19,7 +20,7 @@ public class MyFirstKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private MyFirstSerializerInterface<V> valueSerializer;
     private RandomAccessFile file;
     private int count;
-    private String checkString = new String(" this is our wonderful KeyValueStorage ");
+    private String checkString = " this is our wonderful KeyValueStorage ";
 
     public MyFirstKeyValueStorage(String path, MyFirstSerializerInterface<K> newKeySerializerArg,
                                   MyFirstSerializerInterface<V> newValueSerializerArg) {
@@ -34,11 +35,8 @@ public class MyFirstKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             } catch (IOException e) {
                 throw new RuntimeException("error: can't create new file");
             }
-            ;
         }
-
         map = new HashMap<K, V>();
-
         try {
             file = new RandomAccessFile(f.getName(), "rw");
         } catch (IOException e) {
@@ -50,7 +48,7 @@ public class MyFirstKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
-    void closedCheck() {
+    private void closedCheck() {
         if (isClosedFlag) {
             throw new RuntimeException("error: can't write to closed file");
         }
@@ -99,7 +97,7 @@ public class MyFirstKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         isClosedFlag = true;
     }
 
-    void readFromFile() {
+    private void readFromFile() {
         DataInputStream dataInputStream = new DataInputStream(Channels.newInputStream(file.getChannel()));
         K newKey;
         V newValue;
@@ -111,14 +109,11 @@ public class MyFirstKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         } catch (IOException e) {
             throw new RuntimeException("error: can't read file size from file");
         }
-        ;
         try {
             count = file.readInt();
         } catch (IOException e) {
             throw new RuntimeException("error: can't read file size from file");
         }
-        ;
-
         for (int i = 0; i < count; i++) {
             try {
                 newKey = keySerializer.deserializeFromStream(dataInputStream);
@@ -127,11 +122,10 @@ public class MyFirstKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             } catch (IOException e) {
                 throw new RuntimeException("error: can't read note from file");
             }
-            ;
         }
     }
 
-    void writeToFile() throws IOException {
+    private void writeToFile() throws IOException {
         file.seek(0);
         DataOutputStream dataOutputStream = new DataOutputStream(Channels.newOutputStream(file.getChannel()));
         try {
@@ -139,15 +133,12 @@ public class MyFirstKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         } catch (IOException e) {
             throw new RuntimeException("error: can't write control string to file");
         }
-        ;
         try {
             count = map.size();
             file.writeInt(count);
         } catch (IOException e) {
             throw new RuntimeException("error: can't write file size to file");
         }
-        ;
-
         for (Map.Entry<K, V> entry : map.entrySet()) {
             try {
                 keySerializer.serializeToStream(dataOutputStream, entry.getKey());
@@ -155,8 +146,6 @@ public class MyFirstKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             } catch (IOException e) {
                 throw new RuntimeException("error: can't write note to file");
             }
-            ;
         }
     }
-
 }

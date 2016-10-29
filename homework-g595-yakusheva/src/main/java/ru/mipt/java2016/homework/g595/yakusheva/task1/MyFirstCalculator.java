@@ -1,4 +1,4 @@
-package task1;
+package ru.mipt.java2016.homework.g595.yakusheva.task1;
 
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 

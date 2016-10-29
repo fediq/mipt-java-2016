@@ -1,4 +1,4 @@
-package task2;
+package ru.mipt.java2016.homework.g595.yakusheva.task2;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.tests.task2.AbstractSingleFileStorageTest;
