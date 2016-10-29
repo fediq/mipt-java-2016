@@ -16,8 +16,9 @@ public class JoinArraysGeneric<ArrayComponentType> implements IJoinArrays<ArrayC
      * @param  arraysToJoin - arrays to join into a single one
      * @return a single Array, containing all the arraysToJoin in order
      */
+    @Override
     @SafeVarargs
-    public final ArrayComponentType[] JoinArrays(ArrayComponentType[]... arraysToJoin) {
+    public final ArrayComponentType[] joinArrays(ArrayComponentType[]... arraysToJoin) {
         final ArrayComponentType[] joinedArrays;
 
         if (arraysToJoin == null) {

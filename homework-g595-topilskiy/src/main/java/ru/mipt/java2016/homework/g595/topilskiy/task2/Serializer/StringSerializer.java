@@ -1,6 +1,8 @@
 package ru.mipt.java2016.homework.g595.topilskiy.task2.Serializer;
 
-import ru.mipt.java2016.homework.g595.topilskiy.task2.JoinArrays.JoinArraysByte;
+import ru.mipt.java2016.homework.g595.topilskiy.task2.JoinArrays.JoinArraysPrimitiveByte;
+
+import static java.util.Arrays.copyOfRange;
 
 /**
  * Interface for an String Serializer
@@ -9,8 +11,9 @@ import ru.mipt.java2016.homework.g595.topilskiy.task2.JoinArrays.JoinArraysByte;
  * @since 28.10.16
  */
 public class StringSerializer implements ISerializer<String> {
-    /* Number of BYTES in the java class String */
-    private static final int INTEGER_BYTE_SIZE = Integer.SIZE / Byte.SIZE;
+    /* An IntegerSerializer for serializing and deserializing within the class */
+    private static final IntegerSerializer integerSerializer = (IntegerSerializer)
+                                SerializerFactory.getSerializer("Integer");
 
     /**
      * Serialize a String object into Bytes
@@ -18,10 +21,13 @@ public class StringSerializer implements ISerializer<String> {
      * @param  value - object to be serialized
      * @return Array of Bytes, into which value has been serialized into
      */
+    @Override
     public byte[] serialize(String value) {
-        byte[] lenBytes;
-        byte[] valueBytes;
-        return null;
+        JoinArraysPrimitiveByte joinArraysPrimitiveByte = new JoinArraysPrimitiveByte();
+
+        byte[] lenBytes = integerSerializer.serialize(value.length());
+        byte[] valueBytes = value.getBytes();
+        return joinArraysPrimitiveByte.joinArrays(lenBytes, valueBytes);
     }
 
     /**
@@ -31,7 +37,20 @@ public class StringSerializer implements ISerializer<String> {
      * @return Deserialized value from valueBytes
      * @throws IllegalArgumentException if valueBytes cannot be converted to String
      */
+    @Override
     public String deserialize(byte[] valueBytes) throws IllegalArgumentException {
-        return null;
+        if (valueBytes.length < IntegerSerializer.getIntegerByteSize()) {
+            throw new IllegalArgumentException("Illegal Deserialization");
+        }
+
+        int stringSize = integerSerializer.deserialize(
+                copyOfRange(valueBytes, 0, IntegerSerializer.getIntegerByteSize()));
+
+        if (IntegerSerializer.getIntegerByteSize() + stringSize != valueBytes.length) {
+            throw new IllegalArgumentException("Illegal Deserialization");
+        }
+
+        return new String(
+                copyOfRange(valueBytes, IntegerSerializer.getIntegerByteSize(), valueBytes.length));
     }
 }

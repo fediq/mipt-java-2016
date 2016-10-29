@@ -14,7 +14,7 @@ public class JoinArraysPrimitiveByte /* implements IJoinArrays<byte> */ {
      * @param  arraysToJoin - arrays to join into a single one
      * @return a single Array, containing all the arraysToJoin in order
      */
-    public static byte[] JoinArrays(byte[]... arraysToJoin) {
+    public byte[] joinArrays(byte[]... arraysToJoin) {
         final byte[] joinedArrays;
 
         if (arraysToJoin == null) {
