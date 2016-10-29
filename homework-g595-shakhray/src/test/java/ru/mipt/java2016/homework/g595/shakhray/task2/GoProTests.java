@@ -1,9 +1,12 @@
 package ru.mipt.java2016.homework.g595.shakhray.task2;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
+import ru.mipt.java2016.homework.g595.shakhray.task2.Serialization.Classes.*;
 import ru.mipt.java2016.homework.tests.task2.AbstractSingleFileStorageTest;
 import ru.mipt.java2016.homework.tests.task2.Student;
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
+
+import java.io.IOException;
 
 /**
  * Created by Vlad on 26/10/2016.
@@ -11,16 +14,31 @@ import ru.mipt.java2016.homework.tests.task2.StudentKey;
 public class GoProTests extends AbstractSingleFileStorageTest {
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String path) {
-        return new GoProStorage(path, GoProStorage.StorageType.StringStorage);
+        try {
+            return new GoProStorage(path, StringSerialization.getSerialization(), StringSerialization.getSerialization());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     @Override
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) {
-        return new GoProStorage(path, GoProStorage.StorageType.IntToDoubleStorage);
+        try {
+            return new GoProStorage(path, IntegerSerialization.getSerialization(), DoubleSerialization.getSerialization());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     @Override
     protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) {
-        return new GoProStorage(path, GoProStorage.StorageType.StudentsStorage);
+        try {
+            return new GoProStorage(path, StudentKeySerialization.getSerialization(), StudentSerialization.getSerialization());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }
