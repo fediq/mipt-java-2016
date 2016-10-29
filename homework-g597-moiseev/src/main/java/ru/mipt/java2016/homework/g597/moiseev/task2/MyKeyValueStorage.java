@@ -2,10 +2,7 @@ package ru.mipt.java2016.homework.g597.moiseev.task2;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -22,7 +19,6 @@ import java.util.Map;
 public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V>, AutoCloseable {
     private SerializationStrategy<K> keySerializationStrategy;
     private SerializationStrategy<V> valueSerializationStrategy;
-    private IntegerSerializationStrategy integerSerializationStrategy;
     private String name;
     private RandomAccessFile file;
     private File lock;
@@ -37,14 +33,13 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V>, AutoClose
         String lockPath = path + File.separator + name + ".lock";
         lock = new File(lockPath);
         if (!lock.createNewFile()) {
-            throw new IOException("Database already open");
+            throw new IOException("Database is already open");
         }
 
         elements = new HashMap<>();
         this.name = name;
         this.keySerializationStrategy = keySerializationStrategy;
         this.valueSerializationStrategy = valueSerializationStrategy;
-        integerSerializationStrategy = IntegerSerializationStrategy.getInstance();
 
         String databasePath = path + File.separator + this.name;
         File database = new File(databasePath);
@@ -60,17 +55,22 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V>, AutoClose
     private void loadFromFile() throws IOException {
         file.seek(0);
         elements.clear();
-        int size = integerSerializationStrategy.read(file);
 
-        if (size < 0) {
-            throw new IOException("Invalid database");
-        }
-
-        for (int i = 0; i < size; i++) {
-            K key = keySerializationStrategy.read(file);
-            V value = valueSerializationStrategy.read(file);
+        while (true) {
+            K key;
+            V value;
+            try {
+                key = keySerializationStrategy.read(file);
+            } catch (EOFException e1) {
+                break;
+            }
+            try {
+                value = valueSerializationStrategy.read(file);
+            } catch (EOFException e) {
+                throw new IOException("Invalid file");
+            }
             if (elements.containsKey(key)) {
-                throw new IOException("Invalid database");
+                throw new IOException("Duplicate keys");
             } else {
                 elements.put(key, value);
             }
@@ -111,7 +111,6 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V>, AutoClose
     public void close() throws IOException {
         file.setLength(0);
         file.seek(0);
-        integerSerializationStrategy.write(file, size());
         for (Map.Entry<K, V> entry : elements.entrySet()) {
             keySerializationStrategy.write(file, entry.getKey());
             valueSerializationStrategy.write(file, entry.getValue());
