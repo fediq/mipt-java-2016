@@ -23,6 +23,7 @@ public class MyFirstKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private MyFirstSerializerInterface<V> valueSerializer;
     private RandomAccessFile file;
     private int count;
+    private String checkString = new String(" this is our wonderful KeyValueStorage ");
 
     public MyFirstKeyValueStorage(String path, MyFirstSerializerInterface<K> newKeySerializerArg,
                                   MyFirstSerializerInterface<V> newValueSerializerArg) {
@@ -107,11 +108,21 @@ public class MyFirstKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         K newKey;
         V newValue;
         try {
+            String controlString = new String(file.readUTF());
+            if (!controlString.equals(checkString)) {
+                throw new RuntimeException("error: file is not right");
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("error: can't read file size from file");
+        }
+        ;
+        try {
             count = file.readInt();
         } catch (IOException e) {
             throw new RuntimeException("error: can't read file size from file");
         }
         ;
+
         for (int i = 0; i < count; i++) {
             try {
                 newKey = keySerializer.deserializeFromStream(dataInputStream);
@@ -128,12 +139,19 @@ public class MyFirstKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         file.seek(0);
         DataOutputStream dataOutputStream = new DataOutputStream(Channels.newOutputStream(file.getChannel()));
         try {
+            file.writeUTF(checkString);
+        } catch (IOException e) {
+            throw new RuntimeException("error: can't write control string to file");
+        }
+        ;
+        try {
             count = map.size();
             file.writeInt(count);
         } catch (IOException e) {
             throw new RuntimeException("error: can't write file size to file");
         }
         ;
+
         for (Map.Entry<K, V> entry : map.entrySet()) {
             try {
                 keySerializer.serializeToStream(dataOutputStream, entry.getKey());
