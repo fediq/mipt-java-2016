@@ -3,10 +3,10 @@ package ru.mipt.java2016.homework.g595.topilskiy.task2.Serializer;
 import java.nio.ByteBuffer;
 
 /**
- * Interface for an Integer Serializer
+ * Class for an Integer Serializer
  *
  * @author Artem K. Topilskiy
- * @since 28.10.16
+ * @since 30.10.16
  */
 public class IntegerSerializer implements ISerializer<Integer> {
     /* Number of BYTES in the java class Integer */

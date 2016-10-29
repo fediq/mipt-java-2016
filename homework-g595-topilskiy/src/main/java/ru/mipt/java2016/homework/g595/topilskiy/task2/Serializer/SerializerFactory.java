@@ -17,6 +17,8 @@ public class SerializerFactory {
         CACHED_SERIALIZERS.put("Integer", new IntegerSerializer());
         CACHED_SERIALIZERS.put("Double",  new DoubleSerializer());
         CACHED_SERIALIZERS.put("String",  new StringSerializer());
+        CACHED_SERIALIZERS.put("StudentKey",  new StudentKeySerializer());
+        CACHED_SERIALIZERS.put("Student",  new StudentSerializer());
     }
 
     /**

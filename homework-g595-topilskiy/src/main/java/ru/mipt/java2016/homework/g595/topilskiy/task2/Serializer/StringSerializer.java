@@ -5,10 +5,10 @@ import ru.mipt.java2016.homework.g595.topilskiy.task2.JoinArrays.JoinArraysPrimi
 import static java.util.Arrays.copyOfRange;
 
 /**
- * Interface for an String Serializer
+ * Class for a String Serializer
  *
  * @author Artem K. Topilskiy
- * @since 28.10.16
+ * @since 30.10.16
  */
 public class StringSerializer implements ISerializer<String> {
     /* An IntegerSerializer for serializing and deserializing within the class */
