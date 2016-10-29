@@ -2,16 +2,12 @@ package task2;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 
-import javax.management.RuntimeErrorException;
 import java.io.*;
 import java.nio.channels.Channels;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.TreeMap;
-
 /**
  * Created by Софья on 26.10.2016.
  */
