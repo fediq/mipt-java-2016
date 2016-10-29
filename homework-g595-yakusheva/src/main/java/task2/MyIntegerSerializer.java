@@ -1,4 +1,4 @@
-package task2;
+package ru.mipt.java2016.homework.g595.yakusheva.task2;
 
 import java.io.*;
 
