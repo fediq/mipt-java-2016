@@ -5,11 +5,11 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 public class IntegerSerializer implements MySerializer<Integer> {
-    public void output(DataOutputStream out, Integer val) throws IOException{
+    public void output(DataOutputStream out, Integer val) throws IOException {
         out.writeInt(val);
     }
 
-    public Integer input(DataInputStream in) throws  IOException{
+    public Integer input(DataInputStream in) throws  IOException {
         return in.readInt();
     }
 }

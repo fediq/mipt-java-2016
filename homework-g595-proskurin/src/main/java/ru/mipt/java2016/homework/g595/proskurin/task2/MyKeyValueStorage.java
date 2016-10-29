@@ -9,7 +9,7 @@ import java.io.DataOutputStream;
 import java.io.*;
 import java.util.HashMap;
 
-public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V>{
+public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private HashMap<K, V> myMap = new HashMap<>();
     private MySerializer<K> keySerializer;
@@ -18,11 +18,13 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V>{
     private String realPath;
 
     private void isClosed() {
-        if (closed)
+        if (closed) {
             throw new IllegalStateException("Data base is already closed!");
+        }
     }
 
-    public MyKeyValueStorage(String path, MySerializer<K> keySerializer, MySerializer<V> valueSerializer) throws IOException {
+    public MyKeyValueStorage(String path, MySerializer<K> keySerializer,
+                             MySerializer<V> valueSerializer) throws IOException {
         this.keySerializer = keySerializer;
         this.valueSerializer = valueSerializer;
         closed = false;
@@ -36,12 +38,10 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V>{
                     myMap.put(keySerializer.input(input), valueSerializer.input(input));
                 }
                 input.close();
-            }
-            catch (IOException err) {
+            } catch (IOException err) {
                 System.out.println("Input/Output error occured!");
             }
-        }
-        else {
+        } else {
             base.createNewFile();
         }
     }
@@ -71,8 +71,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V>{
             }
             myMap.clear();
             output.close();
-        }
-        catch (IOException err) {
+        } catch (IOException err) {
             System.out.println("Input/Output error occured!");
         }
         closed = true;
@@ -99,8 +98,9 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V>{
     @Override
     public V read(K key) {
         isClosed();
-        if (myMap.containsKey(key))
+        if (myMap.containsKey(key)) {
             return myMap.get(key);
+        }
         return null;
     }
 }
