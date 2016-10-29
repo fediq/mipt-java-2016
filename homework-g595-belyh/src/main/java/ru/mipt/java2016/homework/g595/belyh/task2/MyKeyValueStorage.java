@@ -2,7 +2,6 @@ package ru.mipt.java2016.homework.g595.belyh.task2;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 
-import javax.xml.crypto.dsig.keyinfo.KeyValue;
 import java.io.*;
 import java.util.Iterator;
 import java.util.HashMap;
@@ -11,17 +10,17 @@ import java.util.HashMap;
  * Created by white2302 on 29.10.2016.
  */
 public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
-    private HashMap <K, V> map = new HashMap<>();
+    private HashMap<K, V> map = new HashMap<>();
     private boolean closed;
-    private Serializer<K> KeySerializer;
-    private Serializer<V> ValueSerializer;
+    private Serializer<K> keySerializer;
+    private Serializer<V> valueSerializer;
     private String myPath;
 
-    MyKeyValueStorage(String Path, Serializer<K> SerializerK, Serializer<V> SerializerV) throws IOException {
-        File f = new File(Path + "/db.txt");
-        myPath = Path + "/db.txt";
-        KeySerializer = SerializerK;
-        ValueSerializer = SerializerV;
+    MyKeyValueStorage(String path, Serializer<K> serializerK, Serializer<V> serializerV) throws IOException {
+        File f = new File(path + "/db.txt");
+        myPath = path + "/db.txt";
+        keySerializer = serializerK;
+        valueSerializer = serializerV;
 
         closed = false;
 
@@ -43,7 +42,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         int size = in.readInt();
 
         for (int i = 0; i < size; i++) {
-            map.put(KeySerializer.deserialize(in), ValueSerializer.deserialize(in));
+            map.put(keySerializer.deserialize(in), valueSerializer.deserialize(in));
         }
         in.close();
     }
@@ -83,8 +82,8 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         out.writeInt(map.size());
 
         for (HashMap.Entry<K, V> it : map.entrySet()) {
-            KeySerializer.serialize(it.getKey(), out);
-            ValueSerializer.serialize(it.getValue(), out);
+            keySerializer.serialize(it.getKey(), out);
+            valueSerializer.serialize(it.getValue(), out);
         }
         out.close();
     }
