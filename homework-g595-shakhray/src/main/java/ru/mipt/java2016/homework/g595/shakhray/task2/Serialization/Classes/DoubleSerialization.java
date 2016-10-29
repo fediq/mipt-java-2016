@@ -14,6 +14,7 @@ public class DoubleSerialization implements StorageSerialization<Double> {
      * The class is a singleton
      */
     private static DoubleSerialization serialization = new DoubleSerialization();
+
     private DoubleSerialization() { }
 
     public static DoubleSerialization getSerialization() {

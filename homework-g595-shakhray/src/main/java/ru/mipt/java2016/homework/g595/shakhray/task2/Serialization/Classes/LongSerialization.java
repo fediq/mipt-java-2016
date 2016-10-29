@@ -14,6 +14,7 @@ public class LongSerialization implements StorageSerialization<Long> {
      * The class is a singleton
      */
     private static LongSerialization serialization = new LongSerialization();
+
     private LongSerialization() { }
 
     public static LongSerialization getSerialization() {

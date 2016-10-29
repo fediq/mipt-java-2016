@@ -21,6 +21,7 @@ public class StudentKeySerialization implements StorageSerialization<StudentKey>
      * This class is a singleton
      */
     private static StudentKeySerialization serialization = new StudentKeySerialization();
+
     private StudentKeySerialization() { }
 
     public static StudentKeySerialization getSerialization() {

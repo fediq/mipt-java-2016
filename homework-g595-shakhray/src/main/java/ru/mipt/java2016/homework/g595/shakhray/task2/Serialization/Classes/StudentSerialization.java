@@ -25,6 +25,7 @@ public class StudentSerialization implements StorageSerialization<Student> {
      * This class is a singleton
      */
     private static StudentSerialization serialization = new StudentSerialization();
+    
     private StudentSerialization() { }
 
     public static StudentSerialization getSerialization() {

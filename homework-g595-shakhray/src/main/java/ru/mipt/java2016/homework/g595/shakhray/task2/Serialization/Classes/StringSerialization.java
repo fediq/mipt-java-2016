@@ -19,6 +19,7 @@ public class StringSerialization implements StorageSerialization<String> {
      * The class is a singleton
      */
     private static StringSerialization serialization = new StringSerialization();
+
     private StringSerialization() { }
 
     public static StringSerialization getSerialization() {

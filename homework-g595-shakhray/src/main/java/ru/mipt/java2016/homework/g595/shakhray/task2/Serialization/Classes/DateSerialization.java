@@ -17,6 +17,7 @@ public class DateSerialization implements StorageSerialization<Date> {
      * The class is a singleton
      */
     private static DateSerialization serialization = new DateSerialization();
+
     private DateSerialization() { }
 
     public static DateSerialization getSerialization() {

@@ -14,6 +14,7 @@ public class BooleanSerialization implements StorageSerialization<Boolean> {
      * The class is a singleton
      */
     private static BooleanSerialization serialization = new BooleanSerialization();
+
     private BooleanSerialization() { }
 
     public static BooleanSerialization getSerialization() {

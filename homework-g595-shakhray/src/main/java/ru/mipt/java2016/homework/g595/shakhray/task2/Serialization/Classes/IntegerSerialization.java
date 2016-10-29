@@ -14,6 +14,7 @@ public class IntegerSerialization implements StorageSerialization<Integer> {
      * The class is a singleton
      */
     private static IntegerSerialization serialization = new IntegerSerialization();
+
     private IntegerSerialization() { }
 
     public static IntegerSerialization getSerialization() {
