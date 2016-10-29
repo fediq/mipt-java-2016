@@ -13,15 +13,14 @@ import java.util.Iterator;
  * @author Artem K. Topilskiy
  * @since 28.10.16
  */
-class  LazyJSONLikeKeyValueStorage<KeyType, ValueType>
+class      LazyByteKeyValueStorage<KeyType, ValueType>
         implements KeyValueStorage<KeyType, ValueType> {
 
-    private final LazyJSONLikeKeyValueStorageHashMapBuffer<KeyType, ValueType> storageBuffer;
-
+    private final LazyByteKeyValueStorageHashMapBuffer<KeyType, ValueType> storageBuffer;
     private Boolean isClosed;
 
-    LazyJSONLikeKeyValueStorage(String pathToStorageDirectory) {
-        storageBuffer = new LazyJSONLikeKeyValueStorageHashMapBuffer<>(pathToStorageDirectory);
+    LazyByteKeyValueStorage(String pathToStorageDirectory) {
+        storageBuffer = new LazyByteKeyValueStorageHashMapBuffer<>(pathToStorageDirectory);
         isClosed = false;
     }
 
@@ -102,6 +101,7 @@ class  LazyJSONLikeKeyValueStorage<KeyType, ValueType>
 
     @Override
     public void close() throws IOException {
+        checkNotClosed();
         isClosed = true;
     }
 

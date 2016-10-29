@@ -9,14 +9,14 @@ import java.util.Iterator;
  * @author Artem K. Topilskiy
  * @since 29.10.16
  */
-class LazyJSONLikeKeyValueStorageHashMapBuffer<KeyType, ValueType> {
+class LazyByteKeyValueStorageHashMapBuffer<KeyType, ValueType> {
     private final String pathToStorage;
 
     /* HashMap for Buffered Storage */
     private HashMap<KeyType, ValueType> hashMapBuffer;
 
 
-    LazyJSONLikeKeyValueStorageHashMapBuffer(String pathToStorageDirectory) {
+    LazyByteKeyValueStorageHashMapBuffer(String pathToStorageDirectory) {
         pathToStorage = pathToStorageDirectory + "/storage.db";
         hashMapBuffer = new HashMap<>();
     }
