@@ -36,23 +36,20 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             try (DataOutputStream wr = new DataOutputStream(new FileOutputStream(fileName))) {
                 wr.writeUTF(type);
                 wr.writeInt(0);
-                wr.writeChar('\n');
             } catch (IOException e) {
                 throw new IllegalStateException("Couldn't write to file");
             }
         }
+
         try (DataInputStream rd = new DataInputStream(new FileInputStream(fileName))) {
             if (!rd.readUTF().equals(type)) {
                 throw new IllegalStateException("Invalid file");
             }
             int number = rd.readInt();
-            rd.readChar();
             for (int i = 0; i < number; ++i) {
                 K key = keySerializator.read(rd);
-                rd.readChar();
                 V val = valSerializator.read(rd);
                 map.put(key, val);
-                rd.readChar();
             }
         } catch (IOException e) {
             throw new IllegalStateException("Couldn't read from to file");
@@ -101,12 +98,9 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         try (DataOutputStream wr = new DataOutputStream(new FileOutputStream(fileName))) {
             wr.writeUTF(type);
             wr.writeInt(map.size());
-            wr.writeChar('\n');
             for (Map.Entry<K, V> entry: map.entrySet()) {
                 keySerializator.write(wr, entry.getKey());
-                wr.writeChar(':');
                 valSerializator.write(wr, entry.getValue());
-                wr.writeChar('\n');
             }
             opened = false;
         } catch (IOException e) {

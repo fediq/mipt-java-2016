@@ -14,7 +14,6 @@ public class StudentKeySerializationStrategy extends SerializationStrategy<Stude
     @Override
     public StudentKey read(DataInputStream rd) throws IOException {
         Integer grId = rd.readInt();
-        checkIfEquals(rd, ',');
         String stName = rd.readUTF();
         return new StudentKey(grId, stName);
     }
@@ -22,7 +21,6 @@ public class StudentKeySerializationStrategy extends SerializationStrategy<Stude
     @Override
     public void write(DataOutputStream wr, StudentKey obj) throws IOException {
         wr.writeInt(obj.getGroupId());
-        wr.writeChar(',');
         wr.writeUTF(obj.getName());
     }
 }

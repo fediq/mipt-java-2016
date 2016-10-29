@@ -11,11 +11,4 @@ public abstract class SerializationStrategy<T> {
     abstract T read(DataInputStream rd) throws IOException;
 
     abstract void write(DataOutputStream wr, T obj) throws IOException;
-
-    protected void checkIfEquals(DataInputStream rd, char c2) throws IOException {
-        char c1 = rd.readChar();
-        if (c1 != c2) {
-            throw new IllegalStateException("Wrong file");
-        }
-    }
 }

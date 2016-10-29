@@ -15,15 +15,10 @@ public class StudentSerializationStrategy extends SerializationStrategy<Student>
     @Override
     public Student read(DataInputStream rd) throws IOException {
         int gId = rd.readInt();
-        checkIfEquals(rd, ',');
         String name = rd.readUTF();
-        checkIfEquals(rd, ',');
         String homeT = rd.readUTF();
-        checkIfEquals(rd, ',');
         Date bD = new Date(rd.readLong());
-        checkIfEquals(rd, ',');
         boolean dorm = rd.readBoolean();
-        checkIfEquals(rd, ',');
         double avSc = rd.readDouble();
         return new Student(gId, name, homeT, bD, dorm, avSc);
     }
@@ -31,15 +26,10 @@ public class StudentSerializationStrategy extends SerializationStrategy<Student>
     @Override
     public void write(DataOutputStream wr, Student obj) throws IOException {
         wr.writeInt(obj.getGroupId());
-        wr.writeChar(',');
         wr.writeUTF(obj.getName());
-        wr.writeChar(',');
         wr.writeUTF(obj.getHometown());
-        wr.writeChar(',');
         wr.writeLong(obj.getBirthDate().getTime());
-        wr.writeChar(',');
         wr.writeBoolean(obj.isHasDormitory());
-        wr.writeChar(',');
         wr.writeDouble(obj.getAverageScore());
     }
 }
