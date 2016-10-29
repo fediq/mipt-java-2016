@@ -54,7 +54,7 @@ public class MyFirstKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
-    void ClosedCheck() {
+    void closedCheck() {
         if (isClosedFlag) {
             throw new RuntimeException("error: can't write to closed file");
         }
@@ -62,7 +62,7 @@ public class MyFirstKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public V read(K key) {
-        ClosedCheck();
+        closedCheck();
         return map.get(key);
     }
 
@@ -73,31 +73,31 @@ public class MyFirstKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public void write(K key, V value) {
-        ClosedCheck();
+        closedCheck();
         map.put(key, value);
     }
 
     @Override
     public void delete(K key) {
-        ClosedCheck();
+        closedCheck();
         map.remove(key);
     }
 
     @Override
     public Iterator<K> readKeys() {
-        ClosedCheck();
+        closedCheck();
         return map.keySet().iterator();
     }
 
     @Override
     public int size() {
-        ClosedCheck();
+        closedCheck();
         return map.size();
     }
 
     @Override
     public void close() throws IOException {
-        ClosedCheck();
+        closedCheck();
         writeToFile();
         file.close();
         isClosedFlag = true;
