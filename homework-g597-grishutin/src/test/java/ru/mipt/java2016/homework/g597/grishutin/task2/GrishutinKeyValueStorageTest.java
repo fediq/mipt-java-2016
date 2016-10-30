@@ -14,7 +14,7 @@ public class GrishutinKeyValueStorageTest extends AbstractSingleFileStorageTest 
             return new GrishutinKeyValueStorage<>(path,
                     new StringSerializationStrategy(),
                     new StringSerializationStrategy());
-        } catch (IOException e) {
+        } catch (IOException | IllegalAccessException e) {
             e.printStackTrace();
         }
         return null;
@@ -26,7 +26,7 @@ public class GrishutinKeyValueStorageTest extends AbstractSingleFileStorageTest 
             return new GrishutinKeyValueStorage<>(path,
                     new IntegerSerializationStrategy(),
                     new DoubleSerializationStrategy());
-        } catch (IOException e) {
+        } catch (IOException | IllegalAccessException e) {
             e.printStackTrace();
         }
         return null;
@@ -38,7 +38,7 @@ public class GrishutinKeyValueStorageTest extends AbstractSingleFileStorageTest 
             return new GrishutinKeyValueStorage<>(path,
                     new StudentKeySerializationStrategy(),
                     new StudentSerializationStrategy());
-        } catch (IOException e) {
+        } catch (IOException | IllegalAccessException e) {
             e.printStackTrace();
         }
         return null;

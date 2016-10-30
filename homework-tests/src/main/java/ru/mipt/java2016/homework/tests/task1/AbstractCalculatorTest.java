@@ -155,8 +155,14 @@ public abstract class AbstractCalculatorTest {
     public void testBadNumber() throws ParsingException {
         tryFail("1.2.3");
     }
-/*<<<<<<< HEAD
-=======
 
->>>>>>> upstream/master*/
+    @Test(expected = ParsingException.class)
+    public void test1() throws ParsingException {
+        tryFail("1. 2");
+    }
+
+    @Test
+    public void test2() throws ParsingException {
+        test("1 - -2", 3);
+    }
 }
