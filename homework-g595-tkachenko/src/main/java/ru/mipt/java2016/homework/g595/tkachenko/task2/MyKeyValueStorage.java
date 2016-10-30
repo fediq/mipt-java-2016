@@ -19,7 +19,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private MySerialization<K> keySerialization;
     private MySerialization<V> valueSerialization;
     private File procAccess;
-    boolean closedAccess;
+    private Boolean closedAccess;
 
     private void isClosed() {
         if (closedAccess) {
