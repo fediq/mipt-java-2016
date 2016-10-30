@@ -36,7 +36,8 @@ public class MKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             DataInputStream fileReading = new DataInputStream(new FileInputStream(database));
             int fileSize = fileReading.readInt();
             for (int i = 0; i < fileSize; ++i) {
-                map.put(keySerializer.deserializeFromStream(fileReading), valueSerializer.deserializeFromStream((fileReading)));
+                map.put(keySerializer.deserializeFromStream(fileReading),
+                        valueSerializer.deserializeFromStream((fileReading)));
             }
             fileReading.close();
         } catch (IOException exc) {
@@ -71,8 +72,9 @@ public class MKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public void delete(K key) {
         isOpened();
-        if (exists(key))
+        if (exists(key)) {
             map.remove(key);
+        }
     }
 
     @Override
