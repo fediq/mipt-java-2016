@@ -17,7 +17,7 @@ public class XSStorage<K, V> implements KeyValueStorage<K, V> {
      * TRUE is the database is closed.
      * FALSE otherwise.
      */
-    private Boolean isStorageClosed = false;
+    private static Boolean isStorageClosed = false;
 
     /**
      * We will need an integer serialization to write
