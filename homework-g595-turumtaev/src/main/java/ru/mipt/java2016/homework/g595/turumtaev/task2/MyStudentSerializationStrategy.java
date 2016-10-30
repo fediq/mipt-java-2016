@@ -32,9 +32,9 @@ public class MyStudentSerializationStrategy implements MySerializationStrategy<S
 
     @Override
     public Student read(DataInputStream input) throws IOException {
-        Integer groupId=input.readInt();
+        Integer groupId = input.readInt();
         String name = input.readUTF();
-        String hometown=input.readUTF();
+        String hometown = input.readUTF();
         Date birthDate =  new Date(input.readLong());
         Boolean isHasDormitory = input.readBoolean();
         Double averageScore = input.readDouble();

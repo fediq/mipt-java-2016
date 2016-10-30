@@ -30,7 +30,7 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
         }
         file = new File(path);
         if (file.exists()) {
-            try (DataInputStream input = new DataInputStream(new FileInputStream(file))){
+            try (DataInputStream input = new DataInputStream(new FileInputStream(file))) {
                 int n = input.readInt();
                 for (int i = 0; i < n; i++) {
                     K key = keySerializationStrategy.read(input);
@@ -81,7 +81,7 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public void close() throws IOException {
         checkNotClosed();
-        try (DataOutputStream output = new DataOutputStream(new FileOutputStream(file))){
+        try (DataOutputStream output = new DataOutputStream(new FileOutputStream(file))) {
             output.writeInt(myMap.size());
             for (Map.Entry<K, V> entry : myMap.entrySet()) {
                 keySerializationStrategy.write(entry.getKey(), output);
