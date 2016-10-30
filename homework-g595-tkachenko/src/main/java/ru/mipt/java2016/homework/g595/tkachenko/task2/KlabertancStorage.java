@@ -23,7 +23,7 @@ public class KlabertancStorage<K, V> implements KeyValueStorage<K, V> {
     private static final int VALUES_SECRET_HASH = 31;
     private boolean flag;
 
-public KlabertancStorage(String path, Serialization<K> k, Serialization<V> v) {
+    public KlabertancStorage(String path, Serialization<K> k, Serialization<V> v) {
 
         keySerialization = k;
         valueSerialization = v;

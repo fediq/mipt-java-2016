@@ -7,7 +7,7 @@ import java.io.IOException;
 /**
  * Created by Dmitry on 30/10/2016.
  */
-public class DoubleSerialization extends Serialization<Double>{
+public class DoubleSerialization extends Serialization<Double> {
     @Override
     public Double read(DataInputStream input) throws IOException {
         return input.readDouble();
