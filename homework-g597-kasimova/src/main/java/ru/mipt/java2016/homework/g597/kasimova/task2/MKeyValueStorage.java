@@ -23,28 +23,24 @@ public class MKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     public MKeyValueStorage(String path,
                             MSerialization<K> keySerializer,
-                            MSerialization<V> valueSerializer) throws IOException {
+                            MSerialization<V> valueSerializer) {
         this.keySerializer = keySerializer;
         this.valueSerializer = valueSerializer;
         File directory = new File(path);
         if (!directory.exists() || !directory.isDirectory()) {
             throw new RuntimeException("Error: Invalid directory name.");
         }
-        filePath = path + File.separator + "database.txt";
+        filePath = path + "/database.txt";
         File database = new File(directory, "database.txt");
-        if (database.exists()) {
-            try (DataInputStream fileReading = new DataInputStream(new FileInputStream(database))) {
-                int fileSize = fileReading.readInt();
-                for (int i = 0; i < fileSize; ++i) {
-                    map.put(keySerializer.deserializeFromStream(fileReading),
-                            valueSerializer.deserializeFromStream((fileReading)));
-                }
-                fileReading.close();
-            } catch (IOException exc) {
-                System.out.println(exc.getMessage());
+        try {
+            DataInputStream fileReading = new DataInputStream(new FileInputStream(database));
+            int fileSize = fileReading.readInt();
+            for (int i = 0; i < fileSize; ++i) {
+                map.put(keySerializer.deserializeFromStream(fileReading), valueSerializer.deserializeFromStream((fileReading)));
             }
-        } else {
-            database.createNewFile();
+            fileReading.close();
+        } catch (IOException exc) {
+            System.out.println(exc.getMessage());
         }
     }
 
@@ -75,9 +71,8 @@ public class MKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public void delete(K key) {
         isOpened();
-        if (exists(key)) {
+        if (exists(key))
             map.remove(key);
-        }
     }
 
     @Override
