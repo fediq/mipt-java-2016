@@ -21,7 +21,7 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
     private ItemParser<V> valueParser = null;
 
     private long getFileHash() throws IOException {
-        FileInputStream in = new FileInputStream(storageDirName + "\\main_storage_file");
+        FileInputStream in = new FileInputStream(storageDirName + "/main_storage_file");
         long hash = 0;
         byte[] buffer = new byte[1024];
         int newBytes = in.read(buffer);
@@ -37,10 +37,11 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
 
     private boolean testFile() {
         try {
-            FileInputStream hin = new FileInputStream(storageDirName + "\\hash");
+            FileInputStream hin = new FileInputStream(storageDirName + "/hash");
             IntegerParser parser = new IntegerParser();
             if ((int) getFileHash() != parser.deserialize(hin) || hin.read() != -1) {
                 hin.close();
+                //throw new AssertionError("My assert2 bad hash");
                 return false;
             }
             hin.close();
@@ -53,7 +54,7 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
 
     private void setHash() throws IOException {
         long hash = getFileHash();
-        FileOutputStream hout = new FileOutputStream(storageDirName + "\\hash");
+        FileOutputStream hout = new FileOutputStream(storageDirName + "/hash");
         new IntegerParser().serialize((int) hash, hout);
         hout.close();
     }
@@ -65,11 +66,11 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
         keyParser = keyParserTmp;
         valueParser = valueParserTmp;
         closed = false;
-        //if (!testFile()) {
-        //    return;
-        //}
+        if (!testFile()) {
+            return;
+        }
         try {
-            FileInputStream in = new FileInputStream(storageDirName + "\\main_storage_file");
+            FileInputStream in = new FileInputStream(storageDirName + "/main_storage_file");
 
             int size = new IntegerParser().deserialize(in);
             for (int i = 0; i < size; ++i) {
@@ -127,7 +128,7 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
 
     public void close() throws IOException {
         closed = true;
-        FileOutputStream out = new FileOutputStream(storageDirName + "\\main_storage_file");
+        FileOutputStream out = new FileOutputStream(storageDirName + "/main_storage_file");
         new IntegerParser().serialize(storage.size(), out);
         for (HashMap.Entry<K, V> entry : storage.entrySet()) {
             keyParser.serialize(entry.getKey(), out);
