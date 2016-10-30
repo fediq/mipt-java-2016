@@ -10,11 +10,8 @@ public class CDiskTable {
 
     private final File file;
 
-    private final String filePath;
-
     public CDiskTable(String filePath) {
         this.file = new File(filePath);
-        this.filePath = filePath;
     }
 
     public void createFile() {
@@ -26,10 +23,7 @@ public class CDiskTable {
     }
 
     public boolean exists() {
-        if (!file.exists()) {
-            return false;
-        }
-        return true;
+        return file.exists();
     }
 
     public void write(String text) {
