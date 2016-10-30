@@ -34,7 +34,7 @@ import java.util.Map;
 
 public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
-    private final MyFile MyFile;
+    private final MyFile myFile;
     private final SerializerInterface<K> keySerializer;
     private final SerializerInterface<V> valueSerializer;
     private final HashMap<K, V> tempStorage = new HashMap<K, V>();
@@ -46,18 +46,18 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                              SerializerInterface<V> valueSerializer) {
         this.keySerializer = keySerializer;
         this.valueSerializer = valueSerializer;
-        MyFile = new MyFile(dirPath + File.separator + "mydatabase.db"); //File.separator- windows = '\'; unix = '/'
+        myFile = new MyFile(dirPath + File.separator + "mydatabase.db"); //File.separator- windows = '\'; unix = '/'
 
 
         try {
-            if (MyFile.exists()) {
+            if (myFile.exists()) {
                 if (!validateFile()) {
                     throw new RuntimeException("It's an injured/wrong file!");
                 }
             }
         } catch (FileNotFoundException e) {   //Если файл был испорчен/ненайден то создаём новый.
-            MyFile.createFile();
-            MyFile.fill(CHECKER);
+            myFile.createFile();
+            myFile.fill(CHECKER);
         }
     }
 
@@ -66,7 +66,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         //Пришлось его полностью переписать, но возник вопрос:
         //как перевести Java.io.DataInputStream в java.lang.String?
 
-        try (DataInputStream rd = new DataInputStream(new FileInputStream(MyFile.name()))) {
+        try (DataInputStream rd = new DataInputStream(new FileInputStream(myFile.name()))) {
             if (!rd.readUTF().equals(CHECKER)) {
                 throw new IllegalStateException("Invalid file");
             }
@@ -85,44 +85,44 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public V read(K key) {
-        IsOpen();
+        isOpen();
         return tempStorage.get(key);
     }
 
     @Override
     public boolean exists(K key) {
-        IsOpen();
+        isOpen();
         return tempStorage.containsKey(key);
     }
 
     @Override
     public void write(K key, V value) {
-        IsOpen();
+        isOpen();
         tempStorage.put(key, value);
     }
 
     @Override
     public void delete(K key) {
-        IsOpen();
+        isOpen();
         tempStorage.remove(key);
     }
 
     @Override
     public Iterator<K> readKeys() {
-        IsOpen();
+        isOpen();
         return tempStorage.keySet().iterator();
     }
 
     @Override
     public int size() {
-        IsOpen();
+        isOpen();
         return tempStorage.size();
     }
 
     @Override
     public void close() {
-        IsOpen();
-        try (DataOutputStream wr = new DataOutputStream(new FileOutputStream(MyFile.name()))) {
+        isOpen();
+        try (DataOutputStream wr = new DataOutputStream(new FileOutputStream(myFile.name()))) {
             wr.writeUTF(CHECKER);
             wr.writeInt(tempStorage.size());
             for (Map.Entry<K, V> entry : tempStorage.entrySet()) {
@@ -135,7 +135,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
     }
     
-    private void IsOpen() {
+    private void isOpen() {
         if (flag) {
             throw new RuntimeException("storage is already closed!");
         }

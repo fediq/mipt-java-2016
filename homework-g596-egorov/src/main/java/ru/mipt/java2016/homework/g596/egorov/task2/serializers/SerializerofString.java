@@ -1,7 +1,9 @@
 package ru.mipt.java2016.homework.g596.egorov.task2.serializers;
 
 import java.io.DataInputStream;
+
 import java.io.DataOutputStream;
+
 import java.io.IOException;
 
 /**
