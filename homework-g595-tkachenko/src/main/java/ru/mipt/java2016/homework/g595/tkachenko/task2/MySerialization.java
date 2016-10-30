@@ -11,7 +11,7 @@ import java.util.Date;
 public interface MySerialization<valType> {
 
     valType readSerialize(DataInputStream input) throws IOException;
-    
+
     void writeSerialize(valType value, DataOutputStream output) throws IOException;
 
     MySerialization<Integer> INT_STRATEGY = new MySerialization<Integer>() {
