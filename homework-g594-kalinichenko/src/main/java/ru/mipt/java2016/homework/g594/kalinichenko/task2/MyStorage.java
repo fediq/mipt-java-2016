@@ -87,7 +87,7 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     @Override
-    public V read(K key) throws Exception {
+    public V read(K key) {
         checkExistence();
         return map.get(key);
     }
