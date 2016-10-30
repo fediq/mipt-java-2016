@@ -6,11 +6,11 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-public class MyStudentKeySerialization extends MySerialization<StudentKey> {
+public class MyStudentKeySerialization implements MySerialization<StudentKey> {
 
     @Override
     public StudentKey read(DataInputStream readFromFile) throws IOException {
-        Integer groupId = readFromFile.readInt();
+        int groupId = readFromFile.readInt();
         String name = readFromFile.readUTF();
         return new StudentKey(groupId, name);
     }

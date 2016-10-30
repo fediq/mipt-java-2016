@@ -5,6 +5,7 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.HashMap;
+import java.util.Map;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -21,22 +22,23 @@ public class KeyValueStorageMyRealization<K, V> implements KeyValueStorage<K, V>
 
     private String fileName; // путь, по которому находится наша база данных
     private String typeOfData; // типы хранящихся ключей и значений в базе данных
-    private HashMap<K, V> map = new HashMap<K, V>(); // данные из нашей базы
+    private Map<K, V> map = new HashMap<K, V>(); // данные из нашей базы
     private MySerialization<K> keySerializator;
     private MySerialization<V> valueSerializator;
     private File file;
 
-    public KeyValueStorageMyRealization(String type, String path, MySerialization serKey, MySerialization serValue) {
-        typeOfData = type;
-        fileName = path + "/store.txt";
+    public KeyValueStorageMyRealization(String path, MySerialization<K> serKey, MySerialization<V> serValue) {
+        typeOfData = serKey.getClass() + " --- " + serValue.getClass();
+        fileName = path + File.separator + "store.txt";
         keySerializator = serKey;
         valueSerializator = serValue;
         file = new File(fileName);
 
         if (!file.exists()) {
             createFile();
+        } else {
+            getAllData();
         }
-        getAllData();
     }
 
     private void createFile() {
@@ -45,13 +47,6 @@ public class KeyValueStorageMyRealization<K, V> implements KeyValueStorage<K, V>
             file.createNewFile();
         } catch (IOException e) {
             throw new IllegalStateException("We can't create file");
-        }
-        try (DataOutputStream writeToFile = new DataOutputStream(new FileOutputStream(fileName))) {
-            //сразу записываем в файл используемые типы и количество пар данных ключ - значение, т.е. 0
-            writeToFile.writeUTF(typeOfData);
-            writeToFile.writeInt(0);
-        } catch (IOException e) {
-            throw new IllegalStateException("We can't write to file");
         }
     }
 

@@ -7,7 +7,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Date;
 
-public class MyStudentSerialization extends MySerialization<Student> {
+public class MyStudentSerialization implements MySerialization<Student> {
 
     @Override
     public Student read(DataInputStream readFromFile) throws IOException {

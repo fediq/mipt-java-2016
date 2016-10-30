@@ -4,7 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-public class MyIntegerSerialization extends MySerialization<Integer> {
+public class MyIntegerSerialization implements MySerialization<Integer> {
 
     @Override
     public Integer read(DataInputStream readFromFile) throws IOException {

@@ -4,8 +4,8 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-public abstract class MySerialization<T> {
-    abstract T read(DataInputStream readFromFile) throws IOException;
-    
-    abstract void write(DataOutputStream writeToFile, T object) throws IOException;
+public interface MySerialization<T> {
+    T read(DataInputStream readFromFile) throws IOException;
+
+    void write(DataOutputStream writeToFile, T object) throws IOException;
 }

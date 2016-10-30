@@ -4,7 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-public class MyDoubleSerialization extends MySerialization<Double> {
+public class MyDoubleSerialization implements MySerialization<Double> {
 
     @Override
     public Double read(DataInputStream readFromFile) throws IOException {
