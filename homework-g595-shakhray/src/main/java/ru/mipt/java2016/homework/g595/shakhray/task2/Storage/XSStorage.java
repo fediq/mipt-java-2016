@@ -69,6 +69,7 @@ public class XSStorage<K, V> implements KeyValueStorage<K, V> {
      * Loads data from file
      */
     private void loadData() throws IOException {
+        data.clear();
         int size = integerSerialization.read(file);
         for (int i = 0; i < size; i++) {
             data.put(keySerialization.read(file), valueSerialization.read(file));
