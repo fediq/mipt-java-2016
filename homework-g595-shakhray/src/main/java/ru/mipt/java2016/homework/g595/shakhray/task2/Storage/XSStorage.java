@@ -134,6 +134,7 @@ public class XSStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public void close() throws IOException {
+        checkIfStorageIsClosed();
         isStorageClosed = true;
         save();
         file.close();
