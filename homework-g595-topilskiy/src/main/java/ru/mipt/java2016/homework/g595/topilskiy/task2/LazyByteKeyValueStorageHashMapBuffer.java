@@ -16,10 +16,11 @@ class LazyByteKeyValueStorageHashMapBuffer<KeyType, ValueType> {
     /* A File IO Wrapper for interactions with the Storage on disk */
     private final LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> fileIOWrapper;
 
-    LazyByteKeyValueStorageHashMapBuffer(LazyByteKeyValueStorageInfo storageInfoInit) throws IOException {
+    LazyByteKeyValueStorageHashMapBuffer(LazyByteKeyValueStorageInfo storageInfoInit)
+                                         throws IOException {
         fileIOWrapper =
                 new LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType>(storageInfoInit);
-        hashMapBuffer = new HashMap<>();
+        hashMapBuffer = fileIOWrapper.read();
     }
 
     /**
