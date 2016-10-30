@@ -10,16 +10,17 @@ import ru.mipt.java2016.homework.tests.task2.StudentKey;
  */
 
 public class KVSTests extends AbstractSingleFileStorageTest {
-    @Override
-    protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) {
-        return new KVSImplementation<>(path, new KVStorageIntegerSerializer(),
-                new KVStorageDoubleSerializer());
-    }
 
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String path) {
         return new KVSImplementation<>(path, new KVStorageStringSerializer(),
                 new KVStorageStringSerializer());
+    }
+
+    @Override
+    protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) {
+        return new KVSImplementation<>(path, new KVStorageIntegerSerializer(),
+                new KVStorageDoubleSerializer());
     }
 
     @Override
