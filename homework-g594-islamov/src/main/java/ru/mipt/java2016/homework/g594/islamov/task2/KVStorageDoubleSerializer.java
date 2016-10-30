@@ -7,10 +7,12 @@ package ru.mipt.java2016.homework.g594.islamov.task2;
  */
 
 public class KVStorageDoubleSerializer implements KVSSerializationInterface<Double> {
+
     @Override
     public String serialize(Double object) {
         return Double.toString(object);
     }
+
     @Override
     public Double deserialize(String object) throws BadStorageException {
         try {

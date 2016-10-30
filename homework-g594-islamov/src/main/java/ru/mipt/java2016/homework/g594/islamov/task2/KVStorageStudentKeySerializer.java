@@ -7,6 +7,7 @@ import ru.mipt.java2016.homework.tests.task2.StudentKey;
  */
 
 public class KVStorageStudentKeySerializer implements KVSSerializationInterface<StudentKey> {
+
     @Override
     public String serialize(StudentKey object) {
         StringBuilder serialized = new StringBuilder("<");
@@ -17,6 +18,7 @@ public class KVStorageStudentKeySerializer implements KVSSerializationInterface<
         serialized.append("'>");
         return serialized.toString();
     }
+
     @Override
     public StudentKey deserialize(String object) throws BadStorageException {
         int objectLength = object.length();

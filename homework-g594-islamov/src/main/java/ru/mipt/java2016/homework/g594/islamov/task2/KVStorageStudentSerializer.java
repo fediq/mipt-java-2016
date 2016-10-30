@@ -8,6 +8,7 @@ import java.util.Date;
  */
 
 public class KVStorageStudentSerializer implements KVSSerializationInterface<Student> {
+
     @Override
     public String serialize(Student object) {
         StringBuilder serialized = new StringBuilder("<");
@@ -26,6 +27,7 @@ public class KVStorageStudentSerializer implements KVSSerializationInterface<Stu
         serialized.append("'>");
         return serialized.toString();
     }
+
     @Override
     public Student deserialize(String object) throws BadStorageException {
         int objectLength = object.length();

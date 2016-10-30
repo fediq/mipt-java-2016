@@ -16,16 +16,16 @@ public class KVSImplementation<K, V> implements KeyValueStorage<K, V> {
     private static final String FILENAME = "/storage.db";
     private static final String FLAGSTRING = "ITISMYFILE";
 
-    public final KVSSerializationInterface<K> keySerializer;
-    public final KVSSerializationInterface<V> valueSerializer;
+    public final KVSSerializationInterface<K> keySerialization;
+    public final KVSSerializationInterface<V> valueSerialization;
     public final HashMap<K, V> cache = new HashMap<K, V>();
-    public File file;
-    public boolean closed = false;
+    private File file;
+    private boolean closed = false;
 
-    public KVSImplementation(String directoryPath, KVSSerializationInterface<K> keySerializer,
-                             KVSSerializationInterface<V> valueSerializer) {
-        this.keySerializer = keySerializer;
-        this.valueSerializer = valueSerializer;
+    public KVSImplementation(String directoryPath, KVSSerializationInterface<K> keySerialization,
+                             KVSSerializationInterface<V> valueSerialization) {
+        this.keySerialization = keySerialization;
+        this.valueSerialization = valueSerialization;
         file = new File(directoryPath + FILENAME);
 
         try {
@@ -47,48 +47,48 @@ public class KVSImplementation<K, V> implements KeyValueStorage<K, V> {
     }
 
     @Override
-    public V read(K key){
-        if (closed) {
+    public V read(K key) {
+        if (isStorageClosed()) {
             throw new RuntimeException("File has already been closed");
         }
         return cache.get(key);
     }
 
     @Override
-    public boolean exists(K key){
-        if (closed) {
+    public boolean exists(K key) {
+        if (isStorageClosed()) {
             throw new RuntimeException("File has already been closed");
         }
         return cache.containsKey(key);
     }
 
     @Override
-    public void write(K key, V value){
-        if (closed) {
+    public void write(K key, V value) {
+        if (isStorageClosed()) {
             throw new RuntimeException("File has already been closed");
         }
         cache.put(key, value);
     }
 
     @Override
-    public void delete(K key){
-        if (closed) {
+    public void delete(K key) {
+        if (isStorageClosed()) {
             throw new RuntimeException("File has already been closed");
         }
         cache.remove(key);
     }
 
     @Override
-    public Iterator<K> readKeys(){
-        if (closed) {
+    public Iterator<K> readKeys() {
+        if (isStorageClosed()) {
             throw new RuntimeException("File has already been closed");
         }
         return cache.keySet().iterator();
     }
 
     @Override
-    public int size(){
-        if (closed) {
+    public int size() {
+        if (isStorageClosed()) {
             throw new RuntimeException("File has already been closed");
         }
         return cache.size();
@@ -99,9 +99,9 @@ public class KVSImplementation<K, V> implements KeyValueStorage<K, V> {
         closed = true;
         StringBuilder storageInString = new StringBuilder(FLAGSTRING + "\n");
         for (Map.Entry<K, V> entry : cache.entrySet()) {
-            storageInString.append(keySerializer.serialize(entry.getKey()));
+            storageInString.append(keySerialization.serialize(entry.getKey()));
             storageInString.append('\n');
-            storageInString.append(valueSerializer.serialize(entry.getValue()));
+            storageInString.append(valueSerialization.serialize(entry.getValue()));
             storageInString.append('\n');
         }
         writeToFile(storageInString.toString());
@@ -118,8 +118,8 @@ public class KVSImplementation<K, V> implements KeyValueStorage<K, V> {
         int storageSize = splitedStorageInString.length;
         for (int i = 1; i < storageSize; i += 2) {
             try {
-                K stringToKeyType = keySerializer.deserialize(splitedStorageInString[i]);
-                V stringToValueType = valueSerializer.deserialize(splitedStorageInString[i + 1]);
+                K stringToKeyType = keySerialization.deserialize(splitedStorageInString[i]);
+                V stringToValueType = valueSerialization.deserialize(splitedStorageInString[i + 1]);
                 cache.put(stringToKeyType, stringToValueType);
             } catch (BadStorageException e) {
                 return false;
@@ -130,11 +130,11 @@ public class KVSImplementation<K, V> implements KeyValueStorage<K, V> {
 
     public String readFromFile() throws FileNotFoundException {
         StringBuilder storageInString = new StringBuilder();
-        if (!file.exists()){
+        if (!getFile().exists()) {
             throw new FileNotFoundException("File is not found");
         }
         try {
-            BufferedReader readLines = new BufferedReader(new FileReader(file.getAbsoluteFile()));
+            BufferedReader readLines = new BufferedReader(new FileReader(getFile().getAbsoluteFile()));
             try {
                 String inputLine;
                 while ((inputLine = readLines.readLine()) != null) {
@@ -147,24 +147,30 @@ public class KVSImplementation<K, V> implements KeyValueStorage<K, V> {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        System.out.println("Vse uspeshno prochitalos");
         return storageInString.toString();
     }
 
     public void writeToFile(String storageInString) throws FileNotFoundException {
         try {
-            if(!file.exists()){
+            if (!getFile().exists()) {
                 file.createNewFile();
             }
-            PrintWriter outputLines = new PrintWriter(file.getAbsoluteFile());
+            PrintWriter outputLines = new PrintWriter(getFile().getAbsoluteFile());
             try {
                 outputLines.write(storageInString);
             } finally {
                 outputLines.close();
             }
-        } catch(IOException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        System.out.println("Vse uspeshno zapisalos");
+    }
+
+    public File getFile() {
+        return this.file;
+    }
+
+    public boolean isStorageClosed() {
+        return this.closed;
     }
 }

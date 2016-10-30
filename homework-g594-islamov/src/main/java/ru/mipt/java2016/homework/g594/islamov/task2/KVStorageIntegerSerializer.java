@@ -7,10 +7,12 @@ import ru.mipt.java2016.homework.g594.islamov.task2.BadStorageException;
  */
 
 public class KVStorageIntegerSerializer implements KVSSerializationInterface<Integer> {
+
     @Override
     public String serialize(Integer object) {
         return Integer.toString(object);
     }
+
     @Override
     public Integer deserialize(String object) throws BadStorageException {
         try {
