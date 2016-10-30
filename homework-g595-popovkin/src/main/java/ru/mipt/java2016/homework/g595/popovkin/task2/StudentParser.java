@@ -23,12 +23,12 @@ public class StudentParser implements ItemParser<Student> {
 
     @Override
     public Student deserialize(FileInputStream in) throws IOException {
-        int GroupId = new IntegerParser().deserialize(in);
-        String Name = new StringParser().deserialize(in);
-        String Hometown = new StringParser().deserialize(in);
-        Date BirthDate = new DateParser().deserialize(in);
-        boolean Dormitory = new BooleanParser().deserialize(in);
-        Double AverageScore = new DoubleParser().deserialize(in);
-        return new Student(GroupId, Name, Hometown, BirthDate, Dormitory, AverageScore);
+        int groupId = new IntegerParser().deserialize(in);
+        String name = new StringParser().deserialize(in);
+        String hometown = new StringParser().deserialize(in);
+        Date birthDate = new DateParser().deserialize(in);
+        boolean dormitory = new BooleanParser().deserialize(in);
+        Double averageScore = new DoubleParser().deserialize(in);
+        return new Student(groupId, name, hometown, birthDate, dormitory, averageScore);
     }
 }

@@ -3,7 +3,6 @@ package ru.mipt.java2016.homework.g595.popovkin.task2;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.*;
 
 /**
  * Created by Howl on 30.10.2016.
@@ -25,7 +24,7 @@ public class StringParser implements ItemParser<String> {
         int len = tmp.deserialize(in);
         StringBuilder buffer = new StringBuilder();
         for (int i = 0; i < len; ++i) {
-            buffer.append((char)in.read());
+            buffer.append((char) in.read());
         }
         return buffer.toString();
     }

@@ -4,7 +4,6 @@ package ru.mipt.java2016.homework.g595.popovkin.task2;
  * Created by Howl on 30.10.2016.
  */
 
-import com.sun.prism.shader.Solid_TextureYV12_AlphaTest_Loader;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.tests.task2.AbstractSingleFileStorageTest;
 import ru.mipt.java2016.homework.tests.task2.Student;

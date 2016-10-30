@@ -11,8 +11,8 @@ import java.io.IOException;
 public class IntegerParser implements ItemParser<Integer> {
 
     @Override
-    public void serialize(Integer arg_, FileOutputStream out) throws IOException {
-        int arg = arg_;
+    public void serialize(Integer argTmp, FileOutputStream out) throws IOException {
+        int arg = argTmp;
         for (int i = 0; i < 4; ++i) {
             out.write((arg >> ((3 - i) * 8)) & 0xFF);
         }
@@ -22,7 +22,7 @@ public class IntegerParser implements ItemParser<Integer> {
     public Integer deserialize(FileInputStream in) throws IOException {
         int ans = 0;
         for (int i = 0; i < 4; ++i) {
-            Integer tmp = (int)in.read();
+            Integer tmp = (int) in.read();
             ans = (ans << 8) + tmp;
         }
         return ans;
