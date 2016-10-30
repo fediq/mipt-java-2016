@@ -24,7 +24,8 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     public MyKeyValueStorage(String path, SerializationStrategy<K> keySerializationStrategy,
             SerializationStrategy<V> valueSerializationStrategy) throws IOException {
-        currentStorageType = keySerializationStrategy.getType() + " : " + valueSerializationStrategy.getType();
+        currentStorageType =
+                keySerializationStrategy.getType() + " : " + valueSerializationStrategy.getType();
         isClosed = false;
 
         File directory = new File(path);
@@ -60,8 +61,8 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
-    private void checkForClosedDatabaseFile(){
-        if(isClosed){
+    private void checkForClosedDatabaseFile() {
+        if (isClosed) {
             throw new RuntimeException("Access to the closed file");
         }
     }
@@ -91,13 +92,13 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     @Override
-    public Iterator<K> readKeys(){
+    public Iterator<K> readKeys() {
         checkForClosedDatabaseFile();
         return database.keySet().iterator();
     }
 
     @Override
-    public int size(){
+    public int size() {
         checkForClosedDatabaseFile();
         return database.size();
     }
