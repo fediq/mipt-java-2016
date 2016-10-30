@@ -9,31 +9,36 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 class GrishutinKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private final SerializationStrategy<K> keySerializationStrategy;
     private final SerializationStrategy<V> valueSerializationStrategy;
     private RandomAccessFile storageFile;
-    private HashMap<K, V> kvHashMap;
+    private File lock;
+    private HashMap<K, V> kvHashMap = new HashMap<>();
 
-    private Integer numEpoch;
-    private int numRecords;
+    private Integer numEpoch = 0;
+    private int numRecords = 0;
     private boolean isClosed = false;
 
     GrishutinKeyValueStorage(String directoryPath,
                              SerializationStrategy<K> keyStrat,
-                             SerializationStrategy<V> valueStrat) throws IOException {
+                             SerializationStrategy<V> valueStrat) throws IOException, IllegalAccessException {
 
         String preferredFilename = "Azazaza.db";
         keySerializationStrategy = keyStrat;
         valueSerializationStrategy = valueStrat;
-        kvHashMap = new HashMap<>();
-        numEpoch = 0;
-        numRecords = 0;
         Path filePath = Paths.get(directoryPath + File.separator + preferredFilename);
-        Files.createDirectories(filePath.getParent());
+        Path lockFilePath = Paths.get(directoryPath + File.separator + preferredFilename + ".lock");
 
+        lock = lockFilePath.toFile();
+        if (!lock.createNewFile()) { // if lock is hold by other kvStorage
+            throw new IllegalAccessException("Database is already opened");
+        }
+
+        Files.createDirectories(filePath.getParent());
         if (!(Files.exists(filePath))) {
             Files.createFile(filePath);
         }
@@ -84,7 +89,7 @@ class GrishutinKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public Iterator<K> readKeys() {
-        return null;
+        return kvHashMap.keySet().iterator();
     }
 
     @Override
@@ -98,6 +103,9 @@ class GrishutinKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             overwrite();
             isClosed = true;
         }
+        kvHashMap.clear();
+        storageFile.close();
+        Files.delete(lock.toPath());
     }
 
     private void overwrite() throws IOException {
