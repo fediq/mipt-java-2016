@@ -91,7 +91,6 @@ public class UltimateCalc implements Calculator {
             while (pos < expression.length()) {
                 Symbol s = parseString(expression); //current symbol
 
-
                 switch (getSymbolType(s)) {
                     case NUMBER:
                         double val = getNumber(expression);
@@ -144,6 +143,7 @@ public class UltimateCalc implements Calculator {
     private double getNumber(String expression) throws ParsingException {
         char c = expression.charAt(pos);
         if (c < '0' || c > '9') {
+            freeResource();
             throw new ParsingException("wrong");
         }
 
@@ -163,6 +163,7 @@ public class UltimateCalc implements Calculator {
         if (c == '.') {
             double pow = 0.1;
             if (pos >= expression.length() - 1) {
+                freeResource();
                 throw new ParsingException("wrong");
             }
 
@@ -188,6 +189,7 @@ public class UltimateCalc implements Calculator {
     //execute operation
     private void calculateOperation(Symbol s) throws ParsingException {
         if (stack.size() < 1) {
+            freeResource();
             throw new ParsingException("wrong");
         }
 
@@ -202,6 +204,7 @@ public class UltimateCalc implements Calculator {
             }
         } else {
             if (stack.isEmpty()) {
+                freeResource();
                 throw new ParsingException("wrong");
             }
             double a = stack.pop();
@@ -221,6 +224,7 @@ public class UltimateCalc implements Calculator {
                     stack.push(a / b);
                     break;
                 default:
+                    freeResource();
                     throw new ParsingException("wrong");
             }
         }
@@ -284,6 +288,7 @@ public class UltimateCalc implements Calculator {
         }
 
         //if nothing of that
+        freeResource();
         throw new ParsingException("wrong");
     }
 
