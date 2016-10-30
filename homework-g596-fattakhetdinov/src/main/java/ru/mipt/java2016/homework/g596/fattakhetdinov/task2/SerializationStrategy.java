@@ -15,7 +15,7 @@ public interface SerializationStrategy<T> {
 
     String getType();
 
-    SerializationStrategy<String> stringSerializator = new SerializationStrategy<String>() {
+    SerializationStrategy<String> STRING_SERIALIZATOR = new SerializationStrategy<String>() {
         @Override
         public void serializeToFile(String str, DataOutputStream output) throws IOException {
             output.writeUTF(str);
@@ -32,7 +32,7 @@ public interface SerializationStrategy<T> {
         }
     };
 
-    SerializationStrategy<Integer> integerSerializator = new SerializationStrategy<Integer>() {
+    SerializationStrategy<Integer> INTEGER_SERIALIZATOR = new SerializationStrategy<Integer>() {
         @Override
         public void serializeToFile(Integer value, DataOutputStream output) throws IOException {
             output.writeInt(value);
@@ -49,7 +49,7 @@ public interface SerializationStrategy<T> {
         }
     };
 
-    SerializationStrategy<Double> doubleSerializator = new SerializationStrategy<Double>() {
+    SerializationStrategy<Double> DOUBLE_SERIALIZATOR = new SerializationStrategy<Double>() {
         @Override
         public void serializeToFile(Double value, DataOutputStream output) throws IOException {
             output.writeDouble(value);
@@ -66,29 +66,27 @@ public interface SerializationStrategy<T> {
         }
     };
 
-    SerializationStrategy<StudentKey> studentKeySerializator =
-            new SerializationStrategy<StudentKey>() {
-                @Override
-                public void serializeToFile(StudentKey studentKey, DataOutputStream output)
-                        throws IOException {
-                    output.writeInt(studentKey.getGroupId());
-                    output.writeUTF(studentKey.getName());
-                }
+    SerializationStrategy<StudentKey> STUDENT_KEY_SERIALIZATOR = new SerializationStrategy<StudentKey>() {
+        @Override
+        public void serializeToFile(StudentKey studentKey, DataOutputStream output) throws IOException {
+            output.writeInt(studentKey.getGroupId());
+            output.writeUTF(studentKey.getName());
+        }
 
-                @Override
-                public StudentKey deserializeFromFile(DataInputStream input) throws IOException {
-                    int groupId = input.readInt();
-                    String name = input.readUTF();
-                    return new StudentKey(groupId, name);
-                }
+        @Override
+        public StudentKey deserializeFromFile(DataInputStream input) throws IOException {
+            int groupId = input.readInt();
+            String name = input.readUTF();
+            return new StudentKey(groupId, name);
+        }
 
-                @Override
-                public String getType() {
-                    return "StudentKey";
-                }
-            };
+        @Override
+        public String getType() {
+            return "StudentKey";
+        }
+    };
 
-    SerializationStrategy<Student> studentSerializator = new SerializationStrategy<Student>() {
+    SerializationStrategy<Student> STUDENT_SERIALIZATOR = new SerializationStrategy<Student>() {
         @Override
         public void serializeToFile(Student student, DataOutputStream output) throws IOException {
             output.writeInt(student.getGroupId());
