@@ -129,7 +129,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 keySerializer.serialize(wr, entry.getKey());
                 valueSerializer.serialize(wr, entry.getValue());
             }
-            flag = false;
+            flag = true;
         } catch (IOException e) {
             throw new IllegalStateException("Couldn't write storage to file");
         }
