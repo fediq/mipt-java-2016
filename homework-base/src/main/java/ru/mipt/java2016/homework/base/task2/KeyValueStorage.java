@@ -1,7 +1,6 @@
 package ru.mipt.java2016.homework.base.task2;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.util.Iterator;
 
 /**
