@@ -9,6 +9,7 @@ import java.nio.ByteBuffer;
  */
 
 public abstract class MySerializer<K> {
+
     public abstract K get(FileInputStream in);
 
     public abstract void put(FileOutputStream out, K val);
