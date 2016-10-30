@@ -10,8 +10,9 @@ public class StringSerializationStrategy implements SerializationStrategy<String
 
     @Override
     public void serialize(String value, RandomAccessFile raf) throws IOException {
-        integerSerializationStrategy.serialize(value.getBytes().length, raf);
-        raf.writeChars(value);
+        byte[] bytes = value.getBytes();
+        integerSerializationStrategy.serialize(bytes.length, raf);
+        raf.write(bytes);
     }
 
     @Override
