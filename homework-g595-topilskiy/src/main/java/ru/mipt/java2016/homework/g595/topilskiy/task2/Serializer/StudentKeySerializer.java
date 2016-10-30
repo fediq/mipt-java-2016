@@ -12,12 +12,10 @@ import static java.util.Arrays.copyOfRange;
  * @since 30.10.16
  */
 public class StudentKeySerializer implements ISerializer<StudentKey> {
-    /* An IntegerSerializer for serializing and deserializing within the class */
+    /* ClassSerializers for serializing and deserializing within the class */
     private static final IntegerSerializer integerSerializer = (IntegerSerializer)
             SerializerFactory.getSerializer("Integer");
-
-    /* A StringSerializer for serializing and deserializing within the class */
-    private static final StringSerializer stringSerializer = (StringSerializer)
+    private static final StringSerializer  stringSerializer = (StringSerializer)
             SerializerFactory.getSerializer("String");
 
     /**
@@ -44,10 +42,6 @@ public class StudentKeySerializer implements ISerializer<StudentKey> {
      */
     @Override
     public StudentKey deserialize(byte[] valueBytes) throws IllegalArgumentException {
-        if (valueBytes.length < IntegerSerializer.getIntegerByteSize()) {
-            throw new IllegalArgumentException("Illegal Deserialization");
-        }
-
         int valueBytesHead = 0;
         int valueBytesTail = IntegerSerializer.getIntegerByteSize();
 
