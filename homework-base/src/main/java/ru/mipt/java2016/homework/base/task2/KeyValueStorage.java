@@ -1,6 +1,7 @@
 package ru.mipt.java2016.homework.base.task2;
 
 import java.io.Closeable;
+import java.io.IOException;
 import java.util.Iterator;
 
 /**
@@ -46,5 +47,5 @@ public interface KeyValueStorage<K, V> extends Closeable {
     /**
      * Возвращает число ключей, которые сейчас в хранилище.
      */
-    int size();
+    int size() throws Exception;
 }
