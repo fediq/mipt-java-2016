@@ -1,5 +1,7 @@
 package ru.mipt.java2016.homework.g594.pyrkin.task2.serializer;
 
+import java.nio.ByteBuffer;
+
 /**
  * DoubleSerializer
  * Created by randan on 10/30/16.
@@ -7,12 +9,19 @@ package ru.mipt.java2016.homework.g594.pyrkin.task2.serializer;
 public class DoubleSerializer implements SerializerInterface<Double> {
 
     @Override
-    public String serialize(Double object) {
-        return object.toString();
+    public int sizeOfSerialize(Double object) {
+        return 8;
     }
 
     @Override
-    public Double deserialize(String inputString) {
-        return Double.parseDouble(inputString);
+    public ByteBuffer serialize(Double object) {
+        ByteBuffer resultBuffer = ByteBuffer.allocate(this.sizeOfSerialize(object));
+        resultBuffer.putDouble(object);
+        return resultBuffer;
+    }
+
+    @Override
+    public Double deserialize(ByteBuffer inputBuffer) {
+        return inputBuffer.getDouble();
     }
 }
