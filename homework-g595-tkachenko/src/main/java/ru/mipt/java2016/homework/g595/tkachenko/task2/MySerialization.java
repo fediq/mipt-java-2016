@@ -11,6 +11,7 @@ import java.util.Date;
 public interface MySerialization<valType> {
 
     valType readSerialize(DataInputStream input) throws IOException;
+    
     void writeSerialize(valType value, DataOutputStream output) throws IOException;
 
     MySerialization<Integer> INT_STRATEGY = new MySerialization<Integer>() {
@@ -62,7 +63,8 @@ public interface MySerialization<valType> {
 
         @Override
         public Student readSerialize(DataInputStream input) throws IOException {
-            return new Student(input.readInt(), input.readUTF(), input.readUTF(), new Date(input.readLong()), input.readBoolean(), input.readDouble());
+            return new Student(input.readInt(), input.readUTF(), input.readUTF(), new Date(input.readLong()),
+                    input.readBoolean(), input.readDouble());
         }
     };
 

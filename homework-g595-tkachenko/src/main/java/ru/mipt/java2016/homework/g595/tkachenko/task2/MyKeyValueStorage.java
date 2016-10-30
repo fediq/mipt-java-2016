@@ -100,19 +100,19 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     public boolean exists(K key) {
         isClosed();
         return (map.containsKey(key));
-    };
+    }
 
     @Override
     public void write(K key, V value) {
         isClosed();
         map.put(key, value);
-    };
+    }
 
     @Override
     public void delete(K key) {
         isClosed();
         map.remove(key);
-    };
+    }
 
     @Override
     public Iterator<K> readKeys() {
