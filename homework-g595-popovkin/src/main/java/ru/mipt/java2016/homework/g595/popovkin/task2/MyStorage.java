@@ -65,15 +65,21 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
         keyParser = keyParserTmp;
         valueParser = valueParserTmp;
         closed = false;
-        if (!testFile()) {
-            return;
+        //if (!testFile()) {
+        //    return;
+        //}
+        try {
+            FileInputStream in = new FileInputStream(storageDirName + "\\main_storage_file");
+
+            int size = new IntegerParser().deserialize(in);
+            for (int i = 0; i < size; ++i) {
+                storage.put(keyParser.deserialize(in), valueParser.deserialize(in));
+            }
+            in.close();
+        } catch(IOException ex) {
+            storage.clear();
+            System.out.println(ex.getMessage());
         }
-        FileInputStream in = new FileInputStream(storageDirName + "\\main_storage_file");
-        int size = new IntegerParser().deserialize(in);
-        for (int i = 0; i < size; ++i) {
-            storage.put(keyParser.deserialize(in), valueParser.deserialize(in));
-        }
-        in.close();
     }
 
     private void checkForCloseness() {
