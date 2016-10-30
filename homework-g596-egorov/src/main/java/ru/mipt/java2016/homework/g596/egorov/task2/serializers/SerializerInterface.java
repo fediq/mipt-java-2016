@@ -8,8 +8,8 @@ import java.io.IOException;         //Как этого избежать?!
  * Created by евгений on 30.10.2016.
  */
 public interface SerializerInterface<T> {
-    abstract T deserialize(DataInputStream rd) throws IOException;
+    T deserialize(DataInputStream rd) throws IOException;
 
-    abstract void serialize(DataOutputStream wr, T obj) throws IOException;
+    void serialize(DataOutputStream wr, T obj) throws IOException;
 }
 
