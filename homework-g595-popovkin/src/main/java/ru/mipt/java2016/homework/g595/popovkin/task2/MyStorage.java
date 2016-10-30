@@ -2,7 +2,8 @@ package ru.mipt.java2016.homework.g595.popovkin.task2;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import java.io.*;
-import java.util.*;
+import java.util.Iterator;
+import java.util.HashMap;
 
 /**
  * Created by Howl on 11.10.2016.
@@ -12,7 +13,7 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
     static final private long P = (long)(1E3 + 3);
     static final private long MOD = (long)(1E9 + 7);
 
-    private HashMap<K, V> storage = null;
+    private final HashMap<K, V> storage = new HashMap<>();
     private boolean closed = true;
     private String storage_dir_name;
 
@@ -43,6 +44,7 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
             }
             newBytes = in.read(buffer);
         }
+        in.close();
         return hash_;
     }
 
@@ -51,9 +53,10 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
             FileInputStream hin = new FileInputStream(storage_dir_name + "\\hash");
             IntegerParser parser_ = new IntegerParser();
             if ((int)get_file_hash() != parser_.deserialize(hin) || hin.read() != -1) {
-                System.out.println("something wrong");
+                hin.close();
                 return false;
             }
+            hin.close();
         } catch (IOException ex) {
             System.out.println(ex.getMessage());
             return false;
@@ -65,29 +68,24 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
         long hash_ = get_file_hash();
         FileOutputStream hout = new FileOutputStream(storage_dir_name + "\\hash");
         new IntegerParser().serialize((int)hash_, hout);
+        hout.close();
     }
 
     public MyStorage(String directory_name, ItemParser<K> keyParser_, ItemParser<V> valueParser_) throws IOException {
         //testFileIO();
-        System.out.println("open...");
         storage_dir_name = directory_name;
         keyParser = keyParser_;
         valueParser = valueParser_;
         closed = false;
         if (!test_file()) {
-            storage = new HashMap<>();
             return;
         }
-        System.out.println("open...");
         FileInputStream in = new FileInputStream(storage_dir_name + "\\main_storage_file");
         int size = new IntegerParser().deserialize(in);
-        storage = new HashMap<>();
-        System.out.println(size);
         for (int i = 0; i < size; ++i) {
             storage.put(keyParser.deserialize(in), valueParser.deserialize(in));
         }
-        System.out.println(storage.toString());
-        System.out.println("OK");
+        in.close();
     }
 
     private void checkForCloseness() {
@@ -98,33 +96,20 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public V read(K key) {
-        System.out.println("get");
-        System.out.println(storage.get(key));
         checkForCloseness();
-        System.out.println("get");
-        System.out.println(storage.get(key));
+        //if (!exists(key)) { return null; }
         return storage.get(key);
     }
 
     @Override
     public boolean exists(K key) {
-        System.out.println("find");
-        System.out.println(storage.containsKey(key));
         checkForCloseness();
-        System.out.println("find");
-        System.out.println(storage.containsKey(key));
         return storage.containsKey(key);
     }
 
     @Override
     public void write(K key, V value) {
-        System.out.println("set");
-        System.out.print(key);
-        System.out.println(value);
         checkForCloseness();
-        System.out.println("set");
-        System.out.print(key);
-        System.out.println(value);
         storage.put(key, value);
     }
 
@@ -137,29 +122,24 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public Iterator<K> readKeys() {
         checkForCloseness();
-        System.out.println("OOO");
         return storage.keySet().iterator();
     }
 
     @Override
     public int size() {
-        System.out.println(storage.size());
         checkForCloseness();
         return storage.size();
     }
 
     public void close() throws FileNotFoundException, IOException {
-        System.out.println("close...");
         closed = true;
         FileOutputStream out = new FileOutputStream(storage_dir_name + "\\main_storage_file");
         new IntegerParser().serialize(storage.size(), out);
-        for (Map.Entry<K, V> entry : storage.entrySet()) {
+        for (HashMap.Entry<K, V> entry : storage.entrySet()) {
             keyParser.serialize(entry.getKey(), out);
             valueParser.serialize(entry.getValue(), out);
         }
         set_hash();
-
-        System.out.println(storage.toString());
-        System.out.println("OK");
+        out.close();
     }
 }
