@@ -42,9 +42,7 @@ public class KVStorage<K, V> implements KeyValueStorage<K, V> {
         } catch (IOException exp) {
             //base was never printed on disk
         }
-
     }
-
 
 
     @Override

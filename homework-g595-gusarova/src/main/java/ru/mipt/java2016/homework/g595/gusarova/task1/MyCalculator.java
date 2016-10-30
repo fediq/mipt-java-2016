@@ -3,7 +3,6 @@ package ru.mipt.java2016.homework.g595.gusarova.task1;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
-
 import java.util.ArrayList;
 
 public class MyCalculator implements Calculator {
