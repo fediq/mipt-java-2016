@@ -5,6 +5,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 public abstract class MySerialization<T> {
-    abstract T read(DataInputStream read_from_file) throws IOException;
-    abstract void write(DataOutputStream write_to_file, T object) throws IOException;
+    abstract T read(DataInputStream readFromFile) throws IOException;
+    abstract void write(DataOutputStream writeToFile, T object) throws IOException;
 }

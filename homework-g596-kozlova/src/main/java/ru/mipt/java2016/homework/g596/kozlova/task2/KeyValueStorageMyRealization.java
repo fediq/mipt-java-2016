@@ -5,7 +5,6 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -20,53 +19,53 @@ public class KeyValueStorageMyRealization<K, V> implements KeyValueStorage<K, V>
     * Сами данные
     * */
 
-    private String file_name; // путь, по которому находится наша база данных
-    private String type_of_data; // типы хранящихся ключей и значений в базе данных
-    private HashMap<K, V> map = new HashMap<K, V>();// данные из нашей базы
-    private MySerialization<K> key_serializator;
-    private MySerialization<V> value_serializator;
-    File file;
+    private String fileName; // путь, по которому находится наша база данных
+    private String typeOfData; // типы хранящихся ключей и значений в базе данных
+    private HashMap<K, V> map = new HashMap<K, V>(); // данные из нашей базы
+    private MySerialization<K> keySerializator;
+    private MySerialization<V> valueSerializator;
+    private File file;
 
-    public KeyValueStorageMyRealization(String type, String path, MySerialization ser_key, MySerialization ser_val) {
-        type_of_data = type;
-        file_name = path + "/store.txt";
-        key_serializator = ser_key;
-        value_serializator = ser_val;
-        file = new File(file_name);
+    public KeyValueStorageMyRealization(String type, String path, MySerialization serKey, MySerialization serValue) {
+        typeOfData = type;
+        fileName = path + "/store.txt";
+        keySerializator = serKey;
+        valueSerializator = serValue;
+        file = new File(fileName);
 
         if (!file.exists()) {
-            create_file();
+            createFile();
         }
-        get_all_data();
+        getAllData();
     }
 
-    private void create_file() {
+    private void createFile() {
         // если файла не существует - создаем его
         try {
             file.createNewFile();
         } catch (IOException e) {
             throw new IllegalStateException("We can't create file");
         }
-        try (DataOutputStream write_to_file = new DataOutputStream(new FileOutputStream(file_name))) {
+        try (DataOutputStream writeToFile = new DataOutputStream(new FileOutputStream(fileName))) {
             //сразу записываем в файл используемые типы и количество пар данных ключ - значение, т.е. 0
-            write_to_file.writeUTF(type_of_data);
-            write_to_file.writeInt(0);
+            writeToFile.writeUTF(typeOfData);
+            writeToFile.writeInt(0);
         } catch (IOException e) {
             throw new IllegalStateException("We can't write to file");
         }
     }
 
-    private void get_all_data() {
+    private void getAllData() {
         // считываем все пары ключ - значение из файла
-        try (DataInputStream read_from_file = new DataInputStream(new FileInputStream(file_name))) {
-            if (!read_from_file.readUTF().equals(type_of_data)) {
+        try (DataInputStream readFromFile = new DataInputStream(new FileInputStream(fileName))) {
+            if (!readFromFile.readUTF().equals(typeOfData)) {
                 // наши типы и хранящиеся в базе данных не совпадают
                 throw new IllegalStateException("This is invalid file");
             }
-            int number = read_from_file.readInt(); // кол-во данных
+            int number = readFromFile.readInt(); // кол-во данных
             for (int i = 0; i < number; ++i) {
-                K key = key_serializator.read(read_from_file);
-                V val = value_serializator.read(read_from_file);
+                K key = keySerializator.read(readFromFile);
+                V val = valueSerializator.read(readFromFile);
                 map.put(key, val);
             }
         } catch (IOException e) {
@@ -144,12 +143,12 @@ public class KeyValueStorageMyRealization<K, V> implements KeyValueStorage<K, V>
     public void close() throws IOException {
         checkOpenedStorage();
         // запись всего имеющегося в базу данных
-        try (DataOutputStream write_to_file = new DataOutputStream(new FileOutputStream(file_name))) {
-            write_to_file.writeUTF(type_of_data);
-            write_to_file.writeInt(map.size());
+        try (DataOutputStream writeToFile = new DataOutputStream(new FileOutputStream(fileName))) {
+            writeToFile.writeUTF(typeOfData);
+            writeToFile.writeInt(map.size());
             for (HashMap.Entry<K, V> entry: map.entrySet()) {
-                key_serializator.write(write_to_file, entry.getKey());
-                value_serializator.write(write_to_file, entry.getValue());
+                keySerializator.write(writeToFile, entry.getKey());
+                valueSerializator.write(writeToFile, entry.getValue());
             }
             map = null;
         } catch (IOException e) {

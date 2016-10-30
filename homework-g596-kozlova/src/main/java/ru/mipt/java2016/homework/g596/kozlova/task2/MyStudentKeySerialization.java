@@ -9,15 +9,15 @@ import java.io.IOException;
 public class MyStudentKeySerialization extends MySerialization<StudentKey> {
 
     @Override
-    public StudentKey read(DataInputStream read_from_file) throws IOException {
-        Integer groupId = read_from_file.readInt();
-        String name = read_from_file.readUTF();
+    public StudentKey read(DataInputStream readFromFile) throws IOException {
+        Integer groupId = readFromFile.readInt();
+        String name = readFromFile.readUTF();
         return new StudentKey(groupId, name);
     }
 
     @Override
-    public void write(DataOutputStream write_to_file, StudentKey student) throws IOException {
-        write_to_file.writeInt(student.getGroupId());
-        write_to_file.writeUTF(student.getName());
+    public void write(DataOutputStream writeToFile, StudentKey student) throws IOException {
+        writeToFile.writeInt(student.getGroupId());
+        writeToFile.writeUTF(student.getName());
     }
 }

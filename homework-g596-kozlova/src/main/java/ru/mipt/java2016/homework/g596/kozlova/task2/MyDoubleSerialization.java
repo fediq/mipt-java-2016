@@ -7,12 +7,12 @@ import java.io.IOException;
 public class MyDoubleSerialization extends MySerialization<Double> {
 
     @Override
-    public Double read(DataInputStream read_from_file) throws IOException {
-        return read_from_file.readDouble();
+    public Double read(DataInputStream readFromFile) throws IOException {
+        return readFromFile.readDouble();
     }
 
     @Override
-    public void write(DataOutputStream write_to_file, Double object) throws IOException {
-        write_to_file.writeDouble(object);
+    public void write(DataOutputStream writeToFile, Double object) throws IOException {
+        writeToFile.writeDouble(object);
     }
 }

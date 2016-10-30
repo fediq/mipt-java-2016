@@ -7,12 +7,12 @@ import java.io.IOException;
 public class MyStringSerialization extends MySerialization<String> {
 
     @Override
-    public String read(DataInputStream read_from_file) throws IOException {
-        return read_from_file.readUTF();
+    public String read(DataInputStream readFromFile) throws IOException {
+        return readFromFile.readUTF();
     }
 
     @Override
-    public void write(DataOutputStream write_to_file, String object) throws IOException {
-        write_to_file.writeUTF(object);
+    public void write(DataOutputStream writeToFile, String object) throws IOException {
+        writeToFile.writeUTF(object);
     }
 }
