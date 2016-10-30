@@ -109,6 +109,8 @@ class GrishutinKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void overwrite() throws IOException {
+        storageFile.seek(0);
+        storageFile.setLength(0);
         IntegerSerializationStrategy integerSerializationStrategy = IntegerSerializationStrategy.INSTANCE;
         integerSerializationStrategy.serialize(numRecords, storageFile);
         for (Map.Entry<K, V> entry: kvHashMap.entrySet()) {
