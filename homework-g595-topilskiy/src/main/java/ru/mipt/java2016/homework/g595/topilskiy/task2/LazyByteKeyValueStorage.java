@@ -19,8 +19,8 @@ class      LazyByteKeyValueStorage<KeyType, ValueType>
     private final LazyByteKeyValueStorageHashMapBuffer<KeyType, ValueType> storageBuffer;
     private Boolean isClosed;
 
-    LazyByteKeyValueStorage(String pathToStorageDirectory) {
-        storageBuffer = new LazyByteKeyValueStorageHashMapBuffer<>(pathToStorageDirectory);
+    LazyByteKeyValueStorage(LazyByteKeyValueStorageInfo storageInfoInit) throws IOException {
+        storageBuffer = new LazyByteKeyValueStorageHashMapBuffer<>(storageInfoInit);
         isClosed = false;
     }
 
@@ -103,8 +103,8 @@ class      LazyByteKeyValueStorage<KeyType, ValueType>
     public void close() throws IOException {
         checkNotClosed();
         isClosed = true;
+        storageBuffer.saveToDisk();
     }
-
 
     /**
      * Check whether Storage is closed
@@ -118,7 +118,12 @@ class      LazyByteKeyValueStorage<KeyType, ValueType>
         }
     }
 
-    public String getPathToStorage() {
-        return storageBuffer.getPathToStorage();
+    /**
+     * Return the path to the directory of data storage
+     *
+     * @return the path to the directory of data storage
+     */
+    String getPathToStorageDirectory() {
+        return storageBuffer.getPathToStorageDirectory();
     }
 }

@@ -1,5 +1,6 @@
 package ru.mipt.java2016.homework.g595.topilskiy.task2;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
 
@@ -10,14 +11,14 @@ import java.util.Iterator;
  * @since 29.10.16
  */
 class LazyByteKeyValueStorageHashMapBuffer<KeyType, ValueType> {
-    private final String pathToStorage;
-
     /* HashMap for Buffered Storage */
     private HashMap<KeyType, ValueType> hashMapBuffer;
+    /* A File IO Wrapper for interactions with the Storage on disk */
+    private final LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> fileIOWrapper;
 
-
-    LazyByteKeyValueStorageHashMapBuffer(String pathToStorageDirectory) {
-        pathToStorage = pathToStorageDirectory + "/storage.db";
+    LazyByteKeyValueStorageHashMapBuffer(LazyByteKeyValueStorageInfo storageInfoInit) throws IOException {
+        fileIOWrapper =
+                new LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType>(storageInfoInit);
         hashMapBuffer = new HashMap<>();
     }
 
@@ -78,7 +79,21 @@ class LazyByteKeyValueStorageHashMapBuffer<KeyType, ValueType> {
         return hashMapBuffer.size();
     }
 
-    String getPathToStorage() {
-        return pathToStorage;
+    /**
+     * Saves hashMapBuffer to Disk using FileIOWrapper
+     *
+     * @throws IOException - if writing to Disk was unsuccessful
+     */
+    void saveToDisk() throws IOException {
+        fileIOWrapper.write(hashMapBuffer);
+    }
+
+    /**
+     * Return the path to the directory of data storage
+     *
+     * @return the path to the directory of data storage
+     */
+    String getPathToStorageDirectory() {
+        return fileIOWrapper.getPathToStorageDirectory();
     }
 }

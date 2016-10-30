@@ -13,7 +13,7 @@ import static java.util.Arrays.copyOfRange;
  * @since 30.10.16
  */
 public class StudentSerializer implements ISerializer<Student> {
-    /* An ClassSerializers for serializing and deserializing within the class */
+    /* ClassSerializers for serializing and deserializing within the class */
     private static final BooleanSerializer booleanSerializer = (BooleanSerializer)
             SerializerFactory.getSerializer("Boolean");
     private static final IntegerSerializer integerSerializer = (IntegerSerializer)

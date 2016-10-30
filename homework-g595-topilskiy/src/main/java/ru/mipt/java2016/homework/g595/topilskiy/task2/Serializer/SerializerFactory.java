@@ -30,7 +30,7 @@ public class SerializerFactory {
      * @param  valueOfSerialization - type, whose Serializers should be returned
      * @return Serializer which serializes valueOfSerialization
      */
-    static ISerializer getSerializer(String valueOfSerialization) {
+    public static ISerializer getSerializer(String valueOfSerialization) {
         return CACHED_SERIALIZERS.get(valueOfSerialization);
     }
 }

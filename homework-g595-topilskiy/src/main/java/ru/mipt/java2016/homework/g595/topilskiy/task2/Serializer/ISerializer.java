@@ -6,7 +6,7 @@ package ru.mipt.java2016.homework.g595.topilskiy.task2.Serializer;
  * @author Artem K. Topilskiy
  * @since 28.10.16
  */
-interface ISerializer<ValueType> {
+public interface ISerializer<ValueType> {
     /**
      * Serialize a ValueType object into Bytes
      *
