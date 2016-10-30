@@ -82,12 +82,12 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public void delete(K key) {
-            dataBase.remove(key);
+        dataBase.remove(key);
     }
 
     @Override
-    public Iterator readKeys() throws ConcurrentModificationException {
-        return dataBase.entrySet().iterator();
+    public Iterator<K> readKeys() {
+        return dataBase.keySet().iterator();
     }
 
     @Override
@@ -96,16 +96,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     @Override
-    public void close() throws IOException {
-        DataOutputStream outputStream;
-        try {
-            outputStream = new DataOutputStream(new FileOutputStream(dataBasePath.toString()));
-        } catch (FileNotFoundException e) {
-            throw new IOException("File not found");
-        }
-        ObjectOutputStream objectOutputStream = new ObjectOutputStream(outputStream);
-        objectOutputStream.writeObject(dataBase);
-        objectOutputStream.close();
-        outputStream.close();
+    public void close() {
+
     }
 }

@@ -4,7 +4,6 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.tests.task2.AbstractSingleFileStorageTest;
 import ru.mipt.java2016.homework.tests.task2.Student;
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
-import ru.mipt.java2016.homework.g596.hromov.task2.MyKeyValueStorage;
 
 /**
  * Created by igorhromov on 15.10.16.
@@ -17,12 +16,12 @@ public class MyKeyValueStorageTest extends AbstractSingleFileStorageTest{
     }
 
     @Override
-    protected KeyValueStorage<Integer, Double> buildI2DStorage(String path) {
+    protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) {
         return null;
     }
 
     @Override
-    protected KeyValueStorage<StudentKey, Student> buildStudentsStorage(String path) {
+    protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) {
         return null;
     }
 }
