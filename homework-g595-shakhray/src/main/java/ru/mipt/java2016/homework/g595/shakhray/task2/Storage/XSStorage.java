@@ -1,4 +1,4 @@
-package ru.mipt.java2016.homework.g595.shakhray.task2;
+package ru.mipt.java2016.homework.g595.shakhray.task2.Storage;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 
@@ -11,7 +11,7 @@ import ru.mipt.java2016.homework.g595.shakhray.task2.Serialization.Interface.Sto
 /**
  * Created by Vlad on 26/10/2016.
  */
-public class GoProStorage<K, V> implements KeyValueStorage<K, V> {
+public class XSStorage<K, V> implements KeyValueStorage<K, V> {
 
     /**
      * TRUE is the database is closed.
@@ -47,7 +47,7 @@ public class GoProStorage<K, V> implements KeyValueStorage<K, V> {
      */
     private RandomAccessFile file;
 
-    public GoProStorage(String path, StorageSerialization<K> passedKeySerialization,
+    public XSStorage(String path, StorageSerialization<K> passedKeySerialization,
                         StorageSerialization<V> passedValueSerialization) throws IOException {
         keySerialization = passedKeySerialization;
         valueSerialization = passedValueSerialization;
