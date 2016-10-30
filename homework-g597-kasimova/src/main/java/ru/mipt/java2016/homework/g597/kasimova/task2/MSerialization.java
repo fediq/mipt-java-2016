@@ -25,7 +25,6 @@ public interface MSerialization<Type> {
             } catch (IOException exp) {
                 System.out.println(exp.getMessage());
             }
-            ;
         }
 
         @Override
@@ -35,7 +34,6 @@ public interface MSerialization<Type> {
             } catch (IOException exp) {
                 System.out.println(exp.getMessage());
             }
-            ;
             return null;
         }
     };
@@ -48,7 +46,6 @@ public interface MSerialization<Type> {
             } catch (IOException exp) {
                 System.out.println(exp.getMessage());
             }
-            ;
         }
 
         @Override
@@ -58,7 +55,6 @@ public interface MSerialization<Type> {
             } catch (IOException exp) {
                 System.out.println(exp.getMessage());
             }
-            ;
             return null;
         }
     };
@@ -71,7 +67,6 @@ public interface MSerialization<Type> {
             } catch (IOException exp) {
                 System.out.println(exp.getMessage());
             }
-            ;
         }
 
         @Override
@@ -81,7 +76,6 @@ public interface MSerialization<Type> {
             } catch (IOException exp) {
                 System.out.println(exp.getMessage());
             }
-            ;
             return null;
         }
     };
@@ -99,7 +93,6 @@ public interface MSerialization<Type> {
             } catch (IOException exp) {
                 System.out.println(exp.getMessage());
             }
-            ;
         }
 
         @Override
@@ -116,7 +109,6 @@ public interface MSerialization<Type> {
             } catch (IOException exp) {
                 System.out.println(exp.getMessage());
             }
-            ;
             return null;
         }
     };
@@ -130,7 +122,6 @@ public interface MSerialization<Type> {
             } catch (IOException exp) {
                 System.out.println(exp.getMessage());
             }
-            ;
         }
 
         @Override
@@ -140,7 +131,6 @@ public interface MSerialization<Type> {
             } catch (IOException exp) {
                 System.out.println(exp.getMessage());
             }
-            ;
             return null;
         }
     };
