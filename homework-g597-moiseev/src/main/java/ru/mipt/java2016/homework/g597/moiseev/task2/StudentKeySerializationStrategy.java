@@ -12,13 +12,15 @@ import java.io.RandomAccessFile;
  * @since 26.10.2016
  */
 public class StudentKeySerializationStrategy implements SerializationStrategy<StudentKey> {
-    private static StudentKeySerializationStrategy instance = new StudentKeySerializationStrategy();
+    private static final StudentKeySerializationStrategy INSTANCE = new StudentKeySerializationStrategy();
 
-    private IntegerSerializationStrategy integerSerializationStrategy = IntegerSerializationStrategy.getInstance();
-    private StringSerializationStrategy stringSerializationStrategy = StringSerializationStrategy.getInstance();
+    private final IntegerSerializationStrategy integerSerializationStrategy =
+            IntegerSerializationStrategy.getInstance();
+    private final StringSerializationStrategy stringSerializationStrategy =
+            StringSerializationStrategy.getInstance();
 
     public static StudentKeySerializationStrategy getInstance() {
-        return instance;
+        return INSTANCE;
     }
 
     private StudentKeySerializationStrategy() {

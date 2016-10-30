@@ -17,8 +17,8 @@ import java.util.Map;
  */
 
 public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V>, AutoCloseable {
-    private SerializationStrategy<K> keySerializationStrategy;
-    private SerializationStrategy<V> valueSerializationStrategy;
+    private final SerializationStrategy<K> keySerializationStrategy;
+    private final SerializationStrategy<V> valueSerializationStrategy;
     private String name;
     private RandomAccessFile file;
     private File lock;
@@ -44,11 +44,9 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V>, AutoClose
         String databasePath = path + File.separator + this.name;
         File database = new File(databasePath);
 
+        file = new RandomAccessFile(database, "rw");
         if (!database.createNewFile()) {
-            file = new RandomAccessFile(database, "rw");
             loadFromFile();
-        } else {
-            file = new RandomAccessFile(database, "rw");
         }
     }
 
@@ -56,19 +54,13 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V>, AutoClose
         file.seek(0);
         elements.clear();
 
-        while (true) {
+        long fileLength = file.length();
+
+        while (file.getFilePointer() < fileLength) {
             K key;
             V value;
-            try {
-                key = keySerializationStrategy.read(file);
-            } catch (EOFException e1) {
-                break;
-            }
-            try {
-                value = valueSerializationStrategy.read(file);
-            } catch (EOFException e) {
-                throw new IOException("Invalid file");
-            }
+            key = keySerializationStrategy.read(file);
+            value = valueSerializationStrategy.read(file);
             if (elements.containsKey(key)) {
                 throw new IOException("Duplicate keys");
             } else {

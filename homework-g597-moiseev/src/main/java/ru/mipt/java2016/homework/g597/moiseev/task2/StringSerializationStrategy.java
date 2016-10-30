@@ -11,12 +11,13 @@ import java.io.RandomAccessFile;
  */
 
 public class StringSerializationStrategy implements SerializationStrategy<String> {
-    private static StringSerializationStrategy instance = new StringSerializationStrategy();
+    private static final StringSerializationStrategy INSTANCE = new StringSerializationStrategy();
 
-    private IntegerSerializationStrategy integerSerializationStrategy = IntegerSerializationStrategy.getInstance();
+    private final IntegerSerializationStrategy integerSerializationStrategy =
+            IntegerSerializationStrategy.getInstance();
 
     public static StringSerializationStrategy getInstance() {
-        return instance;
+        return INSTANCE;
     }
 
     private StringSerializationStrategy() {

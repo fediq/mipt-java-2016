@@ -10,10 +10,10 @@ import java.io.RandomAccessFile;
  * @since 26.10.2016
  */
 public class BooleanSerializationStrategy implements SerializationStrategy<Boolean> {
-    private static BooleanSerializationStrategy ourInstance = new BooleanSerializationStrategy();
+    private static final BooleanSerializationStrategy INSTANCE = new BooleanSerializationStrategy();
 
     public static BooleanSerializationStrategy getInstance() {
-        return ourInstance;
+        return INSTANCE;
     }
 
     private BooleanSerializationStrategy() {

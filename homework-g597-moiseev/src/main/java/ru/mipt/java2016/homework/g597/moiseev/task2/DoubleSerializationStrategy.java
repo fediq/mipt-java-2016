@@ -11,10 +11,10 @@ import java.io.RandomAccessFile;
  */
 
 public class DoubleSerializationStrategy implements SerializationStrategy<Double> {
-    private static DoubleSerializationStrategy instance = new DoubleSerializationStrategy();
+    private static final DoubleSerializationStrategy INSTANCE = new DoubleSerializationStrategy();
 
     public static DoubleSerializationStrategy getInstance() {
-        return instance;
+        return INSTANCE;
     }
 
     private DoubleSerializationStrategy() {

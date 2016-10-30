@@ -11,10 +11,10 @@ import java.io.RandomAccessFile;
  */
 
 public class IntegerSerializationStrategy implements SerializationStrategy<Integer> {
-    private static IntegerSerializationStrategy instance = new IntegerSerializationStrategy();
+    private static final IntegerSerializationStrategy INSTANCE = new IntegerSerializationStrategy();
 
     public static IntegerSerializationStrategy getInstance() {
-        return instance;
+        return INSTANCE;
     }
 
     private IntegerSerializationStrategy() {

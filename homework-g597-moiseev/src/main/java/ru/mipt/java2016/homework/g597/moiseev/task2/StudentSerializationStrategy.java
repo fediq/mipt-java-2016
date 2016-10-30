@@ -13,16 +13,21 @@ import java.util.Date;
  * @since 26.10.2016
  */
 public class StudentSerializationStrategy implements SerializationStrategy<Student> {
-    private static StudentSerializationStrategy instance = new StudentSerializationStrategy();
+    private static final StudentSerializationStrategy INSTANCE = new StudentSerializationStrategy();
 
-    private IntegerSerializationStrategy integerSerializationStrategy = IntegerSerializationStrategy.getInstance();
-    private StringSerializationStrategy stringSerializationStrategy = StringSerializationStrategy.getInstance();
-    private DateSerializationStrategy dateSerializationStrategy = DateSerializationStrategy.getInstance();
-    private DoubleSerializationStrategy doubleSerializationStrategy = DoubleSerializationStrategy.getInstance();
-    private BooleanSerializationStrategy booleanSerializationStrategy = BooleanSerializationStrategy.getInstance();
+    private final IntegerSerializationStrategy integerSerializationStrategy =
+            IntegerSerializationStrategy.getInstance();
+    private final StringSerializationStrategy stringSerializationStrategy =
+            StringSerializationStrategy.getInstance();
+    private final DateSerializationStrategy dateSerializationStrategy =
+            DateSerializationStrategy.getInstance();
+    private final DoubleSerializationStrategy doubleSerializationStrategy =
+            DoubleSerializationStrategy.getInstance();
+    private final BooleanSerializationStrategy booleanSerializationStrategy =
+            BooleanSerializationStrategy.getInstance();
 
     public static StudentSerializationStrategy getInstance() {
-        return instance;
+        return INSTANCE;
     }
 
     private StudentSerializationStrategy() {

@@ -11,10 +11,10 @@ import java.util.Date;
  * @since 26.10.2016
  */
 public class DateSerializationStrategy implements SerializationStrategy<Date> {
-    private static DateSerializationStrategy ourInstance = new DateSerializationStrategy();
+    private static final DateSerializationStrategy INSTANCE = new DateSerializationStrategy();
 
     public static DateSerializationStrategy getInstance() {
-        return ourInstance;
+        return INSTANCE;
     }
 
     private DateSerializationStrategy() {
