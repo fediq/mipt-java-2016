@@ -10,12 +10,12 @@ import java.io.*;
 
 public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
-    private HashMap<K, V> Map = new HashMap<>();
+    private HashMap<K, V> map = new HashMap<>();
     private File values;
     private File keys;
-    private static final String tryProc = "Some process is already working :(";
-    private static final String validateValues = "This is a Values storage.";
-    private static final String validateKeys = "This is a Keys storage.";
+    private static final String TRY_PROC = "Some process is already working :(";
+    private static final String VALUES_VALIDATION = "This is a Values storage.";
+    private static final String KEYS_VALIDATION = "This is a Keys storage.";
     private MySerialization<K> keySerialization;
     private MySerialization<V> valueSerialization;
     private File procAccess;
@@ -29,7 +29,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     public MyKeyValueStorage(String path, MySerialization<K> k, MySerialization<V> v) throws IOException {
 
-        procAccess = new File(tryProc);
+        procAccess = new File(TRY_PROC);
 
         if (procAccess.createNewFile()) {
             keySerialization = k;
@@ -55,10 +55,10 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private void writeStorage() throws IOException {
         try (DataOutputStream keysOutput = new DataOutputStream(new FileOutputStream(keys));
         DataOutputStream valuesOutput = new DataOutputStream(new FileOutputStream(values))) {
-            keysOutput.writeUTF(validateKeys);
-            valuesOutput.writeUTF(validateValues);
-            keysOutput.writeInt(Map.size());
-            for (Map.Entry<K, V> entry : Map.entrySet()) {
+            keysOutput.writeUTF(KEYS_VALIDATION);
+            valuesOutput.writeUTF(VALUES_VALIDATION);
+            keysOutput.writeInt(map.size());
+            for (map.Entry<K, V> entry : map.entrySet()) {
                 keySerialization.writeSerialize(entry.getKey(), keysOutput);
                 valueSerialization.writeSerialize(entry.getValue(), valuesOutput);
             }
@@ -75,7 +75,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
              DataInputStream keysInput = new DataInputStream(new FileInputStream(keys))) {
             String keyValidate = keysInput.readUTF();
             String valueValidate = valuesInput.readUTF();
-            if (!validateValues.equals(valueValidate) || !validateKeys.equals(keyValidate)) {
+            if (!VALUES_VALIDATION.equals(valueValidate) || !KEYS_VALIDATION.equals(keyValidate)) {
                 throw new RuntimeException("It's not MyKeyValueStorage!");
             }
             int size = keysInput.readInt();
@@ -93,37 +93,37 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public V read(K key) {
         isClosed();
-        return Map.get(key);
+        return map.get(key);
     }
 
     @Override
     public boolean exists(K key) {
         isClosed();
-        return (Map.containsKey(key));
+        return (map.containsKey(key));
     };
 
     @Override
     public void write(K key, V value) {
         isClosed();
-        Map.put(key, value);
+        map.put(key, value);
     };
 
     @Override
     public void delete(K key) {
         isClosed();
-        Map.remove(key);
+        map.remove(key);
     };
 
     @Override
     public Iterator<K> readKeys() {
         isClosed();
-        return Map.keySet().iterator();
+        return map.keySet().iterator();
     }
 
     @Override
     public int size() {
         isClosed();
-        return Map.size();
+        return map.size();
     }
 
     @Override

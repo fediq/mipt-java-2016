@@ -13,7 +13,7 @@ public interface MySerialization<valType> {
     valType readSerialize(DataInputStream input) throws IOException;
     void writeSerialize(valType value, DataOutputStream output) throws IOException;
 
-    MySerialization<Integer> intStrategy = new MySerialization<Integer>() {
+    MySerialization<Integer> INT_STRATEGY = new MySerialization<Integer>() {
         @Override
         public void writeSerialize(Integer x, DataOutputStream output) throws IOException {
             output.writeInt(x);
@@ -25,7 +25,7 @@ public interface MySerialization<valType> {
         }
     };
 
-    MySerialization<Double> doubleStrategy = new MySerialization<Double>() {
+    MySerialization<Double> DOUBLE_STRATEGY = new MySerialization<Double>() {
         @Override
         public void writeSerialize(Double d, DataOutputStream output) throws IOException {
             output.writeDouble(d);
@@ -37,7 +37,7 @@ public interface MySerialization<valType> {
         }
     };
 
-    MySerialization<String> stringStrategy = new MySerialization<String>() {
+    MySerialization<String> STRING_STRATEGY = new MySerialization<String>() {
         @Override
         public void writeSerialize(String s, DataOutputStream output) throws IOException {
             output.writeUTF(s);
@@ -49,7 +49,7 @@ public interface MySerialization<valType> {
         }
     };
 
-    MySerialization<Student> studentStrategy = new MySerialization<Student>() {
+    MySerialization<Student> STUDENT_STRATEGY = new MySerialization<Student>() {
         @Override
         public void writeSerialize(Student student, DataOutputStream output) throws IOException {
             output.writeInt(student.getGroupId());
@@ -66,7 +66,7 @@ public interface MySerialization<valType> {
         }
     };
 
-    MySerialization<StudentKey> studentKeyStrategy = new MySerialization<StudentKey>() {
+    MySerialization<StudentKey> STUDENT_KEY_STRATEGY = new MySerialization<StudentKey>() {
         @Override
         public void writeSerialize(StudentKey studentKey, DataOutputStream output) throws IOException {
             output.writeInt(studentKey.getGroupId());
