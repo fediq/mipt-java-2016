@@ -83,6 +83,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public void close() {
+        epochNumber += 1;
         Iterator<K> keySet = table.readKeys();
         while (keySet.hasNext()) {
             read(keySet.next());

@@ -2,6 +2,7 @@ package ru.mipt.java2016.homework.g595.romanenko.task2;
 
 import ru.mipt.java2016.homework.g595.romanenko.task2.serialization.IntegerSerializer;
 import ru.mipt.java2016.homework.g595.romanenko.task2.serialization.SerializationStrategy;
+import ru.mipt.java2016.homework.g595.romanenko.utils.FileDigitalSignature;
 
 import java.io.*;
 import java.nio.channels.Channels;
@@ -31,6 +32,7 @@ class SSTable<Key, Value> {
     private final SerializationStrategy<Value> valueSerializationStrategy;
 
     private boolean isClosed = false;
+    private String path;
 
     private void readIndexes() throws IOException {
         int totalAmount = storage.readInt();
@@ -54,6 +56,13 @@ class SSTable<Key, Value> {
         if (tryFile.exists() && tryFile.isDirectory()) {
             path += "//storage.db";
         }
+        if ((new File(path)).exists()) {
+            boolean validationOk = FileDigitalSignature.getInstance().validateFileSignWithDefaultSignName(path);
+            if (!validationOk)
+                throw new IllegalStateException("Invalid database");
+        }
+        this.path = path;
+
         storage = new RandomAccessFile(path, "rw");
         if (storage.length() != 0) {
             readIndexes();
@@ -96,6 +105,9 @@ class SSTable<Key, Value> {
             }
 
             outputStream.flush();
+
+            FileDigitalSignature.getInstance().signFileWithDefaultSignName(path);
+
         } catch (IOException e) {
             throw new IllegalStateException();
         }
