@@ -17,7 +17,7 @@ public interface MSerialization<Type> {
 
     Type deserializeFromStream(DataInputStream inStream);
 
-    public static final MSerialization<String> STRING_SERIALIZER = new MSerialization<String>() {
+    MSerialization<String> stringSerializer = new MSerialization<String>() {
         @Override
         public void serializeToStream(String value, DataOutputStream outStream) {
             try {
@@ -25,6 +25,7 @@ public interface MSerialization<Type> {
             } catch (IOException exp) {
                 System.out.println(exp.getMessage());
             }
+            ;
         }
 
         @Override
@@ -34,11 +35,12 @@ public interface MSerialization<Type> {
             } catch (IOException exp) {
                 System.out.println(exp.getMessage());
             }
+            ;
             return null;
         }
     };
 
-    public static final MSerialization<Integer> INTEGER_SERIALIZER = new MSerialization<Integer>() {
+    MSerialization<Integer> integerSerializer = new MSerialization<Integer>() {
         @Override
         public void serializeToStream(Integer value, DataOutputStream outStream) {
             try {
@@ -46,6 +48,7 @@ public interface MSerialization<Type> {
             } catch (IOException exp) {
                 System.out.println(exp.getMessage());
             }
+            ;
         }
 
         @Override
@@ -55,11 +58,12 @@ public interface MSerialization<Type> {
             } catch (IOException exp) {
                 System.out.println(exp.getMessage());
             }
+            ;
             return null;
         }
     };
 
-    public static final MSerialization<Double> DOUBLE_SERIALIZER = new MSerialization<Double>() {
+    MSerialization<Double> doubleSerializer = new MSerialization<Double>() {
         @Override
         public void serializeToStream(Double value, DataOutputStream outStream) {
             try {
@@ -67,6 +71,7 @@ public interface MSerialization<Type> {
             } catch (IOException exp) {
                 System.out.println(exp.getMessage());
             }
+            ;
         }
 
         @Override
@@ -76,11 +81,12 @@ public interface MSerialization<Type> {
             } catch (IOException exp) {
                 System.out.println(exp.getMessage());
             }
+            ;
             return null;
         }
     };
 
-    public static final MSerialization<Student> STUDENT_SERIALIZER = new MSerialization<Student>() {
+    MSerialization<Student> studentSerializer = new MSerialization<Student>() {
         @Override
         public void serializeToStream(Student value, DataOutputStream outStream) {
             try {
@@ -93,6 +99,7 @@ public interface MSerialization<Type> {
             } catch (IOException exp) {
                 System.out.println(exp.getMessage());
             }
+            ;
         }
 
         @Override
@@ -109,11 +116,12 @@ public interface MSerialization<Type> {
             } catch (IOException exp) {
                 System.out.println(exp.getMessage());
             }
+            ;
             return null;
         }
     };
 
-    public static final MSerialization<StudentKey> STUDENT_KEY_SERIALIZER = new MSerialization<StudentKey>() {
+    MSerialization<StudentKey> studentKeySerializer = new MSerialization<StudentKey>() {
         @Override
         public void serializeToStream(StudentKey value, DataOutputStream outStream) {
             try {
@@ -122,6 +130,7 @@ public interface MSerialization<Type> {
             } catch (IOException exp) {
                 System.out.println(exp.getMessage());
             }
+            ;
         }
 
         @Override
@@ -131,6 +140,7 @@ public interface MSerialization<Type> {
             } catch (IOException exp) {
                 System.out.println(exp.getMessage());
             }
+            ;
             return null;
         }
     };
