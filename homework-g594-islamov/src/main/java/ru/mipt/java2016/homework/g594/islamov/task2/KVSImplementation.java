@@ -27,9 +27,7 @@ public class KVSImplementation<K, V> implements KeyValueStorage<K, V> {
         this.keySerialization = keySerialization;
         this.valueSerialization = valueSerialization;
         file = new File(directoryPath + FILENAME);
-
         try {
-
             if (file.exists()) {
                 if (!isValidFile()) {
                     throw new RuntimeException("Invalid File");
@@ -38,7 +36,6 @@ public class KVSImplementation<K, V> implements KeyValueStorage<K, V> {
         } catch (FileNotFoundException except) {
             try {
                 file.createNewFile();
-                writeToFile(FLAGSTRING + "\n");
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

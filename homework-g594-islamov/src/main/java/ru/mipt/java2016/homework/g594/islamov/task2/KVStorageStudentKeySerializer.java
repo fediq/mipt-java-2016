@@ -13,7 +13,7 @@ public class KVStorageStudentKeySerializer implements KVSSerializationInterface<
         StringBuilder serialized = new StringBuilder("<");
         serialized.append("'");
         serialized.append(Integer.toString(object.getGroupId()));
-        serialized.append(",'");
+        serialized.append("','");
         serialized.append(object.getName());
         serialized.append("'>");
         return serialized.toString();

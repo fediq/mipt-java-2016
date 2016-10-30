@@ -9,8 +9,4 @@ public class BadStorageException extends Exception {
     public BadStorageException(String errorMessage) {
         super(errorMessage);
     }
-
-    public BadStorageException(String errorMessage, Throwable e) {
-        super(errorMessage, e);
-    }
 }
