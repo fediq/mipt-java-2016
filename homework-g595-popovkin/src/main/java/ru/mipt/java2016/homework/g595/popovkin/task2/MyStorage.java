@@ -76,7 +76,7 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
                 storage.put(keyParser.deserialize(in), valueParser.deserialize(in));
             }
             in.close();
-        } catch(IOException ex) {
+        } catch (IOException ex) {
             storage.clear();
             System.out.println(ex.getMessage());
         }
