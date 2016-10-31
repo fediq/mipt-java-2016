@@ -10,10 +10,4 @@ public interface SerializationStrategy<T> {
     T deserializeFromFile(DataInputStream input) throws IOException;
 
     String getType(); //Возвращает тип стратегии сериализации
-
-
-
-
-
-
 }

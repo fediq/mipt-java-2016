@@ -14,7 +14,7 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 
 public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
-    private final Map<K, V> database = new HashMap<>();
+    private Map<K, V> database = new HashMap<>();
 
     private File databaseFile; //Файл для хранения БД
     private SerializationStrategy<K> keySerializationStrategy;
@@ -117,6 +117,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 keySerializationStrategy.serializeToFile(entry.getKey(), output);
                 valueSerializationStrategy.serializeToFile(entry.getValue(), output);
             }
+            database = null;
         } catch (IOException e) {
             throw new IOException("Can't write to " + databaseFile.getPath(), e);
         }
