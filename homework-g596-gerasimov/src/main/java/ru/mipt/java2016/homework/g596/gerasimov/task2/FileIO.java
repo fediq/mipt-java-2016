@@ -30,12 +30,11 @@ public class FileIO {
     }
 
     public ByteBuffer readField(int size) throws IOException {
-        ByteBuffer result = ByteBuffer.allocate(size);
+        byte[] array = new byte[size];
+        randomAccessFile.read(array, 0, size);
 
-        for (; size > 0; --size) {
-            result.put(randomAccessFile.readByte());
-        }
-        result.rewind();
+        ByteBuffer result = ByteBuffer.wrap(array);
+
         return result;
     }
 
@@ -47,16 +46,19 @@ public class FileIO {
         randomAccessFile.write(code.array());
     }
 
-    public void closeRandomAccessFile() throws IOException {
-        this.randomAccessFile.close();
+    public void fileSetLength(long newLength) throws IOException {
+        randomAccessFile.setLength(newLength);
     }
 
-    public void newRandomAccessFile() throws IOException {
-        this.randomAccessFile = new RandomAccessFile(this.file, "rw");
+    public long fileLength() throws IOException {
+        return randomAccessFile.length();
     }
 
-    public void clearFile() throws IOException {
-        this.file.delete();
-        this.file.createNewFile();
+    public long fileGetFilePointer() throws IOException {
+        return randomAccessFile.getFilePointer();
+    }
+
+    public  void fileClose() throws IOException {
+        randomAccessFile.close();
     }
 }

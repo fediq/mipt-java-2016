@@ -1,8 +1,6 @@
 package ru.mipt.java2016.homework.g596.gerasimov.task2;
 
-import java.io.EOFException;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Iterator;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
@@ -32,79 +30,70 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public V read(K key) throws RuntimeException {
-        this.checkClosed();
+        checkClosed();
         return storage.get(key);
     }
 
     @Override
     public boolean exists(K key) throws RuntimeException {
-        this.checkClosed();
+        checkClosed();
         return storage.containsKey(key);
     }
 
     @Override
     public void write(K key, V value) throws RuntimeException {
-        this.checkClosed();
+        checkClosed();
         storage.put(key, value);
     }
 
     @Override
     public void delete(K key) throws RuntimeException {
-        this.checkClosed();
+        checkClosed();
         storage.remove(key);
     }
 
     @Override
     public Iterator<K> readKeys() throws RuntimeException {
-        this.checkClosed();
+        checkClosed();
         return storage.keySet().iterator();
     }
 
     @Override
     public int size() throws RuntimeException {
-        this.checkClosed();
+        checkClosed();
         return storage.size();
     }
 
     @Override
     public void close() throws IOException {
-        this.writeToFile();
-        this.fileIO.closeRandomAccessFile();
-        this.isClosed = true;
-    }
-
-    private int readSize() throws IOException {
-        return this.fileIO.readSize();
-    }
-
-    private ByteBuffer readField(int size) throws IOException {
-        return this.fileIO.readField(size);
+        writeToFile();
+        fileIO.fileClose();
+        storage.clear();
+        isClosed = true;
     }
 
     private void readFile() throws IOException {
         int sizeOfKey;
         int sizeOfValue;
-        while (true) {
-            try {
-                sizeOfKey = readSize();
-            } catch (EOFException exeption) {
-                break;
-            }
-            K key = keySerializer.deserialize(readField(sizeOfKey));
-            sizeOfValue = readSize();
-            V value = valueSerializer.deserialize(readField(sizeOfValue));
+        while (fileIO.fileGetFilePointer() < fileIO.fileLength()) {
+            sizeOfKey = fileIO.readSize();
+            K key = keySerializer.deserialize(fileIO.readField(sizeOfKey));
+            sizeOfValue = fileIO.readSize();
+            V value = valueSerializer.deserialize(fileIO.readField(sizeOfValue));
             storage.put(key, value);
+        }
+        if (fileIO.fileGetFilePointer() != fileIO.fileLength()) {
+            throw new IOException("Wrong format of storage.db");
         }
     }
 
     private void writeToFile() throws IOException {
-        this.fileIO.clearFile();
-        this.fileIO.newRandomAccessFile();
+        fileIO.fileSetLength(0);
         for (HashMap.Entry<K, V> entry : storage.entrySet()) {
-            this.fileIO.writeSize(keySerializer.sizeOfSerialization(entry.getKey()));
-            this.fileIO.writeField(keySerializer.serialize(entry.getKey()));
-            this.fileIO.writeSize(valueSerializer.sizeOfSerialization(entry.getValue()));
-            this.fileIO.writeField(valueSerializer.serialize(entry.getValue()));
+            fileIO.writeSize(keySerializer.sizeOfSerialization(entry.getKey()));
+            fileIO.writeField(keySerializer.serialize(entry.getKey()));
+            fileIO.writeSize(valueSerializer.sizeOfSerialization(entry.getValue()));
+            fileIO.writeField(valueSerializer.serialize(entry.getValue()));
         }
     }
 
