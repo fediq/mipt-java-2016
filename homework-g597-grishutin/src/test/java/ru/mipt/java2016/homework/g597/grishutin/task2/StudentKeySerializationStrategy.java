@@ -5,7 +5,7 @@ import ru.mipt.java2016.homework.tests.task2.StudentKey;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
-public class StudentKeySerializationStrategy implements SerializationStrategy<StudentKey> {
+class StudentKeySerializationStrategy implements SerializationStrategy<StudentKey> {
     private IntegerSerializationStrategy integerSerializationStrategy = IntegerSerializationStrategy.INSTANCE;
     private StringSerializationStrategy stringSerializationStrategy = StringSerializationStrategy.INSTANCE;
 
@@ -18,6 +18,6 @@ public class StudentKeySerializationStrategy implements SerializationStrategy<St
     @Override
     public StudentKey deserialize(RandomAccessFile raf) throws IOException {
         return new StudentKey(integerSerializationStrategy.deserialize(raf),
-                              stringSerializationStrategy.deserialize(raf));
+                stringSerializationStrategy.deserialize(raf));
     }
 }
