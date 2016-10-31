@@ -14,13 +14,13 @@ public class Specified_serializers{
     public static class SerialiserInt implements Serializer<Integer> {
 
 
-        public void writeToStream(DataOutputStream out, Integer value) throws Exception {
+        public void writeToStream(DataOutputStream out, Integer value) throws IOException {
 
             out.writeInt(value);
 
         }
 
-        public Integer readFromStream(DataInputStream in) throws Exception {
+        public Integer readFromStream(DataInputStream in) throws IOException {
 
             return in.readInt();
         }
