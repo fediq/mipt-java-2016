@@ -28,7 +28,6 @@ import java.util.Map;
 
 public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
-    //private final MyFile myFile;
     private final File myFile;
     private String filename;
     private final SerializerInterface<K> keySerializer;
