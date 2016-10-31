@@ -34,7 +34,7 @@ public class MapTester extends AbstractSingleFileStorageTest {
     }
 
     @Override
-    protected MyHashTable<StudentKey, Student> buildStudentsStorage(String path) {
+    protected MyHashTable<StudentKey, Student> buildPojoStorage(String path) {
         try {
             return new MyHashTable<>(path, "storage.db", new StudentKeySerializator(), new StudentSerializator());
         } catch (IOException e) {
