@@ -1,14 +1,12 @@
 package ru.mipt.java2016.homework.g595.rodin.task2.Serializer;
 
 /**
- * Created by Dmitry on 24.10.16.
+ * Created by dmitry on 28.10.16.
  */
-
-
-public class CSerializeInteger implements ISerialize<Integer> {
+public class CSerializeLong implements ISerialize<Long> {
 
     @Override
-    public String serialize(Integer argument) throws IllegalArgumentException {
+    public String serialize(Long argument) throws IllegalArgumentException {
         if (argument == null) {
             throw new IllegalArgumentException("Null Argument");
         }
@@ -16,17 +14,16 @@ public class CSerializeInteger implements ISerialize<Integer> {
     }
 
     @Override
-    public Integer deserialize(String argument) throws IllegalArgumentException {
+    public Long deserialize(String argument) throws IllegalArgumentException {
         if (argument == null) {
             throw new IllegalArgumentException("Null Argument");
         }
-        Integer result = 0;
+        Long result;
         try {
-            result = Integer.parseInt(argument);
+            result = Long.parseLong(argument);
         } catch (NumberFormatException exception) {
             throw new IllegalArgumentException("Invalid Argument");
         }
         return result;
     }
-
 }

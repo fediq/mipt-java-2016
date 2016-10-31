@@ -2,46 +2,54 @@ package ru.mipt.java2016.homework.g595.rodin.task2;
 
 import java.io.*;
 
-import static java.nio.file.Files.exists;
-
 /**
  * Created by Dmitry on 26.10.16.
  */
-public class CDiskTable {
 
-    private final String directoryPath;
+public class CDiskTable {
 
     private final File file;
 
-   public CDiskTable(String directoryPath)throws RuntimeException{
-       this.directoryPath = directoryPath;
-       file = new File(directoryPath);
-   }
+    public CDiskTable(String filePath) {
+        this.file = new File(filePath);
+    }
 
-   public void createFile(){
-       try {
-           file.createNewFile();
-       } catch (IOException exeption) {
-           throw  new RuntimeException(exeption.getMessage());
-       }
-   }
-
-    public void write(String text) throws RuntimeException{
+    public void createFile() {
         try {
-            PrintWriter outWriter = new PrintWriter(file.getAbsoluteFile());
-            outWriter.print(text);
-        } catch (FileNotFoundException exception)
-        {
-            throw new RuntimeException("File not found");
+            file.createNewFile();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    public  String read() throws FileNotFoundException {
-        StringBuilder stringBuilder = new StringBuilder();
-        exists();
+    public boolean exists() {
+        return file.exists();
+    }
+
+    public void write(String text) {
+
         try {
-            BufferedReader reader
-                    = new BufferedReader(new FileReader( file.getAbsoluteFile()));
+            if (!exists()) {
+                throw new RuntimeException("File not found");
+            }
+            FileWriter out = new FileWriter(file.getAbsoluteFile());
+            try {
+                out.write(text);
+            } finally {
+                out.close();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public String read() throws FileNotFoundException {
+        StringBuilder stringBuilder = new StringBuilder();
+        if (!exists()) {
+            throw new RuntimeException("File not found");
+        }
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(file.getAbsoluteFile()));
             try {
                 String s;
                 while ((s = reader.readLine()) != null) {
@@ -51,16 +59,9 @@ public class CDiskTable {
             } finally {
                 reader.close();
             }
-        } catch(IOException exception) {
-            throw new RuntimeException(exception);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
         return stringBuilder.toString();
-    }
-
-    public  boolean exists() throws FileNotFoundException {
-        if (!file.exists()){
-            throw new FileNotFoundException(file.getName());
-        }
-        return true;
     }
 }
