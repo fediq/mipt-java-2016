@@ -15,11 +15,11 @@ import java.io.RandomAccessFile;
     double averageScore
  */
 class StudentSerializationStrategy implements SerializationStrategy<Student> {
-    private IntegerSerializationStrategy integerSerializationStrategy = IntegerSerializationStrategy.INSTANCE;
-    private StringSerializationStrategy stringSerializationStrategy = StringSerializationStrategy.INSTANCE;
-    private DateSerializationStrategy dateSerializationStrategy = DateSerializationStrategy.INSTANCE;
-    private BooleanSerializationStrategy booleanSerializationStrategy = BooleanSerializationStrategy.INSTANCE;
-    private DoubleSerializationStrategy doubleSerializationStrategy = DoubleSerializationStrategy.INSTANCE;
+    private IntegerSerializationStrategy integerSerializationStrategy = IntegerSerializationStrategy.getInstance();
+    private StringSerializationStrategy stringSerializationStrategy = StringSerializationStrategy.getInstance();
+    private DateSerializationStrategy dateSerializationStrategy = DateSerializationStrategy.getInstance();
+    private BooleanSerializationStrategy booleanSerializationStrategy = BooleanSerializationStrategy.getInstance();
+    private DoubleSerializationStrategy doubleSerializationStrategy = DoubleSerializationStrategy.getInstance();
 
     @Override
     public void serialize(Student student, RandomAccessFile raf) throws IOException {

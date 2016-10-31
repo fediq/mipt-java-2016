@@ -4,7 +4,11 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 public class BooleanSerializationStrategy implements SerializationStrategy<Boolean> {
-    public static BooleanSerializationStrategy INSTANCE = new BooleanSerializationStrategy();
+    private static BooleanSerializationStrategy instance = new BooleanSerializationStrategy();
+
+    public static BooleanSerializationStrategy getInstance() {
+        return instance;
+    }
 
     @Override
     public void serialize(Boolean value, RandomAccessFile raf) throws IOException {

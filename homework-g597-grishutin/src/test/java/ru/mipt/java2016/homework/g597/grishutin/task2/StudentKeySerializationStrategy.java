@@ -6,8 +6,8 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 class StudentKeySerializationStrategy implements SerializationStrategy<StudentKey> {
-    private IntegerSerializationStrategy integerSerializationStrategy = IntegerSerializationStrategy.INSTANCE;
-    private StringSerializationStrategy stringSerializationStrategy = StringSerializationStrategy.INSTANCE;
+    private IntegerSerializationStrategy integerSerializationStrategy = IntegerSerializationStrategy.getInstance();
+    private StringSerializationStrategy stringSerializationStrategy = StringSerializationStrategy.getInstance();
 
     @Override
     public void serialize(StudentKey studentKey, RandomAccessFile raf) throws IOException {

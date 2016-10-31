@@ -4,8 +4,11 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 public class IntegerSerializationStrategy implements SerializationStrategy<Integer> {
-    public static IntegerSerializationStrategy INSTANCE = new IntegerSerializationStrategy();
+    private static IntegerSerializationStrategy instance = new IntegerSerializationStrategy();
 
+    public static IntegerSerializationStrategy getInstance() {
+        return instance;
+    }
     @Override
     public void serialize(Integer value, RandomAccessFile raf) throws IOException {
         raf.writeInt(value);

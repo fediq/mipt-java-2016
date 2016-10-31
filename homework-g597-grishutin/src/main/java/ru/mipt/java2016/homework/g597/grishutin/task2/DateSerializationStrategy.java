@@ -4,9 +4,14 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Date;
 
-public class DateSerializationStrategy implements SerializationStrategy<Date> {
-    public static final DateSerializationStrategy INSTANCE = new DateSerializationStrategy();
-    private LongSerializationStrategy longSerializationStrategy = LongSerializationStrategy.INSTANCE;
+class DateSerializationStrategy implements SerializationStrategy<Date> {
+    private LongSerializationStrategy longSerializationStrategy = LongSerializationStrategy.getInstance();
+
+    private static DateSerializationStrategy instance = new DateSerializationStrategy();
+
+    public static DateSerializationStrategy getInstance() {
+        return instance;
+    }
 
     @Override
     public void serialize(Date date, RandomAccessFile raf) throws IOException {

@@ -4,8 +4,11 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 public class DoubleSerializationStrategy implements SerializationStrategy<Double> {
-    public static DoubleSerializationStrategy INSTANCE = new DoubleSerializationStrategy();
+    private static DoubleSerializationStrategy instance = new DoubleSerializationStrategy();
 
+    public static DoubleSerializationStrategy getInstance() {
+        return instance;
+    }
     @Override
     public void serialize(Double value, RandomAccessFile raf) throws IOException {
         raf.writeDouble(value);

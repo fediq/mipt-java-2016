@@ -9,7 +9,6 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 
 class GrishutinKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
@@ -111,7 +110,7 @@ class GrishutinKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private void overwrite() throws IOException {
         storageFile.seek(0);
         storageFile.setLength(0);
-        IntegerSerializationStrategy integerSerializationStrategy = IntegerSerializationStrategy.INSTANCE;
+        IntegerSerializationStrategy integerSerializationStrategy = IntegerSerializationStrategy.getInstance();
         integerSerializationStrategy.serialize(numRecords, storageFile);
         for (Map.Entry<K, V> entry: kvHashMap.entrySet()) {
             keySerializationStrategy.serialize(entry.getKey(), storageFile);
