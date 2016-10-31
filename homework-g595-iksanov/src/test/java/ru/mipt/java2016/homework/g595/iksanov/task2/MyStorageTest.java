@@ -11,18 +11,18 @@ import ru.mipt.java2016.homework.tests.task2.StudentKey;
 public class MyStorageTest extends AbstractSingleFileStorageTest {
 
     @Override
-    protected KeyValueStorage<String, String> buildStringsStorage(String path) { return new MyStorage<>(path,
-            StrategyForString.getInstance(),
-            StrategyForString.getInstance()); }
+    protected KeyValueStorage<String, String> buildStringsStorage(String path) {
+        return new MyStorage<>(path, StrategyForString.getInstance(), StrategyForString.getInstance());
+    }
 
     @Override
-    protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) { return new MyStorage<>(path,
-            StrategyForInteger.getInstance(),
-            StrategyForDouble.getInstance()); }
+    protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) {
+        return new MyStorage<>(path, StrategyForInteger.getInstance(), StrategyForDouble.getInstance());
+    }
 
     @Override
-    protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) { return new MyStorage<>(path,
-            StrategyForStudentKey.getInstance(),
-            StrategyForStudent.getInstance()); }
+    protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) {
+        return new MyStorage<>(path, StrategyForStudentKey.getInstance(), StrategyForStudent.getInstance());
+    }
 
 }

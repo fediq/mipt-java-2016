@@ -13,7 +13,7 @@ import java.util.Iterator;
  */
 public class MyStorage<K, V> implements KeyValueStorage<K, V> {
 
-    private HashMap<K, V> myMap = new HashMap<>();
+    private Map<K, V> myMap = new HashMap<>();
     private File workfile;
     private SerializationStrategy<K> keySerializationStrategy;
     private SerializationStrategy<V> valueSerializationStrategy;
@@ -26,7 +26,7 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
 
         File tryFile = new File(path);
         if (tryFile.exists() && tryFile.isDirectory()) {
-            path += "/storage.db";
+            path += File.separator + "storage.db";
         }
         workfile = new File(path);
         if (workfile.exists()) {
@@ -92,6 +92,7 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
             throw new IOException("Writing to file error");
         }
         isClosed = true;
+        myMap.clear();
     }
 
     private void checkNotClosed() {
