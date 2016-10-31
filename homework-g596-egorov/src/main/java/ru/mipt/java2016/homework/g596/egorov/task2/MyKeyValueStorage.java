@@ -137,21 +137,6 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
-    private boolean exists() throws FileNotFoundException {
-        if (!myFile.exists()) {
-            throw new FileNotFoundException(myFile.getName());
-        }
-        return true;
-    }
-
-    private void createFile() {
-        try {
-            myFile.createNewFile();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     private void createfile(){
         try {
             myFile.createNewFile();
