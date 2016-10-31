@@ -19,20 +19,23 @@ public class MyHashTable<K, V> implements KeyValueStorage<K, V> {
     private ConcurrentHashMap<K, V> hashMap;
     private SerializationStrategy<K> keySerializator;
     private SerializationStrategy<V> valueSerializator;
-    private Boolean isOpened;
+    private Boolean isOpened = false;
 
-    MyHashTable(String path_, String name_,
+    MyHashTable(String pAth, String nAme,
                 SerializationStrategy<K> keySer, SerializationStrategy<V> valSer)
             throws IOException {
-        if (path_ == null) {
+        if (isOpened) {
+            throw new IOException("file has been already opened");
+        }
+        if (pAth == null) {
             throw new IOException("kek");
         }
-        if (name_ == null) {
+        if (nAme == null) {
             throw new IOException("kek2");
         }
-        StringBuilder sb = new StringBuilder(path_);
+        StringBuilder sb = new StringBuilder(pAth);
         sb.append("/");
-        sb.append(name_);
+        sb.append(nAme);
         sb.append(".db");
         String path = sb.toString();
 
