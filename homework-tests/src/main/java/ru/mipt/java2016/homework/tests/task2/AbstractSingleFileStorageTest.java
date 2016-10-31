@@ -6,7 +6,6 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.tests.task2.StorageTestUtils.*;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;

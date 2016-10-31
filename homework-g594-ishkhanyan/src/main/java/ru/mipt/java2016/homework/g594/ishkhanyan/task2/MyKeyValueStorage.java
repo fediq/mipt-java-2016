@@ -7,9 +7,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-/**
- * Created by semien on 30.10.16.
- */
 public class MyKeyValueStorage<Key, Value> implements KeyValueStorage<Key, Value> {
 
     private final HashMap<Key, Value> actualCopy = new HashMap<>();
@@ -19,15 +16,19 @@ public class MyKeyValueStorage<Key, Value> implements KeyValueStorage<Key, Value
     private MySerialization valueSerializator;
     private String pathDirectory;
     private String fullPath;
-    boolean isOpen = false;
+    private boolean isOpen;
 
     MyKeyValueStorage(String path, String keyT, String valueT) throws IOException {
         keyType = keyT;
         valueType = valueT;
         pathDirectory = path;
         File file = new File(pathDirectory);
-        if (!file.isDirectory()) throw new RuntimeException("invalid directory path");
-        if (!file.exists()) throw new RuntimeException("such directory does not exist");
+        if (!file.isDirectory()) {
+            throw new RuntimeException("invalid directory path");
+        }
+        if (!file.exists()) {
+            throw new RuntimeException("such directory does not exist");
+        }
 
         fullPath = pathDirectory + File.separator +"MyStorage";
         isOpen = true;
@@ -73,12 +74,12 @@ public class MyKeyValueStorage<Key, Value> implements KeyValueStorage<Key, Value
         } else {
             FileInputStream in = new FileInputStream(fullPath);
             DataInputStream fileIn = new DataInputStream(in);
-            int num = (int) MySerialization.MyIntegerSerialization.readFromFile(fileIn);
-            String FileKeyType = (String) MySerialization.MyStringSerialization.readFromFile(fileIn);
-            String FileValueType = (String) MySerialization.MyStringSerialization.readFromFile(fileIn);
-            /*if (FileKeyType != keyType || FileValueType != valueType) {
+            int num = fileIn.readInt();
+            String FileKeyType = fileIn.readUTF();
+            String FileValueType = fileIn.readUTF();
+            if (!FileKeyType.equals(keyType) || !FileValueType.equals(valueType)) {
                 throw new RuntimeException("This file contains other types of objects");
-            }*/
+            }
             Key key;
             Value value;
             for (int i = 0; i < num; ++i) {
@@ -142,9 +143,9 @@ public class MyKeyValueStorage<Key, Value> implements KeyValueStorage<Key, Value
         }
         FileOutputStream out = new FileOutputStream(fullPath);
         DataOutputStream outFile = new DataOutputStream(out);
-        MySerialization.MyIntegerSerialization.writeToFile(actualCopy.size(), outFile);
-        MySerialization.MyStringSerialization.writeToFile(keyType, outFile);
-        MySerialization.MyStringSerialization.writeToFile(valueType, outFile);
+        outFile.writeInt(actualCopy.size());
+        outFile.writeUTF(keyType);
+        outFile.writeUTF(valueType);
         for (Map.Entry<Key, Value> i : actualCopy.entrySet()) {
             keySerializator.writeToFile(i.getKey(), outFile);
             valueSerializator.writeToFile(i.getValue(), outFile);
