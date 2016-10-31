@@ -30,8 +30,8 @@ public class DoubleSerializer implements ISerializer<Double> {
     @Override
     public byte[] serialize(Double value) {
         return ByteBuffer.allocate(DOUBLE_BYTE_SIZE)
-                .putDouble(value)
-                .array();
+                         .putDouble(value)
+                         .array();
     }
 
     /**

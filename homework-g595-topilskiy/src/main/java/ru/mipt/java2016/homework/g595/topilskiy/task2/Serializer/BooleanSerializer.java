@@ -8,7 +8,7 @@ package ru.mipt.java2016.homework.g595.topilskiy.task2.Serializer;
  */
 public class BooleanSerializer implements ISerializer<Boolean> {
     /* Number of BYTES in the java class Boolean */
-    private static final int BOOLEAN_BYTE_SIZE = Byte.SIZE;
+    private static final int BOOLEAN_BYTE_SIZE = Byte.SIZE / Byte.SIZE;
     /* Wrappers for (byte) to use for Boolean serialization and deserialization */
     private static final byte BOOLEAN_BYTE_FALSE = (byte) 0;
     private static final byte BOOLEAN_BYTE_TRUE  = (byte) 1;
