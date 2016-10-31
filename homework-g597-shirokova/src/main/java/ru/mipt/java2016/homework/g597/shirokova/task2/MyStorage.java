@@ -7,45 +7,45 @@ import java.util.Iterator;
 
 class MyStorage<K, V> implements KeyValueStorage<K, V> {
 
-    private FileMap<K, V> ValueStorage;
+    private FileMap<K, V> valueStorage;
 
     MyStorage(String pathToFile, SerializationStrategy<K> keySerializer,
               SerializationStrategy<V> valueSerializer) throws IOException {
-        ValueStorage = new FileMap<>(pathToFile, keySerializer, valueSerializer);
+        valueStorage = new FileMap<>(pathToFile, keySerializer, valueSerializer);
     }
 
     @Override
     public V read(K key) {
-        return ValueStorage.read(key);
+        return valueStorage.read(key);
     }
 
     @Override
     public boolean exists(K key) {
-        return ValueStorage.exists(key);
+        return valueStorage.exists(key);
     }
 
     @Override
     public void write(K key, V value) {
-        ValueStorage.write(key, value);
+        valueStorage.write(key, value);
     }
 
     @Override
     public void delete(K key) {
-        ValueStorage.delete(key);
+        valueStorage.delete(key);
     }
 
     @Override
     public Iterator<K> readKeys() {
-        return ValueStorage.readKeys();
+        return valueStorage.readKeys();
     }
 
     @Override
     public int size() {
-        return ValueStorage.size();
+        return valueStorage.size();
     }
 
     @Override
     public void close() throws IOException {
-        ValueStorage.close();
+        valueStorage.close();
     }
 }

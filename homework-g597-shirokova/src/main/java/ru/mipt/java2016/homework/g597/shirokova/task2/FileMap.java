@@ -6,7 +6,7 @@ import java.util.Iterator;
 
 class FileMap<K, V> {
 
-    private final HashMap<K, V> StorageMap = new HashMap<>();
+    private final HashMap<K, V> storageMap = new HashMap<>();
     private final String pathToStorage;
     private final SerializationStrategy<K> keySerializer;
     private final SerializationStrategy<V> valueSerializer;
@@ -28,7 +28,7 @@ class FileMap<K, V> {
                 DataInputStream fileInput = new DataInputStream(
                         new BufferedInputStream(new FileInputStream(fileForStorage)));
                 while (fileInput.available() != 0) {
-                    StorageMap.put(
+                    storageMap.put(
                             keySerializer.deserialize(fileInput),
                             valueSerializer.deserialize(fileInput)
                     );
@@ -49,44 +49,44 @@ class FileMap<K, V> {
 
     V read(K key) {
         checkClosed();
-        return StorageMap.get(key);
+        return storageMap.get(key);
     }
 
     boolean exists(K key) {
         checkClosed();
-        return StorageMap.containsKey(key);
+        return storageMap.containsKey(key);
     }
 
     void write(K key, V value) {
         checkClosed();
-        StorageMap.put(key, value);
+        storageMap.put(key, value);
     }
 
     void delete(K key) {
         checkClosed();
-        StorageMap.remove(key);
+        storageMap.remove(key);
     }
 
     Iterator<K> readKeys() {
         checkClosed();
-        return StorageMap.keySet().iterator();
+        return storageMap.keySet().iterator();
     }
 
     int size() {
         checkClosed();
-        return StorageMap.size();
+        return storageMap.size();
     }
 
     void close() throws IOException {
         checkClosed();
         DataOutputStream outputFile = new DataOutputStream(
                 new BufferedOutputStream(new FileOutputStream(pathToStorage)));
-        for (HashMap.Entry<K, V> entry : StorageMap.entrySet()) {
+        for (HashMap.Entry<K, V> entry : storageMap.entrySet()) {
             keySerializer.serialize(outputFile, entry.getKey());
             valueSerializer.serialize(outputFile, entry.getValue());
         }
         isClosed = true;
-        StorageMap.clear();
+        storageMap.clear();
         outputFile.close();
     }
 }
