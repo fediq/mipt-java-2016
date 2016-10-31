@@ -24,8 +24,11 @@ public class MyHashTable<K, V> implements KeyValueStorage<K, V> {
     MyHashTable(String path_, String name_,
                 SerializationStrategy<K> keySer, SerializationStrategy<V> valSer)
     throws IOException {
-        if (isOpened){
-            throw new IOException();
+        if (path_ == null){
+            throw new IOException("kek");
+        }
+        if (name_ == null){
+            throw new IOException("kek2");
         }
         StringBuilder sb = new StringBuilder(path_);
         sb.append("/" );
@@ -34,9 +37,6 @@ public class MyHashTable<K, V> implements KeyValueStorage<K, V> {
         String path = sb.toString();
 
         File f = new File(path);
-        if(!f.exists() && !f.isDirectory()) {
-            throw new IOException(" File does not exist ");
-        }
 
         hashMap = new ConcurrentHashMap<>();
         this.keySerializator = keySer;
