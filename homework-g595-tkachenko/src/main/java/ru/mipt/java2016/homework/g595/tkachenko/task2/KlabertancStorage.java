@@ -12,17 +12,17 @@ import java.util.Map;
  */
 public class KlabertancStorage<K, V> implements KeyValueStorage<K, V> {
 
-    private static final String TRY_PROC = "tryproc";
-    private static final String KEYS_SECRET_STRING = "Таємна рядок для ключів.";
-    private static final String VALUES_SECRET_STRING = "Таємна рядок для значень.";
+    private static final String TRY_LOCK = "trylock";
+    private static final Integer KEYS_SECRET_NUMBER = 47;
+    private static final Integer VALUES_SECRET_NUMBER = 31;
 
     private HashMap<K, V> storage = new HashMap<>();
     private Serialization<K> keySerialization;
     private Serialization<V> valueSerialization;
     private File keys;
     private File values;
-    private File procAccess;
-    private boolean flag;
+    private File lockAccess;
+    private boolean flagForClose;
 
     public KlabertancStorage(String path, Serialization<K> k, Serialization<V> v) {
 
@@ -34,11 +34,11 @@ public class KlabertancStorage<K, V> implements KeyValueStorage<K, V> {
             throw new RuntimeException("Invalid path!");
         }
 
-        procAccess = new File(dir, TRY_PROC);
-        if (procAccess.exists()) {
+        lockAccess = new File(dir, TRY_LOCK);
+        if (lockAccess.exists()) {
             throw new RuntimeException("Another process is already running!");
         }
-        procAccess.mkdir();
+        lockAccess.mkdir();
 
         keys = new File(dir, "keys.db");
         values = new File(dir, "values.db");
@@ -51,9 +51,9 @@ public class KlabertancStorage<K, V> implements KeyValueStorage<K, V> {
     private void getStorageFromDisk() {
         try (DataInputStream keysInput = new DataInputStream(new FileInputStream(keys));
              DataInputStream valuesInput = new DataInputStream(new FileInputStream(values))) {
-            String keysValid = Serialization.readString(keysInput);
-            String valuesValid = Serialization.readString(valuesInput);
-            if (!keysValid.equals(KEYS_SECRET_STRING) || !valuesValid.equals(VALUES_SECRET_STRING)) {
+            int keysValid = keysInput.readInt();
+            int valuesValid = valuesInput.readInt();
+            if (!KEYS_SECRET_NUMBER.equals(keysValid) || !VALUES_SECRET_NUMBER.equals(valuesValid)) {
                 throw new RuntimeException("It's not a KlabertancStorage!");
             }
             
@@ -72,8 +72,8 @@ public class KlabertancStorage<K, V> implements KeyValueStorage<K, V> {
     private void putStorageOnDisk() throws IOException {
         try (DataOutputStream keysOutput = new DataOutputStream(new FileOutputStream(keys));
              DataOutputStream valuesOutput = new DataOutputStream(new FileOutputStream(values))) {
-            Serialization.writeString(keysOutput, KEYS_SECRET_STRING);
-            Serialization.writeString(valuesOutput, VALUES_SECRET_STRING);
+            keysOutput.writeInt(KEYS_SECRET_NUMBER);
+            valuesOutput.writeInt(VALUES_SECRET_NUMBER);
             keysOutput.writeInt(storage.size());
             for (Map.Entry<K, V> entry : storage.entrySet()) {
                 keySerialization.write(keysOutput, entry.getKey());
@@ -87,7 +87,7 @@ public class KlabertancStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void isStorageClosed() {
-        if (flag) {
+        if (flagForClose) {
             throw new RuntimeException("You're a bad guy. Don't try to access the closed storage!");
         }
     }
@@ -132,7 +132,7 @@ public class KlabertancStorage<K, V> implements KeyValueStorage<K, V> {
     public void close() throws IOException {
         isStorageClosed();
         putStorageOnDisk();
-        procAccess.delete();
-        flag = true;
+        lockAccess.delete();
+        flagForClose = true;
     }
 }

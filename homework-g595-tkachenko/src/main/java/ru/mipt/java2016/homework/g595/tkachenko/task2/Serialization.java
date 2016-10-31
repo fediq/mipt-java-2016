@@ -12,19 +12,13 @@ public abstract class Serialization<valType> {
 
     public static void writeString(DataOutputStream output, String x) throws IOException {
         output.writeInt(x.length());
-        char[] c = x.toCharArray();
-        for (int i = 0; i < x.length(); i++) {
-            output.writeInt((int) c[i]);
-        }
+        output.write(x.getBytes(), 0, x.length());
     }
 
     public static String readString(DataInputStream input) throws IOException {
-        StringBuilder sBuild = new StringBuilder();
-        int size = input.readInt();
-        for (int i = 0; i < size; i++) {
-            sBuild.append((char) input.readInt());
-        }
-        return sBuild.toString();
+        byte[] b = new byte[input.readInt()];
+        input.read(b);
+        return new String(b);
     }
 
     abstract valType read(DataInputStream input) throws IOException;
