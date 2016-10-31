@@ -14,7 +14,7 @@ public class ImplCalculator implements Calculator {
         if (expression == null) {
             throw new ParsingException("Null");
         }
-        String work = expression.replaceAll("[\\s]", ""); //delete space symbols
+        String work = expression.replaceAll("\\s", ""); //delete space symbols
         if (work.isEmpty()) {
             throw new ParsingException("Empty String");
         }
