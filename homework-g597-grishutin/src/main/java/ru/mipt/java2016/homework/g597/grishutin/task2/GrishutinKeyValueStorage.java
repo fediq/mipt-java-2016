@@ -1,6 +1,7 @@
 package ru.mipt.java2016.homework.g597.grishutin.task2;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
+import sun.plugin.dom.exception.InvalidStateException;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -26,11 +27,11 @@ class GrishutinKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                              SerializationStrategy<K> keyStrat,
                              SerializationStrategy<V> valueStrat) throws IOException, IllegalAccessException {
 
-        String preferredFilename = "Azazaza.db";
+        final String preferredFilename = "Azazaza.db";
         keySerializationStrategy = keyStrat;
         valueSerializationStrategy = valueStrat;
-        Path filePath = Paths.get(directoryPath + File.separator + preferredFilename);
-        Path lockFilePath = Paths.get(directoryPath + File.separator + preferredFilename + ".lock");
+        Path filePath = Paths.get(directoryPath, preferredFilename);
+        Path lockFilePath = Paths.get(directoryPath, preferredFilename + ".lock");
 
         lock = lockFilePath.toFile();
         if (!lock.createNewFile()) { // if lock is hold by other kvStorage
@@ -59,6 +60,9 @@ class GrishutinKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public V read(K key) {
+        if (isClosed) {
+            throw new InvalidStateException("Storage is closed!");
+        }
         return kvHashMap.get(key);
     }
 
@@ -69,6 +73,9 @@ class GrishutinKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public synchronized void write(K key, V value) {
+        if (isClosed) {
+            throw new InvalidStateException("Storage is closed!");
+        }
         if (!(exists(key))) {
             numRecords++;
         }
