@@ -24,7 +24,7 @@ public class MapTester extends AbstractSingleFileStorageTest {
     }
 
     @Override
-    protected MyHashTable<Integer, Double> buildI2DStorage(String path) {
+    protected MyHashTable<Integer, Double> buildNumbersStorage(String path) {
         try {
             return new MyHashTable<>(path, "storage.db", new IntegerSerializator(), new DoubleSerializator());
         } catch (IOException e) {
