@@ -19,7 +19,7 @@ import java.util.Map;
 public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private Map<K, V> dataBase;
-    private String dataBaseFileName = "/storage.db";
+    private String dataBaseFileName = File.separator + "storage.db";
     private File dataBaseFile;
     private String dataBasePath;
     private boolean isClosed;
@@ -58,66 +58,53 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
+    private void checkClosed() {
+        if (isClosed) {
+            throw new IllegalStateException("File already closed");
+        }
+    }
 
     @Override
     public boolean exists(K key) {
-        if (!isClosed) {
-            return dataBase.containsKey(key);
-        } else {
-            throw new IllegalStateException("File already closed");
-        }
+        checkClosed();
+        return dataBase.containsKey(key);
     }
 
     @Override
     public V read(K key) {
-        if (!isClosed) {
-            return dataBase.get(key);
-        } else {
-            throw new IllegalStateException("File already closed");
-        }
+        checkClosed();
+        return dataBase.get(key);
     }
 
     @Override
     public void write(K key, V value) {
-        if (!isClosed) {
-            dataBase.put(key, value);
-        } else {
-            throw new IllegalStateException("File already closed");
-        }
+        checkClosed();
+        dataBase.put(key, value);
     }
 
     @Override
     public void delete(K key) {
-        if (!isClosed) {
-            dataBase.remove(key);
-        } else {
-            throw new IllegalStateException("File already closed");
-        }
+        checkClosed();
+        dataBase.remove(key);
     }
 
     @Override
     public Iterator<K> readKeys() {
-        if (!isClosed) {
-            return dataBase.keySet().iterator();
-        } else {
-            throw new IllegalStateException("File already closed");
-        }
+        checkClosed();
+        return dataBase.keySet().iterator();
+
     }
 
     @Override
     public int size() {
-        if (!isClosed) {
-            return dataBase.size();
-        } else {
-            throw new IllegalStateException("File already closed");
-        }
+        checkClosed();
+        return dataBase.size();
     }
 
     @Override
     public void close() {
         if (!isClosed) {
-            try {
-                DataOutputStream outputFile = new DataOutputStream(new FileOutputStream(dataBasePath));
+            try (DataOutputStream outputFile = new DataOutputStream(new FileOutputStream(dataBasePath))) {
                 outputFile.writeInt(dataBase.size());
                 for (Map.Entry<K, V> entry : dataBase.entrySet()) {
                     keySerializer.serializeToStream(entry.getKey(), outputFile);
