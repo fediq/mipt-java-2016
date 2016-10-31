@@ -47,7 +47,7 @@ public class KeyValueDB<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
-    void loadExistingKVDB () throws IOException {
+    void loadExistingKVDB() throws IOException {
         dbFile.seek(0);
         keyValueMap.clear();
         while (dbFile.getFilePointer() < dbFile.length()) {
