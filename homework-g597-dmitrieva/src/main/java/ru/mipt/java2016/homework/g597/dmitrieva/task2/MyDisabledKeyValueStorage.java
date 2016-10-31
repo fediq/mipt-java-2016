@@ -25,7 +25,7 @@ public class MyDisabledKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             throw new NullPointerException("The pathname argument is null");
         }
         lock = new File(path + File.separator + "zarabotayples");
-        if(!lock.createNewFile()) {
+        if (!lock.createNewFile()) {
             throw new IllegalStateException("Can not work with one file from multiple storages");
         }
         isFileOpened = true;
