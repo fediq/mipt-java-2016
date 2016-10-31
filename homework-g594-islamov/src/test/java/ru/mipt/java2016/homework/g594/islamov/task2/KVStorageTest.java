@@ -9,7 +9,7 @@ import ru.mipt.java2016.homework.tests.task2.StudentKey;
  * Created by Iskander Islamov on 30.10.2016.
  */
 
-public class KVSTests extends AbstractSingleFileStorageTest {
+public class KVStorageTest extends AbstractSingleFileStorageTest {
 
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String path) {
