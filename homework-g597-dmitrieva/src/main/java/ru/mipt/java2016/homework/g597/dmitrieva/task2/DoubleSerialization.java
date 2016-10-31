@@ -6,14 +6,14 @@ import java.io.RandomAccessFile;
 /**
  * Created by macbook on 30.10.16.
  */
-public class DoubleValueSerialization extends SerializationStrategy<Double> {
+public class DoubleSerialization extends SerializationStrategy<Double> {
 
     @Override
     public Double read(RandomAccessFile file) throws IOException {
         try {
             return file.readDouble();
         } catch (IOException e) {
-            throw new IOException("An I/O error occurred");
+            throw new IOException("Couldn't read during the Double deserialization");
         }
     }
 
@@ -22,7 +22,7 @@ public class DoubleValueSerialization extends SerializationStrategy<Double> {
         try {
             file.writeDouble(value);
         } catch (IOException e) {
-            throw new IOException("An I/O error occurred");
+            throw new IOException("Couldn't write during the Double serialization");
         }
     }
 }

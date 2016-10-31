@@ -12,60 +12,43 @@ import java.util.HashMap;
 public class MyDisabledKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private HashMap<K, V> map;
-    //private File file;
-    //private StringBuilder pathname = new StringBuilder();
     private RandomAccessFile raFile; // raFile - это типа random access file (ну а вдруг )))))0)
-    private String typeOfKey;
-    private SerializationStrategy<K> serKey;
-    private SerializationStrategy<V> serValue;
+    private final SerializationStrategy<K> keyStrategy;
+    private final SerializationStrategy<V> valueStrategy;
     private String mode = "rw"; // По умолчанию выставлили чтение/запись
     private boolean isFileOpened;
 
-    MyDisabledKeyValueStorage(String typeOfKey, String path,
-                              SerializationStrategy<K> key, SerializationStrategy<V> value)
-            throws NullPointerException, IOException {
+    MyDisabledKeyValueStorage(String path, SerializationStrategy<K> key, SerializationStrategy<V> value)
+            throws IOException {
+        if (path == null) {
+            throw new NullPointerException("The pathname argument is null");
+        }
+        File lock = new File(path);
+        /*
+        if(!lock.createNewFile()) {
+            throw new IllegalStateException("Can not work with one file from multiple storages");
+        }*/
         isFileOpened = true;
-        File file;
         map = new HashMap<>();
-        this.typeOfKey = typeOfKey;
-        this.serKey = key;
-        this.serValue = value;
-        StringBuilder pathname = new StringBuilder();
-        pathname.append(path).append(File.separator).append("storage.txt");
+        this.keyStrategy = key;
+        this.valueStrategy = value;
+        String pathname = path + File.separator + "storage.txt";
         try {
-            file = new File(pathname.toString());
-            if (!file.exists()) {
-                try {
-                    file.createNewFile();
-                    raFile = new RandomAccessFile(file, mode);
-                    try {
-                        raFile.writeUTF(this.typeOfKey);
-                        raFile.writeInt(0);
-                    } catch (IOException e) {
-                        throw new IOException("An I/O error occurred");
-                    }
-                } catch (IOException e) {
-                    throw new IOException("An I/O error occurred");
-                }
+            File file = new File(pathname);
+            if (file.createNewFile()) {
+                raFile = new RandomAccessFile(file, mode);
             } else {
-                try {
-                    raFile = new RandomAccessFile(file, mode);
-                    raFile.seek(0);
-                    if (!raFile.readUTF().equals(this.typeOfKey)) {
-                        throw new IllegalStateException("Invalid file to read from");
-                    }
-                    int numberOfElements = raFile.readInt();
-                    for (int i = 0; i < numberOfElements; i++) {
-                        K currentKey = this.serKey.read(raFile);
-                        V currentValue = this.serValue.read(raFile);
-                        map.put(currentKey, currentValue);
-                    }
-                } catch (FileNotFoundException e) {
-                    throw new FileNotFoundException("The given string does not denote an existing file");
+                raFile = new RandomAccessFile(file, mode);
+                raFile.seek(0);
+                int numberOfElements = raFile.readInt();
+                for (int i = 0; i < numberOfElements; i++) {
+                    K currentKey = this.keyStrategy.read(raFile);
+                    V currentValue = this.valueStrategy.read(raFile);
+                    map.put(currentKey, currentValue);
                 }
             }
-        } catch (NullPointerException e) {
-            throw new NullPointerException("The pathname argument is null");
+        } catch (FileNotFoundException e) {
+            throw new FileNotFoundException("The given string does not denote an existing file");
         }
     }
 
@@ -107,6 +90,7 @@ public class MyDisabledKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public int size() {
+        checkFileNotClosed();
         return map.size();
     }
 
@@ -116,15 +100,15 @@ public class MyDisabledKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         try {
             raFile.setLength(0);
             raFile.seek(0); // на всякий случай
-            raFile.writeUTF(typeOfKey);
             raFile.writeInt(map.size());
             for (HashMap.Entry<K, V> entry : map.entrySet()) {
-                serKey.write(raFile, entry.getKey());
-                serValue.write(raFile, entry.getValue());
+                keyStrategy.write(raFile, entry.getKey());
+                valueStrategy.write(raFile, entry.getValue());
             }
             isFileOpened = false;
+
         } catch (IOException e) {
-            throw new IOException("An I/O error occurred");
+            throw new IOException("Couldn't write during the close of storage");
         }
     }
 }

@@ -24,7 +24,7 @@ public class StudentValueSerialization extends SerializationStrategy<Student> {
             Student value = new Student(groupID, name, hometown, birthDate, hasDormitory, averageScore);
             return value;
         } catch (IOException e) {
-            throw new IOException("An I/O error occurred");
+            throw new IOException("Couldn't read during the StudentValue deserialization");
         }
     }
 
@@ -38,7 +38,7 @@ public class StudentValueSerialization extends SerializationStrategy<Student> {
             file.writeBoolean(value.isHasDormitory());
             file.writeDouble(value.getAverageScore());
         } catch (IOException e) {
-            throw new IOException("An I/O error occurred");
+            throw new IOException("Couldn't write during the StudentValue serialization");
         }
     }
 }

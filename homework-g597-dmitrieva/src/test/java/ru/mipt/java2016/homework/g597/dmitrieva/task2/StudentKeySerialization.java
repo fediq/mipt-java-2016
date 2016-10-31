@@ -13,10 +13,9 @@ public class StudentKeySerialization extends SerializationStrategy<StudentKey> {
     @Override
     public StudentKey read(RandomAccessFile file) throws IOException {
         try {
-            //StudentKey key = );
             return new StudentKey(file.readInt(), file.readUTF());
         } catch (IOException e) {
-            throw new IOException("An I/O error occurred");
+            throw new IOException("Couldn't read during the StudentKey deserialization");
         }
     }
 
@@ -26,7 +25,7 @@ public class StudentKeySerialization extends SerializationStrategy<StudentKey> {
             file.writeInt(value.getGroupId());
             file.writeUTF(value.getName());
         } catch (IOException e) {
-            throw new IOException("An I/O error occurred");
+            throw new IOException("Couldn't write during the StudentKey serialization");
         }
     }
 }

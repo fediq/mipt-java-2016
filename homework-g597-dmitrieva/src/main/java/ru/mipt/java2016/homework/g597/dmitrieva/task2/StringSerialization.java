@@ -17,7 +17,7 @@ public class StringSerialization extends SerializationStrategy<String> {
             file.read(bytes);
             return new String(bytes, StandardCharsets.UTF_8);
         } catch (IOException e) {
-            throw new IOException("An I/O error occurred");
+            throw new IOException("Couldn't read during the String deserialization");
         }
     }
 
@@ -31,7 +31,7 @@ public class StringSerialization extends SerializationStrategy<String> {
                 file.writeByte(bytes[i]);
             }
         } catch (IOException e) {
-            throw new IOException("An I/O error occurred");
+            throw new IOException("Couldn't write during the String serialization");
         }
     }
 }

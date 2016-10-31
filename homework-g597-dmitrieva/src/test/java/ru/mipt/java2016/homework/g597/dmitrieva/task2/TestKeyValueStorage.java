@@ -14,7 +14,7 @@ public class TestKeyValueStorage extends AbstractSingleFileStorageTest {
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String path) {
         try {
-            return new MyDisabledKeyValueStorage<>("String", path,
+            return new MyDisabledKeyValueStorage<>(path,
                     new StringSerialization(), new StringSerialization());
         } catch (IOException e) {
             e.printStackTrace();
@@ -25,8 +25,8 @@ public class TestKeyValueStorage extends AbstractSingleFileStorageTest {
     @Override
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) {
         try {
-            return new MyDisabledKeyValueStorage<>("Integer", path,
-                    new IntegerKeySerialization(), new DoubleValueSerialization());
+            return new MyDisabledKeyValueStorage<>(path,
+                    new IntegerSerialization(), new DoubleSerialization());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -36,7 +36,7 @@ public class TestKeyValueStorage extends AbstractSingleFileStorageTest {
     @Override
     protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) {
         try {
-            return new MyDisabledKeyValueStorage<>("Student", path,
+            return new MyDisabledKeyValueStorage<>(path,
                     new StudentKeySerialization(), new StudentValueSerialization());
         } catch (IOException e) {
             e.printStackTrace();
