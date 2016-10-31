@@ -15,7 +15,8 @@ class SimpleStorageTable<K, V> {
     private final String pathToFile;
     private int size = 0;
 
-    private final Seriжюalizer<K> keySerializer;
+    private final Serializer<K> keySerializer;
+    private final Serializer<K> keySerializer;
     private final Serializer<V> valueSerializer;
 
     private boolean closed = false;
