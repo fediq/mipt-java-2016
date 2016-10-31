@@ -25,10 +25,9 @@ public class StringStringSerialisator extends ObjectSerialisator<String, String>
     Pair<String, String> read() throws IOException {
         String input = inputStream.readLine();
         System.out.println(input);
-        if (input == null){
+        if (input == null) {
             throw new IOException("EOF");
-        }
-        else {
+        } else {
             int border = input.indexOf(":");
             String key = input.substring(0, border);
             String value = input.substring(border + 1, input.length());

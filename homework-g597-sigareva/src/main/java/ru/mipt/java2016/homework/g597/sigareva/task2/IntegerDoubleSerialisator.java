@@ -9,8 +9,8 @@ import java.io.IOException;
  */
 public class IntegerDoubleSerialisator extends ObjectSerialisator {
 
-    IntegerDoubleSerialisator(String path_) {
-        super(path_);
+    IntegerDoubleSerialisator(String newPath) {
+        super(newPath);
     }
 
     @Override
@@ -24,10 +24,9 @@ public class IntegerDoubleSerialisator extends ObjectSerialisator {
     @Override
     Pair read() throws IOException {
         String input = inputStream.readLine();
-        if (input == null){
+        if (input == null) {
             throw new IOException("EOF");
-        }
-        else {
+        } else {
             int border = input.indexOf(":");
             Integer key = Integer.parseInt(input.substring(0, border));
             Double value = Double.parseDouble(input.substring(border + 1, input.length()));

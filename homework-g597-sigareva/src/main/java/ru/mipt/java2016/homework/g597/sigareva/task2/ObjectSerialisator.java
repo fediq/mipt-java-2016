@@ -5,16 +5,22 @@ import javafx.util.Pair;
 import java.io.*;
 
 abstract class ObjectSerialisator<K, V> {
+
     abstract void write(K key, V value);
+
     abstract Pair<K, V> read() throws IOException;
 
-    BufferedReader inputStream;
-    PrintWriter outputStream;
+    protected BufferedReader inputStream;
+    protected PrintWriter outputStream;
     private String path;
     private String myFile;
-    boolean goodFile = true;
+    private boolean goodFile = true;
 
-    ObjectSerialisator(String newPath){
+    public boolean isGoodFile() {
+        return goodFile;
+    }
+
+    public ObjectSerialisator(String newPath) {
         path = newPath;
         StringBuilder adress = new StringBuilder();
         adress.append(path);
@@ -22,15 +28,14 @@ abstract class ObjectSerialisator<K, V> {
         myFile =  adress.toString();
 
         if ((new File(myFile)).exists()) {
-            try{
+            try {
                 inputStream = new BufferedReader(new FileReader(myFile));
                 String firstString = inputStream.readLine();
                 if(!firstString.equals("Lenin is the best. Lenin is my love!")){
                     goodFile = false;
                 }
                 inputStream.close();
-            }
-            catch (IOException e){
+            } catch (IOException e) {
                 System.out.println(e.getMessage());
             }
 
@@ -42,59 +47,52 @@ abstract class ObjectSerialisator<K, V> {
                 outputStream.print("Lenin is the best. Lenin is my love!");
                 openOutputStream = true;
                 outputStream.close();
-            }
-            catch (IOException e){
+            } catch (IOException e) {
                 System.out.println(e.getMessage());
             }
         }
     }
 
-    boolean openInputStream = false;
-    boolean openOutputStream = false;
+    private boolean openInputStream = false;
+    private boolean openOutputStream = false;
 
-    void CheckBeforeRead(){
-        if(openInputStream){
+    public void CheckBeforeRead() {
+        if (openInputStream) {
             try {
                 inputStream.close();
-            }
-            catch (IOException e){
+            } catch (IOException e) {
                 System.out.println(e.getMessage());
             }
         }
-        if(openOutputStream){
+        if (openOutputStream) {
             outputStream.close();
         }
-        try{
+        try {
             inputStream = new BufferedReader(new FileReader(myFile));
-            String someString = inputStream.readLine();
+            inputStream.readLine();
             openInputStream = true;
-        }
-        catch (IOException e){
+        } catch (IOException e) {
             System.out.println(e.getMessage());
         }
     }
 
-    void CheckBeforeWrite(){
-        if(openInputStream){
+    public void CheckBeforeWrite() {
+        if (openInputStream) {
             try {
                 inputStream.close();
-            }
-            catch (IOException e){
+            } catch (IOException e) {
                 System.out.println(e.getMessage());
             }
         }
-        if(openOutputStream){
+        if (openOutputStream) {
             outputStream.close();
         }
-        try{
+        try {
             outputStream = new PrintWriter(new FileWriter(myFile));
             openOutputStream = true;
             outputStream.print("Lenin is the best. Lenin is my love!\n");
-        }
-        catch (IOException e){
+        } catch (IOException e) {
             System.out.println(e.getMessage());
         }
     }
-
-
 }

@@ -19,8 +19,8 @@ import java.util.Date;
  */
 class StudentSerialisator extends ObjectSerialisator <StudentKey, Student> {
 
-    StudentSerialisator(String path_) {
-        super(path_);
+    StudentSerialisator(String newPath) {
+        super(newPath);
     }
 
     @Override
@@ -48,23 +48,24 @@ class StudentSerialisator extends ObjectSerialisator <StudentKey, Student> {
         } else {
             StringBuilder newInput = new StringBuilder(input.subSequence(0, input.length()));
             int border = newInput.indexOf(" ");
-            int StudentKeyGroupId = Integer.parseInt(newInput.substring(0, border));
+            int studentKeyGroupId = Integer.parseInt(newInput.substring(0, border));
             newInput.delete(0, border + 1);
             border = newInput.indexOf(":");
-            String StudentKeyName = newInput.substring(0, border);
+            String studentKeyName = newInput.substring(0, border);
             newInput.delete(0, border + 1);
             border = newInput.indexOf(" ");
-            String ValueHomeTown = newInput.substring(0, border);
+            String valueHomeTown = newInput.substring(0, border);
             newInput.delete(0, border + 1);
             border = newInput.indexOf(" ");
-            Date ValueDate = new Date(Long.parseLong(newInput.substring(0, border)));
+            Date valueDate = new Date(Long.parseLong(newInput.substring(0, border)));
             newInput.delete(0, border + 1);
             border = newInput.indexOf(" ");
-            Boolean ValueHasDormitory = Boolean.parseBoolean(newInput.substring(0, border));
+            Boolean valueHasDormitory = Boolean.parseBoolean(newInput.substring(0, border));
             newInput.delete(0, border + 1);
-            Double ValueAverage = Double.parseDouble(newInput.toString());
-            StudentKey key = new StudentKey(StudentKeyGroupId, StudentKeyName);
-            Student value = new Student(StudentKeyGroupId, StudentKeyName, ValueHomeTown, ValueDate, ValueHasDormitory, ValueAverage);
+            Double valueAverage = Double.parseDouble(newInput.toString());
+            StudentKey key = new StudentKey(studentKeyGroupId, studentKeyName);
+            Student value = new Student(studentKeyGroupId, studentKeyName,
+                    valueHomeTown, valueDate, valueHasDormitory, valueAverage);
             return new Pair(key, value);
         }
     }
