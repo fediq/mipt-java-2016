@@ -15,7 +15,7 @@ import static org.junit.Assert.*;
 import static ru.mipt.java2016.homework.tests.task2.StorageTestUtils.*;
 
 /**
- * Оснастка для функционального тестирования {@link ru.mipt.java2016.homework.base.task2.KeyValueStorage}.
+ * Оснастка для функционального тестирования {@link KeyValueStorage}.
  * Для запуска нужно завести конкретный класс-потомок и определить соответствующие фабричные методы.
  *
  * @author Fedor S. Lavrentyev
@@ -29,14 +29,14 @@ public abstract class AbstractSingleFileStorageTest {
 
     protected abstract KeyValueStorage<StudentKey, Student> buildPojoStorage(String path);
 
-    public static final StudentKey KEY_1 = new StudentKey(591, "Vasya Pukin");
-    public static final Student VALUE_1 = new Student(591, "Vasya Pukin", "Vasyuki", date(1996, 4, 14), true, 7.8);
+    private static final StudentKey KEY_1 = new StudentKey(591, "Vasya Pukin");
+    private static final Student VALUE_1 = new Student(591, "Vasya Pukin", "Vasyuki", date(1996, 4, 14), true, 7.8);
 
-    public static final StudentKey KEY_2 = new StudentKey(591, "Ahmad Ben Hafiz");
-    public static final Student VALUE_2 = new Student(591, "Ahmad Ben Hafiz", "Cairo", date(1432, 9, 2), false, 3.3);
+    private static final StudentKey KEY_2 = new StudentKey(591, "Ahmad Ben Hafiz");
+    private static final Student VALUE_2 = new Student(591, "Ahmad Ben Hafiz", "Cairo", date(1432, 9, 2), false, 3.3);
 
-    public static final StudentKey KEY_3 = new StudentKey(599, "John Smith");
-    public static final Student VALUE_3 = new Student(599, "John Smith", "Glasgow", date(1874, 3, 8), true, 9.1);
+    private static final StudentKey KEY_3 = new StudentKey(599, "John Smith");
+    private static final Student VALUE_3 = new Student(599, "John Smith", "Glasgow", date(1874, 3, 8), true, 9.1);
 
     @Test
     public void testReadWrite() {

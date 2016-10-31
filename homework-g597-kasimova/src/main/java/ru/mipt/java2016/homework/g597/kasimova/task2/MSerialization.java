@@ -17,7 +17,7 @@ public interface MSerialization<Type> {
 
     Type deserializeFromStream(DataInputStream inStream);
 
-    MSerialization<String> STRING_SERIALIZER = new MSerialization<String>() {
+    public static final MSerialization<String> STRING_SERIALIZER = new MSerialization<String>() {
         @Override
         public void serializeToStream(String value, DataOutputStream outStream) {
             try {
@@ -38,7 +38,7 @@ public interface MSerialization<Type> {
         }
     };
 
-    MSerialization<Integer> INTEGER_SERIALIZER = new MSerialization<Integer>() {
+    public static final MSerialization<Integer> INTEGER_SERIALIZER = new MSerialization<Integer>() {
         @Override
         public void serializeToStream(Integer value, DataOutputStream outStream) {
             try {
@@ -59,7 +59,7 @@ public interface MSerialization<Type> {
         }
     };
 
-    MSerialization<Double> DOUBLE_SERIALIZER = new MSerialization<Double>() {
+    public static final MSerialization<Double> DOUBLE_SERIALIZER = new MSerialization<Double>() {
         @Override
         public void serializeToStream(Double value, DataOutputStream outStream) {
             try {
@@ -80,7 +80,7 @@ public interface MSerialization<Type> {
         }
     };
 
-    MSerialization<Student> STUDENT_SERIALIZER = new MSerialization<Student>() {
+    public static final MSerialization<Student> STUDENT_SERIALIZER = new MSerialization<Student>() {
         @Override
         public void serializeToStream(Student value, DataOutputStream outStream) {
             try {
@@ -113,7 +113,7 @@ public interface MSerialization<Type> {
         }
     };
 
-    MSerialization<StudentKey> STUDENT_KEY_SERIALIZER = new MSerialization<StudentKey>() {
+    public static final MSerialization<StudentKey> STUDENT_KEY_SERIALIZER = new MSerialization<StudentKey>() {
         @Override
         public void serializeToStream(StudentKey value, DataOutputStream outStream) {
             try {
