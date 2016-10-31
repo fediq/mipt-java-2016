@@ -5,8 +5,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 public abstract class MySerialization<T> { // Интерфейс
-    abstract T read(DataInputStream rd) throws IOException;
+    abstract T read(DataInputStream input) throws IOException;
 
-    abstract void write(DataOutputStream wr, T obj) throws IOException;
+    abstract void write(DataOutputStream output, T data) throws IOException;
 }
 
