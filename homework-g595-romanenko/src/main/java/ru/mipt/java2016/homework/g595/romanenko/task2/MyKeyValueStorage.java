@@ -88,7 +88,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         while (keySet.hasNext()) {
             read(keySet.next());
         }
-        table.rewrite(cachedValues);
+        table.rewrite(new MapProducer<>(cachedValues));
         table.close();
     }
 
