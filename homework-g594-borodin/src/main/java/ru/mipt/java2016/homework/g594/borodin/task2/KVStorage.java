@@ -38,7 +38,7 @@ public class KVStorage<K, V> implements  KeyValueStorage<K, V> {
                 for (int i = 0; i < sizeOfStorage; ++i) {
                     K newKey = keyStrategy.deserialize(dataInputStream);
                     V newValue = valueStrategy.deserialize(dataInputStream);
-	                storage.put(newKey, newValue);
+                    storage.put(newKey, newValue);
                 }
             } catch (FileNotFoundException e) {
                 throw new RuntimeException("File not found");
