@@ -22,6 +22,7 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
     private HashMap<K, V> storage = new HashMap<K, V>();
     private MySerialization<K> keySerialization;
     private MySerialization<V> valueSerialization;
+
     public MyStorage(String path, MySerialization<K> serializeK, MySerialization<V> serializeV) throws IOException {
         close = false;
         fullPath = path + "/" + "storage";
