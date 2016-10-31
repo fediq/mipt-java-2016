@@ -126,7 +126,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         return bufMap;
     }
 
-    private void saveChanges () throws IOException {
+    private void saveChanges() throws IOException {
         file.setLength(0);
         file.seek(0);
         for (Map.Entry<K, V> entry : dataBase.entrySet()) {
@@ -134,4 +134,4 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             valueSerializer.write(file, entry.getValue());
         }
     }
- }
+}

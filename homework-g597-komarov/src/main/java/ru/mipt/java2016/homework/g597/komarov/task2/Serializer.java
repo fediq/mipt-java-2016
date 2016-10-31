@@ -8,7 +8,7 @@ import java.io.RandomAccessFile;
  */
 public interface Serializer<T> {
 
-    public T read(RandomAccessFile file) throws IOException;
+    T read(RandomAccessFile file) throws IOException;
 
-    public void write(RandomAccessFile file, T arg) throws IOException;
+    void write(RandomAccessFile file, T arg) throws IOException;
 }
