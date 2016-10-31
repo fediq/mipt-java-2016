@@ -49,7 +49,7 @@ public final class BestKeyValueStorageEver<K, V> implements KeyValueStorage<K, V
      * @throws IOException - if I/O troubles occure.
      * @throws RuntimeException - if file containes two equal keys or key without value.
      */
-    private void getDataFromFile() throws IOException, RuntimeException {
+    private void getDataFromFile() throws IOException {
         file.seek(0); // go to the start
         map.clear();
 
