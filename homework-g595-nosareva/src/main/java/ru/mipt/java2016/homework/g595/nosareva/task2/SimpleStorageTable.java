@@ -16,7 +16,6 @@ class SimpleStorageTable<K, V> {
     private int size = 0;
 
     private final Serializer<K> keySerializer;
-    private final Serializer<K> keySerializer;
     private final Serializer<V> valueSerializer;
 
     private boolean closed = false;
