@@ -14,7 +14,7 @@ import java.io.RandomAccessFile;
     boolean hasDormitory,
     double averageScore
  */
-public class StudentSerializationStrategy implements SerializationStrategy<Student> {
+class StudentSerializationStrategy implements SerializationStrategy<Student> {
     private IntegerSerializationStrategy integerSerializationStrategy = IntegerSerializationStrategy.INSTANCE;
     private StringSerializationStrategy stringSerializationStrategy = StringSerializationStrategy.INSTANCE;
     private DateSerializationStrategy dateSerializationStrategy = DateSerializationStrategy.INSTANCE;
@@ -34,10 +34,10 @@ public class StudentSerializationStrategy implements SerializationStrategy<Stude
     @Override
     public Student deserialize(RandomAccessFile raf) throws IOException {
         return new Student(integerSerializationStrategy.deserialize(raf),
-                           stringSerializationStrategy.deserialize(raf),
-                           stringSerializationStrategy.deserialize(raf),
-                           dateSerializationStrategy.deserialize(raf),
-                           booleanSerializationStrategy.deserialize(raf),
-                           doubleSerializationStrategy.deserialize(raf));
+                stringSerializationStrategy.deserialize(raf),
+                stringSerializationStrategy.deserialize(raf),
+                dateSerializationStrategy.deserialize(raf),
+                booleanSerializationStrategy.deserialize(raf),
+                doubleSerializationStrategy.deserialize(raf));
     }
 }
