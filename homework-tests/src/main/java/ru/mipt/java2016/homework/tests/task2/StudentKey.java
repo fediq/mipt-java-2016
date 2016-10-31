@@ -1,5 +1,6 @@
 package ru.mipt.java2016.homework.tests.task2;
 
+
 /**
  * Класс-ключ, по которому можно однозначно идентифицировать объект типа {@link Student}.
  *
