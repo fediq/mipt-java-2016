@@ -1,7 +1,6 @@
 package ru.mipt.java2016.homework.g597.grishutin.task2;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
-import sun.plugin.dom.exception.InvalidStateException;
 
 import java.io.*;
 import java.nio.file.Files;
