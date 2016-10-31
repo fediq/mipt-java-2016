@@ -15,6 +15,4 @@ public class SerializationStrategyInteger implements MySerialization<Integer> {
     public void write(DataOutputStream output, Integer data) throws IOException {
         output.writeInt(data);
     }
-
-
 }

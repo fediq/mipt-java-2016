@@ -29,6 +29,4 @@ public class SerializationStrategyStudent implements MySerialization<Student> {
         return new Student(studentGroupID, studentName, studentHometown, studentBirthday,
                 input.readBoolean(), input.readDouble());
     }
-
-
 }

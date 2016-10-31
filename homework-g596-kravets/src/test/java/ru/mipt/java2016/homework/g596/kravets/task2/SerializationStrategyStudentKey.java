@@ -21,6 +21,4 @@ public class SerializationStrategyStudentKey implements MySerialization<StudentK
         String studentName = input.readUTF();
         return new StudentKey(studentGroupID, studentName);
     }
-
-
 }

@@ -21,5 +21,4 @@ public class MyKeyValueStorageTest extends AbstractSingleFileStorageTest {
     protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) {
         return new MyKeyValueStorage(path, new SerializationStrategyStudentKey(), new SerializationStrategyStudent());
     }
-
 }
