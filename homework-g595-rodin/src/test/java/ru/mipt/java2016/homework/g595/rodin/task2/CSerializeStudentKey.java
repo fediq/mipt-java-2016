@@ -1,5 +1,8 @@
-package ru.mipt.java2016.homework.g595.rodin.task2.Serializer;
+package ru.mipt.java2016.homework.g595.rodin.task2;
 
+import ru.mipt.java2016.homework.g595.rodin.task2.Serializer.CSerializeInteger;
+import ru.mipt.java2016.homework.g595.rodin.task2.Serializer.CSerializeString;
+import ru.mipt.java2016.homework.g595.rodin.task2.Serializer.ISerialize;
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
 
 import java.util.StringTokenizer;
