@@ -12,16 +12,19 @@ public class MyKeyValueStorageTest extends AbstractSingleFileStorageTest{
 
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String path) {
-        return null;
+        return new MyKeyValueStorage<>(path, new MySerializator.SerializeForString(),
+                new MySerializator.SerializeForString());
     }
 
     @Override
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) {
-        return null;
+        return new MyKeyValueStorage<>(path, new MySerializator.SerializeForInteger(),
+                new MySerializator.SerializeForDouble());
     }
 
     @Override
     protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) {
-        return null;
+        return new MyKeyValueStorage<>(path, new MySerializator.SerializeForStudentKey(),
+                new MySerializator.SerializeForStudent());
     }
 }
