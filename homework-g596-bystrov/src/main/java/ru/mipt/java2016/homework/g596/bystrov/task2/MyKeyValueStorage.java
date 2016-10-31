@@ -17,15 +17,15 @@ import java.util.HashMap;
  */
 public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private HashMap<K, V> map = new HashMap<K, V>();
-    private SerializationStrategy<K> SSK;
-    private SerializationStrategy<V> SSV;
+    private SerializationStrategy<K> ssk;
+    private SerializationStrategy<V> ssv;
     private File f;
     private boolean open;
 
-    public MyKeyValueStorage(SerializationStrategy<K> SSK, SerializationStrategy<V> SSV,
+    public MyKeyValueStorage(SerializationStrategy<K> ssk, SerializationStrategy<V> ssv,
             String fileName) {
-        this.SSK = SSK;
-        this.SSV = SSV;
+        this.ssk = ssk;
+        this.ssv = ssv;
         File folder = new File(fileName);
         if (!folder.exists()) {
             throw new RuntimeException("Folder doesn't exist");
@@ -42,8 +42,8 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         try (DataInputStream in = new DataInputStream(new FileInputStream(f))) {
             int k = in.readInt();
             for (int i = 0; i < k; i++) {
-                K key = SSK.deserialize(in);
-                V value = SSV.deserialize(in);
+                K key = ssk.deserialize(in);
+                V value = ssv.deserialize(in);
                 map.put(key, value);
             }
         } catch (IOException e) {
@@ -55,8 +55,8 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         try (DataOutputStream out = new DataOutputStream(new FileOutputStream(f))) {
             out.writeInt(map.size());
             for (Map.Entry<K, V> writeMap : map.entrySet()) {
-                SSK.serialize(writeMap.getKey(), out);
-                SSV.serialize(writeMap.getValue(), out);
+                ssk.serialize(writeMap.getKey(), out);
+                ssv.serialize(writeMap.getValue(), out);
             }
             out.close();
         } catch (IOException e) {

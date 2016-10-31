@@ -1,6 +1,5 @@
 package ru.mipt.java2016.homework.g596.bystrov.task2;
 
-import org.junit.Test;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -11,14 +10,13 @@ import ru.mipt.java2016.homework.tests.task2.Student;
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
 
 import static org.junit.Assert.assertEquals;
-import static ru.mipt.java2016.homework.tests.task2.StorageTestUtils.doInTempDirectory;
 
 /**
  * Created by AlexBystrov.
  */
 public class MyKeyValueStorageTest extends AbstractSingleFileStorageTest {
 
-    private static SerializationStrategy<StudentKey> SSStudKey =
+    private static SerializationStrategy<StudentKey> ssStudKey =
             new SerializationStrategy<StudentKey>() {
                 @Override
                 public void serialize(StudentKey x, DataOutputStream out) throws IOException {
@@ -32,7 +30,7 @@ public class MyKeyValueStorageTest extends AbstractSingleFileStorageTest {
                 }
             };
 
-    private static SerializationStrategy<Student> SSStud = new SerializationStrategy<Student>() {
+    private static SerializationStrategy<Student> ssStud = new SerializationStrategy<Student>() {
         @Override
         public void serialize(Student x, DataOutputStream out) throws IOException {
             out.writeInt(x.getGroupId());
@@ -52,18 +50,18 @@ public class MyKeyValueStorageTest extends AbstractSingleFileStorageTest {
 
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String fileName) {
-        return new MyKeyValueStorage<>(SerializationStrategy.SSString,
-                SerializationStrategy.SSString, fileName);
+        return new MyKeyValueStorage<>(SerializationStrategy.ssString,
+                SerializationStrategy.ssString, fileName);
     }
 
     @Override
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(String fileName) {
-        return new MyKeyValueStorage<>(SerializationStrategy.SSInt, SerializationStrategy.SSDouble,
+        return new MyKeyValueStorage<>(SerializationStrategy.ssInt, SerializationStrategy.ssDouble,
                 fileName);
     }
 
     @Override
     protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String fileName) {
-        return new MyKeyValueStorage<>(SSStudKey, SSStud, fileName);
+        return new MyKeyValueStorage<>(ssStudKey, ssStud, fileName);
     }
 }
