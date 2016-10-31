@@ -48,16 +48,50 @@ public class MyKeyValueStorageTest extends AbstractSingleFileStorageTest {
         }
     };
 
+    SerializationStrategy<Integer> SS_INT = new SerializationStrategy<Integer>() {
+        @Override
+        public void serialize(Integer x, DataOutputStream out) throws IOException {
+            out.writeInt(x);
+        }
+
+        @Override
+        public Integer deserialize(DataInputStream in) throws IOException {
+            return in.readInt();
+        }
+    };
+
+    SerializationStrategy<Double> SS_DOUBLE = new SerializationStrategy<Double>() {
+        @Override
+        public void serialize(Double x, DataOutputStream out) throws IOException {
+            out.writeDouble(x);
+        }
+
+        @Override
+        public Double deserialize(DataInputStream in) throws IOException {
+            return in.readDouble();
+        }
+    };
+
+    SerializationStrategy<String> SS_STRING = new SerializationStrategy<String>() {
+        @Override
+        public void serialize(String x, DataOutputStream out) throws IOException {
+            out.writeUTF(x);
+        }
+
+        @Override
+        public String deserialize(DataInputStream in) throws IOException {
+            return in.readUTF();
+        }
+    };
+
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String fileName) {
-        return new MyKeyValueStorage<>(SerializationStrategy.SS_STRING,
-                SerializationStrategy.SS_STRING, fileName);
+        return new MyKeyValueStorage<>(SS_STRING, SS_STRING, fileName);
     }
 
     @Override
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(String fileName) {
-        return new MyKeyValueStorage<>(SerializationStrategy.SS_INT, SerializationStrategy.SS_DOUBLE,
-                fileName);
+        return new MyKeyValueStorage<>(SS_INT, SS_DOUBLE, fileName);
     }
 
     @Override

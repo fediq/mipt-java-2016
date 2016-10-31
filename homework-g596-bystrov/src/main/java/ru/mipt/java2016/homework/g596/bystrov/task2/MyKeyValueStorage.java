@@ -16,22 +16,22 @@ import java.util.HashMap;
  * Created by AlexBystrov.
  */
 public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
-    private HashMap<K, V> map = new HashMap<K, V>();
-    private SerializationStrategy<K> ssk;
-    private SerializationStrategy<V> ssv;
-    private File f;
+    private Map<K, V> database = new HashMap<K, V>();
+    private SerializationStrategy<K> keyStrategy;
+    private SerializationStrategy<V> valueStrategy;
+    private File fileName;
     private boolean open;
 
-    public MyKeyValueStorage(SerializationStrategy<K> ssk, SerializationStrategy<V> ssv,
-            String fileName) {
-        this.ssk = ssk;
-        this.ssv = ssv;
-        File folder = new File(fileName);
+    public MyKeyValueStorage(SerializationStrategy<K> keyStrategy,
+            SerializationStrategy<V> valueStrategy, String filePath) {
+        this.keyStrategy = keyStrategy;
+        this.valueStrategy = valueStrategy;
+        File folder = new File(filePath);
         if (!folder.exists()) {
             throw new RuntimeException("Folder doesn't exist");
         }
-        f = new File(folder, "storage.db");
-        if (f.exists()) {
+        fileName = new File(folder, "storage.db");
+        if (fileName.exists()) {
             readFile();
         }
         open = true;
@@ -39,63 +39,70 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
 
     private void readFile() {
-        try (DataInputStream in = new DataInputStream(new FileInputStream(f))) {
+        try (DataInputStream in = new DataInputStream(new FileInputStream(fileName))) {
             int k = in.readInt();
             for (int i = 0; i < k; i++) {
-                K key = ssk.deserialize(in);
-                V value = ssv.deserialize(in);
-                map.put(key, value);
+                K key = keyStrategy.deserialize(in);
+                V value = valueStrategy.deserialize(in);
+                database.put(key, value);
             }
         } catch (IOException e) {
-            throw new RuntimeException("Can't read file", e);
+            throw new RuntimeException("Can't read fileName", e);
         }
     }
 
     private void writeFile() {
-        try (DataOutputStream out = new DataOutputStream(new FileOutputStream(f))) {
-            out.writeInt(map.size());
-            for (Map.Entry<K, V> writeMap : map.entrySet()) {
-                ssk.serialize(writeMap.getKey(), out);
-                ssv.serialize(writeMap.getValue(), out);
+        try (DataOutputStream out = new DataOutputStream(new FileOutputStream(fileName))) {
+            out.writeInt(database.size());
+            for (Map.Entry<K, V> writeMap : database.entrySet()) {
+                keyStrategy.serialize(writeMap.getKey(), out);
+                valueStrategy.serialize(writeMap.getValue(), out);
             }
-            out.close();
         } catch (IOException e) {
-            throw new RuntimeException("Can't write file", e);
+            throw new RuntimeException("Can't write fileName", e);
+        }
+    }
+
+    private void checkOpened() {
+        if (!open) {
+            throw new RuntimeException("File is closed");
         }
     }
 
     public V read(K key) {
-        return map.get(key);
+        checkOpened();
+        return database.get(key);
     }
 
     public void write(K key, V value) {
-        if (!open) {
-            throw new RuntimeException("File is closed");
-        }
-        map.put(key, value);
+        checkOpened();
+        database.put(key, value);
     }
 
     public Iterator<K> readKeys() {
-        if (!open) {
-            throw new RuntimeException("File is closed");
-        }
-        return map.keySet().iterator();
+        checkOpened();
+        return database.keySet().iterator();
     }
 
     public void delete(K key) {
-        map.remove(key);
+        checkOpened();
+        database.remove(key);
     }
 
     public int size() {
-        return map.size();
+        checkOpened();
+        return database.size();
     }
 
     public boolean exists(K key) {
-        return map.containsKey(key);
+        checkOpened();
+        return database.containsKey(key);
     }
 
     public void close() throws IOException {
+        checkOpened();
         writeFile();
+        database.clear();
         open = false;
     }
 }
