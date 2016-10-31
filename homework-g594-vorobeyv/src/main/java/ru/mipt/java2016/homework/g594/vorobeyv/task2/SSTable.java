@@ -2,7 +2,6 @@ package ru.mipt.java2016.homework.g594.vorobeyv.task2;
 
 import java.io.*;
 import java.util.HashMap;
-import java.util.IllegalFormatCodePointException;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -29,11 +28,11 @@ public class SSTable<K, V> {
             throw new IOException();
         }
         if (data.exists()) {
-            Desirialize(data);
+            desirialize(data);
         }
     }
 
-    private void Serialize(File file) throws IOException {
+    private void serialize(File file) throws IOException {
         DataOutputStream output = new DataOutputStream(new FileOutputStream(file));
         if (closed) {
             file = new File(filePath);
@@ -49,7 +48,7 @@ public class SSTable<K, V> {
         closed = true;
     }
 
-    private void Desirialize(File file) throws IOException {
+    private void desirialize(File file) throws IOException {
         DataInputStream input = new DataInputStream(new FileInputStream(file));
         String check = input.readUTF();
         if (check.equals("Myfile")) {
@@ -66,7 +65,7 @@ public class SSTable<K, V> {
         }
     }
 
-    public V read(K key) throws RuntimeException {
+    public V read(K key) throws IllegalStateException {
         isClosed();
         if (index.containsKey(key)) {
             return index.get(key);
@@ -75,12 +74,12 @@ public class SSTable<K, V> {
         }
     }
 
-    public boolean exists(K key) throws RuntimeException {
+    public boolean exists(K key) throws IllegalStateException {
         isClosed();
         return index.containsKey(key);
     }
 
-    public void write(K key, V value) throws RuntimeException {
+    public void write(K key, V value) throws IllegalStateException {
         isClosed();
         index.put(key, value);
     }
@@ -106,7 +105,7 @@ public class SSTable<K, V> {
 
     public void close() throws IOException {
         if (!closed) {
-            Serialize(data);
+            serialize(data);
             closed = true;
         } else {
             return;

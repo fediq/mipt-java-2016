@@ -14,10 +14,6 @@ import java.io.IOException;
  * Created by Morell on 30.10.2016.
  */
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-
 public class SStudentKey extends Serializator<StudentKey> {
     @Override
     public StudentKey read(DataInputStream input) throws IOException {
