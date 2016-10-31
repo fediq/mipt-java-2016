@@ -20,12 +20,12 @@ public class ConcreteStrategyString implements SerializationStrategy<String> {
     }
 
     //serializing functions
-    static public void writeString(DataOutputStream stream, String string) throws IOException {
+    public static void writeString(DataOutputStream stream, String string) throws IOException {
         stream.writeInt(string.length());
         stream.write(string.getBytes("UTF-8"));
     }
 
-    static public String readString(DataInputStream stream) throws IOException {
+    public static String readString(DataInputStream stream) throws IOException {
         int len = stream.readInt();
         byte[] bytes = new byte[len];
         stream.read(bytes);

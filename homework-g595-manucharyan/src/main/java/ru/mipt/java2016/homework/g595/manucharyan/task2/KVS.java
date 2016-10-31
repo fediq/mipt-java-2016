@@ -28,19 +28,22 @@ public class KVS<K, V> implements KeyValueStorage<K, V> {
     private File mutexFile; // для многопоточности
     private boolean isClosed;
 
-    public KVS(SerializationStrategy<K> keySerializationStrategy_,
-               SerializationStrategy<V> valueSerializaionStrategy_,
+    public KVS(SerializationStrategy<K> keySerializationStrategy,
+               SerializationStrategy<V> valueSerializaionStrategy,
                String path) throws IOException {
 
-        keySerializationStrategy = keySerializationStrategy_;
-        valueSerializaionStrategy = valueSerializaionStrategy_;
+        this.keySerializationStrategy = keySerializationStrategy;
+        this.valueSerializaionStrategy = valueSerializaionStrategy;
 
         mutexFile = new File(path, "Mutex");
         if (mutexFile.exists()) {
             throw new RuntimeException("Storage is already used!");
         }
+
         File dr = new File(path);
-        if (!dr.isDirectory() || !dr.exists()) throw new RuntimeException("wrong path");
+        if (!dr.isDirectory() || !dr.exists()) {
+            throw new RuntimeException("wrong path");
+        }
 
         storage = new File(path, "storage.db");
 
@@ -100,8 +103,7 @@ public class KVS<K, V> implements KeyValueStorage<K, V> {
      */
     @Override
     public boolean exists(K key) {
-        if (isClosed || !base.containsKey(key)) return false;
-        else return true;
+        return !(isClosed || !base.containsKey(key));
     }
 
     /**
@@ -109,8 +111,11 @@ public class KVS<K, V> implements KeyValueStorage<K, V> {
      */
     @Override
     public void write(K key, V value) {
-        if (isClosed) throw new RuntimeException("Can't write: storage is closed");
-        else base.put(key, value);
+        if (isClosed) {
+            throw new RuntimeException("Can't write: storage is closed");
+        } else {
+            base.put(key, value);
+        }
     }
 
     /**
@@ -118,8 +123,11 @@ public class KVS<K, V> implements KeyValueStorage<K, V> {
      */
     @Override
     public void delete(K key) {
-        if (isClosed) throw new RuntimeException("Can't delete: storage is closed");
-        else base.remove(key);
+        if (isClosed) {
+            throw new RuntimeException("Can't delete: storage is closed");
+        } else {
+            base.remove(key);
+        }
     }
 
     /**
@@ -130,8 +138,11 @@ public class KVS<K, V> implements KeyValueStorage<K, V> {
      */
     @Override
     public Iterator<K> readKeys() {
-        if (isClosed) throw new RuntimeException("Can't iterate: storage is closed");
-        return base.keySet().iterator();
+        if (isClosed) {
+            throw new RuntimeException("Can't iterate: storage is closed");
+        } else {
+            return base.keySet().iterator();
+        }
     }
 
     /**
