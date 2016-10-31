@@ -12,7 +12,7 @@ public interface SerializationStrategy<V> {
 
     V deserialize(DataInputStream in) throws IOException;
 
-    SerializationStrategy<Integer> ssInt = new SerializationStrategy<Integer>() {
+    SerializationStrategy<Integer> SS_INT = new SerializationStrategy<Integer>() {
         @Override
         public void serialize(Integer x, DataOutputStream out) throws IOException {
             out.writeInt(x);
@@ -24,7 +24,7 @@ public interface SerializationStrategy<V> {
         }
     };
 
-    SerializationStrategy<Double> ssDouble = new SerializationStrategy<Double>() {
+    SerializationStrategy<Double> SS_DOUBLE = new SerializationStrategy<Double>() {
         @Override
         public void serialize(Double x, DataOutputStream out) throws IOException {
             out.writeDouble(x);
@@ -36,7 +36,7 @@ public interface SerializationStrategy<V> {
         }
     };
 
-    SerializationStrategy<String> ssString = new SerializationStrategy<String>() {
+    SerializationStrategy<String> SS_STRING = new SerializationStrategy<String>() {
         @Override
         public void serialize(String x, DataOutputStream out) throws IOException {
             out.writeUTF(x);

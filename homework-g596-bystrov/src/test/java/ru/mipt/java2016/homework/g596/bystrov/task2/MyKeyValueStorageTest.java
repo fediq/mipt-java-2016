@@ -16,7 +16,7 @@ import static org.junit.Assert.assertEquals;
  */
 public class MyKeyValueStorageTest extends AbstractSingleFileStorageTest {
 
-    private static SerializationStrategy<StudentKey> ssStudKey =
+    private static SerializationStrategy<StudentKey> SS_STUDKEY =
             new SerializationStrategy<StudentKey>() {
                 @Override
                 public void serialize(StudentKey x, DataOutputStream out) throws IOException {
@@ -30,7 +30,7 @@ public class MyKeyValueStorageTest extends AbstractSingleFileStorageTest {
                 }
             };
 
-    private static SerializationStrategy<Student> ssStud = new SerializationStrategy<Student>() {
+    private static SerializationStrategy<Student> SS_STUD = new SerializationStrategy<Student>() {
         @Override
         public void serialize(Student x, DataOutputStream out) throws IOException {
             out.writeInt(x.getGroupId());
@@ -50,18 +50,18 @@ public class MyKeyValueStorageTest extends AbstractSingleFileStorageTest {
 
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String fileName) {
-        return new MyKeyValueStorage<>(SerializationStrategy.ssString,
-                SerializationStrategy.ssString, fileName);
+        return new MyKeyValueStorage<>(SerializationStrategy.SS_STRING,
+                SerializationStrategy.SS_STRING, fileName);
     }
 
     @Override
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(String fileName) {
-        return new MyKeyValueStorage<>(SerializationStrategy.ssInt, SerializationStrategy.ssDouble,
+        return new MyKeyValueStorage<>(SerializationStrategy.SS_INT, SerializationStrategy.SS_DOUBLE,
                 fileName);
     }
 
     @Override
     protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String fileName) {
-        return new MyKeyValueStorage<>(ssStudKey, ssStud, fileName);
+        return new MyKeyValueStorage<>(SS_STUDKEY, SS_STUD, fileName);
     }
 }
