@@ -12,12 +12,12 @@ public class KeyValueStorageTestImplementation extends AbstractSingleFileStorage
     }
 
     @Override
-    protected KeyValueStorage<Integer, Double> buildI2DStorage(String path) {
+    protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) {
         return new KeyValueStorageImplementation(path, "Integer", "Double");
     }
 
     @Override
-    protected KeyValueStorage<StudentKey, Student> buildStudentsStorage(String path) {
+    protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) {
         return new KeyValueStorageImplementation(path, "StudentKey", "Student");
     }
 }

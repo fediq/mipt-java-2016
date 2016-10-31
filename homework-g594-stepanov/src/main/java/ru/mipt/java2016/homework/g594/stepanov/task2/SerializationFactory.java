@@ -5,7 +5,6 @@ import ru.mipt.java2016.homework.tests.task2.Student;
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
 
 import java.util.HashMap;
-import java.util.TreeMap;
 
 public class SerializationFactory {
     SerializationFactory(String keyType, String valueType, String path) {
@@ -34,6 +33,15 @@ public class SerializationFactory {
             cashedValues = new HashMap<StudentKey, Student>();
         }
     }
-    public ObjectSerializator serializator;
-    public HashMap cashedValues;
+
+    private ObjectSerializator serializator;
+    private HashMap cashedValues;
+
+    public ObjectSerializator getSerializator() {
+        return serializator;
+    }
+
+    public HashMap getValues() {
+        return cashedValues;
+    }
 }

@@ -5,7 +5,7 @@ import javafx.util.Pair;
 
 import java.io.IOException;
 
-public class StringStringSerializator extends ObjectSerializator<String, String>{
+public class StringStringSerializator extends ObjectSerializator<String, String> {
 
     public StringStringSerializator(String directory) throws IOException {
         super(directory);

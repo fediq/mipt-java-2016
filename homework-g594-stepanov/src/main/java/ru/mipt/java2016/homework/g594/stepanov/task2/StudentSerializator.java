@@ -5,13 +5,9 @@ import ru.mipt.java2016.homework.tests.task2.Student;
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
 
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Locale;
 
-public class StudentSerializator extends ObjectSerializator<StudentKey, Student>{
+public class StudentSerializator extends ObjectSerializator<StudentKey, Student> {
     public StudentSerializator(String directory) throws IOException {
         super(directory);
     }
@@ -27,7 +23,7 @@ public class StudentSerializator extends ObjectSerializator<StudentKey, Student>
         outputStream.print(separator);
         outputStream.print(value.getHometown());
         outputStream.print(numerator);
-        outputStream.print(value.getBirthDate());
+        outputStream.print(value.getBirthDate().getTime());
         outputStream.print(numerator);
         outputStream.print(value.isHasDormitory());
         outputStream.print(numerator);
@@ -64,13 +60,7 @@ public class StudentSerializator extends ObjectSerializator<StudentKey, Student>
         if (pos1 == -1) {
             throw new IOException("Invalid string in input file");
         }
-        DateFormat df = new SimpleDateFormat("EEE MMM dd kk:mm:ss z yyyy", Locale.ENGLISH);
-        Date date = null;
-        try {
-            date = df.parse(s.substring(0, pos1));
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-        }
+        Date dd = new Date(Long.parseLong(s.substring(0, pos1)));
         s = s.substring(pos1 + 1, s.length());
         pos1 = s.indexOf(numerator);
         if (pos1 == -1) {
@@ -81,7 +71,7 @@ public class StudentSerializator extends ObjectSerializator<StudentKey, Student>
         pos1 = s.indexOf(finish);
         Double average = Double.parseDouble(s.substring(0, pos1));
         StudentKey key = new StudentKey(groupId, name);
-        Student value = new Student(groupId, name, homeTown, date, hasDormitory, average);
+        Student value = new Student(groupId, name, homeTown, dd, hasDormitory, average);
         return new Pair(key, value);
     }
 }

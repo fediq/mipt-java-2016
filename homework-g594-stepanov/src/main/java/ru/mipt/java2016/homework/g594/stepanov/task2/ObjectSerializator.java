@@ -5,51 +5,45 @@ import javafx.util.Pair;
 import java.io.*;
 
 public abstract class ObjectSerializator<K, V> {
+
     abstract void write(K key, V value) throws IOException;
+
     abstract Pair<K, V> read() throws IOException;
-    String start = "[";
-    String numerator = ",";
-    String separator = ":";
-    String finish = "]";
-    public BufferedReader inputStream;
-    public PrintWriter outputStream;
+
+    protected String start = "[";
+    protected String numerator = ",";
+    protected String separator = ":";
+    protected String finish = "]";
+    protected BufferedReader inputStream;
+    protected PrintWriter outputStream;
 
     public ObjectSerializator(String directory) throws IOException {
         path = directory;
-        System.out.println("GO");
         File dir = new File(directory);
-        System.out.println(directory);
         if (!dir.exists()) {
-            System.out.println("GO!!!!!!!!!");
             dir.mkdir();
             dir.createNewFile();
-        } else {
-            System.out.println("EXISTS");
         }
-        System.out.println(directory);
         StringBuilder builder = new StringBuilder();
         builder.append(path);
         builder.append("/Storage.db");
         storageName = builder.toString();
+        builder = new StringBuilder();
+        builder.append(path);
+        builder.append("/HashCode.txt");
+        hashName = builder.toString();
         if ((new File(storageName).exists())) {
             if (!validate()) {
                 validState = false;
             }
         } else {
-            System.out.println("Create\n");
             File tmp = new File(storageName);
             tmp.createNewFile();
         }
-        System.out.println(storageName);
     }
 
 
     boolean validate() throws IOException {
-        System.out.println("LOL");
-        StringBuilder builder = new StringBuilder();
-        builder.append(path);
-        builder.append("/Storage.db");
-        storageName = builder.toString();
         inputStream = new BufferedReader(new FileReader(storageName));
         while (true) {
             try {
@@ -65,10 +59,6 @@ public abstract class ObjectSerializator<K, V> {
                 }
             }
         }
-        builder = new StringBuilder();
-        builder.append(path);
-        builder.append("/HashCode.txt");
-        hashName = builder.toString();
         BufferedReader hashReader = new BufferedReader(new FileReader(hashName));
         String writtenHash = hashReader.readLine();
         if (Integer.parseInt(writtenHash) != currentHash) {
@@ -88,9 +78,8 @@ public abstract class ObjectSerializator<K, V> {
             try {
                 inputStream.close();
             } catch (Exception e) {
-                //do nothing
+                System.out.println(e.getMessage());
             }
-
             reading = false;
         }
     }
@@ -98,9 +87,7 @@ public abstract class ObjectSerializator<K, V> {
     void getReadyToRead() {
         try {
             terminate();
-            System.out.println("DONE1\n");
             inputStream = new BufferedReader(new FileReader(storageName));
-            System.out.println("DONE2\n");
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
@@ -124,14 +111,18 @@ public abstract class ObjectSerializator<K, V> {
         outputStream.close();
     }
 
-    Integer currentHash = 0;
-    boolean validState = true;
-    String path;
-    String storageName;
-    String hashName;
+    protected Integer currentHash = 0;
+    protected boolean validState = true;
+    private String path;
+    private String storageName;
+    private String hashName;
 
-    boolean writing = false;
-    boolean reading = false;
+    private boolean writing = false;
+    private boolean reading = false;
+
+    public void setCurrentHashToNull() {
+        currentHash = 0;
+    }
 
 }
 
