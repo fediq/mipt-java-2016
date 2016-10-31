@@ -20,7 +20,7 @@ abstract class ObjectSerialisator<K, V> {
         return goodFile;
     }
 
-    public ObjectSerialisator(String newPath) {
+    protected ObjectSerialisator(String newPath) {
         path = newPath;
         StringBuilder adress = new StringBuilder();
         adress.append(path);
@@ -31,7 +31,7 @@ abstract class ObjectSerialisator<K, V> {
             try {
                 inputStream = new BufferedReader(new FileReader(myFile));
                 String firstString = inputStream.readLine();
-                if(!firstString.equals("Lenin is the best. Lenin is my love!")){
+                if (!firstString.equals("Lenin is the best. Lenin is my love!")) {
                     goodFile = false;
                 }
                 inputStream.close();
@@ -56,7 +56,7 @@ abstract class ObjectSerialisator<K, V> {
     private boolean openInputStream = false;
     private boolean openOutputStream = false;
 
-    public void CheckBeforeRead() {
+    public void checkBeforeRead() {
         if (openInputStream) {
             try {
                 inputStream.close();
@@ -76,7 +76,7 @@ abstract class ObjectSerialisator<K, V> {
         }
     }
 
-    public void CheckBeforeWrite() {
+    public void checkBeforeWrite() {
         if (openInputStream) {
             try {
                 inputStream.close();

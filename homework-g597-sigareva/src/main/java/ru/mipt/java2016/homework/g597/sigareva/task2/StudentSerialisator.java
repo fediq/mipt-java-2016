@@ -17,7 +17,7 @@ import java.util.Date;
  private final int groupId;
  private final String name;
  */
-class StudentSerialisator extends ObjectSerialisator <StudentKey, Student> {
+class StudentSerialisator extends ObjectSerialisator<StudentKey, Student> {
 
     StudentSerialisator(String newPath) {
         super(newPath);

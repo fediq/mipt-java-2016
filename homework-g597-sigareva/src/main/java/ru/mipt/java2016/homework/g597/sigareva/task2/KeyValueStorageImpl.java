@@ -19,23 +19,23 @@ public class KeyValueStorageImpl implements KeyValueStorage {
 
     KeyValueStorageImpl(String path, String keyType, String valueType) throws IOException {
 
-        if (keyType == "Integer" && valueType == "Double"){
-            Serialisator = new IntegerDoubleSerialisator(path);
+        if (keyType == "Integer" && valueType == "Double") {
+            serialisator = new IntegerDoubleSerialisator(path);
             mapa = new HashMap<Integer, Double>();
         } else if (keyType == "String" && valueType == "String") {
-            Serialisator = new StringStringSerialisator(path);
+            serialisator = new StringStringSerialisator(path);
             mapa = new HashMap<String, String>();
         } else if (keyType == "StudentKey" && valueType == "Student") {
-            Serialisator = new StudentSerialisator(path);
+            serialisator = new StudentSerialisator(path);
             mapa = new HashMap<StudentKey, Student>();
         }
-        if(!Serialisator.isGoodFile()) {
+        if (!serialisator.isGoodFile()) {
             System.out.println("Lenin is sad");
         } else {
-            Serialisator.CheckBeforeRead();
+            serialisator.checkBeforeRead();
             while (true) {
                 try {
-                    Pair currPair = Serialisator.read();
+                    Pair currPair = serialisator.read();
                     mapa.put(currPair.getKey(), currPair.getValue());
                 } catch (IOException e) {
                     if (e.getMessage() == "EOF") {
@@ -46,9 +46,9 @@ public class KeyValueStorageImpl implements KeyValueStorage {
         }
     }
 
-ObjectSerialisator Serialisator;
+    private ObjectSerialisator serialisator;
 
-    HashMap mapa;
+    private HashMap mapa;
 
     @Override
     public Object read(Object key) {
@@ -100,14 +100,14 @@ ObjectSerialisator Serialisator;
 
     @Override
     public void close() throws IOException {
-        Serialisator.CheckBeforeWrite();
+        serialisator.checkBeforeWrite();
 
         Iterator currIter = mapa.entrySet().iterator();
         while (currIter.hasNext()) {
             Map.Entry thisEntry = (Map.Entry) currIter.next();
-            Serialisator.write(thisEntry.getKey(), thisEntry.getValue());
+            serialisator.write(thisEntry.getKey(), thisEntry.getValue());
         }
-        Serialisator.outputStream.close();
+        serialisator.outputStream.close();
         fileOpen = false;
     }
 }
