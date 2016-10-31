@@ -46,6 +46,8 @@ public class KlabertancStorage<K, V> implements KeyValueStorage<K, V> {
         if (keys.exists() && values.exists()) {
             getStorageFromDisk();
         }
+
+        flagForClose = false;
     }
 
     private void getStorageFromDisk() {
@@ -64,6 +66,9 @@ public class KlabertancStorage<K, V> implements KeyValueStorage<K, V> {
                 V value = valueSerialization.read(valuesInput);
                 storage.put(key, value);
             }
+
+            keysInput.close();
+            valuesInput.close();
         } catch (IOException e) {
             throw new RuntimeException("Wrong input/output!");
         }
