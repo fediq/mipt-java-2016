@@ -19,32 +19,41 @@ public class MyKeyValueStorage<Key, Value> implements KeyValueStorage<Key, Value
     private String fileTitle;
     private String keyType;
     private boolean isOpenedFile;
+    private File file;
     private Map<Key, Value> actualMap = new HashMap<Key, Value>();
 
-    public MyKeyValueStorage(String path, String type, MySerialization key, MySerialization value) {
+    public MyKeyValueStorage(String path, MySerialization<Key> key, MySerialization<Value> value) {
         fileTitle = path + File.separator + "storage.db";
-        keyType = type;
+        keyType = key.getClass() + ":" + value.getClass();
         keySerializator = key;
         valueSerializator = value;
         actualMap = new HashMap<Key, Value>();
         isOpenedFile = true;
-        File file = new File(fileTitle);
-
+        file = new File(fileTitle);
         if (!file.exists()) {
-            try {
-                file.createNewFile();
-            } catch (IOException e) {
-                throw new IllegalStateException("Error! Couldn't create a new file");
-            }
-            try (DataOutputStream output = new DataOutputStream(new FileOutputStream(fileTitle))) {
-                output.writeUTF(type);
-                output.writeInt(0);
-            } catch (IOException e) {
-                throw new IllegalStateException("Error! Couldn't write a file.");
-            }
+            createNewFile();
+        } else {
+            readData();
         }
+    }
+
+    private void checkToOpenFile() {
+        if (!isOpenedFile) {
+            throw new RuntimeException("Error! You can't use closed storage!");
+        }
+    }
+
+    private void createNewFile() {
+        try {
+            file.createNewFile();
+        } catch (IOException e) {
+            throw new IllegalStateException("Error! Couldn't create a new file");
+        }
+    }
+
+    private void readData() {
         try (DataInputStream input = new DataInputStream(new FileInputStream(fileTitle))) {
-            if (!input.readUTF().equals(type)) {
+            if (!input.readUTF().equals(keyType)) {
                 throw new RuntimeException("Error! Invalid storage format.");
             }
             int num = input.readInt();
@@ -55,12 +64,6 @@ public class MyKeyValueStorage<Key, Value> implements KeyValueStorage<Key, Value
             }
         } catch (IOException e) {
             throw new RuntimeException("Error! Invalid storage format.");
-        }
-    }
-
-    private void checkToOpenFile() {
-        if (!isOpenedFile) {
-            throw new RuntimeException("Error! You can't use closed storage!");
         }
     }
 

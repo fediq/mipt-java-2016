@@ -6,7 +6,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 public class SerializationStrategyDouble
-        implements MySerialization<Double> { // Сериализатор для Double
+        implements MySerialization<Double> {
 
     @Override
     public Double read(DataInputStream input) throws IOException {
