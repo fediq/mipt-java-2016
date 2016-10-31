@@ -36,8 +36,9 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         if (file.exists() && file.isDirectory()) {
             this.dataBasePath = path + dataBaseFileName;
             this.dataBaseFile = new File(dataBasePath);
-        } else
+        } else {
             throw new IllegalStateException("Can't access file");
+        }
         try {
             if (dataBaseFile.exists()) {
                 DataInputStream fileInput = new DataInputStream(new FileInputStream(dataBaseFile));

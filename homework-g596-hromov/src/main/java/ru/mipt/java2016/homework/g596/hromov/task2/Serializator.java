@@ -2,14 +2,14 @@ package ru.mipt.java2016.homework.g596.hromov.task2;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.IOException;
 
 /**
  * Created by igorhromov on 30.10.16.
  */
-interface Serializator<Class> {
+interface Serializator<type> {
 
-    void serializeToStream (Class value, DataOutputStream outStream);
-    Class deserializeFromStream (DataInputStream inputStream);
+    void serializeToStream(type value, DataOutputStream outStream);
+
+    type deserializeFromStream(DataInputStream inputStream);
 
 }
