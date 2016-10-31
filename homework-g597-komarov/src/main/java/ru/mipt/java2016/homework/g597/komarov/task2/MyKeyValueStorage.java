@@ -27,7 +27,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         dataBase = new HashMap<>();
         File pathToFile = Paths.get(path, "storage.db").toFile();
 
-        if(!pathToFile.exists()) {
+        if (!pathToFile.exists()) {
             try {
                 if (!pathToFile.createNewFile()) {
                     throw new RuntimeException("File has already created");
