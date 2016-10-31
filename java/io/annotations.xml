@@ -1,0 +1,5 @@
+<root>
+    <item name='java.io.IOException'>
+        <annotation name='java.lang.Deprecated'/>
+    </item>
+</root>
