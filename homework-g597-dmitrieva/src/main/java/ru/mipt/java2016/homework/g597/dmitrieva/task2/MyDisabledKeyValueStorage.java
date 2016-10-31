@@ -13,6 +13,7 @@ public class MyDisabledKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private HashMap<K, V> map;
     private RandomAccessFile raFile; // raFile - это типа random access file (ну а вдруг )))))0)
+    private File lock;
     private final SerializationStrategy<K> keyStrategy;
     private final SerializationStrategy<V> valueStrategy;
     private String mode = "rw"; // По умолчанию выставлили чтение/запись
@@ -23,11 +24,10 @@ public class MyDisabledKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         if (path == null) {
             throw new NullPointerException("The pathname argument is null");
         }
-        File lock = new File(path);
-        /*
+        lock = new File(path + File.separator + "zarabotayples");
         if(!lock.createNewFile()) {
             throw new IllegalStateException("Can not work with one file from multiple storages");
-        }*/
+        }
         isFileOpened = true;
         map = new HashMap<>();
         this.keyStrategy = key;
@@ -48,6 +48,7 @@ public class MyDisabledKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 }
             }
         } catch (FileNotFoundException e) {
+            lock.delete();
             throw new FileNotFoundException("The given string does not denote an existing file");
         }
     }
@@ -98,6 +99,7 @@ public class MyDisabledKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     public void close() throws IOException {
         checkFileNotClosed();
         try {
+            lock.delete();
             raFile.setLength(0);
             raFile.seek(0); // на всякий случай
             raFile.writeInt(map.size());
