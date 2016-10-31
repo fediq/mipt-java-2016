@@ -12,7 +12,7 @@ import java.util.Iterator;
 
 public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     public MegaKeyValueStorage(String path, String dataType, InterfaceSerialization<K> keySerialization,
-                               InterfaceSerialization<V> valueSerialization) {
+                               InterfaceSerialization<V> valueSerialization) throws IllegalStateException {
         isOpen = true;
         directory = path + "/storage.db";
         keyValueStorage = new HashMap<>();
@@ -47,7 +47,7 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     @Override
-    public V read(K key) {
+    public V read(K key) throws IllegalStateException {
         if (!isOpen) {
             throw new IllegalStateException("You can't use KVS when it's closed");
         }
@@ -55,7 +55,7 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     @Override
-    public boolean exists(K key) {
+    public boolean exists(K key) throws IllegalStateException {
         if (!isOpen) {
             throw new IllegalStateException("You can't use KVS when it's closed");
         }
@@ -63,7 +63,7 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     @Override
-    public void write(K key, V value) {
+    public void write(K key, V value) throws IllegalStateException {
         if (!isOpen) {
             throw new IllegalStateException("You can't use KVS when it's closed");
         }
@@ -71,7 +71,7 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     @Override
-    public void delete(K key) {
+    public void delete(K key) throws IllegalStateException {
         if (!isOpen) {
             throw new IllegalStateException("You can't use KVS when it's closed");
         }
@@ -79,7 +79,7 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     @Override
-    public int size() {
+    public int size() throws IllegalStateException {
         if (!isOpen) {
             throw new IllegalStateException("You can't use KVS when it's closed");
         }
@@ -87,7 +87,7 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     @Override
-    public Iterator<K> readKeys() {
+    public Iterator<K> readKeys() throws IllegalStateException {
         if (!isOpen) {
             throw new IllegalStateException("You can't use KVS when it's closed");
         }
@@ -95,7 +95,7 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() throws IllegalStateException {
         if (!isOpen) {
             throw new IllegalStateException("You can't use KVS when it's closed");
         }
