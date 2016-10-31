@@ -49,8 +49,8 @@ interface MySerialization<Type> {
     };
     MySerialization<StudentKey> MY_STUDENT_KEY_SERIALIZATION = new MySerialization<StudentKey>() {
         @Override
-        public void writeToFile(StudentKey object, DataOutputStream file) throws IOException { // write all fields in series
-            file.writeInt(object.getGroupId());
+        public void writeToFile(StudentKey object, DataOutputStream file) throws IOException {
+            file.writeInt(object.getGroupId()); // write all fields in series
             file.writeUTF(object.getName());
         }
 
