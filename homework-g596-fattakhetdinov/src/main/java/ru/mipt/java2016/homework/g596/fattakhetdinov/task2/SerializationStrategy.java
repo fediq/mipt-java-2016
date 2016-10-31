@@ -13,7 +13,7 @@ public interface SerializationStrategy<T> {
 
     T deserializeFromFile(DataInputStream input) throws IOException;
 
-    String getType();
+    String getType(); //Возвращает тип стратегии сериализации
 
     SerializationStrategy<String> STRING_SERIALIZATOR = new SerializationStrategy<String>() {
         @Override
