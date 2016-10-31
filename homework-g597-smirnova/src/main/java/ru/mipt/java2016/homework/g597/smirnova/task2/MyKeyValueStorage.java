@@ -23,7 +23,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         if (!(new File(path)).exists()) {
             throw new FileNotFoundException("No such directory");
         }
-        lock = new File (path, "lock.txt");
+        lock = new File(path, "lock.txt");
         if (!lock.createNewFile()) {
             throw new IllegalStateException("Lock has been set");
         }
@@ -32,7 +32,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         keySerializationStrategy = newKeySerializationStrategy;
         valueSerializationStrategy = newValueSerializationStrategy;
         try {
-            if(!storage.createNewFile()) {
+            if (!storage.createNewFile()) {
                 getData();
             }
         } catch (Exception e) {
