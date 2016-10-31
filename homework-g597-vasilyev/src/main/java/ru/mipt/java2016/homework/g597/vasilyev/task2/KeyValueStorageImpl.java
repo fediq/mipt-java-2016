@@ -5,6 +5,8 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.channels.OverlappingFileLockException;
+import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -14,19 +16,31 @@ import java.util.Map;
  * Created by mizabrik on 30.10.16.
  */
 public class KeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
-    public KeyValueStorageImpl(Path storagePath,
+
+    private Map<K, V> map;
+    private RandomAccessFile storage;
+    private Serializer<K> keySerializer;
+    private Serializer<V> valueSerializer;
+    private boolean open;
+
+    public KeyValueStorageImpl(String path,
                                Serializer<K> keySerializer,
-                               Serializer<V> valueSerializer) throws IOException {
+                               Serializer<V> valueSerializer) throws IOException, ConcurrentStorageAccessException {
         this.keySerializer = keySerializer;
         this.valueSerializer = valueSerializer;
 
+        Path dbPath = FileSystems.getDefault().getPath(path, "ilovehardcoding.db");
         try {
-            storage = new RandomAccessFile(storagePath.toString(), "rw");
+            storage = new RandomAccessFile(dbPath.toString(), "rw");
         } catch (FileNotFoundException e) {
             throw new RuntimeException("RandomAccessFile(path, \"rw\") throwed FileNotFoundException");
         }
 
-        storage.getChannel().tryLock();
+        try {
+            storage.getChannel().tryLock();
+        } catch (OverlappingFileLockException e) {
+            throw new ConcurrentStorageAccessException();
+        }
 
         map = new HashMap<>();
 
@@ -93,10 +107,4 @@ public class KeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
 
         storage.close();
     }
-
-    private Map<K, V> map;
-    private RandomAccessFile storage;
-    private Serializer<K> keySerializer;
-    private Serializer<V> valueSerializer;
-    private boolean open;
 }

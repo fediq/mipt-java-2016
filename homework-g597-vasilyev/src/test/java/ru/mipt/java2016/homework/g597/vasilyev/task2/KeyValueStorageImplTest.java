@@ -8,15 +8,45 @@ import ru.mipt.java2016.homework.tests.task2.StudentKey;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.nio.file.FileSystems;
-import java.nio.file.Path;
 import java.util.Date;
 
 /**
  * Created by mizabrik on 30.10.16.
  */
 public class KeyValueStorageImplTest extends AbstractSingleFileStorageTest {
+    @Override
+    protected KeyValueStorage<String, String> buildStringsStorage(String path) {
+        StringSerializer serializer = new StringSerializer();
+        try {
+            return new KeyValueStorageImpl<>(path, serializer, serializer);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    @Override
+    protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) {
+        try {
+            return new KeyValueStorageImpl<>(path,
+                    new IntegerSerializer(), new DoubleSerializer());
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    @Override
+    protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) {
+        try {
+            return new KeyValueStorageImpl<>(path,
+                    new StudentKeySerializer(), new StudentSerializer());
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     private class StudentSerializer implements Serializer<Student> {
+        private Serializer<String> stringSerializer;
+
         public StudentSerializer() {
             this.stringSerializer = new StringSerializer();
         }
@@ -42,11 +72,11 @@ public class KeyValueStorageImplTest extends AbstractSingleFileStorageTest {
             return new Student(groupId, name, hometown, birthDate,
                     hasDormitory, averageScore);
         }
-
-        private Serializer<String> stringSerializer;
     }
 
     private class StudentKeySerializer implements Serializer<StudentKey> {
+        private Serializer<String> stringSerializer;
+
         public StudentKeySerializer() {
             this.stringSerializer = new StringSerializer();
         }
@@ -62,41 +92,6 @@ public class KeyValueStorageImplTest extends AbstractSingleFileStorageTest {
             int groupId = source.readInt();
             String name = stringSerializer.read(source);
             return new StudentKey(groupId, name);
-        }
-
-        private Serializer<String> stringSerializer;
-    }
-
-    @Override
-    protected KeyValueStorage<String, String> buildStringsStorage(String path) {
-        Path dbPath = FileSystems.getDefault().getPath(path, "strings.db");
-        StringSerializer serializer = new StringSerializer();
-        try {
-            return new KeyValueStorageImpl<>(dbPath, serializer, serializer);
-        } catch (IOException e) {
-            return null;
-        }
-    }
-
-    @Override
-    protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) {
-        Path dbPath = FileSystems.getDefault().getPath(path, "numbers.db");
-        try {
-            return new KeyValueStorageImpl<>(dbPath,
-                    new IntegerSerializer(), new DoubleSerializer());
-        } catch (IOException e) {
-            return null;
-        }
-    }
-
-    @Override
-    protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) {
-        Path dbPath = FileSystems.getDefault().getPath(path, "pojo.db");
-        try {
-            return new KeyValueStorageImpl<>(dbPath,
-                    new StudentKeySerializer(), new StudentSerializer());
-        } catch (IOException e) {
-            return null;
         }
     }
 }
