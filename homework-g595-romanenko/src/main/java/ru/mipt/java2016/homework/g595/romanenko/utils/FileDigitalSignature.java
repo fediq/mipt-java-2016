@@ -1,7 +1,5 @@
 package ru.mipt.java2016.homework.g595.romanenko.utils;
 
-import sun.security.rsa.RSAKeyPairGenerator;
-
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -20,7 +18,7 @@ public class FileDigitalSignature {
     private static PrivateKey privateKey = null;
     private static PublicKey publicKey = null;
 
-    private static FileDigitalSignature INSTANCE = new FileDigitalSignature();
+    private static final FileDigitalSignature INSTANCE = new FileDigitalSignature();
 
     public static FileDigitalSignature getInstance() {
         return INSTANCE;
@@ -36,15 +34,15 @@ public class FileDigitalSignature {
             SecureRandom random = SecureRandom.getInstance("SHA1PRNG", "SUN");
             random.setSeed(seed);
 
-            RSAKeyPairGenerator keyGen = new RSAKeyPairGenerator();
+            KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
             keyGen.initialize(1024, random);
 
             KeyPair pair = keyGen.generateKeyPair();
             privateKey = pair.getPrivate();
             publicKey = pair.getPublic();
-
-        } catch (Exception ex) {
-            System.out.println(ex.getMessage());
+        } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
+            System.out.println(e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -86,19 +84,21 @@ public class FileDigitalSignature {
     }
 
     public boolean validateFileSign(String path, String signPath) {
-        boolean validationResult = false;
+        boolean validationResult;
         try {
             FileInputStream fileInputStream = new FileInputStream(signPath);
             byte[] sign = new byte[fileInputStream.available()];
             fileInputStream.read(sign);
             fileInputStream.close();
-            validationResult =validateFileSign(path, sign);
-        } catch (IOException ignored) { }
+            validationResult = validateFileSign(path, sign);
+        } catch (IOException ignored) {
+            validationResult = false;
+        }
         return validationResult;
     }
 
     public boolean validateFileSign(String path, byte[] sign) {
-        boolean result = false;
+        boolean validationResult = false;
 
         try {
 
@@ -115,14 +115,16 @@ public class FileDigitalSignature {
             stream.close();
             file.close();
 
-            result = signature.verify(sign);
+            validationResult = signature.verify(sign);
 
         } catch (NoSuchAlgorithmException | SignatureException | InvalidKeyException e) {
             System.out.println(e.getMessage());
             e.printStackTrace();
-        } catch (IOException ignored) { }
+        } catch (IOException ignored) {
+            validationResult = false;
+        }
 
-        return result;
+        return validationResult;
     }
 
     public boolean validateFileSignWithDefaultSignName(String path) {

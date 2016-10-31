@@ -9,6 +9,7 @@ import java.nio.channels.Channels;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 /**
  * Sorted strings table
@@ -23,16 +24,17 @@ Number of nodes (Integer)
 Key, offset(Integer) ...
 Values
 */
-class SSTable<Key, Value> {
+public class SSTable<Key, Value> {
 
     private RandomAccessFile storage;
-    private final HashMap<Key, Integer> indexes = new HashMap<>();
+    private final Map<Key, Integer> indexes = new HashMap<>();
 
     private final SerializationStrategy<Key> keySerializationStrategy;
     private final SerializationStrategy<Value> valueSerializationStrategy;
 
     private boolean isClosed = false;
     private String path;
+    private String dbName = null;
 
     private void readIndexes() throws IOException {
         int totalAmount = storage.readInt();
@@ -45,21 +47,22 @@ class SSTable<Key, Value> {
         }
     }
 
-    SSTable(String path,
-            SerializationStrategy<Key> keySerializationStrategy,
-            SerializationStrategy<Value> valueSerializationStrategy) throws IOException {
+    public SSTable(String path,
+                   SerializationStrategy<Key> keySerializationStrategy,
+                   SerializationStrategy<Value> valueSerializationStrategy) throws IOException {
 
         this.keySerializationStrategy = keySerializationStrategy;
         this.valueSerializationStrategy = valueSerializationStrategy;
 
         File tryFile = new File(path);
         if (tryFile.exists() && tryFile.isDirectory()) {
-            path += "//storage.db";
+            path += "/storage.db";
         }
         if ((new File(path)).exists()) {
             boolean validationOk = FileDigitalSignature.getInstance().validateFileSignWithDefaultSignName(path);
-            if (!validationOk)
+            if (!validationOk) {
                 throw new IllegalStateException("Invalid database");
+            }
         }
         this.path = path;
 
@@ -69,10 +72,18 @@ class SSTable<Key, Value> {
         }
     }
 
-    void rewrite(HashMap<Key, Value> toFlip) {
+    /**
+     * Write toFlip map to current storage. Remove old storage if it wasn't empty.
+     * Flush data to disk and sign storage with FileDigitalSignature.
+     *
+     * @param toFlip map<Key, Value> to flip
+     */
+    public void rewrite(Producer<Key, Value> toFlip) {
         checkClosed();
 
         try {
+            indexes.clear();
+
             storage.setLength(0);
             IntegerSerializer integerSerializer = IntegerSerializer.getInstance();
 
@@ -91,6 +102,7 @@ class SSTable<Key, Value> {
             }
 
             for (Key key : cachedKeys) {
+                indexes.put(key, totalLength);
                 offsets.add(totalLength);
                 totalLength += valueSerializationStrategy.getBytesSize(toFlip.get(key));
             }
@@ -119,7 +131,7 @@ class SSTable<Key, Value> {
         }
     }
 
-    Value getValue(Key key) {
+    public Value getValue(Key key) {
         checkClosed();
         if (!indexes.containsKey(key)) {
             return null;
@@ -137,35 +149,56 @@ class SSTable<Key, Value> {
         return result;
     }
 
-    void close() {
+    public void close() {
         if (isClosed) {
             return;
         }
         isClosed = true;
         try {
             storage.close();
+            FileDigitalSignature.getInstance().signFileWithDefaultSignName(path);
         } catch (IOException e) {
             throw new IllegalStateException();
         }
     }
 
-    int size() {
+    public int size() {
         checkClosed();
         return indexes.size();
     }
 
-    void removeKeyFromIndexes(Key key) {
+    public void removeKeyFromIndexes(Key key) {
         checkClosed();
         indexes.remove(key);
     }
 
-    boolean exists(Key key) {
+    public boolean exists(Key key) {
         checkClosed();
         return indexes.containsKey(key);
     }
 
-    Iterator<Key> readKeys() {
+    public Iterator<Key> readKeys() {
         checkClosed();
         return indexes.keySet().iterator();
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public SerializationStrategy<Key> getKeySerializationStrategy() {
+        return keySerializationStrategy;
+    }
+
+    public SerializationStrategy<Value> getValueSerializationStrategy() {
+        return valueSerializationStrategy;
+    }
+
+    public void setDatabaseName(String newDBName) {
+        dbName = newDBName;
+    }
+
+    public String getDatabaseName() {
+        return dbName;
     }
 }
