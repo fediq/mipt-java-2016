@@ -1,4 +1,4 @@
-package ru.mipt.java2016.homework.g597.markov;
+package ru.mipt.java2016.homework.g597.markov.task1;
 
 /**
  * Created by Alexander on 12.10.2016.
