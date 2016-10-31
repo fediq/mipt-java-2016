@@ -4,7 +4,9 @@ import ru.mipt.java2016.homework.tests.task2.Student;
 import ru.mipt.java2016.homework.g595.topilskiy.task2.JoinArrays.JoinArraysPrimitiveByte;
 
 import java.util.Date;
+
 import static java.util.Arrays.copyOfRange;
+
 
 /**
  * Class for a Student Serializer
@@ -14,15 +16,15 @@ import static java.util.Arrays.copyOfRange;
  */
 public class StudentSerializer implements ISerializer<Student> {
     /* ClassSerializers for serializing and deserializing within the class */
-    private static final BooleanSerializer booleanSerializer = (BooleanSerializer)
+    private static final BooleanSerializer BOOLEAN_SERIALIZER = (BooleanSerializer)
             SerializerFactory.getSerializer("Boolean");
-    private static final IntegerSerializer integerSerializer = (IntegerSerializer)
+    private static final IntegerSerializer INTEGER_SERIALIZER = (IntegerSerializer)
             SerializerFactory.getSerializer("Integer");
-    private static final DoubleSerializer  doubleSerializer  = (DoubleSerializer)
+    private static final DoubleSerializer  DOUBLE_SERIALIZER  = (DoubleSerializer)
             SerializerFactory.getSerializer("Double");
-    private static final DateSerializer    dateSerializer    = (DateSerializer)
+    private static final DateSerializer    DATE_SERIALIZER    = (DateSerializer)
             SerializerFactory.getSerializer("Date");
-    private static final StringSerializer  stringSerializer  = (StringSerializer)
+    private static final StringSerializer  STRING_SERIALIZER  = (StringSerializer)
             SerializerFactory.getSerializer("String");
 
     /**
@@ -35,18 +37,18 @@ public class StudentSerializer implements ISerializer<Student> {
     public byte[] serialize(Student value) {
         JoinArraysPrimitiveByte joinArraysPrimitiveByte = new JoinArraysPrimitiveByte();
 
-        byte[] StudentGroupIDBytes       = integerSerializer.serialize(value.getGroupId());
-        byte[] StudentNameBytes          =  stringSerializer.serialize(value.getName());
-        byte[] StudentHometownBytes      =  stringSerializer.serialize(value.getHometown());
-        byte[] StudentBirthdateBytes     =    dateSerializer.serialize(value.getBirthDate());
-        byte[] StudentHasDormitoryBytes  = booleanSerializer.serialize(value.isHasDormitory());
-        byte[] StudentAverageScoreBytes  =  doubleSerializer.serialize(value.getAverageScore());
-        return joinArraysPrimitiveByte.joinArrays(StudentGroupIDBytes,
-                                                  StudentNameBytes,
-                                                  StudentHometownBytes,
-                                                  StudentBirthdateBytes,
-                                                  StudentHasDormitoryBytes,
-                                                  StudentAverageScoreBytes);
+        byte[] studentGroupIDBytes       = INTEGER_SERIALIZER.serialize(value.getGroupId());
+        byte[] studentNameBytes          =  STRING_SERIALIZER.serialize(value.getName());
+        byte[] studentHometownBytes      =  STRING_SERIALIZER.serialize(value.getHometown());
+        byte[] studentBirthdateBytes     =    DATE_SERIALIZER.serialize(value.getBirthDate());
+        byte[] studentHasDormitoryBytes  = BOOLEAN_SERIALIZER.serialize(value.isHasDormitory());
+        byte[] studentAverageScoreBytes  =  DOUBLE_SERIALIZER.serialize(value.getAverageScore());
+        return joinArraysPrimitiveByte.joinArrays(studentGroupIDBytes,
+                                                  studentNameBytes,
+                                                  studentHometownBytes,
+                                                  studentBirthdateBytes,
+                                                  studentHasDormitoryBytes,
+                                                  studentAverageScoreBytes);
     }
 
     /**
@@ -67,7 +69,7 @@ public class StudentSerializer implements ISerializer<Student> {
 
 
         /* READ GroupID */
-        int StudentGroupID = integerSerializer.deserialize(
+        int studentGroupID = INTEGER_SERIALIZER.deserialize(
                 copyOfRange(valueBytes, valueBytesHead, valueBytesTail)
         );
         valueBytesHead = valueBytesTail;
@@ -75,11 +77,11 @@ public class StudentSerializer implements ISerializer<Student> {
 
         /* READ Name */
         valueBytesTail += IntegerSerializer.getIntegerByteSize();
-        int nameLen = integerSerializer.deserialize(
+        int nameLen = INTEGER_SERIALIZER.deserialize(
                 copyOfRange(valueBytes, valueBytesHead, valueBytesTail)
         );
         valueBytesTail += nameLen;
-        String StudentName = stringSerializer.deserialize(
+        String studentName = STRING_SERIALIZER.deserialize(
                 copyOfRange(valueBytes, valueBytesHead, valueBytesTail)
         );
         valueBytesHead = valueBytesTail;
@@ -87,11 +89,11 @@ public class StudentSerializer implements ISerializer<Student> {
 
         /* READ Hometown */
         valueBytesTail += IntegerSerializer.getIntegerByteSize();
-        int hometownLen = integerSerializer.deserialize(
+        int hometownLen = INTEGER_SERIALIZER.deserialize(
                 copyOfRange(valueBytes, valueBytesHead, valueBytesTail)
         );
         valueBytesTail += hometownLen;
-        String StudentHometown = stringSerializer.deserialize(
+        String studentHometown = STRING_SERIALIZER.deserialize(
                 copyOfRange(valueBytes, valueBytesHead, valueBytesTail)
         );
         valueBytesHead = valueBytesTail;
@@ -99,7 +101,7 @@ public class StudentSerializer implements ISerializer<Student> {
 
         /* READ Birthday */
         valueBytesTail += DateSerializer.getDateByteSize();
-        Date StudentBirthday = dateSerializer.deserialize(
+        Date studentBirthday = DATE_SERIALIZER.deserialize(
                 copyOfRange(valueBytes, valueBytesHead, valueBytesTail)
         );
         valueBytesHead = valueBytesTail;
@@ -107,7 +109,7 @@ public class StudentSerializer implements ISerializer<Student> {
 
         /* READ HasDormitory */
         valueBytesTail += BooleanSerializer.getBooleanByteSize();
-        Boolean StudentHasDormitory = booleanSerializer.deserialize(
+        Boolean studentHasDormitory = BOOLEAN_SERIALIZER.deserialize(
                 copyOfRange(valueBytes, valueBytesHead, valueBytesTail)
         );
         valueBytesHead = valueBytesTail;
@@ -115,17 +117,17 @@ public class StudentSerializer implements ISerializer<Student> {
 
         /* READ Average Score */
         valueBytesTail += DoubleSerializer.getDoubleByteSize();
-        Double StudentAverageScore = doubleSerializer.deserialize(
+        Double studentAverageScore = DOUBLE_SERIALIZER.deserialize(
                 copyOfRange(valueBytes, valueBytesHead, valueBytesTail)
         );
 
 
         /* Complete Student */
-        return new Student(StudentGroupID,
-                           StudentName,
-                           StudentHometown,
-                           StudentBirthday,
-                           StudentHasDormitory,
-                           StudentAverageScore);
+        return new Student(studentGroupID,
+                           studentName,
+                           studentHometown,
+                           studentBirthday,
+                           studentHasDormitory,
+                           studentAverageScore);
     }
 }

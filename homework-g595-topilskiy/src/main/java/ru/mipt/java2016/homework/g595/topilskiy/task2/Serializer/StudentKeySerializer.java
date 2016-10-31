@@ -13,9 +13,9 @@ import static java.util.Arrays.copyOfRange;
  */
 public class StudentKeySerializer implements ISerializer<StudentKey> {
     /* ClassSerializers for serializing and deserializing within the class */
-    private static final IntegerSerializer integerSerializer = (IntegerSerializer)
+    private static final IntegerSerializer INTEGER_SERIALIZER = (IntegerSerializer)
             SerializerFactory.getSerializer("Integer");
-    private static final StringSerializer  stringSerializer = (StringSerializer)
+    private static final StringSerializer  STRING_SERIALIZER = (StringSerializer)
             SerializerFactory.getSerializer("String");
 
     /**
@@ -28,9 +28,9 @@ public class StudentKeySerializer implements ISerializer<StudentKey> {
     public byte[] serialize(StudentKey value) {
         JoinArraysPrimitiveByte joinArraysPrimitiveByte = new JoinArraysPrimitiveByte();
 
-        byte[] StudentKeyGroupIDBytes = integerSerializer.serialize(value.getGroupId());
-        byte[] StudentKeyNameBytes = stringSerializer.serialize(value.getName());
-        return joinArraysPrimitiveByte.joinArrays(StudentKeyGroupIDBytes, StudentKeyNameBytes);
+        byte[] studentKeyGroupIDBytes = INTEGER_SERIALIZER.serialize(value.getGroupId());
+        byte[] studentKeyNameBytes = STRING_SERIALIZER.serialize(value.getName());
+        return joinArraysPrimitiveByte.joinArrays(studentKeyGroupIDBytes, studentKeyNameBytes);
     }
 
     /**
@@ -45,21 +45,21 @@ public class StudentKeySerializer implements ISerializer<StudentKey> {
         int valueBytesHead = 0;
         int valueBytesTail = IntegerSerializer.getIntegerByteSize();
 
-        int StudentKeyGroupID = integerSerializer.deserialize(
+        int studentKeyGroupID = INTEGER_SERIALIZER.deserialize(
                 copyOfRange(valueBytes, valueBytesHead, valueBytesTail)
         );
         valueBytesHead = valueBytesTail;
         valueBytesTail += IntegerSerializer.getIntegerByteSize();
 
-        int nameLen = integerSerializer.deserialize(
+        int nameLen = INTEGER_SERIALIZER.deserialize(
                 copyOfRange(valueBytes, valueBytesHead, valueBytesTail)
         );
         valueBytesTail += nameLen;
 
-        String StudentKeyName = stringSerializer.deserialize(
+        String studentKeyName = STRING_SERIALIZER.deserialize(
                 copyOfRange(valueBytes, valueBytesHead, valueBytesTail)
         );
 
-        return new StudentKey(StudentKeyGroupID, StudentKeyName);
+        return new StudentKey(studentKeyGroupID, studentKeyName);
     }
 }

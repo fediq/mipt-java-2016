@@ -35,9 +35,9 @@ public class JoinArraysGeneric<ArrayComponentType> implements IJoinArrays<ArrayC
              * is completely valid, because the new Array
              * contains exactly arguments of ArrayComponentType
              */
-            Class<?> ArrayComponentTypeClass = arraysToJoin[0].getClass().getComponentType();
+            Class<?> arrayComponentTypeClass = arraysToJoin[0].getClass().getComponentType();
             joinedArrays = (ArrayComponentType[])
-                            Array.newInstance(ArrayComponentTypeClass, joinedArraysLength);
+                            Array.newInstance(arrayComponentTypeClass, joinedArraysLength);
 
             int arrayCopyOffset = 0;
             for (ArrayComponentType[] arrayCurrent : arraysToJoin) {

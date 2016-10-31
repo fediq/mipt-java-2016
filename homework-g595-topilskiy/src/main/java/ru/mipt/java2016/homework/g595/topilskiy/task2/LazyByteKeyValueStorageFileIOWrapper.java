@@ -54,7 +54,7 @@ class LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> {
      *
      * @return File, reflecting the data storage file
      */
-    File getStorageDataFile () {
+    File getStorageDataFile() {
         return new File(storageInfo.getPathToStorageDirectory() +
                         File.separator +
                         STORAGE_FILENAME);
@@ -101,9 +101,7 @@ class LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> {
          * @throws IOException  - thrown by FileOutputStream.write()
          */
         void write(HashMap<KeyType, ValueType> hashMapBuffer,
-                              FileOutputStream fileOut)       throws IOException{
-            IntegerSerializer integerTypeSerializer = new IntegerSerializer();
-
+                              FileOutputStream fileOut)       throws IOException {
             byte[] keyTypeStringNumBytesAndBytes =
                     getNumBytesAndBytes(storageInfo.getKeyTypeString(), "String");
             byte[] valueTypeStringNumBytesAndBytes =
@@ -143,14 +141,13 @@ class LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> {
          * @return A map of Key pointing to keyBytes
          */
         private HashMap<KeyType, byte[]>
-        getKeyKeyBytesMap(HashMap<KeyType, ValueType> hashMapBuffer) {
+            getKeyKeyBytesMap(HashMap<KeyType, ValueType> hashMapBuffer) {
             HashMap<KeyType, byte[]> keyKeyBytesMap = new HashMap<>();
 
             for (Map.Entry<KeyType, ValueType> entry : hashMapBuffer.entrySet()) {
                 keyKeyBytesMap.put(entry.getKey(),
                                    getNumBytesAndBytes(entry.getKey(),
-                                                       storageInfo.getKeyTypeString())
-                                  );
+                                                       storageInfo.getKeyTypeString()));
             }
 
             return keyKeyBytesMap;
@@ -164,14 +161,13 @@ class LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> {
          * @return A map of Key pointing to valueBytes
          */
         private HashMap<KeyType, byte[]>
-        getKeyValueBytesMap(HashMap<KeyType, ValueType> hashMapBuffer) {
+            getKeyValueBytesMap(HashMap<KeyType, ValueType> hashMapBuffer) {
             HashMap<KeyType, byte[]> keyValueBytesMap = new HashMap<>();
 
             for (Map.Entry<KeyType, ValueType> entry : hashMapBuffer.entrySet()) {
                 keyValueBytesMap.put(entry.getKey(),
                                      getNumBytesAndBytes(entry.getValue(),
-                                                         storageInfo.getValueTypeString())
-                                    );
+                                                         storageInfo.getValueTypeString()));
             }
 
             return keyValueBytesMap;
@@ -188,7 +184,7 @@ class LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> {
          * @return A map of Key pointing to keyOffsetBytes
          */
         private HashMap<KeyType, byte[]>
-        getKeyOffsetMap(int sizeofHeaderOffsetBytes,
+            getKeyOffsetMap(int sizeofHeaderOffsetBytes,
                         HashMap<KeyType, byte[]> keyKeyBytesMap,
                         HashMap<KeyType, byte[]> keyValueBytesMap) {
             HashMap<KeyType, byte[]> keyOffsetBytesMap = new HashMap<>();

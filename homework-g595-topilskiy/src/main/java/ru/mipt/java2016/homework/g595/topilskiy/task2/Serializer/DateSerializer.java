@@ -10,7 +10,7 @@ import java.util.Date;
  */
 public class DateSerializer implements ISerializer<Date> {
     /* A LongSerializer for serializing and deserializing within the class */
-    private static final LongSerializer longSerializer = (LongSerializer)
+    private static final LongSerializer LONG_SERIALIZER = (LongSerializer)
             SerializerFactory.getSerializer("Long");
 
 
@@ -31,7 +31,7 @@ public class DateSerializer implements ISerializer<Date> {
      */
     @Override
     public byte[] serialize(Date value) {
-        return longSerializer.serialize(value.getTime());
+        return LONG_SERIALIZER.serialize(value.getTime());
     }
 
     /**
@@ -43,6 +43,6 @@ public class DateSerializer implements ISerializer<Date> {
      */
     @Override
     public Date deserialize(byte[] valueBytes) throws IllegalArgumentException {
-        return new Date(longSerializer.deserialize(valueBytes));
+        return new Date(LONG_SERIALIZER.deserialize(valueBytes));
     }
 }

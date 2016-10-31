@@ -12,7 +12,7 @@ import static java.util.Arrays.copyOfRange;
  */
 public class StringSerializer implements ISerializer<String> {
     /* An IntegerSerializer for serializing and deserializing within the class */
-    private static final IntegerSerializer integerSerializer = (IntegerSerializer)
+    private static final IntegerSerializer INTEGER_SERIALIZER = (IntegerSerializer)
                                 SerializerFactory.getSerializer("Integer");
 
     /**
@@ -25,7 +25,7 @@ public class StringSerializer implements ISerializer<String> {
     public byte[] serialize(String value) {
         JoinArraysPrimitiveByte joinArraysPrimitiveByte = new JoinArraysPrimitiveByte();
 
-        byte[] lenBytes = integerSerializer.serialize(value.length());
+        byte[] lenBytes = INTEGER_SERIALIZER.serialize(value.length());
         byte[] valueBytes = value.getBytes();
         return joinArraysPrimitiveByte.joinArrays(lenBytes, valueBytes);
     }
@@ -43,7 +43,7 @@ public class StringSerializer implements ISerializer<String> {
             throw new IllegalArgumentException("Illegal Deserialization");
         }
 
-        int stringSize = integerSerializer.deserialize(
+        int stringSize = INTEGER_SERIALIZER.deserialize(
                 copyOfRange(valueBytes, 0, IntegerSerializer.getIntegerByteSize()));
 
         if (IntegerSerializer.getIntegerByteSize() + stringSize != valueBytes.length) {

@@ -10,7 +10,7 @@ import java.util.HashMap;
  */
 public class SerializerFactory {
     /* A Cache HashMap by key valueOfSerialization for Serializers */
-    private static HashMap<String, ISerializer> CACHED_SERIALIZERS;
+    private static final HashMap<String, ISerializer> CACHED_SERIALIZERS;
 
     static {
         CACHED_SERIALIZERS = new HashMap<>();
