@@ -61,7 +61,7 @@ class GrishutinKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public V read(K key) {
         if (isClosed) {
-            throw new InvalidStateException("Storage is closed!");
+            throw new IllegalStateException("Storage is closed!");
         }
         return kvHashMap.get(key);
     }
@@ -74,7 +74,7 @@ class GrishutinKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public synchronized void write(K key, V value) {
         if (isClosed) {
-            throw new InvalidStateException("Storage is closed!");
+            throw new IllegalStateException("Storage is closed!");
         }
         if (!(exists(key))) {
             numRecords++;
