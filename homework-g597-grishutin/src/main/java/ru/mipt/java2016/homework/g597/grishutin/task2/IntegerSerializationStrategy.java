@@ -9,6 +9,7 @@ public class IntegerSerializationStrategy implements SerializationStrategy<Integ
     public static IntegerSerializationStrategy getInstance() {
         return instance;
     }
+
     @Override
     public void serialize(Integer value, RandomAccessFile raf) throws IOException {
         raf.writeInt(value);

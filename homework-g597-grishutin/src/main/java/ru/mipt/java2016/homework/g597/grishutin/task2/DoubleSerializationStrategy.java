@@ -9,6 +9,7 @@ public class DoubleSerializationStrategy implements SerializationStrategy<Double
     public static DoubleSerializationStrategy getInstance() {
         return instance;
     }
+
     @Override
     public void serialize(Double value, RandomAccessFile raf) throws IOException {
         raf.writeDouble(value);
