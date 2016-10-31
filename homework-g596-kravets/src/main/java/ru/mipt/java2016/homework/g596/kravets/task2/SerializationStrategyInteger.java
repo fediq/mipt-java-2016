@@ -4,7 +4,8 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-public class SerializationStrategyInteger extends MySerialization<Integer> { // Сериализатор для Int
+public class SerializationStrategyInteger
+        implements MySerialization<Integer> { // Сериализатор для Int
 
     @Override
     public Integer read(DataInputStream input) throws IOException {

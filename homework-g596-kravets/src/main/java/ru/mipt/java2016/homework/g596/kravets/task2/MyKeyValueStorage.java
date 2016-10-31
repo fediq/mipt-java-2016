@@ -19,10 +19,10 @@ public class MyKeyValueStorage<Key, Value> implements KeyValueStorage<Key, Value
     private String fileTitle;
     private String keyType;
     private boolean isOpenedFile;
-    private HashMap<Key, Value> actualMap;
+    private Map<Key, Value> actualMap = new HashMap<Key, Value>();
 
     public MyKeyValueStorage(String path, String type, MySerialization key, MySerialization value) {
-        fileTitle = path + "/storage.db";
+        fileTitle = path + File.separator + "storage.db";
         keyType = type;
         keySerializator = key;
         valueSerializator = value;
@@ -111,6 +111,7 @@ public class MyKeyValueStorage<Key, Value> implements KeyValueStorage<Key, Value
                 valueSerializator.write(output, entry.getValue());
             }
             isOpenedFile = false;
+            actualMap.clear();
         } catch (IOException e) {
             throw new IOException("Error! Couldn't save file to storage.");
         }

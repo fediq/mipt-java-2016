@@ -8,7 +8,7 @@ import java.util.Date;
 import ru.mipt.java2016.homework.tests.task2.Student;
 
 
-public class SerializationStrategyStudent extends MySerialization<Student> {
+public class SerializationStrategyStudent implements MySerialization<Student> {
 
     @Override
     public void write(DataOutputStream output, Student data) throws IOException {

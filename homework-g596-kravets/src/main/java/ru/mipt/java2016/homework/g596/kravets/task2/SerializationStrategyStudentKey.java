@@ -7,7 +7,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 
-public class SerializationStrategyStudentKey extends MySerialization<StudentKey> {
+public class SerializationStrategyStudentKey implements MySerialization<StudentKey> {
 
     @Override
     public void write(DataOutputStream output, StudentKey data) throws IOException {

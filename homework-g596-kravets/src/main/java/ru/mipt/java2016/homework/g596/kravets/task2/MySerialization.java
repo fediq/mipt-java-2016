@@ -4,9 +4,9 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-public abstract class MySerialization<T> { // Интерфейс
-    abstract T read(DataInputStream input) throws IOException;
+public interface MySerialization<T> {
+    T read(DataInputStream input) throws IOException;
 
-    abstract void write(DataOutputStream output, T data) throws IOException;
+    void write(DataOutputStream output, T data) throws IOException;
 }
 
