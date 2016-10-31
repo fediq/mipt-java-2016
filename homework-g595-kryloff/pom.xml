@@ -24,7 +24,13 @@
             <groupId>ru.mipt.java2016</groupId>
             <artifactId>homework-tests</artifactId>
             <version>1.0.0</version>
-            <scope>test</scope>
+            <!--<scope>test</scope> -->
+        </dependency>
+        
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>homework-tests</artifactId>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
     <name>homework-g595-kryloff</name>
