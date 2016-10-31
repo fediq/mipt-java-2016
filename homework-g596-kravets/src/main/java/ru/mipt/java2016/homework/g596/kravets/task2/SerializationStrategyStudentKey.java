@@ -7,15 +7,14 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 
-
-
-public class SerializationStrategyStudentKey extends MySerialization <StudentKey> {
+public class SerializationStrategyStudentKey extends MySerialization<StudentKey> {
 
     @Override
-    public void write (DataOutputStream output, StudentKey data) throws  IOException{
+    public void write(DataOutputStream output, StudentKey data) throws IOException {
         output.writeInt(data.getGroupId());
         output.writeUTF(data.getName());
     }
+
     @Override
     public StudentKey read(DataInputStream input) throws IOException {
         Integer studentGroupID = input.readInt();
