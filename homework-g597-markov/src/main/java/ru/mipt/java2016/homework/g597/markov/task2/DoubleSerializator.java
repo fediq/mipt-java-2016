@@ -4,15 +4,16 @@ package ru.mipt.java2016.homework.g597.markov.task2;
  * Created by Alexander on 30.10.2016.
  */
 
-import java.io.RandomAccessFile;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 
 public class DoubleSerializator implements SerializationStrategy<Double> {
 
-    public DoubleSerializator() {}
+    public DoubleSerializator() {
+    }
 
     @Override
-    public Double read(RandomAccessFile fileName) throws IOException{
+    public Double read(RandomAccessFile fileName) throws IOException {
         return fileName.readDouble();
     }
 

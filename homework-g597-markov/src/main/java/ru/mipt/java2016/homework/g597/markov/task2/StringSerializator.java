@@ -4,16 +4,17 @@ package ru.mipt.java2016.homework.g597.markov.task2;
  * Created by Alexander on 30.10.2016.
  */
 
-import java.io.RandomAccessFile;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 
 
 public class StringSerializator implements SerializationStrategy<String> {
 
-    public StringSerializator(){}
+    public StringSerializator() {
+    }
 
     @Override
-    public String read(RandomAccessFile fileName)throws IOException{
+    public String read(RandomAccessFile fileName) throws IOException {
         int length = fileName.readInt();
         byte[] bytes = new byte[length];
         fileName.readFully(bytes);
@@ -21,7 +22,7 @@ public class StringSerializator implements SerializationStrategy<String> {
     }
 
     @Override
-    public void write(RandomAccessFile fileName, String data) throws IOException{
+    public void write(RandomAccessFile fileName, String data) throws IOException {
         byte[] bytes = data.getBytes();
         fileName.writeInt(bytes.length);
         fileName.write(bytes);
