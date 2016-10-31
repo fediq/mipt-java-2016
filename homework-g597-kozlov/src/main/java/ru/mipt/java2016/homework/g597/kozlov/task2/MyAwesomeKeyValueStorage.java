@@ -9,7 +9,7 @@ package ru.mipt.java2016.homework.g597.kozlov.task2;
  * Остальные байты - сами пары <Key, Value>
  *
  * Реализация - через сериализаторы: для каждого случая (в виде класса) тупо записываем в файл данные
- * через нужные фукнции.
+ * через нужные фукнции. Сериализаторы играют роль константы в основном классе.
  */
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
@@ -32,8 +32,8 @@ public class MyAwesomeKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private HashMap<K, V> map;  // храним данные здесь
 
-    private Serialization<K> keySerialization;
-    private Serialization<V> valueSerialization;
+    private final Serialization<K> keySerialization;
+    private final Serialization<V> valueSerialization;
 
     MyAwesomeKeyValueStorage(String path, Serialization<K> keyS, Serialization<V> valueS) throws IOException {
 

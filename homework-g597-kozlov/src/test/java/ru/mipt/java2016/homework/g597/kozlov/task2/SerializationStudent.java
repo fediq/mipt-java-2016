@@ -11,11 +11,11 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 public class SerializationStudent implements Serialization<Student> {
-    private static SerializationInteger sampleInteger = new SerializationInteger();
-    private static SerializationString sampleString = new SerializationString();
-    private static SerializationDate sampleDate = new SerializationDate();
-    private static SerializationBoolean sampleBoolean = new SerializationBoolean();
-    private static SerializationDouble sampleDouble = new SerializationDouble();
+    private final SerializationInteger sampleInteger = new SerializationInteger();
+    private final SerializationString sampleString = new SerializationString();
+    private final SerializationDate sampleDate = new SerializationDate();
+    private final SerializationBoolean sampleBoolean = new SerializationBoolean();
+    private final SerializationDouble sampleDouble = new SerializationDouble();
 
     @Override
     public Student read(RandomAccessFile file) throws IOException {
