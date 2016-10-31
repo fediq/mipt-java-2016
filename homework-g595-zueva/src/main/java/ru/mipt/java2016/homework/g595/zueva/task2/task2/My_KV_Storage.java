@@ -1,48 +1,53 @@
-package ru.mipt.java2016.homework.g595.zueva.task2.task2;
+package ru.mipt.java2016.homework.g595.zueva.task2;
 
-/*сreated by Nadya*/
+/*сreated by nestyme*/
 
 import org.apache.commons.io.IOExceptionWithCause;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
-import ru.mipt.java2016.homework.g595.zueva.task2.task2.Serializer;
+import ru.mipt.java2016.homework.g595.zueva.task2.Serializer;
 import java.util.Iterator;
 import java.util.Map;
 import java.io.*;
 import java.util.HashMap;
 
 
-public class My_KV_Storage<K, V> implements KeyValueStorage<K, V> {
+public class MyKVStorage<K, V> implements KeyValueStorage<K, V> {
     private static final String VALIDATION_STRING;
 
     static {
         VALIDATION_STRING = "My strange storage";
     }
 
-    public String FileName;
+    private String FileName;
     public HashMap<K, V> CurrentStorage;
     public Serializer<K> keySerializer;
     public Serializer<V> valueSerializer;
     public boolean ifOpen = false;
 
     /*Конструктор класс хранилища*/
-    public My_KV_Storage(String newFileName,
-                         Serializer newKeySerialisation,
-                         Serializer newValueSerialisation) throws Exception {
+
+    public MyKVStorage(String newFileName,
+                       Serializer newKeySerialisation,
+                       Serializer newValueSerialisation) throws Exception {
         keySerializer = newKeySerialisation;
         valueSerializer = newValueSerialisation;
         FileName = newFileName + "/note.txt";
         CurrentStorage = new HashMap<K, V>();
         ifOpen = true;
+
         /*проверка, возможно ли открыть и создать файл*/
+
         File destination = new File(FileName);
         if (!destination.exists()) {
             destination.createNewFile();
 
             try (DataOutputStream out = new DataOutputStream(new FileOutputStream(FileName))) {
+
                 out.writeUTF(VALIDATION_STRING);
                 out.writeInt(0b0);
+
             } catch (Exception e) {
-                throw new Exception("Cannot write to file");
+                throw new RuntimeException("Cannot write to file");
             }
         }
         /* Существует ли наша валидирующая строка в файле && проверка, возможно ли читать из файла*/
@@ -58,23 +63,26 @@ public class My_KV_Storage<K, V> implements KeyValueStorage<K, V> {
                 CurrentStorage.put(keyToInsert, valueToInsert);
             }
         } catch (Exception exception) {
-            throw new Exception("Cannot read from file");
+            throw new RuntimeException("Cannot read from file");
         }
     }
     @Override
-    public void close() throws IOExceptionWithCause {
+    public void close() throws IOException {
         isFileClosed();
         try
                 (DataOutputStream out = new DataOutputStream(new FileOutputStream(FileName))) {
             out.writeUTF(VALIDATION_STRING);
             out.writeInt(CurrentStorage.size());
             for (Map.Entry<K, V> i : CurrentStorage.entrySet()) {
+
                 keySerializer.writeToStream(out, i.getKey());
                 valueSerializer.writeToStream(out, i.getValue());
+
             }
             ifOpen = false;
+
         } catch (Exception e) {
-            throw new IllegalStateException("Failed to save and close storage");
+            e.printStackTrace();
         }
     }
     @Override
