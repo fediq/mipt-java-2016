@@ -9,8 +9,8 @@ import java.io.IOException;
  */
 public class StringStringSerialisator extends ObjectSerialisator<String, String> {
 
-    StringStringSerialisator(String path_) {
-        super(path_);
+    StringStringSerialisator(String newPath) {
+        super(newPath);
     }
 
     @Override

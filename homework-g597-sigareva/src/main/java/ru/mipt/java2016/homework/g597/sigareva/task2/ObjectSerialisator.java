@@ -4,21 +4,18 @@ import javafx.util.Pair;
 
 import java.io.*;
 
-/**
- * Created by 1 on 30.10.2016.
- */
-public abstract class ObjectSerialisator<K, V> {
+abstract class ObjectSerialisator<K, V> {
     abstract void write(K key, V value);
     abstract Pair<K, V> read() throws IOException;
 
-    public BufferedReader inputStream;
-    public PrintWriter outputStream;
-    String path;
-    String myFile;
+    BufferedReader inputStream;
+    PrintWriter outputStream;
+    private String path;
+    private String myFile;
     boolean goodFile = true;
 
-    ObjectSerialisator(String path_){
-        path = path_;
+    ObjectSerialisator(String newPath){
+        path = newPath;
         StringBuilder adress = new StringBuilder();
         adress.append(path);
         adress.append("\\Lenin_luchshiy"); // название хранилища
