@@ -78,18 +78,18 @@ public class MyKeyValueStorage<Key, Value> implements KeyValueStorage<Key, Value
         } else {
             FileInputStream in = new FileInputStream(fullPath);
             DataInputStream fileIn = new DataInputStream(in);
-            int num = fileIn.readInt();
-            String fileKeyType = fileIn.readUTF();
-            String fileValueType = fileIn.readUTF();
+            int num = fileIn.readInt(); // read number of pairs(key/value) in storage
+            String fileKeyType = fileIn.readUTF(); // read the type of keys
+            String fileValueType = fileIn.readUTF(); // read the type of values
             if (!fileKeyType.equals(keyType) || !fileValueType.equals(valueType)) {
                 throw new RuntimeException("This file contains other types of objects");
             }
             Key key;
             Value value;
-            for (int i = 0; i < num; ++i) {
+            for (int i = 0; i < num; ++i) { // read all pairs from file
                 key = (Key) keySerializator.readFromFile(fileIn);
                 value = (Value) valueSerializator.readFromFile(fileIn);
-                actualCopy.put(key, value);
+                actualCopy.put(key, value); // add pair to hashMap
             }
         }
 
@@ -132,7 +132,7 @@ public class MyKeyValueStorage<Key, Value> implements KeyValueStorage<Key, Value
         if (!isOpen) {
             throw new RuntimeException("Storage has been already closed");
         }
-        return actualCopy.keySet().iterator();
+        return actualCopy.keySet().iterator(); // return iterator to the set of pairs
     }
 
     @Override
@@ -147,10 +147,10 @@ public class MyKeyValueStorage<Key, Value> implements KeyValueStorage<Key, Value
         }
         FileOutputStream out = new FileOutputStream(fullPath);
         DataOutputStream outFile = new DataOutputStream(out);
-        outFile.writeInt(actualCopy.size());
-        outFile.writeUTF(keyType);
-        outFile.writeUTF(valueType);
-        for (Map.Entry<Key, Value> i : actualCopy.entrySet()) {
+        outFile.writeInt(actualCopy.size()); // write number of pairs(key/value) in storage
+        outFile.writeUTF(keyType); // write the type of keys
+        outFile.writeUTF(valueType); // write the type of values
+        for (Map.Entry<Key, Value> i : actualCopy.entrySet()) { // write all pairs to file
             keySerializator.writeToFile(i.getKey(), outFile);
             valueSerializator.writeToFile(i.getValue(), outFile);
         }

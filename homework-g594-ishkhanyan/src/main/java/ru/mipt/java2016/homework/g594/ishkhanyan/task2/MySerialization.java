@@ -48,27 +48,26 @@ interface MySerialization<Type> {
         }
     };
     MySerialization<StudentKey> MY_STUDENT_KEY_SERIALIZATION = new MySerialization<StudentKey>() {
-
         @Override
-        public void writeToFile(StudentKey object, DataOutputStream file) throws IOException {
+        public void writeToFile(StudentKey object, DataOutputStream file) throws IOException { // write all fields in series
             file.writeInt(object.getGroupId());
             file.writeUTF(object.getName());
         }
 
         @Override
-        public StudentKey readFromFile(DataInputStream file) throws IOException {
+        public StudentKey readFromFile(DataInputStream file) throws IOException { // read all fields and create object
             Integer groupId = file.readInt();
             String name = file.readUTF();
             return new StudentKey(groupId, name);
         }
     };
-    MySerialization<Student> MY_STUDENT_SERIALIZATION = new MySerialization<Student>() {
+    MySerialization<Student> MY_STUDENT_SERIALIZATION = new MySerialization<Student>() { // similar to the previous type
         @Override
         public void writeToFile(Student object, DataOutputStream file) throws IOException {
             file.writeInt(object.getGroupId());
             file.writeUTF(object.getName());
             file.writeUTF(object.getHometown());
-            file.writeLong(object.getBirthDate().getTime());
+            file.writeLong(object.getBirthDate().getTime()); // date -> (long)milliseconds
             file.writeBoolean(object.isHasDormitory());
             file.writeDouble(object.getAverageScore());
         }
@@ -78,7 +77,7 @@ interface MySerialization<Type> {
             Integer groupId = file.readInt();
             String name = file.readUTF();
             String homeTown = file.readUTF();
-            Date date = new Date(file.readLong());
+            Date date = new Date(file.readLong()); // (long)milliseconds -> date
             Boolean hasDormitory = file.readBoolean();
             Double averageScore = file.readDouble();
             return new Student(groupId, name, homeTown, date, hasDormitory, averageScore);
