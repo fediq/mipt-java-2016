@@ -15,7 +15,8 @@ public class MyStorageTests extends AbstractSingleFileStorageTest {
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String path) {
         try {
-            return new MyStorage(path, SerializationString.getSerialization(), SerializationString.getSerialization());
+            return new MyStorage(path, SerializationType.SerializationString.getSerialization(),
+                    SerializationType.SerializationString.getSerialization());
         } catch (IOException e) {
             throw new RuntimeException("Error");
         }
@@ -24,7 +25,8 @@ public class MyStorageTests extends AbstractSingleFileStorageTest {
     @Override
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) {
         try {
-            return new MyStorage(path, SerializationInteger.getSerialization(), SerializationDouble.getSerialization());
+            return new MyStorage(path, SerializationType.SerializationInteger.getSerialization(),
+                    SerializationType.SerializationDouble.getSerialization());
         } catch (IOException e) {
             throw new RuntimeException("Error");
         }
@@ -33,7 +35,8 @@ public class MyStorageTests extends AbstractSingleFileStorageTest {
     @Override
     protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) {
         try {
-            return new MyStorage(path, SerializationStudentKey.getSerialization(), SerializationStudent.getSerialization());
+            return new MyStorage(path, SerializationType.SerializationStudentKey.getSerialization(),
+                    SerializationType.SerializationStudent.getSerialization());
         } catch (IOException e) {
             throw new RuntimeException("Error");
         }
