@@ -15,7 +15,7 @@ public class SerializationType {
     public static class SerializationBoolean implements MySerialization<Boolean> {
         private static SerializationBoolean serialize = new SerializationBoolean();
 
-        private SerializationBoolean() { };
+        private SerializationBoolean() { }
 
         public static SerializationBoolean getSerialization() {
             return serialize;
@@ -45,7 +45,7 @@ public class SerializationType {
     public static class SerializationDate implements MySerialization<Date> {
         private static SerializationDate serialize = new SerializationDate();
 
-        private SerializationDate() { };
+        private SerializationDate() { }
 
         public static SerializationDate getSerialization() {
             return serialize;
@@ -73,10 +73,11 @@ public class SerializationType {
             }
         }
     }
+
     public static class SerializationDouble implements MySerialization<Double> {
         private static SerializationDouble serialize = new SerializationDouble();
 
-        private SerializationDouble() { };
+        private SerializationDouble() { }
 
         public static SerializationDouble getSerialization() {
             return serialize;
@@ -106,7 +107,7 @@ public class SerializationType {
     public static class SerializationInteger implements MySerialization<Integer> {
         private static SerializationInteger serialize = new SerializationInteger();
 
-        private SerializationInteger() { };
+        private SerializationInteger() { }
 
         public static SerializationInteger getSerialization() {
             return serialize;
@@ -136,7 +137,7 @@ public class SerializationType {
     public static class SerializationString implements MySerialization<String> {
         private static SerializationString serialize = new SerializationString();
 
-        private SerializationString() { };
+        private SerializationString() { }
 
         public static SerializationString getSerialization() {
             return serialize;
@@ -179,7 +180,7 @@ public class SerializationType {
                 SerializationType.SerializationDouble.getSerialization();
         private static SerializationStudent serialize = new SerializationStudent();
 
-        private SerializationStudent() { };
+        private SerializationStudent() { }
 
         public static SerializationStudent getSerialization() {
             return serialize;
@@ -231,7 +232,7 @@ public class SerializationType {
                 SerializationType.SerializationString.getSerialization();
         private static SerializationStudentKey serialize = new SerializationStudentKey();
 
-        private SerializationStudentKey() { };
+        private SerializationStudentKey() { }
 
         public static SerializationStudentKey getSerialization() {
             return serialize;
