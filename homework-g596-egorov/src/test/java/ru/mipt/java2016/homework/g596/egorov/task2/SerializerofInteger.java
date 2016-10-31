@@ -1,4 +1,6 @@
-package ru.mipt.java2016.homework.g596.egorov.task2.serializers;
+package ru.mipt.java2016.homework.g596.egorov.task2;
+
+import ru.mipt.java2016.homework.g596.egorov.task2.serializers.SerializerInterface;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
