@@ -18,7 +18,7 @@ public class SerializerofStudentKey implements SerializerInterface<StudentKey> {
 
     @Override
     public StudentKey deserialize(DataInputStream rd) throws IOException {
-        Integer grId = rd.readInt();
+        int grId = rd.readInt();
         String stName = rd.readUTF();
         return new StudentKey(grId, stName);
     }

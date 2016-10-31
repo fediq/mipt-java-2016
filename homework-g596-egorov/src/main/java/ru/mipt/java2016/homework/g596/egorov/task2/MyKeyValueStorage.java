@@ -25,28 +25,26 @@ import java.util.Map;
  * @since 04.10.16
  */
 
-//В данной реализации не используются Input/Outputstream.
-//Слишком поздно я о них узнал. Потом переделаю.
-//Это даже проще получится...
-
-//Переделал. Прога сократилась в полтора раза.
-//Времени ушло меньше в полтора раза.
 
 public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
-    private final MyFile myFile;
+    //private final MyFile myFile;
+    private final File myFile;
+    private String filename;
     private final SerializerInterface<K> keySerializer;
     private final SerializerInterface<V> valueSerializer;
-    private final HashMap<K, V> tempStorage = new HashMap<K, V>();
+    private final Map<K, V> tempStorage = new HashMap<K, V>();
     private static final String CHECKER = "-_- $$It's my directory!$$ -_-";
-    private boolean flag = false;
+    private boolean isOpened = false;
 
 
     public MyKeyValueStorage(String dirPath, SerializerInterface<K> keySerializer,
                              SerializerInterface<V> valueSerializer) {
         this.keySerializer = keySerializer;
         this.valueSerializer = valueSerializer;
-        myFile = new MyFile(dirPath + File.separator + "mydatabase.db"); //File.separator- windows = '\'; unix = '/'
+
+        filename = dirPath + File.separator + "mydatabase.db";
+        myFile = new File(filename); //File.separator- windows = '\'; unix = '/'
 
 
         try {
@@ -56,17 +54,14 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 }
             }
         } catch (FileNotFoundException e) {   //Если файл был испорчен/ненайден то создаём новый.
-            myFile.createFile();
-            myFile.fill(CHECKER);
+            createfile();
+            fill(CHECKER);
         }
     }
 
     private boolean validateFile() throws FileNotFoundException {
-        //раньше, тут был метод, использующий строки.
-        //Пришлось его полностью переписать, но возник вопрос:
-        //как перевести Java.io.DataInputStream в java.lang.String?
 
-        try (DataInputStream rd = new DataInputStream(new FileInputStream(myFile.name()))) {
+        try (DataInputStream rd = new DataInputStream(new FileInputStream(filename))) {
             if (!rd.readUTF().equals(CHECKER)) {
                 throw new IllegalStateException("Invalid file");
             }
@@ -85,61 +80,91 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public V read(K key) {
-        isOpen();
+        chackOpenness();
         return tempStorage.get(key);
     }
 
     @Override
     public boolean exists(K key) {
-        isOpen();
+        chackOpenness();
         return tempStorage.containsKey(key);
     }
 
     @Override
     public void write(K key, V value) {
-        isOpen();
+        chackOpenness();
         tempStorage.put(key, value);
     }
 
     @Override
     public void delete(K key) {
-        isOpen();
+        chackOpenness();
         tempStorage.remove(key);
     }
 
     @Override
     public Iterator<K> readKeys() {
-        isOpen();
+        chackOpenness();
         return tempStorage.keySet().iterator();
     }
 
     @Override
     public int size() {
-        isOpen();
+        chackOpenness();
         return tempStorage.size();
     }
 
     @Override
     public void close() {
-        isOpen();
-        try (DataOutputStream wr = new DataOutputStream(new FileOutputStream(myFile.name()))) {
+        chackOpenness();
+        try (DataOutputStream wr = new DataOutputStream(new FileOutputStream(filename))) {
             wr.writeUTF(CHECKER);
             wr.writeInt(tempStorage.size());
             for (Map.Entry<K, V> entry : tempStorage.entrySet()) {
                 keySerializer.serialize(wr, entry.getKey());
                 valueSerializer.serialize(wr, entry.getValue());
             }
-            flag = true;
+            isOpened = true;
+            tempStorage.clear();
         } catch (IOException e) {
             throw new IllegalStateException("Couldn't write storage to file");
         }
     }
-    
-    private void isOpen() {
-        if (flag) {
+
+    private void chackOpenness() {
+        if (isOpened) {
             throw new RuntimeException("storage is already closed!");
         }
     }
+
+    private boolean exists() throws FileNotFoundException {
+        if (!myFile.exists()) {
+            throw new FileNotFoundException(myFile.getName());
+        }
+        return true;
+    }
+
+    private void createFile() {
+        try {
+            myFile.createNewFile();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void createfile(){
+        try {
+            myFile.createNewFile();
+        } catch (IOException exception) {
+            throw new RuntimeException(exception);
+        }
+    }
+
+    private void fill(String cheker) {
+        try (DataOutputStream wr = new DataOutputStream(new FileOutputStream(filename))) {
+            wr.writeUTF(cheker);
+        } catch (IOException e) {
+            throw new IllegalStateException("Smth goes wrong: Can't write to file!");
+        }
+    }
 }
-
-
