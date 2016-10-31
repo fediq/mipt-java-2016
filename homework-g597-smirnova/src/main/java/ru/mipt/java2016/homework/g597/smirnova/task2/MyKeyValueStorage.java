@@ -16,19 +16,27 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private SerializationStrategy<V> valueSerializationStrategy;
     private Boolean isOpen = false;
     private File storage;
+    private File lock;
 
     public MyKeyValueStorage(String path, SerializationStrategy<K> newKeySerializationStrategy,
                              SerializationStrategy<V> newValueSerializationStrategy) throws IOException {
-        if ((new File(path)).exists()) {
-            storage = new File(path, "storage.db");
-            isOpen = true;
-            keySerializationStrategy = newKeySerializationStrategy;
-            valueSerializationStrategy = newValueSerializationStrategy;
-            if (storage.exists()) {
+        if (!(new File(path)).exists()) {
+            throw new FileNotFoundException("No such directory");
+        }
+        lock = new File (path, "lock.txt");
+        if (!lock.createNewFile()) {
+            throw new IllegalStateException("Lock has been set");
+        }
+        storage = new File(path, "storage.db");
+        isOpen = true;
+        keySerializationStrategy = newKeySerializationStrategy;
+        valueSerializationStrategy = newValueSerializationStrategy;
+        try {
+            if(!storage.createNewFile()) {
                 getData();
             }
-        } else {
-            throw new FileNotFoundException("No such directory");
+        } catch (Exception e) {
+            lock.delete();
         }
     }
 
@@ -40,81 +48,75 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 V value = valueSerializationStrategy.readFromStream(input);
                 data.put(key, value);
             }
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            lock.delete();
         }
 
     }
 
     @Override
     public V read(K key) {
-        if (isOpen) {
-            return data.get(key);
-        } else {
+        if (!isOpen) {
             throw new IllegalStateException("File is closed");
         }
+        return data.get(key);
     }
 
     @Override
     public boolean exists(K key) {
-        if (isOpen) {
-            return data.containsKey(key);
-        } else {
+        if (!isOpen) {
             throw new IllegalStateException("File is closed");
         }
+        return data.containsKey(key);
     }
 
     @Override
     public void write(K key, V value) {
-        if (isOpen) {
-            data.put(key, value);
-        } else {
+        if (!isOpen) {
             throw new IllegalStateException("File is closed");
         }
+        data.put(key, value);
     }
 
     @Override
     public void delete(K key) {
-        if (isOpen) {
-            data.remove(key);
-        } else {
+        if (!isOpen) {
             throw new IllegalStateException("File is closed");
         }
+        data.remove(key);
     }
 
     @Override
     public Iterator<K> readKeys() {
-        if (isOpen) {
-            return data.keySet().iterator();
-        } else {
+        if (!isOpen) {
             throw new IllegalStateException("File is closed");
         }
+        return data.keySet().iterator();
     }
 
     @Override
     public int size() {
-        if (isOpen) {
-            return data.size();
-        } else {
+        if (!isOpen) {
             throw new IllegalStateException("File is closed");
         }
+        return data.size();
     }
 
     @Override
     public void close() throws IllegalStateException {
-        if (isOpen) {
-            isOpen = false;
-            try (DataOutputStream output = new DataOutputStream(new FileOutputStream(storage))) {
-                output.writeInt(data.size());
-                for (Map.Entry<K, V> entry : data.entrySet()) {
-                    keySerializationStrategy.writeToStream(output, entry.getKey());
-                    valueSerializationStrategy.writeToStream(output, entry.getValue());
-                }
-            } catch (IOException e) {
-                throw new AssertionError("Error in writing into file");
-            }
-        } else {
+        if (!isOpen) {
             throw new IllegalStateException("File is closed");
+        }
+        isOpen = false;
+        lock.delete();
+        try (DataOutputStream output = new DataOutputStream(new FileOutputStream(storage))) {
+            output.writeInt(data.size());
+            for (Map.Entry<K, V> entry : data.entrySet()) {
+                keySerializationStrategy.writeToStream(output, entry.getKey());
+                valueSerializationStrategy.writeToStream(output, entry.getValue());
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException("Error in writing into file");
         }
     }
 }
