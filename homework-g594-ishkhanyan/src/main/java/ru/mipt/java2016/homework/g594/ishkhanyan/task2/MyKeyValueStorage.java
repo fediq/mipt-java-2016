@@ -30,41 +30,45 @@ public class MyKeyValueStorage<Key, Value> implements KeyValueStorage<Key, Value
             throw new RuntimeException("such directory does not exist");
         }
 
-        fullPath = pathDirectory + File.separator +"MyStorage";
+        fullPath = pathDirectory + File.separator + "MyStorage";
         isOpen = true;
 
         switch (keyType) {
             case "Integer":
-                keySerializator = MySerialization.MyIntegerSerialization;
+                keySerializator = MySerialization.MY_INT_SERIALIZATION;
                 break;
             case "Double":
-                keySerializator = MySerialization.MyDoubleSerialization;
+                keySerializator = MySerialization.MY_DOUBLE_SERIALIZATION;
                 break;
             case "String":
-                keySerializator = MySerialization.MyStringSerialization;
+                keySerializator = MySerialization.MY_STRING_SERIALIZATION;
                 break;
             case "Student":
-                keySerializator = MySerialization.MyStudentSerialization;
+                keySerializator = MySerialization.MY_STUDENT_SERIALIZATION;
                 break;
             case "StudentKey":
-                keySerializator = MySerialization.MyStudentKeySerialization;
+                keySerializator = MySerialization.MY_STUDENT_KEY_SERIALIZATION;
+                break;
+            default:
                 break;
         }
         switch (valueType) {
             case "Integer":
-                valueSerializator = MySerialization.MyIntegerSerialization;
+                valueSerializator = MySerialization.MY_INT_SERIALIZATION;
                 break;
             case "Double":
-                valueSerializator = MySerialization.MyDoubleSerialization;
+                valueSerializator = MySerialization.MY_DOUBLE_SERIALIZATION;
                 break;
             case "String":
-                valueSerializator = MySerialization.MyStringSerialization;
+                valueSerializator = MySerialization.MY_STRING_SERIALIZATION;
                 break;
             case "Student":
-                valueSerializator = MySerialization.MyStudentSerialization;
+                valueSerializator = MySerialization.MY_STUDENT_SERIALIZATION;
                 break;
             case "StudentKey":
-                valueSerializator = MySerialization.MyStudentKeySerialization;
+                valueSerializator = MySerialization.MY_STUDENT_KEY_SERIALIZATION;
+                break;
+            default:
                 break;
         }
 
@@ -75,9 +79,9 @@ public class MyKeyValueStorage<Key, Value> implements KeyValueStorage<Key, Value
             FileInputStream in = new FileInputStream(fullPath);
             DataInputStream fileIn = new DataInputStream(in);
             int num = fileIn.readInt();
-            String FileKeyType = fileIn.readUTF();
-            String FileValueType = fileIn.readUTF();
-            if (!FileKeyType.equals(keyType) || !FileValueType.equals(valueType)) {
+            String fileKeyType = fileIn.readUTF();
+            String fileValueType = fileIn.readUTF();
+            if (!fileKeyType.equals(keyType) || !fileValueType.equals(valueType)) {
                 throw new RuntimeException("This file contains other types of objects");
             }
             Key key;

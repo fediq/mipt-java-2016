@@ -11,9 +11,10 @@ import java.util.Date;
 
 interface MySerialization<Type> {
     void writeToFile(Type object, DataOutputStream file) throws IOException;
+
     Type readFromFile(DataInputStream file) throws IOException;
 
-    MySerialization<Integer> MyIntegerSerialization = new MySerialization<Integer>() {
+    MySerialization<Integer> MY_INT_SERIALIZATION = new MySerialization<Integer>() {
         @Override
         public void writeToFile(Integer object, DataOutputStream file) throws IOException {
             file.writeInt(object);
@@ -24,7 +25,7 @@ interface MySerialization<Type> {
             return file.readInt();
         }
     };
-    MySerialization<Double> MyDoubleSerialization = new MySerialization<Double>() {
+    MySerialization<Double> MY_DOUBLE_SERIALIZATION = new MySerialization<Double>() {
         @Override
         public void writeToFile(Double object, DataOutputStream file) throws IOException {
             file.writeDouble(object);
@@ -35,7 +36,7 @@ interface MySerialization<Type> {
             return file.readDouble();
         }
     };
-    MySerialization<String> MyStringSerialization = new MySerialization<String>() {
+    MySerialization<String> MY_STRING_SERIALIZATION = new MySerialization<String>() {
         @Override
         public void writeToFile(String k, DataOutputStream file) throws IOException {
             file.writeUTF(k);
@@ -46,7 +47,7 @@ interface MySerialization<Type> {
             return file.readUTF();
         }
     };
-    MySerialization<StudentKey> MyStudentKeySerialization = new MySerialization<StudentKey>() {
+    MySerialization<StudentKey> MY_STUDENT_KEY_SERIALIZATION = new MySerialization<StudentKey>() {
 
         @Override
         public void writeToFile(StudentKey object, DataOutputStream file) throws IOException {
@@ -61,7 +62,7 @@ interface MySerialization<Type> {
             return new StudentKey(groupId, name);
         }
     };
-    MySerialization<Student> MyStudentSerialization = new MySerialization<Student>() {
+    MySerialization<Student> MY_STUDENT_SERIALIZATION = new MySerialization<Student>() {
         @Override
         public void writeToFile(Student object, DataOutputStream file) throws IOException {
             file.writeInt(object.getGroupId());
@@ -80,7 +81,7 @@ interface MySerialization<Type> {
             Date date = new Date(file.readLong());
             Boolean hasDormitory = file.readBoolean();
             Double averageScore = file.readDouble();
-            return new Student(groupId,name,homeTown,date,hasDormitory,averageScore);
+            return new Student(groupId, name, homeTown, date, hasDormitory, averageScore);
         }
     };
 }
