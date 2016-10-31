@@ -10,5 +10,6 @@ import java.io.IOException;
 
 public interface Serialization<V> {
     V read(RandomAccessFile file) throws IOException;
+    
     void write(RandomAccessFile file, V object) throws IOException;
 }

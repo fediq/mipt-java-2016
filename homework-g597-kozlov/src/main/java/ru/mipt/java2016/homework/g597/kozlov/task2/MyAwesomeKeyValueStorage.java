@@ -71,7 +71,7 @@ public class MyAwesomeKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public V read(K key) {
         return map.get(key);
-    };
+    }
 
     @Override
     public boolean exists(K key) {
@@ -81,13 +81,13 @@ public class MyAwesomeKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public void write(K key, V value) {
         map.put(key, value);
-    };
+    }
 
     @Override
     public void delete(K key) {
         map.remove(key);
-    };
-
+    }
+    
     @Override
     public Iterator<K> readKeys() {
         return map.keySet().iterator();
