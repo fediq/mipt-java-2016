@@ -9,7 +9,7 @@ import java.io.IOException;
  */
 interface Serializator<Class> {
 
-    void serializeToStream(Class value, DataOutputStream outStream)  throws IOException;
-    Class deserializeFromStream(DataInputStream inputStream) throws IOException;
+    void serializeToStream (Class value, DataOutputStream outStream);
+    Class deserializeFromStream (DataInputStream inputStream);
 
 }

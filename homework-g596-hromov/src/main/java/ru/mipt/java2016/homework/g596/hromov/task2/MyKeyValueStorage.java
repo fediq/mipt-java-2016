@@ -62,63 +62,71 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     public boolean exists(K key) {
         if (!isClosed) {
             return dataBase.containsKey(key);
-        } else
+        } else {
             throw new IllegalStateException("File already closed");
+        }
     }
 
     @Override
     public V read(K key) {
         if (!isClosed) {
             return dataBase.get(key);
-        } else
+        } else {
             throw new IllegalStateException("File already closed");
+        }
     }
 
     @Override
     public void write(K key, V value) {
         if (!isClosed) {
             dataBase.put(key, value);
-        } else
+        } else {
             throw new IllegalStateException("File already closed");
+        }
     }
 
     @Override
     public void delete(K key) {
         if (!isClosed) {
             dataBase.remove(key);
-        } else
+        } else {
             throw new IllegalStateException("File already closed");
+        }
     }
 
     @Override
     public Iterator<K> readKeys() {
         if (!isClosed) {
             return dataBase.keySet().iterator();
-        } else
+        } else {
             throw new IllegalStateException("File already closed");
+        }
     }
 
     @Override
     public int size() {
         if (!isClosed) {
             return dataBase.size();
-        } else
+        } else {
             throw new IllegalStateException("File already closed");
+        }
     }
 
     @Override
     public void close() {
-        if (!isClosed) try {
-            DataOutputStream outputFile = new DataOutputStream(new FileOutputStream(dataBasePath));
-            outputFile.writeInt(dataBase.size());
-            for (Map.Entry<K, V> entry : dataBase.entrySet()) {
-                keySerializer.serializeToStream(entry.getKey(), outputFile);
-                valueSerializer.serializeToStream(entry.getValue(), outputFile);
+        if (!isClosed) {
+            try {
+                DataOutputStream outputFile = new DataOutputStream(new FileOutputStream(dataBasePath));
+                outputFile.writeInt(dataBase.size());
+                for (Map.Entry<K, V> entry : dataBase.entrySet()) {
+                    keySerializer.serializeToStream(entry.getKey(), outputFile);
+                    valueSerializer.serializeToStream(entry.getValue(), outputFile);
+                }
+                outputFile.close();
+                isClosed = true;
+            } catch (IOException e) {
+                throw new IllegalStateException("Can't write to file");
             }
-            outputFile.close();
-            isClosed = true;
-        } catch (IOException e) {
-            throw new IllegalStateException("Can't write to file");
         }
     }
 }
