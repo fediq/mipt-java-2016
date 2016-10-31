@@ -11,10 +11,10 @@ import java.io.IOException;
  * @since 31.10.16.
  */
 public class MySerializationBool implements MySerialization<Boolean> {
-    private static final MySerializationBool serialization = new MySerializationBool();
+    private static final MySerializationBool SERIALIZATION = new MySerializationBool();
 
     public static MySerializationBool getSerialization() {
-        return serialization;
+        return SERIALIZATION;
     }
 
     @Override

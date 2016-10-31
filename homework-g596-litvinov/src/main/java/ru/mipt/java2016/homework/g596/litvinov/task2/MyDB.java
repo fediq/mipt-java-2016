@@ -19,8 +19,10 @@ public class MyDB<K, V> implements KeyValueStorage<K, V>, AutoCloseable {
     private Map<K, V> map = new HashMap<>();
     private MySerialization<K> keySerialiator;
     private MySerialization<V> valueSerializator;
-    private String fileName, checksum;
-    private File file, checksumFile;
+    private String fileName;
+    private String checksum;
+    private File file;
+    private File checksumFile;
 
 
     public MyDB(String name, String path, MySerialization<K> keySerialiator,

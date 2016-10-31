@@ -12,10 +12,10 @@ import java.io.IOException;
  */
 public class MySerializationFloat implements MySerialization<Float> {
 
-    private static final MySerializationFloat serialization = new MySerializationFloat();
+    private static final MySerializationFloat SERIALIZATION = new MySerializationFloat();
 
     public static MySerializationFloat getSerialization() {
-        return serialization;
+        return SERIALIZATION;
     }
 
     @Override

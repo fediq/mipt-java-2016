@@ -12,10 +12,10 @@ import java.io.IOException;
  */
 public class MySerializationInteger implements MySerialization<Integer> {
 
-    private static final MySerializationInteger serialization = new MySerializationInteger();
+    private static final MySerializationInteger SERIALIZATION = new MySerializationInteger();
 
     public static MySerializationInteger getSerialization() {
-        return serialization;
+        return SERIALIZATION;
     }
 
     @Override

@@ -12,10 +12,10 @@ import java.util.Date;
  * @since 31.10.16.
  */
 public class MySerializationDate implements MySerialization<Date> {
-    private static final MySerializationDate serialization = new MySerializationDate();
+    private static final MySerializationDate SERIALIZATION = new MySerializationDate();
 
     public static MySerializationDate getSerialization() {
-        return serialization;
+        return SERIALIZATION;
     }
 
     @Override
