@@ -10,7 +10,7 @@ public class IntegerSerializer implements SerializerInterface<Integer> {
 
     @Override
     public int sizeOfSerialize(Integer object) {
-        return 4;
+        return Integer.SIZE / 8;
     }
 
     @Override

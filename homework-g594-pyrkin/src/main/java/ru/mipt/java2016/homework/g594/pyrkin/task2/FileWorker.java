@@ -1,62 +1,59 @@
 package ru.mipt.java2016.homework.g594.pyrkin.task2;
 
-import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
 import java.nio.file.NotDirectoryException;
-import java.util.Vector;
 
 /**
  * FileWorker
  * Created by randan on 10/30/16.
  */
-public class FileWorker {
+class FileWorker {
 
-    private final File directory;
     private final File file;
 
-    public FileWorker(String directoryPath, String fileName) throws IOException {
-        this.directory = new File(directoryPath);
-        if(!this.directory.exists())
+    private RandomAccessFile randomAccessFile;
+
+    FileWorker(String directoryPath, String fileName) throws IOException {
+        File directory = new File(directoryPath);
+        if (!directory.exists()) {
             throw new NotDirectoryException("directory not found");
+        }
         this.file = new File(directoryPath, fileName);
         this.file.createNewFile();
+        this.randomAccessFile = new RandomAccessFile(this.file, "r");
     }
 
-    public ByteBuffer read (int bytesToRead) throws IOException {
+    ByteBuffer read(int bytesToRead) throws IOException {
         ByteBuffer resultBuffer = ByteBuffer.allocate(bytesToRead);
-        RandomAccessFile file = new RandomAccessFile(this.file, "r");
 
-        while(bytesToRead != 0){
+        while (bytesToRead != 0) {
             --bytesToRead;
-            resultBuffer.put(file.readByte());
+            resultBuffer.put(this.randomAccessFile.readByte());
         }
-        file.close();
+
+        resultBuffer.rewind();
         return resultBuffer;
     }
 
-    public int read () throws IOException {
-        RandomAccessFile file = new RandomAccessFile(this.file, "r");
-        return file.readInt();
+    int read() throws IOException {
+        return this.randomAccessFile.readInt();
     }
 
-    public void write (ByteBuffer buffer) throws IOException {
-        RandomAccessFile file = new RandomAccessFile(this.file, "w");
-        while(true) {
-            try {
-                file.write(buffer.get());
-            }catch (BufferUnderflowException e){
-                break;
-            }
-        }
+    void write(ByteBuffer buffer) throws IOException {
+        this.randomAccessFile.write(buffer.array());
     }
 
-    public void write (int size) throws IOException {
-        RandomAccessFile file = new RandomAccessFile(this.file, "w");
-        file.write(size);
+    void write(int size) throws IOException {
+        this.randomAccessFile.writeInt(size);
+    }
+
+    void clear() throws IOException {
+        this.randomAccessFile.close();
+        this.file.delete();
+        this.file.createNewFile();
+        this.randomAccessFile = new RandomAccessFile(this.file, "rw");
     }
 }

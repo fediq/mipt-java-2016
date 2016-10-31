@@ -16,7 +16,7 @@ public class StringSerializer implements SerializerInterface<String> {
     @Override
     public ByteBuffer serialize(String object) {
         ByteBuffer resultBuffer = ByteBuffer.allocate(this.sizeOfSerialize(object));
-        for(char symbol : object.toCharArray()){
+        for (char symbol : object.toCharArray()) {
             resultBuffer.putChar(symbol);
         }
         resultBuffer.putChar('\0');
@@ -27,7 +27,7 @@ public class StringSerializer implements SerializerInterface<String> {
     public String deserialize(ByteBuffer inputBuffer) {
         StringBuilder resultString = new StringBuilder();
         char symbol;
-        while ((symbol =  inputBuffer.getChar()) != '\0'){
+        while ((symbol = inputBuffer.getChar()) != '\0') {
             resultString.append(symbol);
         }
         return resultString.toString();

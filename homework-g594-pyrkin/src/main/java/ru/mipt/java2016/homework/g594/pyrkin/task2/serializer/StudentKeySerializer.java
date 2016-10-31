@@ -12,29 +12,31 @@ public class StudentKeySerializer implements SerializerInterface<StudentKey> {
 
     @Override
     public int sizeOfSerialize(StudentKey object) {
-        return 4 + 2 * (object.getName().length() + 1);
+        return Integer.SIZE / 8 + 2 * (object.getName().length() + 1);
     }
 
     @Override
     public ByteBuffer serialize(StudentKey object) {
         ByteBuffer resultBuffer = ByteBuffer.allocate(this.sizeOfSerialize(object));
+
         resultBuffer.putInt(object.getGroupId());
-        for(char symbol : object.getName().toCharArray()){
-            resultBuffer.putChar(symbol);
-        }
-        resultBuffer.putChar('\0');
+
+        StringSerializer stringSerializer = new StringSerializer();
+        resultBuffer.put(stringSerializer.serialize(object.getName()).array());
+
         return resultBuffer;
     }
 
     @Override
     public StudentKey deserialize(ByteBuffer inputBuffer) {
         int groupId;
-        StringBuilder name = new StringBuilder();
+        String name;
+
         groupId = inputBuffer.getInt();
-        char symbol;
-        while ((symbol = inputBuffer.getChar()) != '\0'){
-            name.append(symbol);
-        }
-        return new StudentKey(groupId, name.toString());
+
+        StringSerializer stringSerializer = new StringSerializer();
+        name = stringSerializer.deserialize(inputBuffer);
+
+        return new StudentKey(groupId, name);
     }
 }

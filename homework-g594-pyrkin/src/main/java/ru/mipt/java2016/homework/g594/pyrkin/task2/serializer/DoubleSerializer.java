@@ -10,7 +10,7 @@ public class DoubleSerializer implements SerializerInterface<Double> {
 
     @Override
     public int sizeOfSerialize(Double object) {
-        return 8;
+        return Double.SIZE / 8;
     }
 
     @Override
