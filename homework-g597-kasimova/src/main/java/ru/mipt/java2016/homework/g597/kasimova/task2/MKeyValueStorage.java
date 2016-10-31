@@ -23,25 +23,28 @@ public class MKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     public MKeyValueStorage(String path,
                             MSerialization<K> keySerializer,
-                            MSerialization<V> valueSerializer) {
+                            MSerialization<V> valueSerializer) throws IOException {
         this.keySerializer = keySerializer;
         this.valueSerializer = valueSerializer;
         File directory = new File(path);
         if (!directory.exists() || !directory.isDirectory()) {
             throw new RuntimeException("Error: Invalid directory name.");
         }
-        filePath = path + "/database.txt";
+        filePath = path + File.separator + "database.txt";
         File database = new File(directory, "database.txt");
-        try {
-            DataInputStream fileReading = new DataInputStream(new FileInputStream(database));
-            int fileSize = fileReading.readInt();
-            for (int i = 0; i < fileSize; ++i) {
-                map.put(keySerializer.deserializeFromStream(fileReading),
-                        valueSerializer.deserializeFromStream((fileReading)));
+        if (database.exists()) {
+            try (DataInputStream fileReading = new DataInputStream(new FileInputStream(database))) {
+                int fileSize = fileReading.readInt();
+                for (int i = 0; i < fileSize; ++i) {
+                    map.put(keySerializer.deserializeFromStream(fileReading),
+                            valueSerializer.deserializeFromStream((fileReading)));
+                }
+                fileReading.close();
+            } catch (IOException exc) {
+                System.out.println(exc.getMessage());
             }
-            fileReading.close();
-        } catch (IOException exc) {
-            System.out.println(exc.getMessage());
+        } else {
+            database.createNewFile();
         }
     }
 
