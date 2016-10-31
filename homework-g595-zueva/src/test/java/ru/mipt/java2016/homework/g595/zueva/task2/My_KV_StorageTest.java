@@ -5,6 +5,8 @@ import ru.mipt.java2016.homework.tests.task2.AbstractSingleFileStorageTest;
 import ru.mipt.java2016.homework.tests.task2.Student;
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
 
+import java.io.IOException;
+
 
 public class My_KV_StorageTest extends AbstractSingleFileStorageTest {
 
@@ -14,7 +16,7 @@ public class My_KV_StorageTest extends AbstractSingleFileStorageTest {
         try {
             answer1 = new MyKVStorage(path, new Specified_serializers.SerialiserInt(),
                     new Specified_serializers.SerializerDouble());
-        } catch (Exception exception) {
+        } catch (IOException exception) {
             System.out.println(exception.getMessage());
         }
         return answer1;
@@ -26,7 +28,7 @@ public class My_KV_StorageTest extends AbstractSingleFileStorageTest {
         try {
             answer2 = new MyKVStorage(path, new Specified_serializers.SerializerStudentKey(),
                     new Specified_serializers.SerializerStudent());
-        } catch (Exception exception) {
+        } catch (IOException exception) {
             System.out.println(exception.getMessage());
         }
         return answer2;
@@ -40,7 +42,7 @@ public class My_KV_StorageTest extends AbstractSingleFileStorageTest {
         try {
             answer3 = new MyKVStorage(path, new Specified_serializers.SerializerString(),
                     new Specified_serializers.SerializerString());
-        } catch (Exception exception) {
+        } catch (IOException exception) {
             System.out.println(exception.getMessage());
         }
         return answer3;
