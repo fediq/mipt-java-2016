@@ -28,7 +28,7 @@ public class MyKVStorage<K, V> implements KeyValueStorage<K, V> {
 
     public MyKVStorage(String newFileName,
                        Serializer newKeySerialisation,
-                       Serializer newValueSerialisation) throws Exception {
+                       Serializer newValueSerialisation) throws IOException {
         keySerializer = newKeySerialisation;
         valueSerializer = newValueSerialisation;
         FileName = newFileName + "/note.txt";
@@ -47,7 +47,7 @@ public class MyKVStorage<K, V> implements KeyValueStorage<K, V> {
                 out.writeInt(0b0);
 
             } catch (Exception e) {
-                throw new RuntimeException("Cannot write to file");
+                throw new IllegalStateException("Cannot write to file");
             }
         }
         /* Существует ли наша валидирующая строка в файле && проверка, возможно ли читать из файла*/
@@ -63,7 +63,7 @@ public class MyKVStorage<K, V> implements KeyValueStorage<K, V> {
                 CurrentStorage.put(keyToInsert, valueToInsert);
             }
         } catch (Exception exception) {
-            throw new RuntimeException("Cannot read from file");
+            throw new IllegalStateException("Cannot read from file");
         }
     }
     @Override
