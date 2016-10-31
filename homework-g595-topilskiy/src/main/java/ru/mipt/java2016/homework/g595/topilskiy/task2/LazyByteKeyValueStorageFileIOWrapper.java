@@ -56,7 +56,7 @@ class LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> {
      */
     File getStorageDataFile () {
         return new File(storageInfo.getPathToStorageDirectory() +
-                        File.pathSeparator +
+                        File.separator +
                         STORAGE_FILENAME);
     }
 
@@ -76,9 +76,7 @@ class LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> {
     }
 
     HashMap<KeyType, ValueType> read() throws IOException {
-        File storageDataFile = new File(storageInfo.getPathToStorageDirectory() +
-                                        File.pathSeparator +
-                                        STORAGE_FILENAME);
+        File storageDataFile = getStorageDataFile();
         HashMap<KeyType, ValueType> hashMapBuffer = new HashMap<>();
 
         boolean storageDataFileCreated = storageDataFile.createNewFile();

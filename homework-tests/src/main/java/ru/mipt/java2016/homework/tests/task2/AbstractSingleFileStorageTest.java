@@ -123,7 +123,7 @@ public abstract class AbstractSingleFileStorageTest {
             });
             doInTempDirectory(path2 -> {
                 File from = new File(path1);
-                String path2ext = path2 + File.pathSeparator + "trololo/";
+                String path2ext = path2 + File.separator + "trololo/";
                 File to = new File(path2ext);
                 FileUtils.copyDirectory(from, to);
                 doWithPojo(path2ext, storage -> {

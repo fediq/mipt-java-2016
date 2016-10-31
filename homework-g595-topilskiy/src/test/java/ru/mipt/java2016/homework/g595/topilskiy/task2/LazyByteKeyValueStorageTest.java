@@ -21,7 +21,7 @@ public class LazyByteKeyValueStorageTest extends AbstractSingleFileStorageTest {
     @Test
     public void testSerializers() {
         final DoubleSerializer doubleSerializer  = new DoubleSerializer();
-        final double DOUBLE_CONST = 7.8;
+        final double DOUBLE_CONST = 981237518.234123;
         final double EPSILON = 0.001;
         double deserializeSerializedDoubleConst = doubleSerializer.deserialize(
                                                   doubleSerializer.serialize(DOUBLE_CONST));
