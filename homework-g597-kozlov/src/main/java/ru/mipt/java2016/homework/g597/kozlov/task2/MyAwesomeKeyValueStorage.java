@@ -3,6 +3,13 @@ package ru.mipt.java2016.homework.g597.kozlov.task2;
 /**
  * Created by Alexander on 31.10.2016.
  * Обычное такое хитрое хранилище, you know.
+ *
+ * Структура базы-файла такая:
+ * Первые байты говорят о количестве ключей
+ * Остальные байты - сами пары <Key, Value>
+ *
+ * Реализация - через сериализаторы: для каждого случая (в виде класса) тупо записываем в файл данные
+ * через нужные фукнции.
  */
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
@@ -16,11 +23,6 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
-
-
-// структура базы-файла такая:
-// первые байты говорят о количестве ключей
-// остальные байты - сами пары <Key, Value>
 
 public class MyAwesomeKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private static final String DB_NAME = "storage.db";  // название базы
@@ -87,7 +89,7 @@ public class MyAwesomeKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     public void delete(K key) {
         map.remove(key);
     }
-    
+
     @Override
     public Iterator<K> readKeys() {
         return map.keySet().iterator();
