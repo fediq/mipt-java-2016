@@ -10,11 +10,11 @@ import java.io.IOException;
 public class StringSerialization extends Serialization<String> {
     @Override
     public String read(DataInputStream input) throws IOException {
-        return input.readUTF();
+        return readString(input);
     }
 
     @Override
     public void write(DataOutputStream output, String x) throws IOException {
-        output.writeUTF(x);
+        writeString(output, x);
     }
 }

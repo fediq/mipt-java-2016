@@ -12,12 +12,12 @@ import java.io.IOException;
 public class StudentKeySerialization extends Serialization<StudentKey> {
     @Override
     public StudentKey read(DataInputStream input) throws IOException {
-        return new StudentKey(input.readInt(), input.readUTF());
+        return new StudentKey(input.readInt(), readString(input));
     }
 
     @Override
     public void write(DataOutputStream output, StudentKey x) throws IOException {
         output.writeInt(x.getGroupId());
-        output.writeUTF(x.getName());
+        writeString(output, x.getName());
     }
 }

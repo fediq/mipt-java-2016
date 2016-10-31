@@ -13,15 +13,15 @@ import java.util.Date;
 public class StudentSerialization extends Serialization<Student> {
     @Override
     public Student read(DataInputStream input) throws IOException {
-        return new Student(input.readInt(), input.readUTF(), input.readUTF(), new Date(input.readLong()),
+        return new Student(input.readInt(), readString(input), readString(input), new Date(input.readLong()),
                 input.readBoolean(), input.readDouble());
     }
 
     @Override
     public void write(DataOutputStream output, Student x) throws IOException {
         output.writeInt(x.getGroupId());
-        output.writeUTF(x.getName());
-        output.writeUTF(x.getHometown());
+        writeString(output, x.getName());
+        writeString(output, x.getHometown());
         output.writeLong(x.getBirthDate().getTime());
         output.writeBoolean(x.isHasDormitory());
         output.writeDouble(x.getAverageScore());

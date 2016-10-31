@@ -12,15 +12,16 @@ import java.util.Map;
  */
 public class KlabertancStorage<K, V> implements KeyValueStorage<K, V> {
 
+    private static final String TRY_PROC = "tryproc";
+    private static final String KEYS_SECRET_STRING = "Таємна рядок для ключів.";
+    private static final String VALUES_SECRET_STRING = "Таємна рядок для значень.";
+
     private HashMap<K, V> storage = new HashMap<>();
     private Serialization<K> keySerialization;
     private Serialization<V> valueSerialization;
     private File keys;
     private File values;
     private File procAccess;
-    private static final String TRY_PROC = "tryproc";
-    private static final int KEYS_SECRET_HASH = 47;
-    private static final int VALUES_SECRET_HASH = 31;
     private boolean flag;
 
     public KlabertancStorage(String path, Serialization<K> k, Serialization<V> v) {
@@ -43,16 +44,16 @@ public class KlabertancStorage<K, V> implements KeyValueStorage<K, V> {
         values = new File(dir, "values.db");
 
         if (keys.exists() && values.exists()) {
-            get();
+            getStorageFromDisk();
         }
     }
 
-    private void get() {
+    private void getStorageFromDisk() {
         try (DataInputStream keysInput = new DataInputStream(new FileInputStream(keys));
              DataInputStream valuesInput = new DataInputStream(new FileInputStream(values))) {
-            Integer keysValid = keysInput.readInt();
-            Integer valuesValid = valuesInput.readInt();
-            if ((KEYS_SECRET_HASH != keysValid) || (VALUES_SECRET_HASH != valuesValid)) {
+            String keysValid = Serialization.readString(keysInput);
+            String valuesValid = Serialization.readString(valuesInput);
+            if (!keysValid.equals(KEYS_SECRET_STRING) || !valuesValid.equals(VALUES_SECRET_STRING)) {
                 throw new RuntimeException("It's not a KlabertancStorage!");
             }
             
@@ -68,11 +69,11 @@ public class KlabertancStorage<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
-    private void put() throws IOException {
+    private void putStorageOnDisk() throws IOException {
         try (DataOutputStream keysOutput = new DataOutputStream(new FileOutputStream(keys));
              DataOutputStream valuesOutput = new DataOutputStream(new FileOutputStream(values))) {
-            keysOutput.writeInt(KEYS_SECRET_HASH);
-            valuesOutput.writeInt(VALUES_SECRET_HASH);
+            Serialization.writeString(keysOutput, KEYS_SECRET_STRING);
+            Serialization.writeString(valuesOutput, VALUES_SECRET_STRING);
             keysOutput.writeInt(storage.size());
             for (Map.Entry<K, V> entry : storage.entrySet()) {
                 keySerialization.write(keysOutput, entry.getKey());
@@ -85,7 +86,7 @@ public class KlabertancStorage<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
-    private void closed() {
+    private void isStorageClosed() {
         if (flag) {
             throw new RuntimeException("You're a bad guy. Don't try to access the closed storage!");
         }
@@ -93,44 +94,44 @@ public class KlabertancStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public V read(K key) {
-        closed();
+        isStorageClosed();
         return storage.get(key);
     }
 
     @Override
     public boolean exists(K key) {
-        closed();
+        isStorageClosed();
         return storage.containsKey(key);
     }
 
     @Override
     public void write(K key, V value) {
-        closed();
+        isStorageClosed();
         storage.put(key, value);
     }
 
     @Override
     public void delete(K key) {
-        closed();
+        isStorageClosed();
         storage.remove(key);
     }
 
     @Override
     public Iterator<K> readKeys() {
-        closed();
+        isStorageClosed();
         return storage.keySet().iterator();
     }
 
     @Override
     public int size() {
-        closed();
+        isStorageClosed();
         return storage.size();
     }
 
     @Override
     public void close() throws IOException {
-        closed();
-        put();
+        isStorageClosed();
+        putStorageOnDisk();
         procAccess.delete();
         flag = true;
     }
