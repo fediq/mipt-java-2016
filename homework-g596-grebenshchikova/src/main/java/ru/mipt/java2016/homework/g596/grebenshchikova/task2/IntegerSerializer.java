@@ -17,10 +17,10 @@ public class IntegerSerializer implements MySerializerInterface<Integer> {
         return file.readInt();
     }
 
-    private static final IntegerSerializer Example = new IntegerSerializer();
+    private static final IntegerSerializer EXAMPLE = new IntegerSerializer();
 
     public static IntegerSerializer getExample() {
-        return Example;
+        return EXAMPLE;
     }
 
     private IntegerSerializer() {

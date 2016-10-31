@@ -36,10 +36,10 @@ public class StudentSerializer implements MySerializerInterface<Student> {
         return new Student(groupId, name, hometown, birthDate, hasDormitory, averageScore);
     }
 
-    private static final StudentSerializer Example = new StudentSerializer();
+    private static final StudentSerializer EXAMPLE = new StudentSerializer();
 
     public static StudentSerializer getExample() {
-        return Example;
+        return EXAMPLE;
     }
 
     private StudentSerializer() {

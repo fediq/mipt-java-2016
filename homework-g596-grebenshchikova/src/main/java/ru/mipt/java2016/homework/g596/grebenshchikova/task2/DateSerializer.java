@@ -18,10 +18,10 @@ public class DateSerializer implements MySerializerInterface<Date> {
         return new Date(file.readLong());
     }
 
-    private static final DateSerializer Example = new DateSerializer();
+    private static final DateSerializer EXAMPLE = new DateSerializer();
 
     public static DateSerializer getExample() {
-        return Example;
+        return EXAMPLE;
     }
 
     private DateSerializer() {

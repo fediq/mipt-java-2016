@@ -17,10 +17,10 @@ public class BooleanSerializer implements MySerializerInterface<Boolean> {
         return file.readBoolean();
     }
 
-    private static final BooleanSerializer Example = new BooleanSerializer();
+    private static final BooleanSerializer EXAMPLE = new BooleanSerializer();
 
     public static BooleanSerializer getExample() {
-        return Example;
+        return EXAMPLE;
     }
 
     private BooleanSerializer() {

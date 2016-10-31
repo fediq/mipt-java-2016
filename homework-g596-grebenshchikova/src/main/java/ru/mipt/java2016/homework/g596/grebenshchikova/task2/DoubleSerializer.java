@@ -17,10 +17,10 @@ public class DoubleSerializer implements MySerializerInterface<Double> {
         return file.readDouble();
     }
 
-    private static final DoubleSerializer Example = new DoubleSerializer();
+    private static final DoubleSerializer EXAMPLE = new DoubleSerializer();
 
     public static DoubleSerializer getExample() {
-        return Example;
+        return EXAMPLE;
     }
 
     private DoubleSerializer() {

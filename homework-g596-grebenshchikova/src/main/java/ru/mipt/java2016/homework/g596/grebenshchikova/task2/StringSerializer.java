@@ -24,10 +24,10 @@ public class StringSerializer implements MySerializerInterface<String> {
         return new String(bytes);
     }
 
-    private static final StringSerializer Example = new StringSerializer();
+    private static final StringSerializer EXAMPLE = new StringSerializer();
 
     public static StringSerializer getExample() {
-        return Example;
+        return EXAMPLE;
     }
 
     private StringSerializer() {

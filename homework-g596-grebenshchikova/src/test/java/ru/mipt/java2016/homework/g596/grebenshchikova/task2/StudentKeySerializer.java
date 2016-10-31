@@ -25,10 +25,10 @@ public class StudentKeySerializer implements MySerializerInterface<StudentKey> {
         return new StudentKey(groupID, name);
     }
 
-    private static final StudentKeySerializer Example = new StudentKeySerializer();
+    private static final StudentKeySerializer EXAMPLE = new StudentKeySerializer();
 
     public static StudentKeySerializer getExample() {
-        return Example;
+        return EXAMPLE;
     }
 
     private StudentKeySerializer() {
