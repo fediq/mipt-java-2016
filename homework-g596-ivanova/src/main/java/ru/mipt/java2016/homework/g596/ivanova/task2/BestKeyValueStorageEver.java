@@ -8,6 +8,7 @@ import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Iterator;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 
@@ -42,32 +43,29 @@ public final class BestKeyValueStorageEver<K, V> implements KeyValueStorage<K, V
      * This map will be initialised at the beginning of work, when file is opened.
      * After the process of working with storage, elements from map will be written to the file.
      */
-    private HashMap<K, V> map;
+    private Map<K, V> map;
 
     /**
      * @throws IOException - if I/O troubles occure.
+     * @throws RuntimeException - if file containes two equal keys or key without value.
      */
-    private void getDataFromFile() throws IOException {
+    private void getDataFromFile() throws IOException, RuntimeException {
         file.seek(0); // go to the start
         map.clear();
 
         K key;
         V value;
-        while (true) {
-            try {
-                key = keySerialisation.read(file);
-            } catch (EOFException e) {
-                break;
-            }
+        while (file.getFilePointer() < file.length()) {
+            key = keySerialisation.read(file);
 
             if (map.containsKey(key)) {
-                throw new IOException("File containes two equal keys.");
+                throw new RuntimeException("File containes two equal keys.");
             }
 
             try {
                 value = valueSerialisation.read(file);
             } catch (EOFException e) {
-                throw new IOException("No value for some key.");
+                throw new RuntimeException("No value for some key.");
             }
 
             map.put(key, value);
@@ -137,7 +135,7 @@ public final class BestKeyValueStorageEver<K, V> implements KeyValueStorage<K, V
         file.setLength(0); // clear file
         file.seek(0); // go to the beginning
 
-        for (HashMap.Entry<K, V> element : map.entrySet()) {
+        for (Map.Entry<K, V> element : map.entrySet()) {
             keySerialisation.write(file, element.getKey());
             valueSerialisation.write(file, element.getValue());
         }
