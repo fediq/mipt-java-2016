@@ -18,17 +18,17 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-public class SStudentKey extends Serializator<StudentKey>{
+public class SStudentKey extends Serializator<StudentKey> {
     @Override
-    public StudentKey read(DataInputStream input ) throws IOException {
-            int groupId = input.readInt();
-            String name = input.readUTF();
-            return new StudentKey( groupId, name );
+    public StudentKey read(DataInputStream input) throws IOException {
+        int groupId = input.readInt();
+        String name = input.readUTF();
+        return new StudentKey(groupId, name);
     }
 
     @Override
     public void write(DataOutputStream output, StudentKey value) throws IOException {
-            output.writeInt( value.getGroupId());
-            output.writeUTF( value.getName());
+        output.writeInt(value.getGroupId());
+        output.writeUTF(value.getName());
     }
 }

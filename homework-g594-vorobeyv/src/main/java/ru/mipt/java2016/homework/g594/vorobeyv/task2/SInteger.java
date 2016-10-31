@@ -9,20 +9,19 @@ import java.io.IOException;
  */
 public class SInteger extends Serializator<Integer> {
     @Override
-    public Integer read(DataInputStream input ) throws IOException {
-        try{
+    public Integer read(DataInputStream input) throws IOException {
+        try {
             return input.readInt();
-        }
-        catch( IOException ex ){
+        } catch (IOException ex) {
             throw ex;
         }
     }
+
     @Override
     public void write(DataOutputStream output, Integer value) throws IOException {
-        try{
-             output.writeInt( value );
-        }
-        catch( IOException ex ){
+        try {
+            output.writeInt(value);
+        } catch (IOException ex) {
             throw ex;
         }
     }

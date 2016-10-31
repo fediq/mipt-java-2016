@@ -9,21 +9,19 @@ import java.io.IOException;
  */
 public class SString extends Serializator<String> {
     @Override
-    public String read(DataInputStream input ) throws IOException {
-        try{
+    public String read(DataInputStream input) throws IOException {
+        try {
             return input.readUTF();
-        }
-        catch( IOException ex ){
+        } catch (IOException ex) {
             throw ex;
         }
     }
 
     @Override
     public void write(DataOutputStream output, String value) throws IOException {
-        try{
-            output.writeUTF( value );
-        }
-        catch( IOException ex ){
+        try {
+            output.writeUTF(value);
+        } catch (IOException ex) {
             throw ex;
         }
     }

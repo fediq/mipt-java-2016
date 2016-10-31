@@ -12,18 +12,18 @@ import java.util.Date;
  */
 public class SStudentVal extends Serializator<Student> {
     @Override
-    public Student read(DataInputStream input ) throws IOException {
-            // Сделал отдельно считывание в groupId, name , а не сразу в конструктор , чтобы
-            // было удобнее проверять правильность считывания
-            int groupId = input.readInt();
-            String name = input.readUTF();
-            String hometown = input.readUTF();
-            long date = input.readLong();
-            Date birthDate = new Date( date );
-            boolean hasDormitory = input.readBoolean();
-            double averageScore = input.readDouble();
-            return  new Student( groupId,  name,  hometown,
-                     birthDate,  hasDormitory,  averageScore);
+    public Student read(DataInputStream input) throws IOException {
+        // Сделал отдельно считывание в groupId, name , а не сразу в конструктор , чтобы
+        // было удобнее проверять правильность считывания
+        int groupId = input.readInt();
+        String name = input.readUTF();
+        String hometown = input.readUTF();
+        long date = input.readLong();
+        Date birthDate = new Date(date);
+        boolean hasDormitory = input.readBoolean();
+        double averageScore = input.readDouble();
+        return new Student(groupId, name, hometown,
+                birthDate, hasDormitory, averageScore);
     }
 
     @Override
