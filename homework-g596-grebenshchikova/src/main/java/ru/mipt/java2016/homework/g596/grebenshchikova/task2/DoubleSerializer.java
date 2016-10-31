@@ -1,5 +1,7 @@
 package ru.mipt.java2016.homework.g596.grebenshchikova.task2;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
@@ -8,13 +10,13 @@ import java.io.RandomAccessFile;
  */
 public class DoubleSerializer implements MySerializerInterface<Double> {
     @Override
-    public void write(RandomAccessFile file, Double object) throws IOException {
-        file.writeDouble(object);
+    public void write(DataOutput output, Double object) throws IOException {
+        output.writeDouble(object);
     }
 
     @Override
-    public Double read(RandomAccessFile file) throws IOException {
-        return file.readDouble();
+    public Double read(DataInput input) throws IOException {
+        return input.readDouble();
     }
 
     private static final DoubleSerializer EXAMPLE = new DoubleSerializer();

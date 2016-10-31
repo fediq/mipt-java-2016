@@ -15,7 +15,7 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
  * Created by liza on 30.10.16.
  */
 public class MyKeyValueStorage<Key, Value> implements KeyValueStorage<Key, Value> {
-    private HashMap<Key, Value> elementsDB;
+    private Map<Key, Value> elementsDB = new HashMap<>();
     private final MySerializerInterface<Key> keySerializer;
     private final MySerializerInterface<Value> valueSerializer;
     private RandomAccessFile file;

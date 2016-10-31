@@ -1,5 +1,7 @@
 package ru.mipt.java2016.homework.g596.grebenshchikova.task2;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
@@ -8,13 +10,13 @@ import java.io.RandomAccessFile;
  */
 public class IntegerSerializer implements MySerializerInterface<Integer> {
     @Override
-    public void write(RandomAccessFile file, Integer object) throws IOException {
-        file.writeInt(object);
+    public void write(DataOutput output, Integer object) throws IOException {
+        output.writeInt(object);
     }
 
     @Override
-    public Integer read(RandomAccessFile file) throws IOException {
-        return file.readInt();
+    public Integer read(DataInput input) throws IOException {
+        return input.readInt();
     }
 
     private static final IntegerSerializer EXAMPLE = new IntegerSerializer();

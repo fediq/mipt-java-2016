@@ -1,5 +1,7 @@
 package ru.mipt.java2016.homework.g596.grebenshchikova.task2;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Date;
@@ -16,23 +18,23 @@ public class StudentSerializer implements MySerializerInterface<Student> {
     private final IntegerSerializer integerSerializer = IntegerSerializer.getExample();
 
     @Override
-    public void write(RandomAccessFile file, Student object) throws IOException {
-        integerSerializer.write(file, object.getGroupId());
-        stringSerializer.write(file, object.getName());
-        stringSerializer.write(file, object.getHometown());
-        dateSerializer.write(file, object.getBirthDate());
-        booleanSerializer.write(file, object.isHasDormitory());
-        doubleSerializer.write(file, object.getAverageScore());
+    public void write(DataOutput output, Student object) throws IOException {
+        integerSerializer.write(output, object.getGroupId());
+        stringSerializer.write(output, object.getName());
+        stringSerializer.write(output, object.getHometown());
+        dateSerializer.write(output, object.getBirthDate());
+        booleanSerializer.write(output, object.isHasDormitory());
+        doubleSerializer.write(output, object.getAverageScore());
     }
 
     @Override
-    public Student read(RandomAccessFile file) throws IOException {
-        int groupId = integerSerializer.read(file);
-        String name = stringSerializer.read(file);
-        String hometown = stringSerializer.read(file);
-        Date birthDate = dateSerializer.read(file);
-        boolean hasDormitory = booleanSerializer.read(file);
-        double averageScore = doubleSerializer.read(file);
+    public Student read(DataInput input) throws IOException {
+        int groupId = integerSerializer.read(input);
+        String name = stringSerializer.read(input);
+        String hometown = stringSerializer.read(input);
+        Date birthDate = dateSerializer.read(input);
+        boolean hasDormitory = booleanSerializer.read(input);
+        double averageScore = doubleSerializer.read(input);
         return new Student(groupId, name, hometown, birthDate, hasDormitory, averageScore);
     }
 

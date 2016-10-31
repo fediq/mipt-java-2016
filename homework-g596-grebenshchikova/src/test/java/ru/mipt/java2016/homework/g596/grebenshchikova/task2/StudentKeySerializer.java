@@ -1,5 +1,7 @@
 package ru.mipt.java2016.homework.g596.grebenshchikova.task2;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
@@ -12,16 +14,15 @@ public class StudentKeySerializer implements MySerializerInterface<StudentKey> {
     private final StringSerializer stringSerializer = StringSerializer.getExample();
 
     @Override
-    public void write(RandomAccessFile file, StudentKey object) throws IOException {
-        integerSerializer.write(file, object.getGroupId());
-        ;
-        stringSerializer.write(file, object.getName());
+    public void write(DataOutput output, StudentKey object) throws IOException {
+        integerSerializer.write(output, object.getGroupId());
+        stringSerializer.write(output, object.getName());
     }
 
     @Override
-    public StudentKey read(RandomAccessFile file) throws IOException {
-        int groupID = integerSerializer.read(file);
-        String name = stringSerializer.read(file);
+    public StudentKey read(DataInput input) throws IOException {
+        int groupID = integerSerializer.read(input);
+        String name = stringSerializer.read(input);
         return new StudentKey(groupID, name);
     }
 

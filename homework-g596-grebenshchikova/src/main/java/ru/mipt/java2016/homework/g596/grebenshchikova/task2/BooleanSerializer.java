@@ -1,5 +1,7 @@
 package ru.mipt.java2016.homework.g596.grebenshchikova.task2;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
@@ -8,13 +10,13 @@ import java.io.RandomAccessFile;
  */
 public class BooleanSerializer implements MySerializerInterface<Boolean> {
     @Override
-    public void write(RandomAccessFile file, Boolean object) throws IOException {
-        file.writeBoolean(object);
+    public void write(DataOutput output, Boolean object) throws IOException {
+        output.writeBoolean(object);
     }
 
     @Override
-    public Boolean read(RandomAccessFile file) throws IOException {
-        return file.readBoolean();
+    public Boolean read(DataInput input) throws IOException {
+        return input.readBoolean();
     }
 
     private static final BooleanSerializer EXAMPLE = new BooleanSerializer();
