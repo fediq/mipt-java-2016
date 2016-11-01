@@ -46,6 +46,15 @@
 1. [Java vs C++; Работа с исключениям и I/O](https://yadi.sk/d/meyw4Nv1wUrzc)  
 [Примеры кода](https://github.com/DanAnastasyev/mipt-java-2016/tree/master/seminars/src/ru/mipt/java2016/seminars/seminar1)  
 [Доп семинар](https://github.com/DanAnastasyev/mipt-java-2016/blob/master/seminars/src/ru/mipt/java2016/seminars/Seminar%201.5%20Notes.md)
+Доп. литература: [Head First Изучаем Java](http://www.ozon.ru/context/detail/id/7821666/)
+
+2. [Паттерны проектирования](https://yadi.sk/d/Clpl7NfhwuYod)  
+Доп. литература: [Head First Паттерны проектирования](https://www.ozon.ru/context/detail/id/20216992/)
+
+3. [Строки и обёртки над примитивными типами в Java. Антипаттерны](https://yadi.sk/d/nhdo_dFsx7JnZ)  
+Доп. литература: [Чистый код](http://www.ozon.ru/context/detail/id/21916535/)
+
+4. [Повторное использование кода в Java. Многопоточность в Java](https://yadi.sk/d/nitO2OJuxcMAw)
 
 #### Рекомендуемая литература
 
