@@ -29,8 +29,8 @@ public class KeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
     private boolean isClosed;
 
     public KeyValueStorageImpl(SerializationStrategy<K> keySerializationStrategy,
-               SerializationStrategy<V> valueSerializaionStrategy,
-               String path) throws IOException {
+                               SerializationStrategy<V> valueSerializaionStrategy,
+                               String path) throws IOException {
 
         this.keySerializationStrategy = keySerializationStrategy;
         this.valueSerializationStrategy = valueSerializaionStrategy;
@@ -49,7 +49,7 @@ public class KeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
 
         if (storage.exists()) {
             uploadDataFromStorage();
-        }else if(!storage.createNewFile()){
+        } else if (!storage.createNewFile()) {
             throw new RuntimeException("Can't create a storage!");
         }
 
