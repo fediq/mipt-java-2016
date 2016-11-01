@@ -16,25 +16,27 @@ import  ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 
 public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private RandomAccessFile file;
+    private File flag;
     private Serializer<K> keySerializer;
     private Serializer<V> valueSerializer;
     private Map<K, V> dataBase;
 
     public MyKeyValueStorage(String path, Serializer<K> keySerializerArg,
                              Serializer<V> valueSerializerArg) throws IOException {
+        flag = Paths.get(path, "flag").toFile();
+        if (!flag.createNewFile()) {
+            throw new RuntimeException("File has already been opened");
+        }
+
         keySerializer = keySerializerArg;
         valueSerializer = valueSerializerArg;
         dataBase = new HashMap<>();
         File pathToFile = Paths.get(path, "storage.db").toFile();
 
-        if (!pathToFile.exists()) {
-            try {
-                if (!pathToFile.createNewFile()) {
-                    throw new RuntimeException("File has already created");
-                }
-            } catch (IOException e) {
-                throw new RuntimeException("Cannot create the file");
-            }
+        try {
+            pathToFile.createNewFile();
+        } catch (IOException e) {
+            throw new RuntimeException("Cannot create the file");
         }
         try {
             file = new RandomAccessFile(pathToFile, "rw");
@@ -46,71 +48,53 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public V read(K key) {
-        if (ifOpen()) {
-            return dataBase.get(key);
-        } else {
-            throw new RuntimeException("Already closed");
-        }
+        checkState();
+        return dataBase.get(key);
     }
 
     @Override
     public boolean exists(K key) {
-        if (ifOpen()) {
-            return dataBase.containsKey(key);
-        } else {
-            throw new RuntimeException("Already closed");
-        }
+        checkState();
+        return dataBase.containsKey(key);
     }
 
     @Override
     public void write(K key, V value) {
-        if (ifOpen()) {
-            dataBase.put(key, value);
-        } else {
-            throw new RuntimeException("Already closed");
-        }
+        checkState();
+        dataBase.put(key, value);
     }
 
     @Override
     public void delete(K key) {
-        if (ifOpen()) {
-            dataBase.remove(key);
-        } else {
-            throw new RuntimeException("Already closed");
-        }
+        checkState();
+        dataBase.remove(key);
     }
 
     @Override
     public Iterator<K> readKeys() {
-        if (ifOpen()) {
-            return dataBase.keySet().iterator();
-        } else {
-            throw new RuntimeException("Already closed");
-        }
+        checkState();
+        return dataBase.keySet().iterator();
     }
 
     @Override
     public int size() {
-        if (ifOpen()) {
-            return dataBase.size();
-        } else {
-            throw new RuntimeException("Already closed");
-        }
+        checkState();
+        return dataBase.size();
     }
 
     @Override
     public void close() throws IOException {
-        if (ifOpen()) {
-            saveChanges();
-            dataBase = null;
-            file.close();
-        } else {
-            throw new RuntimeException("Already closed");
-        }
+        checkState();
+        saveChanges();
+        dataBase = null;
+        file.close();
+        flag.delete();
     }
 
-    private boolean ifOpen() {
-        return (dataBase != null);
+    private void checkState() {
+        if (dataBase == null) {
+            throw new RuntimeException("Already closed");
+        }
     }
 
     private Map<K, V> readMapFromFile() throws IOException {
