@@ -41,7 +41,7 @@ public class MyAwesomeKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             throw new IOException("Path is wrong.");
         }
 
-        ifopen = new File(path + "/" + DB_NAME + ".check");
+        ifopen = new File(path + File.separator + DB_NAME + ".check");
         if (!ifopen.createNewFile()) {
             throw new IOException("DB is already open.");
         }
@@ -50,10 +50,12 @@ public class MyAwesomeKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         keySerialization = keyS;
         valueSerialization = valueS;
 
-        File database = new File(path + "/" + DB_NAME);
+        File database = new File(path + File.separator + DB_NAME);
 
-        if (!database.createNewFile()) {
-            fileDB = new RandomAccessFile(database, "rw");
+        boolean isDBcreated = database.createNewFile();
+        fileDB = new RandomAccessFile(database, "rw");
+
+        if (!isDBcreated) {
             fileDB.seek(0);
 
             SerializationInteger intS = new SerializationInteger();
@@ -64,8 +66,6 @@ public class MyAwesomeKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 V value = valueSerialization.read(fileDB);
                 map.put(key, value);
             }
-        } else {
-            fileDB = new RandomAccessFile(database, "rw");
         }
     }
 
