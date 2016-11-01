@@ -91,11 +91,11 @@ public class MKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         return map.size();
     }
 
+
     @Override
     public void close() {
         if (opened) {
-            try {
-                DataOutputStream fileWriting = new DataOutputStream(new FileOutputStream(filePath));
+            try (DataOutputStream fileWriting = new DataOutputStream(new FileOutputStream(filePath))) {
                 fileWriting.writeInt(size());
                 for (HashMap.Entry<K, V> entry : map.entrySet()) {
                     keySerializer.serializeToStream(entry.getKey(), fileWriting);
