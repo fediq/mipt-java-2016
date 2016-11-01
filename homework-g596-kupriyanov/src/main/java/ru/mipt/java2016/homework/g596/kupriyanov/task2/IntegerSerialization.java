@@ -8,7 +8,7 @@ import java.io.IOException;
  * Created by Artem Kupriyanov on 29/10/2016.
  */
 
-public class IntegerSerializationAndDeserialization implements SerializationAndDeserializationStrategy<Integer> {
+public class IntegerSerialization implements SerializationStrategy<Integer> {
     @Override
     public void write(Integer value, DataOutputStream out) throws IOException {
         out.writeInt(value);

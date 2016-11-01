@@ -5,6 +5,7 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import java.io.*;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 import java.io.IOException;
 
@@ -15,16 +16,16 @@ import java.io.IOException;
 public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private File file;
     private Boolean dbOpen;
-    private SerializationAndDeserializationStrategy<K> sADForKey;
-    private SerializationAndDeserializationStrategy<V> sADForValue;
-    private HashMap<K, V> db = new HashMap<K, V>();
+    private SerializationStrategy<K> keySerializer;
+    private SerializationStrategy<V> valueSerializer;
+    private Map<K, V> db = new HashMap<K, V>();
 
-    public MyKeyValueStorage(String path, SerializationAndDeserializationStrategy<K> sadForKey,
-                     SerializationAndDeserializationStrategy<V> sadForValue) throws IOException {
+    public MyKeyValueStorage(String path, SerializationStrategy<K> keySer,
+                     SerializationStrategy<V> valueSer) throws IOException {
         File checkDir = new File(path);
-        sADForKey = sadForKey;
-        sADForValue = sadForValue;
-        file = new File(path + "/db.txt");
+        keySerializer = keySer;
+        valueSerializer = valueSer;
+        file = new File(path + file.separator + "db.txt");
         if (!checkDir.exists()) {
             throw new RuntimeException("FILE DOESN'T EXIST");
         }
@@ -37,7 +38,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             DataInputStream in = new DataInputStream(fin);
             int cntElems = in.readInt();
             for (int i = 0; i < cntElems; ++i) {
-                db.put(sADForKey.read(in), sADForValue.read(in));
+                db.put(keySerializer.read(in), valueSerializer.read(in));
             }
             in.close();
         } catch (IOException e) {
@@ -45,66 +46,58 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
+    private void checkOpened() {
+        if (!dbOpen) {
+            throw new RuntimeException("CLOSED");
+        }
+    }
+
     @Override
     public V read(K key) {
-        if (!dbOpen) {
-            throw new RuntimeException("COULDN'T READ");
-        }
+        checkOpened();
         return db.get(key);
     }
 
     @Override
     public boolean exists(K key) {
-        if (!dbOpen) {
-            throw new RuntimeException("COULDN'T GET EXISTS");
-        }
+        checkOpened();
         return db.containsKey(key);
     }
 
     @Override
     public void write(K key, V value) {
-        if (!dbOpen) {
-            throw new RuntimeException("COULDN'T WRITE");
-        }
+        checkOpened();
         db.put(key, value);
     }
 
     @Override
     public void delete(K key) {
-        if (!dbOpen) {
-            throw new RuntimeException("COULDN'T DELETE");
-        }
+        checkOpened();
         db.remove(key);
     }
 
     @Override
     public Iterator<K> readKeys() {
-        if (!dbOpen) {
-            throw new RuntimeException("COULDN'T GET ITERATOR");
-        }
+        checkOpened();
         return db.keySet().iterator();
     }
 
     @Override
     public int size() {
-        if (!dbOpen) {
-            throw new RuntimeException("COLDN'T GET SIZE");
-        }
+        checkOpened();
         return db.size();
     }
 
     @Override
     public void close() throws IOException {
-        if (!dbOpen) {
-            throw new RuntimeException("COULDN'T CLOSE DB");
-        }
+        checkOpened();
         try {
             FileOutputStream fout = new FileOutputStream(file);
             DataOutputStream out = new DataOutputStream(fout);
             out.writeInt(db.size());
             for (HashMap.Entry<K, V> pair: db.entrySet()) {
-                sADForKey.write(pair.getKey(), out);
-                sADForValue.write(pair.getValue(), out);
+                keySerializer.write(pair.getKey(), out);
+                valueSerializer.write(pair.getValue(), out);
             }
             dbOpen = false;
             out.close();

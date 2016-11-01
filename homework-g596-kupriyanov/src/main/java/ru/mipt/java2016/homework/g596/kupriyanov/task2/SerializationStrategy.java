@@ -8,7 +8,7 @@ import java.io.IOException;
  * Created by Artem Kupriyanov on 29/10/2016.
  */
 
-public interface SerializationAndDeserializationStrategy<V> {
+public interface SerializationStrategy<V> {
     void write(V value, DataOutputStream out) throws IOException;
 
     V read(DataInputStream in) throws IOException;

@@ -7,7 +7,7 @@ import java.io.IOException;
 /**
  * Created by Artem Kupriyanov on 29/10/2016.
  */
-public class BooleanSerializationAndDeserialization implements SerializationAndDeserializationStrategy<Boolean> {
+public class BooleanSerialization implements SerializationStrategy<Boolean> {
 
     @Override
     public void write(Boolean value, DataOutputStream out) throws IOException {

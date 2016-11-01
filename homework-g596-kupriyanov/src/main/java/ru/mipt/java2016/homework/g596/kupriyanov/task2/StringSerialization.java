@@ -7,7 +7,7 @@ import java.io.IOException;
 /**
  * Created by Artem Kupriyanov on 29/10/2016.
  */
-public class StringSerializationAndDeserialization implements SerializationAndDeserializationStrategy<String> {
+public class StringSerialization implements SerializationStrategy<String> {
 
     @Override
     public void write(String value, DataOutputStream out) throws IOException {

@@ -11,7 +11,7 @@ import java.util.Date;
  * Created by Artem Kupriyanov on 29/10/2016.
  */
 
-public class StudentSerializationAndDeserialization implements SerializationAndDeserializationStrategy<Student> {
+public class StudentSerialization implements SerializationStrategy<Student> {
 
     @Override
     public void write(Student value, DataOutputStream out) throws IOException {

@@ -7,7 +7,7 @@ import java.io.IOException;
 /**
  * Created by Artem Kupriyanov on 29/10/2016.
  */
-public class DoubleSerializationAndDeserialization implements SerializationAndDeserializationStrategy<Double> {
+public class DoubleSerialization implements SerializationStrategy<Double> {
 
     @Override
     public void write(Double value, DataOutputStream out) throws IOException {

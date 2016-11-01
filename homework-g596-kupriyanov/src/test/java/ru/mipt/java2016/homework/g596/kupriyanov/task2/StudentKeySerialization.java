@@ -9,7 +9,7 @@ import java.io.IOException;
 /**
  * Created by Artem Kupriyanov on 29/10/2016.
  */
-public class StudentKeySerializationAndDeserialization implements SerializationAndDeserializationStrategy<StudentKey> {
+public class StudentKeySerialization implements SerializationStrategy<StudentKey> {
 
     @Override
     public void write(StudentKey value, DataOutputStream out) throws IOException {

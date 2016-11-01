@@ -19,8 +19,8 @@ public class MyKeyValueStorageTest extends AbstractSingleFileStorageTest {
         MyKeyValueStorage<String, String> KVSForTest;
         try {
             KVSForTest = new MyKeyValueStorage(path,
-                    new StringSerializationAndDeserialization(),
-                    new StringSerializationAndDeserialization());
+                    new StringSerialization(),
+                    new StringSerialization());
         }catch (IOException exp) {
             return null;
         }
@@ -32,8 +32,8 @@ public class MyKeyValueStorageTest extends AbstractSingleFileStorageTest {
         MyKeyValueStorage<Integer, Double> KVSForTest;
         try {
             KVSForTest = new MyKeyValueStorage(path,
-                    new IntegerSerializationAndDeserialization(),
-                    new DoubleSerializationAndDeserialization());
+                    new IntegerSerialization(),
+                    new DoubleSerialization());
         } catch (IOException exp) {
             return null;
         }
@@ -45,8 +45,8 @@ public class MyKeyValueStorageTest extends AbstractSingleFileStorageTest {
         MyKeyValueStorage<StudentKey, Student> KVSForTest;
         try {
             KVSForTest = new MyKeyValueStorage(path,
-                    new StudentKeySerializationAndDeserialization(),
-                    new StudentSerializationAndDeserialization());
+                    new StudentKeySerialization(),
+                    new StudentSerialization());
         } catch (IOException exp) {
             return null;
         }
