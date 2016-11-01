@@ -58,9 +58,9 @@ public class XSStorage<K, V> implements KeyValueStorage<K, V> {
      */
     private String path;
 
-    public XSStorage(String path_, StorageSerialization<K> passedKeySerialization,
+    public XSStorage(String pathPassed, StorageSerialization<K> passedKeySerialization,
                         StorageSerialization<V> passedValueSerialization) throws IOException {
-        path = path_;
+        path = pathPassed;
         if (locker.checkLock(path)) {
             throw new IOException("Storage is locked.");
         }
