@@ -26,7 +26,7 @@ public class MyHashTable<K, V> implements KeyValueStorage<K, V> {
                 SerializationStrategy<K> keySerializer, SerializationStrategy<V> valSerializer)
             throws IOException {
         if (isOpened) {
-            throw new IllegalArgumentException("file has been already opened");
+            throw new IOException("file has been already opened");
         }
         if (pathGiven == null) {
             throw new IllegalArgumentException("No path given");
@@ -35,12 +35,12 @@ public class MyHashTable<K, V> implements KeyValueStorage<K, V> {
             throw new IllegalArgumentException("No name given");
         }
 
-        lock = new File("lock.check");
-        if (lock.exists()){
+        lock = new File(pathGiven + File.separator + "lock.check");
+        if (!lock.createNewFile()) {
             throw new IllegalArgumentException("Already opened in other process");
         }
 
-        String path = pathGiven + "/" + nameGiven + ".db";
+        String path = pathGiven + File.separator + nameGiven + ".db";
         File f = new File(path);
 
         keySerializator = keySerializer;
@@ -85,10 +85,6 @@ public class MyHashTable<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public void close() throws IOException {
-        if (!isOpened) {
-            throw new IOException("file is not opened");
-        }
-
         file.setLength(0);
         for (K key : hashMap.keySet()) {
             keySerializator.write(file, key);
@@ -98,7 +94,6 @@ public class MyHashTable<K, V> implements KeyValueStorage<K, V> {
         file.close();
         lock.delete();
         isOpened = false;
-
     }
 
     private void readData() throws IOException {
