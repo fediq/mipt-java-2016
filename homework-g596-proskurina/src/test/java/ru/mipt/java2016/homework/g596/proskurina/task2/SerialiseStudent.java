@@ -41,4 +41,9 @@ public class SerialiseStudent implements SerialiserInterface<Student> {
         double averageScore = Double.parseDouble(tokens[5]);
         return new Student(groupId, name, hometown, birthDate, hasDormitory, averageScore);
     }
+
+    @Override
+    public String getType() {
+        return "Student";
+    }
 }

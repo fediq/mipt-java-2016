@@ -15,4 +15,9 @@ public class SerialiseString implements SerialiserInterface<String> {
     public String deserialise(String inString) {
         return inString;
     }
+
+    @Override
+    public String getType() {
+        return "String";
+    }
 }

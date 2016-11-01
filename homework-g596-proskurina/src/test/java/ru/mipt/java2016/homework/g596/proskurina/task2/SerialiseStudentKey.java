@@ -26,4 +26,10 @@ public class SerialiseStudentKey implements SerialiserInterface<StudentKey> {
         String name = tokens[1];
         return new StudentKey(groupId, name);
     }
+
+    @Override
+    public String getType() {
+        return "StudentKey";
+    }
+
 }
