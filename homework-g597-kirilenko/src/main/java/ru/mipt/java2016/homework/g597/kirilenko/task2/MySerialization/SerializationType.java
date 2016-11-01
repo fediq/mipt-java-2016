@@ -1,8 +1,5 @@
 package ru.mipt.java2016.homework.g597.kirilenko.task2.MySerialization;
 
-import ru.mipt.java2016.homework.tests.task2.Student;
-import ru.mipt.java2016.homework.tests.task2.StudentKey;
-
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Date;
@@ -167,102 +164,102 @@ public class SerializationType {
         }
     }
 
-    public static class SerializationStudent implements MySerialization<Student> {
-        private SerializationType.SerializationInteger serializeInt =
-                SerializationType.SerializationInteger.getSerialization();
-        private SerializationType.SerializationString serializeStr =
-                SerializationType.SerializationString.getSerialization();
-        private SerializationType.SerializationDate serializeDate =
-                SerializationType.SerializationDate.getSerialization();
-        private SerializationType.SerializationBoolean serializeBool =
-                SerializationType.SerializationBoolean.getSerialization();
-        private SerializationType.SerializationDouble serializeDouble =
-                SerializationType.SerializationDouble.getSerialization();
-        private static SerializationStudent serialize = new SerializationStudent();
-
-        private SerializationStudent() { }
-
-        public static SerializationStudent getSerialization() {
-            return serialize;
-        }
-
-        private boolean isCorrect(Student value) {
-            Integer group = value.getGroupId();
-            String name = value.getName();
-            Date birth = value.getBirthDate();
-            int year = birth.getYear();
-            Double score = value.getAverageScore();
-            if (group <= 0 || name == "" || name == " " || score < 0 || year < -1900 || year > 116) {
-                return false;
-            }
-            return true;
-        }
-
-        @Override
-        public void write(RandomAccessFile file, Student value) throws IOException {
-            serializeInt.write(file, value.getGroupId());
-            serializeStr.write(file, value.getName());
-            serializeStr.write(file, value.getHometown());
-            serializeDate.write(file, value.getBirthDate());
-            serializeBool.write(file, value.isHasDormitory());
-            serializeDouble.write(file, value.getAverageScore());
-        }
-
-        @Override
-        public Student read(RandomAccessFile file) throws IOException {
-            Integer group = serializeInt.read(file);
-            String name = serializeStr.read(file);
-            String home = serializeStr.read(file);
-            Date birth = serializeDate.read(file);
-            Boolean dormitory = serializeBool.read(file);
-            Double score = serializeDouble.read(file);
-            Student value = new Student(group, name, home, birth, dormitory, score);
-            if (isCorrect(value)) {
-                return value;
-            } else {
-                throw new IOException("Incorrect value");
-            }
-        }
-    }
-
-    public static class SerializationStudentKey implements MySerialization<StudentKey> {
-        private SerializationType.SerializationInteger serializeInt =
-                SerializationType.SerializationInteger.getSerialization();
-        private SerializationType.SerializationString serializeStr =
-                SerializationType.SerializationString.getSerialization();
-        private static SerializationStudentKey serialize = new SerializationStudentKey();
-
-        private SerializationStudentKey() { }
-
-        public static SerializationStudentKey getSerialization() {
-            return serialize;
-        }
-
-        private boolean isCorrect(StudentKey value) {
-            Integer group = value.getGroupId();
-            String name = value.getName();
-            if (group <= 0 || name == "" || name == " ") {
-                return false;
-            }
-            return true;
-        }
-
-        @Override
-        public void write(RandomAccessFile file, StudentKey value) throws IOException {
-            serializeInt.write(file, value.getGroupId());
-            serializeStr.write(file, value.getName());
-        }
-
-        @Override
-        public StudentKey read(RandomAccessFile file) throws IOException {
-            Integer group = serializeInt.read(file);
-            String name = serializeStr.read(file);
-            StudentKey value = new StudentKey(group, name);
-            if (isCorrect(value)) {
-                return value;
-            } else {
-                throw new IOException("Incorrect value");
-            }
-        }
-    }
+//    public static class SerializationStudent implements MySerialization<Student> {
+//        private SerializationType.SerializationInteger serializeInt =
+//                SerializationType.SerializationInteger.getSerialization();
+//        private SerializationType.SerializationString serializeStr =
+//                SerializationType.SerializationString.getSerialization();
+//        private SerializationType.SerializationDate serializeDate =
+//                SerializationType.SerializationDate.getSerialization();
+//        private SerializationType.SerializationBoolean serializeBool =
+//                SerializationType.SerializationBoolean.getSerialization();
+//        private SerializationType.SerializationDouble serializeDouble =
+//                SerializationType.SerializationDouble.getSerialization();
+//        private static SerializationStudent serialize = new SerializationStudent();
+//
+//        private SerializationStudent() { }
+//
+//        public static SerializationStudent getSerialization() {
+//            return serialize;
+//        }
+//
+//        private boolean isCorrect(Student value) {
+//            Integer group = value.getGroupId();
+//            String name = value.getName();
+//            Date birth = value.getBirthDate();
+//            int year = birth.getYear();
+//            Double score = value.getAverageScore();
+//            if (group <= 0 || name == "" || name == " " || score < 0 || year < -1900 || year > 116) {
+//                return false;
+//            }
+//            return true;
+//        }
+//
+//        @Override
+//        public void write(RandomAccessFile file, Student value) throws IOException {
+//            serializeInt.write(file, value.getGroupId());
+//            serializeStr.write(file, value.getName());
+//            serializeStr.write(file, value.getHometown());
+//            serializeDate.write(file, value.getBirthDate());
+//            serializeBool.write(file, value.isHasDormitory());
+//            serializeDouble.write(file, value.getAverageScore());
+//        }
+//
+//        @Override
+//        public Student read(RandomAccessFile file) throws IOException {
+//            Integer group = serializeInt.read(file);
+//            String name = serializeStr.read(file);
+//            String home = serializeStr.read(file);
+//            Date birth = serializeDate.read(file);
+//            Boolean dormitory = serializeBool.read(file);
+//            Double score = serializeDouble.read(file);
+//            Student value = new Student(group, name, home, birth, dormitory, score);
+//            if (isCorrect(value)) {
+//                return value;
+//            } else {
+//                throw new IOException("Incorrect value");
+//            }
+//        }
+//    }
+//
+//    public static class SerializationStudentKey implements MySerialization<StudentKey> {
+//        private SerializationType.SerializationInteger serializeInt =
+//                SerializationType.SerializationInteger.getSerialization();
+//        private SerializationType.SerializationString serializeStr =
+//                SerializationType.SerializationString.getSerialization();
+//        private static SerializationStudentKey serialize = new SerializationStudentKey();
+//
+//        private SerializationStudentKey() { }
+//
+//        public static SerializationStudentKey getSerialization() {
+//            return serialize;
+//        }
+//
+//        private boolean isCorrect(StudentKey value) {
+//            Integer group = value.getGroupId();
+//            String name = value.getName();
+//            if (group <= 0 || name == "" || name == " ") {
+//                return false;
+//            }
+//            return true;
+//        }
+//
+//        @Override
+//        public void write(RandomAccessFile file, StudentKey value) throws IOException {
+//            serializeInt.write(file, value.getGroupId());
+//            serializeStr.write(file, value.getName());
+//        }
+//
+//        @Override
+//        public StudentKey read(RandomAccessFile file) throws IOException {
+//            Integer group = serializeInt.read(file);
+//            String name = serializeStr.read(file);
+//            StudentKey value = new StudentKey(group, name);
+//            if (isCorrect(value)) {
+//                return value;
+//            } else {
+//                throw new IOException("Incorrect value");
+//            }
+//        }
+//    }
 }

@@ -22,10 +22,14 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
     private HashMap<K, V> storage = new HashMap<K, V>();
     private MySerialization<K> keySerialization;
     private MySerialization<V> valueSerialization;
+    private File f = new File("checkProcesses");
 
     public MyStorage(String path, MySerialization<K> serializeK, MySerialization<V> serializeV) throws IOException {
+        if (!f.createNewFile()) {
+            throw new IOException("Error");
+        }
         close = false;
-        fullPath = path + "/" + "storage";
+        fullPath = path + File.separator + "storage";
         keySerialization = serializeK;
         valueSerialization = serializeV;
         File file = new File(fullPath);
@@ -47,64 +51,55 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
+    private void isClose() {
+        if (close) {
+            throw new IllegalStateException("Error");
+        }
+    }
+
     @Override
     public V read(K key) {
-        if (!close) {
-            return storage.get(key);
-        } else {
-            throw new RuntimeException("Error");
-        }
+        isClose();
+        return storage.get(key);
     }
 
     @Override
     public boolean exists(K key) {
-        if (!close) {
-            return storage.containsKey(key);
-        } else {
-            throw new RuntimeException("Error");
-        }
+        isClose();
+        return storage.containsKey(key);
     }
 
     @Override
     public void write(K key, V value) {
-        if (!close) {
-            storage.put(key, value);
-        } else {
-            throw new RuntimeException("Error");
-        }
+        isClose();
+        storage.put(key, value);
     }
 
     @Override
     public void delete(Object key) {
-        if (!close) {
-            storage.remove(key);
-        } else {
-            throw new RuntimeException("Error");
-        }
+        isClose();
+        storage.remove(key);
     }
 
     @Override
     public Iterator readKeys() {
-        if (!close) {
-            return storage.keySet().iterator();
-        } else {
-            throw new RuntimeException("Error");
-        }
+        isClose();
+        return storage.keySet().iterator();
     }
 
     @Override
     public int size() {
-        if (!close) {
-            return storage.size();
-        } else {
-            throw new RuntimeException("Error");
-        }
+        isClose();
+        return storage.size();
     }
 
     @Override
     public void close() throws IOException {
+        isClose();
         close = true;
+        f.delete();
         rwFile.seek(0);
+        rwFile.setLength(0);
         SerializationType.SerializationInteger.getSerialization().write(rwFile, storage.size());
         Set<K> keys = storage.keySet();
         for (K k : keys) {

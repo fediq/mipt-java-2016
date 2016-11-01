@@ -7,6 +7,7 @@ import ru.mipt.java2016.homework.tests.task2.Student;
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
 
 import java.io.IOException;
+import java.util.Date;
 
 /**
  * Created by Natak on 27.10.2016.
@@ -35,10 +36,11 @@ public class MyStorageTests extends AbstractSingleFileStorageTest {
     @Override
     protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) {
         try {
-            return new MyStorage(path, SerializationType.SerializationStudentKey.getSerialization(),
-                    SerializationType.SerializationStudent.getSerialization());
+            return new MyStorage(path, SerializationStudentKey.getSerialization(),
+                    SerializationStudent.getSerialization());
         } catch (IOException e) {
             throw new RuntimeException("Error");
         }
     }
 }
+
