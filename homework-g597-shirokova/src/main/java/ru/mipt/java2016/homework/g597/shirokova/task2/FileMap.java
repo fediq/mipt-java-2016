@@ -10,40 +10,38 @@ class FileMap<K, V> {
     private final String pathToStorage;
     private final SerializationStrategy<K> keySerializer;
     private final SerializationStrategy<V> valueSerializer;
-    private boolean isClosed;
+    private boolean isClosed = false;
+    private File lock;
 
     FileMap(String currentPath, SerializationStrategy<K> serializerForKeys,
             SerializationStrategy<V> serializerForValues) throws IOException {
         keySerializer = serializerForKeys;
         valueSerializer = serializerForValues;
         File fileForStorage = new File(currentPath);
-        pathToStorage = currentPath + "/storage.db";
-        if (fileForStorage.exists()) {
-            fileForStorage = new File(pathToStorage);
-        } else {
+        if (!fileForStorage.exists()) {
             throw new IOException("Can't create file");
         }
-        if (fileForStorage.exists()) {
-            try {
-                DataInputStream fileInput = new DataInputStream(
-                        new BufferedInputStream(new FileInputStream(fileForStorage)));
-                while (fileInput.available() != 0) {
-                    storageMap.put(
-                            keySerializer.deserialize(fileInput),
-                            valueSerializer.deserialize(fileInput)
-                    );
-                }
-                isClosed = false;
-                fileInput.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+        pathToStorage = currentPath + "/storage.db";
+        fileForStorage = new File(pathToStorage);
+        if (!fileForStorage.exists()) {
+            if (!fileForStorage.createNewFile()) {
+                throw new IOException("Can't create file");
             }
         }
+        checkAccess(currentPath);
+        readMapFromFile(fileForStorage);
     }
 
     private void checkClosed() {
         if (isClosed) {
             throw new RuntimeException("File is closed");
+        }
+    }
+
+    private void checkAccess(String path) throws IOException {
+        lock = new File(path + "/lock.db");
+        if (!lock.createNewFile()) {
+            throw new IllegalStateException("Storage is already used");
         }
     }
 
@@ -79,14 +77,38 @@ class FileMap<K, V> {
 
     void close() throws IOException {
         checkClosed();
-        DataOutputStream outputFile = new DataOutputStream(
-                new BufferedOutputStream(new FileOutputStream(pathToStorage)));
-        for (HashMap.Entry<K, V> entry : storageMap.entrySet()) {
-            keySerializer.serialize(outputFile, entry.getKey());
-            valueSerializer.serialize(outputFile, entry.getValue());
-        }
+        writeMapToFile();
         isClosed = true;
         storageMap.clear();
-        outputFile.close();
+        lock.delete();
     }
+
+    private void readMapFromFile(File fileForStorage) throws IOException {
+        try (FileInputStream fileStream = new FileInputStream(fileForStorage)) {
+            try (BufferedInputStream bufferedStream = new BufferedInputStream(fileStream)) {
+                try (DataInputStream fileInput = new DataInputStream(bufferedStream)) {
+                    while (fileInput.available() != 0) {
+                        storageMap.put(
+                                keySerializer.deserialize(fileInput),
+                                valueSerializer.deserialize(fileInput)
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    private void writeMapToFile() throws IOException {
+        try (FileOutputStream outputStream = new FileOutputStream((pathToStorage))) {
+            try (BufferedOutputStream bufferedStream = new BufferedOutputStream(outputStream)) {
+                try (DataOutputStream outputFile = new DataOutputStream(bufferedStream)) {
+                    for (HashMap.Entry<K, V> entry : storageMap.entrySet()) {
+                        keySerializer.serialize(outputFile, entry.getKey());
+                        valueSerializer.serialize(outputFile, entry.getValue());
+                    }
+                }
+            }
+        }
+    }
+
 }
