@@ -43,10 +43,10 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 keyIdentification.write(output, entry.getKey());
                 valueIdentification.write(output, entry.getValue());
             }
-            output.close();
-            security.delete();
         } catch (IOException e) {
             throw new RuntimeException("Error write");
+        } finally {
+            security.delete();
         }
     }
 
@@ -58,7 +58,6 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 V value = valueIdentification.read(input);
                 hashmap.put(key, value);
             }
-            input.close();
         } catch (IOException e) {
             throw new RuntimeException("Error read");
         }
