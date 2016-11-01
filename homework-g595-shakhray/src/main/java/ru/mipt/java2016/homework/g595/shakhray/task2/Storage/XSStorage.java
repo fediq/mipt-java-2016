@@ -5,6 +5,7 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import java.io.*;
 import java.util.*;
 
+import ru.mipt.java2016.homework.g595.shakhray.task2.FileLocking.FileLocker;
 import ru.mipt.java2016.homework.g595.shakhray.task2.Serialization.Classes.IntegerSerialization;
 import ru.mipt.java2016.homework.g595.shakhray.task2.Serialization.Interface.StorageSerialization;
 
@@ -14,10 +15,15 @@ import ru.mipt.java2016.homework.g595.shakhray.task2.Serialization.Interface.Sto
 public class XSStorage<K, V> implements KeyValueStorage<K, V> {
 
     /**
+     * Dealing with concurrency support
+     */
+    private FileLocker locker = FileLocker.getFileLocker();
+
+    /**
      * TRUE is the database is closed.
      * FALSE otherwise.
      */
-    private static Boolean isStorageClosed = false;
+    private Boolean isStorageClosed = false;
 
     /**
      * We will need an integer serialization to write
@@ -47,15 +53,25 @@ public class XSStorage<K, V> implements KeyValueStorage<K, V> {
      */
     private RandomAccessFile file;
 
-    public XSStorage(String path, StorageSerialization<K> passedKeySerialization,
+    /**
+     * Path to the storage
+     */
+    private String path;
+
+    public XSStorage(String path_, StorageSerialization<K> passedKeySerialization,
                         StorageSerialization<V> passedValueSerialization) throws IOException {
+        path = path_;
+        if (locker.checkLock(path)) {
+            throw new IOException("Storage is locked.");
+        }
+        locker.setLock(path);
         keySerialization = passedKeySerialization;
         valueSerialization = passedValueSerialization;
         File directory = new File(path);
         if (!directory.isDirectory()) {
             throw new IOException("Directory not found.");
         }
-        absoluteStoragePath = path + "/" + storageFilename;
+        absoluteStoragePath = path + File.separator + storageFilename;
         File f = new File(absoluteStoragePath);
         if (!f.createNewFile()) {
             file = new RandomAccessFile(f, "rw");
@@ -81,6 +97,8 @@ public class XSStorage<K, V> implements KeyValueStorage<K, V> {
      */
     private void save() throws IOException {
         file.seek(0);
+        // Clearing the contents of file before writing
+        file.setLength(0);
         integerSerialization.write(file, data.size());
         for (K key: data.keySet()) {
             keySerialization.write(file, key);
@@ -136,6 +154,7 @@ public class XSStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public void close() throws IOException {
         checkIfStorageIsClosed();
+        locker.unsetLock(path);
         isStorageClosed = true;
         save();
         file.close();
