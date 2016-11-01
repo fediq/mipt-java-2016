@@ -16,7 +16,7 @@ import java.util.Iterator;
 public class MyHashTable<K, V> implements KeyValueStorage<K, V> {
 
     private RandomAccessFile file;
-    private HashMap<K, V> hashMap;
+    private HashMap<K, V> hashMap = new HashMap<>();
     private SerializationStrategy<K> keySerializator;
     private SerializationStrategy<V> valueSerializator;
     private Boolean isOpened = false;
@@ -26,7 +26,7 @@ public class MyHashTable<K, V> implements KeyValueStorage<K, V> {
                 SerializationStrategy<K> keySerializer, SerializationStrategy<V> valSerializer)
             throws IOException {
         if (isOpened) {
-            throw new IOException("file has been already opened");
+            throw new IllegalArgumentException("file has been already opened");
         }
         if (pathGiven == null) {
             throw new IOException("No path given");
@@ -43,7 +43,6 @@ public class MyHashTable<K, V> implements KeyValueStorage<K, V> {
         String path = pathGiven + "/" + nameGiven + ".db";
         File f = new File(path);
 
-        hashMap = new HashMap<>();
         keySerializator = keySerializer;
         valueSerializator = valSerializer;
 
