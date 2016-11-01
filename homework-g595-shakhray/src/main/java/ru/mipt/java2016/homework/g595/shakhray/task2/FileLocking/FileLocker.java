@@ -1,13 +1,10 @@
 package ru.mipt.java2016.homework.g595.shakhray.task2.FileLocking;
 
-import org.apache.commons.io.FileUtils;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 
 /**
