@@ -30,7 +30,7 @@ public class KeyValueStorageImpl implements KeyValueStorage {
             mapa = new HashMap<StudentKey, Student>();
         }
         if (!serialisator.isGoodFile()) {
-            System.out.println("Lenin is sad");
+            throw new IllegalStateException("Lenin is sad");
         } else {
             serialisator.checkBeforeRead();
             while (true) {

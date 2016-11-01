@@ -36,7 +36,7 @@ abstract class ObjectSerialisator<K, V> {
                 }
                 inputStream.close();
             } catch (IOException e) {
-                System.out.println(e.getMessage());
+                throw new IllegalStateException("Something is bad\n");
             }
 
         } else {
@@ -48,7 +48,7 @@ abstract class ObjectSerialisator<K, V> {
                 openOutputStream = true;
                 outputStream.close();
             } catch (IOException e) {
-                System.out.println(e.getMessage());
+                throw new IllegalStateException("Something is bad\n");
             }
         }
     }
@@ -61,7 +61,7 @@ abstract class ObjectSerialisator<K, V> {
             try {
                 inputStream.close();
             } catch (IOException e) {
-                System.out.println(e.getMessage());
+                throw new IllegalStateException("Something is bad\n");
             }
         }
         if (openOutputStream) {
@@ -72,7 +72,7 @@ abstract class ObjectSerialisator<K, V> {
             inputStream.readLine();
             openInputStream = true;
         } catch (IOException e) {
-            System.out.println(e.getMessage());
+            throw new IllegalStateException("Something is bad\n");
         }
     }
 
@@ -81,7 +81,7 @@ abstract class ObjectSerialisator<K, V> {
             try {
                 inputStream.close();
             } catch (IOException e) {
-                System.out.println(e.getMessage());
+                throw new IllegalStateException("Something is bad\n");
             }
         }
         if (openOutputStream) {
@@ -92,7 +92,7 @@ abstract class ObjectSerialisator<K, V> {
             openOutputStream = true;
             outputStream.print("Lenin is the best. Lenin is my love!\n");
         } catch (IOException e) {
-            System.out.println(e.getMessage());
+            throw new IllegalStateException("Something is bad\n");
         }
     }
 }

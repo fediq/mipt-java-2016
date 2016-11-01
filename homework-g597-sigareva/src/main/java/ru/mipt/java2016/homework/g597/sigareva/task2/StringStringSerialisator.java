@@ -24,7 +24,6 @@ public class StringStringSerialisator extends ObjectSerialisator<String, String>
     @Override
     Pair<String, String> read() throws IOException {
         String input = inputStream.readLine();
-        System.out.println(input);
         if (input == null) {
             throw new IOException("EOF");
         } else {
