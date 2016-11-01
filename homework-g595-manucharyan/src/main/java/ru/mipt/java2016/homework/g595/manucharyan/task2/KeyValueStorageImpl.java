@@ -18,68 +18,68 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
  * @author Vardan Manucharyan
  * @since 30.10.16
  **/
-public class KVS<K, V> implements KeyValueStorage<K, V> {
+public class KeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
 
     private SerializationStrategy<K> keySerializationStrategy;
-    private SerializationStrategy<V> valueSerializaionStrategy;
+    private SerializationStrategy<V> valueSerializationStrategy;
 
     private HashMap<K, V> base = new HashMap<>();
     private File storage;
     private File mutexFile; // для многопоточности
     private boolean isClosed;
 
-    public KVS(SerializationStrategy<K> keySerializationStrategy,
+    public KeyValueStorageImpl(SerializationStrategy<K> keySerializationStrategy,
                SerializationStrategy<V> valueSerializaionStrategy,
                String path) throws IOException {
 
         this.keySerializationStrategy = keySerializationStrategy;
-        this.valueSerializaionStrategy = valueSerializaionStrategy;
+        this.valueSerializationStrategy = valueSerializaionStrategy;
 
         mutexFile = new File(path, "Mutex");
-        if (mutexFile.exists()) {
-            throw new RuntimeException("Storage is already used!");
+        if (!mutexFile.createNewFile()) {
+            throw new RuntimeException("Can't synchronize!");
         }
 
-        File dr = new File(path);
-        if (!dr.isDirectory() || !dr.exists()) {
+        File directory = new File(path);
+        if (!directory.isDirectory()) {
             throw new RuntimeException("wrong path");
         }
 
         storage = new File(path, "storage.db");
 
         if (storage.exists()) {
-            checkStorage();
+            uploadDataFromStorage();
+        }else if(!storage.createNewFile()){
+            throw new RuntimeException("Can't create a storage!");
         }
 
         isClosed = false;
     }
 
-    private void checkStorage() throws IOException {
+    private void uploadDataFromStorage() {
         try (DataInputStream stream = new DataInputStream(new FileInputStream(storage))) {
             int count;
             count = stream.readInt();
 
             for (int i = 0; i < count; i++) {
                 K key = keySerializationStrategy.deserializeFromStream(stream);
-                V val = valueSerializaionStrategy.deserializeFromStream(stream);
+                V val = valueSerializationStrategy.deserializeFromStream(stream);
                 base.put(key, val);
             }
-            stream.close();
         } catch (IOException exception) {
             throw new RuntimeException("Trouble with storage.db");
         }
     }
 
-    private void refreshStorage() {
+    private void downnloadDataToStorage() {
         try (DataOutputStream stream = new DataOutputStream(new FileOutputStream(storage))) {
 
             stream.writeInt(base.size());
 
             for (HashMap.Entry<K, V> pair : base.entrySet()) {
                 keySerializationStrategy.serializeToStream(pair.getKey(), stream);
-                valueSerializaionStrategy.serializeToStream(pair.getValue(), stream);
+                valueSerializationStrategy.serializeToStream(pair.getValue(), stream);
             }
-            stream.close();
         } catch (IOException exception) {
             throw new RuntimeException("Trouble with storage.db");
         }
@@ -155,7 +155,7 @@ public class KVS<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public void close() {
-        refreshStorage();
+        downnloadDataToStorage();
         isClosed = true;
         base.clear();
         mutexFile.delete();
