@@ -12,7 +12,7 @@ public abstract class Serialization<valType> {
 
     public static void writeString(DataOutputStream output, String x) throws IOException {
         output.writeInt(x.length());
-        output.write(x.getBytes(), 0, x.length());
+        output.write(x.getBytes(), 0, x.getBytes().length);
     }
 
     public static String readString(DataInputStream input) throws IOException {
