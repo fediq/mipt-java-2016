@@ -83,12 +83,12 @@ class FileMap<K, V> {
         try (FileInputStream fileStream = new FileInputStream(fileForStorage);
              BufferedInputStream bufferedStream = new BufferedInputStream(fileStream);
              DataInputStream fileInput = new DataInputStream(bufferedStream)) {
-                while (fileInput.available() != 0) {
-                    storageMap.put(
-                            keySerializer.deserialize(fileInput),
-                            valueSerializer.deserialize(fileInput)
-                    );
-                }
+            while (fileInput.available() != 0) {
+                storageMap.put(
+                        keySerializer.deserialize(fileInput),
+                        valueSerializer.deserialize(fileInput)
+                );
+            }
         }
     }
 
@@ -96,10 +96,10 @@ class FileMap<K, V> {
         try (FileOutputStream outputStream = new FileOutputStream((pathToStorage));
              BufferedOutputStream bufferedStream = new BufferedOutputStream(outputStream);
              DataOutputStream outputFile = new DataOutputStream(bufferedStream)) {
-                    for (HashMap.Entry<K, V> entry : storageMap.entrySet()) {
-                        keySerializer.serialize(outputFile, entry.getKey());
-                        valueSerializer.serialize(outputFile, entry.getValue());
-                    }
+            for (HashMap.Entry<K, V> entry : storageMap.entrySet()) {
+                keySerializer.serialize(outputFile, entry.getKey());
+                valueSerializer.serialize(outputFile, entry.getValue());
+            }
         }
     }
 
