@@ -11,7 +11,7 @@ import java.io.IOException;
 public abstract class Serialization<valType> {
 
     public static void writeString(DataOutputStream output, String x) throws IOException {
-        output.writeInt(x.length());
+        output.writeInt(x.getBytes().length);
         output.write(x.getBytes(), 0, x.getBytes().length);
     }
 
