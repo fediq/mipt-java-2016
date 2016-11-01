@@ -15,7 +15,6 @@ public class MyKeyValueStorageTest extends AbstractSingleFileStorageTest {
             return new MyKeyValueStorage(path, StringIdentification.get(), StringIdentification.get());
         }
         catch (IOException e){
-            System.out.println("JOPA!!!");
             return null;
         }
     }
