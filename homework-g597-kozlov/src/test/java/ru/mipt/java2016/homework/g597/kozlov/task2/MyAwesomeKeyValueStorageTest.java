@@ -23,7 +23,7 @@ public class MyAwesomeKeyValueStorageTest extends AbstractSingleFileStorageTest 
             error.printStackTrace();
             return null;
         }
-    };
+    }
 
     @Override
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) {
@@ -35,7 +35,7 @@ public class MyAwesomeKeyValueStorageTest extends AbstractSingleFileStorageTest 
             error.printStackTrace();
             return null;
         }
-    };
+    }
 
     @Override
     protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) {
@@ -47,5 +47,5 @@ public class MyAwesomeKeyValueStorageTest extends AbstractSingleFileStorageTest 
             error.printStackTrace();
             return null;
         }
-    };
+    }
 }
