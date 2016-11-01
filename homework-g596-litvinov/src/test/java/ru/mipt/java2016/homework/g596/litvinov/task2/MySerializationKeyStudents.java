@@ -1,11 +1,8 @@
-package task2;
+package ru.mipt.java2016.homework.g596.litvinov.task2;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import ru.mipt.java2016.homework.g596.litvinov.task2.MySerialization;
-import ru.mipt.java2016.homework.g596.litvinov.task2.MySerializationInteger;
-import ru.mipt.java2016.homework.g596.litvinov.task2.MySerializationString;
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
 
 /**

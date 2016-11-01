@@ -1,11 +1,7 @@
-package task2;
+package ru.mipt.java2016.homework.g596.litvinov.task2;
 
 import java.io.IOException;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
-import ru.mipt.java2016.homework.g596.litvinov.task2.MyDB;
-import ru.mipt.java2016.homework.g596.litvinov.task2.MySerializationDouble;
-import ru.mipt.java2016.homework.g596.litvinov.task2.MySerializationInteger;
-import ru.mipt.java2016.homework.g596.litvinov.task2.MySerializationString;
 import ru.mipt.java2016.homework.tests.task2.AbstractSingleFileStorageTest;
 import ru.mipt.java2016.homework.tests.task2.Student;
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
