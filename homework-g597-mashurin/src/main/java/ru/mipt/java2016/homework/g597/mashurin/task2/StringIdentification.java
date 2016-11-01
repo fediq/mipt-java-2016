@@ -4,7 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-public class StringIdentification extends Identification<String>{
+public class StringIdentification extends Identification<String> {
 
     public static StringIdentification get() {
         return new StringIdentification();

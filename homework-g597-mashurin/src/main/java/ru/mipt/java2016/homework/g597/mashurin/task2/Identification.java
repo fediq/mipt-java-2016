@@ -4,7 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-public abstract class Identification<Value> {
+abstract class Identification<Value> {
     abstract Value read(DataInputStream input) throws IOException;
     abstract void write(DataOutputStream output, Value value) throws IOException;
 }

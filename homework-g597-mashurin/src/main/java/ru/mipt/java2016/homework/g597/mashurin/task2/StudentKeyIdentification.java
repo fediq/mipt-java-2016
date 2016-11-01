@@ -21,7 +21,7 @@ public class StudentKeyIdentification extends Identification<StudentKey> {
     @Override
     public StudentKey read(DataInputStream input) throws IOException {
         int group = IntegerIdentification.get().read(input);
-        String name =StringIdentification.get().read(input);
+        String name = StringIdentification.get().read(input);
         return new StudentKey(group, name);
     }
 }

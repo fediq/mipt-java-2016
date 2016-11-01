@@ -11,11 +11,11 @@ import java.io.IOException;
 public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private Identification<K> keyIdentification;
     private Identification<V> valueIdentification;
-    File file;
+    private File file;
     private HashMap<K, V> hashmap;
     private boolean closedStreem;
 
-    public MyKeyValueStorage(String nameDirectory, Identification<K> key, Identification<V> value) throws IOException{
+    public MyKeyValueStorage(String nameDirectory, Identification<K> key, Identification<V> value) throws IOException {
 
         hashmap = new HashMap<K, V>();
         File directory = new File(nameDirectory);
@@ -25,12 +25,12 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             throw new IOException("Isnt directory");
         }
         file = new File(nameDirectory, "storage.db");
-        if (file.exists()){
+        if (file.exists()) {
             read();
         }
     }
 
-    private void write(){
+    private void write() {
         try {
             DataOutputStream output = new DataOutputStream(new FileOutputStream(file));
             output.writeInt(hashmap.size());
@@ -44,12 +44,12 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
-    private  void read(){
+    private  void read() {
         try {
             DataInputStream input = new DataInputStream(new FileInputStream(file));
-            int read_size = input.readInt();
+            int readSize = input.readInt();
             int i = 0;
-            while (i < read_size) {
+            while (i < readSize) {
                 K key = keyIdentification.read(input);
                 V value = valueIdentification.read(input);
                 hashmap.put(key, value);
@@ -73,7 +73,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public void close() throws IOException {
-        if (closedStreem){
+        if (closedStreem) {
             throw new IOException("Streem closed");
         }
         write();
