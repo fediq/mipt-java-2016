@@ -15,11 +15,19 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
     private final SerializerInterface<V> valueSerializer;
     private final String myStorageCode = "55AAh";
     private File file;
+    private File lock;
 
     public Storage(String path, SerializerInterface<K> keySerializer, SerializerInterface<V> valueSerializer)
             throws IOException {
         this.keySerializer = keySerializer;
         this.valueSerializer = valueSerializer;
+
+        lock = new File(path + File.separator + "database.lock");
+        boolean isLock = !lock.createNewFile();
+
+        if (isLock) {
+            throw new RuntimeException("database is not available at the moment");
+        }
 
         file = new File(path + File.separator + "database.db");
         if (!file.exists()) {
@@ -48,6 +56,10 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void putDatabase() throws IOException {
+        if (lock.exists()) {
+            lock.delete();
+        }
+
         if (file.exists()) {
             file.delete();
         }

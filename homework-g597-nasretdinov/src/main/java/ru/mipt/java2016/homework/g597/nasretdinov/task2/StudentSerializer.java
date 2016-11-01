@@ -1,11 +1,11 @@
 package ru.mipt.java2016.homework.g597.nasretdinov.task2;
 
+import ru.mipt.java2016.homework.tests.task2.Student;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Date;
-
-import ru.mipt.java2016.homework.tests.task2.Student;
 
 /**
  * Created by isk on 31.10.16.
