@@ -4,23 +4,37 @@ import ru.mipt.java2016.homework.tests.task2.Student;
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
 
 import javafx.util.Pair;
-import java.io.IOException;
 import java.util.Date;
 
-/**
- * Created by 1 on 31.10.2016.
- *     private final String hometown;
- private final Date birthDate;
- private final boolean hasDormitory;
- private final double averageScore;
-
- private final int groupId;
- private final String name;
- */
 class StudentSerialisator extends ObjectSerialisator<StudentKey, Student> {
 
     StudentSerialisator(String newPath) {
         super(newPath);
+    }
+
+    @Override
+    protected Pair<StudentKey, Student> convert() {
+        StringBuilder newInput = new StringBuilder(lastRead.subSequence(0, lastRead.length()));
+        int border = newInput.indexOf(" ");
+        int studentKeyGroupId = Integer.parseInt(newInput.substring(0, border));
+        newInput.delete(0, border + 1);
+        border = newInput.indexOf(":");
+        String studentKeyName = newInput.substring(0, border);
+        newInput.delete(0, border + 1);
+        border = newInput.indexOf(" ");
+        String valueHomeTown = newInput.substring(0, border);
+        newInput.delete(0, border + 1);
+        border = newInput.indexOf(" ");
+        Date valueDate = new Date(Long.parseLong(newInput.substring(0, border)));
+        newInput.delete(0, border + 1);
+        border = newInput.indexOf(" ");
+        Boolean valueHasDormitory = Boolean.parseBoolean(newInput.substring(0, border));
+        newInput.delete(0, border + 1);
+        Double valueAverage = Double.parseDouble(newInput.toString());
+        StudentKey key = new StudentKey(studentKeyGroupId, studentKeyName);
+        Student value = new Student(studentKeyGroupId, studentKeyName,
+                valueHomeTown, valueDate, valueHasDormitory, valueAverage);
+        return new Pair(key, value);
     }
 
     @Override
@@ -37,36 +51,5 @@ class StudentSerialisator extends ObjectSerialisator<StudentKey, Student> {
         outputStream.print(" ");
         outputStream.print(value.getAverageScore());
         outputStream.print("\n");
-    }
-
-    @Override
-    Pair<StudentKey, Student> read() throws IOException {
-        String input = inputStream.readLine();
-        //System.out.println(input);
-        if (input == null) {
-            throw new IOException("EOF");
-        } else {
-            StringBuilder newInput = new StringBuilder(input.subSequence(0, input.length()));
-            int border = newInput.indexOf(" ");
-            int studentKeyGroupId = Integer.parseInt(newInput.substring(0, border));
-            newInput.delete(0, border + 1);
-            border = newInput.indexOf(":");
-            String studentKeyName = newInput.substring(0, border);
-            newInput.delete(0, border + 1);
-            border = newInput.indexOf(" ");
-            String valueHomeTown = newInput.substring(0, border);
-            newInput.delete(0, border + 1);
-            border = newInput.indexOf(" ");
-            Date valueDate = new Date(Long.parseLong(newInput.substring(0, border)));
-            newInput.delete(0, border + 1);
-            border = newInput.indexOf(" ");
-            Boolean valueHasDormitory = Boolean.parseBoolean(newInput.substring(0, border));
-            newInput.delete(0, border + 1);
-            Double valueAverage = Double.parseDouble(newInput.toString());
-            StudentKey key = new StudentKey(studentKeyGroupId, studentKeyName);
-            Student value = new Student(studentKeyGroupId, studentKeyName,
-                    valueHomeTown, valueDate, valueHasDormitory, valueAverage);
-            return new Pair(key, value);
-        }
     }
 }

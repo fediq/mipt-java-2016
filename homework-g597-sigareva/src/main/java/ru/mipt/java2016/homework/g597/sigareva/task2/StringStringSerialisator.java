@@ -14,24 +14,19 @@ public class StringStringSerialisator extends ObjectSerialisator<String, String>
     }
 
     @Override
+    protected Pair<String, String> convert() {
+        int border = lastRead.indexOf(":");
+        String key = lastRead.substring(0, border);
+        String value = lastRead.substring(border + 1, lastRead.length());
+        return new Pair(key, value);
+    }
+
+    @Override
     void write(String key, String value) {
         outputStream.print(key);
         outputStream.print(":");
         outputStream.print(value);
         outputStream.print("\n");
-    }
-
-    @Override
-    Pair<String, String> read() throws IOException {
-        String input = inputStream.readLine();
-        if (input == null) {
-            throw new IOException("EOF");
-        } else {
-            int border = input.indexOf(":");
-            String key = input.substring(0, border);
-            String value = input.substring(border + 1, input.length());
-            return new Pair(key, value);
-        }
     }
 }
 

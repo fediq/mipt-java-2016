@@ -36,7 +36,7 @@ public class StorageTestUtils {
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
-            throw new IllegalStateException("Unexpected Exception", e);
+            throw new IllegalStateException("Unexpected Exception");
         }
     }
 

@@ -2,99 +2,70 @@ package ru.mipt.java2016.homework.g597.sigareva.task2;
 
 import javafx.util.Pair;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
-import ru.mipt.java2016.homework.tests.task2.Student;
-import ru.mipt.java2016.homework.tests.task2.StudentKey;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-/**
- * Created by 1 on 30.10.2016.
- */
-public class KeyValueStorageImpl implements KeyValueStorage {
+public class KeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
 
     private Boolean fileOpen = true;
+    private HashMap<K, V> mapa;
+    private ObjectSerialisator<K, V> serialisator;
 
-    KeyValueStorageImpl(String path, String keyType, String valueType) throws IOException {
+    KeyValueStorageImpl(ObjectSerialisator newSerializator) {
 
-        if (keyType.equals("Integer") && valueType.equals("Double")) {
-            serialisator = new IntegerDoubleSerialisator(path);
-            mapa = new HashMap<Integer, Double>();
-        } else if (keyType.equals("String") && valueType.equals("String")) {
-            serialisator = new StringStringSerialisator(path);
-            mapa = new HashMap<String, String>();
-        } else if (keyType.equals("StudentKey") && valueType.equals("Student")) {
-            serialisator = new StudentSerialisator(path);
-            mapa = new HashMap<StudentKey, Student>();
-        }
-        if (!serialisator.isGoodFile()) {
-            throw new IllegalStateException("Lenin is sad");
-        } else {
-            serialisator.checkBeforeRead();
-            while (true) {
-                try {
-                    Pair currPair = serialisator.read();
-                    mapa.put(currPair.getKey(), currPair.getValue());
-                } catch (IOException e) {
-                    if (e.getMessage() == "EOF") {
-                        break;
-                    }
-                }
-            }
+        serialisator = newSerializator;
+        mapa = new HashMap<K, V>();
+        serialisator.checkBeforeRead();
+        while (serialisator.canRead()) {
+            Pair<K, V> currPair = serialisator.convert();
+            mapa.put(currPair.getKey(), currPair.getValue());
         }
     }
 
-    private ObjectSerialisator serialisator;
 
-    private HashMap mapa;
+
+    public void checkState() {
+        if (!fileOpen) {
+            throw new IllegalStateException("The storage is closed.");
+        }
+    }
 
     @Override
-    public Object read(Object key) {
-        if (!fileOpen) {
-            throw new IllegalStateException("Lenin is sad");
-        }
+    public V read(K key) {
+        checkState();
         return mapa.get(key);
     }
 
     @Override
-    public boolean exists(Object key) {
-        if (!fileOpen) {
-            throw new IllegalStateException("Lenin is sad");
-        }
+    public boolean exists(K key) {
+        checkState();
         return mapa.containsKey(key);
     }
 
     @Override
-    public void write(Object key, Object value) {
-        if (!fileOpen) {
-            throw new IllegalStateException("Lenin is sad");
-        }
+    public void write(K key, V value) {
+        checkState();
         mapa.put(key, value);
     }
 
     @Override
-    public void delete(Object key) {
-        if (!fileOpen) {
-            throw new IllegalStateException("Lenin is sad");
-        }
+    public void delete(K key) {
+        checkState();
         mapa.remove(key);
     }
 
     @Override
     public Iterator readKeys() {
-        if (!fileOpen) {
-            throw new IllegalStateException("Lenin is sad");
-        }
+        checkState();
         return mapa.keySet().iterator();
     }
 
     @Override
     public int size() {
-        if (!fileOpen) {
-            throw new IllegalStateException("Lenin is sad");
-        }
+        checkState();
         return mapa.size();
     }
 
@@ -104,7 +75,7 @@ public class KeyValueStorageImpl implements KeyValueStorage {
 
         Iterator currIter = mapa.entrySet().iterator();
         while (currIter.hasNext()) {
-            Map.Entry thisEntry = (Map.Entry) currIter.next();
+            Map.Entry<K, V> thisEntry = (Map.Entry) currIter.next();
             serialisator.write(thisEntry.getKey(), thisEntry.getValue());
         }
         serialisator.outputStream.close();

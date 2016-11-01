@@ -8,53 +8,41 @@ abstract class ObjectSerialisator<K, V> {
 
     abstract void write(K key, V value);
 
-    abstract Pair<K, V> read() throws IOException;
-
     protected BufferedReader inputStream;
     protected PrintWriter outputStream;
-    private String path;
-    private String myFile;
-    private boolean goodFile = true;
 
-    public boolean isGoodFile() {
-        return goodFile;
-    }
-
-    protected ObjectSerialisator(String newPath) {
-        path = newPath;
-        StringBuilder adress = new StringBuilder();
-        adress.append(path);
-        adress.append("\\Lenin_luchshiy"); // название хранилища
-        myFile =  adress.toString();
-
-        if ((new File(myFile)).exists()) {
-            try {
-                inputStream = new BufferedReader(new FileReader(myFile));
-                String firstString = inputStream.readLine();
-                if (!firstString.equals("Lenin is the best. Lenin is my love!")) {
-                    goodFile = false;
-                }
-                inputStream.close();
-            } catch (IOException e) {
-                throw new IllegalStateException("Something is bad\n");
-            }
-
-        } else {
-            File f = new File(myFile);
-            try {
-                f.createNewFile();
-                outputStream = new PrintWriter(new FileWriter(myFile));
-                outputStream.print("Lenin is the best. Lenin is my love!");
-                openOutputStream = true;
-                outputStream.close();
-            } catch (IOException e) {
-                throw new IllegalStateException("Something is bad\n");
-            }
-        }
-    }
+    private String myFilePath;
 
     private boolean openInputStream = false;
     private boolean openOutputStream = false;
+
+    protected ObjectSerialisator(String newPath) {
+        myFilePath =  newPath + File.separator + "Lenin";
+        File file = new File(myFilePath);
+
+        try {
+            file.createNewFile();
+        } catch (IOException e) {
+            throw new IllegalStateException("Something is bad\n");
+        }
+    }
+
+    protected String lastRead;
+
+    public boolean canRead() {
+        try {
+            lastRead = inputStream.readLine();
+        } catch (IOException e){
+            System.out.println(e.getMessage());
+        }
+        if(lastRead == null) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    protected abstract Pair<K, V> convert();
 
     public void checkBeforeRead() {
         if (openInputStream) {
@@ -68,15 +56,14 @@ abstract class ObjectSerialisator<K, V> {
             outputStream.close();
         }
         try {
-            inputStream = new BufferedReader(new FileReader(myFile));
-            inputStream.readLine();
+            inputStream = new BufferedReader(new FileReader(myFilePath));
             openInputStream = true;
         } catch (IOException e) {
             throw new IllegalStateException("Something is bad\n");
         }
     }
 
-    public void checkBeforeWrite() {
+    public void checkBeforeWrite() throws IOException{
         if (openInputStream) {
             try {
                 inputStream.close();
@@ -88,9 +75,8 @@ abstract class ObjectSerialisator<K, V> {
             outputStream.close();
         }
         try {
-            outputStream = new PrintWriter(new FileWriter(myFile));
+            outputStream = new PrintWriter(new FileWriter(myFilePath));
             openOutputStream = true;
-            outputStream.print("Lenin is the best. Lenin is my love!\n");
         } catch (IOException e) {
             throw new IllegalStateException("Something is bad\n");
         }
