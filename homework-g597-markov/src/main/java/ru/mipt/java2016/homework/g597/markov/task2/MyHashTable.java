@@ -29,15 +29,15 @@ public class MyHashTable<K, V> implements KeyValueStorage<K, V> {
             throw new IllegalArgumentException("file has been already opened");
         }
         if (pathGiven == null) {
-            throw new IOException("No path given");
+            throw new IllegalArgumentException("No path given");
         }
         if (nameGiven == null) {
-            throw new IOException("No name given");
+            throw new IllegalArgumentException("No name given");
         }
 
         lock = new File("lock.check");
         if (lock.exists()){
-            throw new IOException("Already opened in other process");
+            throw new IllegalArgumentException("Already opened in other process");
         }
 
         String path = pathGiven + "/" + nameGiven + ".db";
