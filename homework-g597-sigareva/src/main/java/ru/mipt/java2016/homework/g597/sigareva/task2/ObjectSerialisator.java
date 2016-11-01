@@ -44,7 +44,7 @@ abstract class ObjectSerialisator<K, V> {
 
     protected abstract Pair<K, V> convert();
 
-    public void checkBeforeRead() {
+    public void checkBeforeRead() throws IOException {
         if (openInputStream) {
             try {
                 inputStream.close();

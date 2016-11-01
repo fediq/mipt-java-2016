@@ -18,7 +18,11 @@ public class KeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
 
         serialisator = newSerializator;
         mapa = new HashMap<K, V>();
-        serialisator.checkBeforeRead();
+        try {
+            serialisator.checkBeforeRead();
+        } catch (IOException e){
+            System.out.println(e.getMessage());
+        }
         while (serialisator.canRead()) {
             Pair<K, V> currPair = serialisator.convert();
             mapa.put(currPair.getKey(), currPair.getValue());
