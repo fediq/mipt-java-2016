@@ -10,8 +10,6 @@ import java.io.RandomAccessFile;
 
 public class StringSerializator implements SerializationStrategy<String> {
 
-    public StringSerializator() {
-    }
 
     @Override
     public String read(RandomAccessFile fileName) throws IOException {

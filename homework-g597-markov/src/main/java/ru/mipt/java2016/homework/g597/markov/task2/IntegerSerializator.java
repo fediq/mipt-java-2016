@@ -9,9 +9,6 @@ import java.io.RandomAccessFile;
 
 public class IntegerSerializator implements SerializationStrategy<Integer> {
 
-    public IntegerSerializator() {
-    }
-
     @Override
     public Integer read(RandomAccessFile fileName) throws IOException {
         return fileName.readInt();

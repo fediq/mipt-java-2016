@@ -9,9 +9,6 @@ import java.io.RandomAccessFile;
 
 public class BooleanSerializator implements SerializationStrategy<Boolean> {
 
-    public BooleanSerializator() {
-    }
-
     @Override
     public Boolean read(RandomAccessFile fileName) throws IOException {
         return fileName.readBoolean();

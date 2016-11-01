@@ -9,9 +9,6 @@ import java.io.RandomAccessFile;
 
 public class DoubleSerializator implements SerializationStrategy<Double> {
 
-    public DoubleSerializator() {
-    }
-
     @Override
     public Double read(RandomAccessFile fileName) throws IOException {
         return fileName.readDouble();

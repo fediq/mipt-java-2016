@@ -10,9 +10,6 @@ import java.util.Date;
 
 public class DateSerializator implements SerializationStrategy<Date> {
 
-    public DateSerializator() {
-    }
-
     @Override
     public Date read(RandomAccessFile fileName) throws IOException {
         long date = fileName.readLong();

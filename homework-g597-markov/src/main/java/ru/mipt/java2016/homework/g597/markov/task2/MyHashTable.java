@@ -9,41 +9,43 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.HashMap;
 import java.util.Iterator;
-import java.util.concurrent.ConcurrentHashMap;
 
 
 public class MyHashTable<K, V> implements KeyValueStorage<K, V> {
 
     private RandomAccessFile file;
-    private ConcurrentHashMap<K, V> hashMap;
+    private HashMap<K, V> hashMap;
     private SerializationStrategy<K> keySerializator;
     private SerializationStrategy<V> valueSerializator;
     private Boolean isOpened = false;
+    private File lock;
 
-    MyHashTable(String pAth, String nAme,
-                SerializationStrategy<K> keySer, SerializationStrategy<V> valSer)
+    MyHashTable(String pathGiven, String nameGiven,
+                SerializationStrategy<K> keySerializer, SerializationStrategy<V> valSerializer)
             throws IOException {
         if (isOpened) {
             throw new IOException("file has been already opened");
         }
-        if (pAth == null) {
-            throw new IOException("kek");
+        if (pathGiven == null) {
+            throw new IOException("No path given");
         }
-        if (nAme == null) {
-            throw new IOException("kek2");
+        if (nameGiven == null) {
+            throw new IOException("No name given");
         }
-        StringBuilder sb = new StringBuilder(pAth);
-        sb.append("/");
-        sb.append(nAme);
-        sb.append(".db");
-        String path = sb.toString();
 
+        lock = new File("lock.check");
+        if (lock.exists()){
+            throw new IOException("Already opened in other process");
+        }
+
+        String path = pathGiven + "/" + nameGiven + ".db";
         File f = new File(path);
 
-        hashMap = new ConcurrentHashMap<>();
-        this.keySerializator = keySer;
-        this.valueSerializator = valSer;
+        hashMap = new HashMap<>();
+        keySerializator = keySerializer;
+        valueSerializator = valSerializer;
 
         file = new RandomAccessFile(f, "rw");
         isOpened = true;
@@ -87,6 +89,7 @@ public class MyHashTable<K, V> implements KeyValueStorage<K, V> {
         if (!isOpened) {
             throw new IOException("file is not opened");
         }
+
         file.setLength(0);
         for (K key : hashMap.keySet()) {
             keySerializator.write(file, key);
@@ -94,6 +97,7 @@ public class MyHashTable<K, V> implements KeyValueStorage<K, V> {
         }
         hashMap.clear();
         file.close();
+        lock.delete();
         isOpened = false;
 
     }
