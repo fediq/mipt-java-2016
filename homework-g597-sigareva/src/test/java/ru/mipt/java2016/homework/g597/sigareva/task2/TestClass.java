@@ -16,7 +16,7 @@ public class TestClass extends AbstractSingleFileStorageTest {
         try {
             return new KeyValueStorageImpl(path, "String", "String");
         } catch (IOException e) {
-            throw new IllegalStateException("Somethin is wrong\n");
+            throw new IllegalStateException("Something is wrong\n");
         }
     }
 
@@ -25,7 +25,7 @@ public class TestClass extends AbstractSingleFileStorageTest {
         try {
             return new KeyValueStorageImpl(path, "Integer", "Double");
         } catch (IOException e) {
-            throw new IllegalStateException("Somethin is wrong\n");
+            throw new IllegalStateException("Something is wrong\n");
         }
     }
 
@@ -34,7 +34,7 @@ public class TestClass extends AbstractSingleFileStorageTest {
         try {
             return new KeyValueStorageImpl(path, "StudentKey", "Student");
         } catch (IOException e) {
-            throw new IllegalStateException("Somethin is wrong\n");
+            throw new IllegalStateException("Something is wrong\n");
         }
     }
 }

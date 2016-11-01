@@ -19,13 +19,13 @@ public class KeyValueStorageImpl implements KeyValueStorage {
 
     KeyValueStorageImpl(String path, String keyType, String valueType) throws IOException {
 
-        if (keyType == "Integer" && valueType == "Double") {
+        if (keyType.equals("Integer") && valueType.equals("Double")) {
             serialisator = new IntegerDoubleSerialisator(path);
             mapa = new HashMap<Integer, Double>();
-        } else if (keyType == "String" && valueType == "String") {
+        } else if (keyType.equals("String") && valueType.equals("String")) {
             serialisator = new StringStringSerialisator(path);
             mapa = new HashMap<String, String>();
-        } else if (keyType == "StudentKey" && valueType == "Student") {
+        } else if (keyType.equals("StudentKey") && valueType.equals("Student")) {
             serialisator = new StudentSerialisator(path);
             mapa = new HashMap<StudentKey, Student>();
         }
