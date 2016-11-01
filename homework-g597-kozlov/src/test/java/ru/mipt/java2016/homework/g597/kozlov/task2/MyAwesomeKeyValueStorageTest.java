@@ -38,7 +38,7 @@ public class MyAwesomeKeyValueStorageTest extends AbstractSingleFileStorageTest 
     };
 
     @Override
-    protected  KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) {
+    protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) {
         try {
             MyAwesomeKeyValueStorage test = new MyAwesomeKeyValueStorage<StudentKey, Student>(path,
                     new SerializationStudentKey(), new SerializationStudent());
