@@ -59,22 +59,26 @@ class GrishutinKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public V read(K key) {
+        checkOpened();
+
+        return kvHashMap.get(key);
+    }
+
+    private void checkOpened() {
         if (isClosed) {
             throw new IllegalStateException("Storage is closed!");
         }
-        return kvHashMap.get(key);
     }
 
     @Override
     public boolean exists(K key) {
+        checkOpened();
         return kvHashMap.containsKey(key);
     }
 
     @Override
     public synchronized void write(K key, V value) {
-        if (isClosed) {
-            throw new IllegalStateException("Storage is closed!");
-        }
+        checkOpened();
         if (!(exists(key))) {
             numRecords++;
         }
@@ -84,6 +88,7 @@ class GrishutinKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public synchronized void delete(K key) {
+        checkOpened();
         if (!(exists(key))) {
             throw new IllegalArgumentException(String.format("No such key: %s", key.toString()));
         }
@@ -94,11 +99,13 @@ class GrishutinKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public Iterator<K> readKeys() {
+        checkOpened();
         return kvHashMap.keySet().iterator();
     }
 
     @Override
     public int size() {
+        checkOpened();
         return numRecords;
     }
 
