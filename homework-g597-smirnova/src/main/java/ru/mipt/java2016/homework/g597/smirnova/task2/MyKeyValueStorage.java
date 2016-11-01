@@ -1,6 +1,7 @@
 package ru.mipt.java2016.homework.g597.smirnova.task2;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
+
 import java.io.*;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -37,6 +38,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             }
         } catch (Exception e) {
             lock.delete();
+            throw new IllegalStateException("Can't create file");
         }
     }
 
@@ -50,65 +52,56 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             }
         } catch (Exception e) {
             lock.delete();
+            throw new IllegalStateException("Can't read from file");
         }
 
     }
 
-    @Override
-    public V read(K key) {
+    private void checkForClosed() {
         if (!isOpen) {
             throw new IllegalStateException("File is closed");
         }
+    }
+
+    @Override
+    public V read(K key) {
+        checkForClosed();
         return data.get(key);
     }
 
     @Override
     public boolean exists(K key) {
-        if (!isOpen) {
-            throw new IllegalStateException("File is closed");
-        }
+        checkForClosed();
         return data.containsKey(key);
     }
 
     @Override
     public void write(K key, V value) {
-        if (!isOpen) {
-            throw new IllegalStateException("File is closed");
-        }
+        checkForClosed();
         data.put(key, value);
     }
 
     @Override
     public void delete(K key) {
-        if (!isOpen) {
-            throw new IllegalStateException("File is closed");
-        }
+        checkForClosed();
         data.remove(key);
     }
 
     @Override
     public Iterator<K> readKeys() {
-        if (!isOpen) {
-            throw new IllegalStateException("File is closed");
-        }
+        checkForClosed();
         return data.keySet().iterator();
     }
 
     @Override
     public int size() {
-        if (!isOpen) {
-            throw new IllegalStateException("File is closed");
-        }
+        checkForClosed();
         return data.size();
     }
 
     @Override
     public void close() throws IllegalStateException {
-        if (!isOpen) {
-            throw new IllegalStateException("File is closed");
-        }
-        isOpen = false;
-        lock.delete();
+        checkForClosed();
         try (DataOutputStream output = new DataOutputStream(new FileOutputStream(storage))) {
             output.writeInt(data.size());
             for (Map.Entry<K, V> entry : data.entrySet()) {
@@ -117,6 +110,9 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             }
         } catch (IOException e) {
             throw new IllegalStateException("Error in writing into file");
+        } finally {
+            lock.delete();
+            isOpen = false;
         }
     }
 }
