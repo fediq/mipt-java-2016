@@ -56,6 +56,9 @@
 
 4. [Повторное использование кода в Java. Многопоточность в Java](https://yadi.sk/d/nitO2OJuxcMAw)
 
+5. [Средства синхронизации в Java](https://yadi.sk/d/2YAOFlpSxx73h)  
+[Примеры кода](https://github.com/DanAnastasyev/mipt-java-2016/tree/master/seminars/src/ru/mipt/java2016/seminars/seminar5)
+
 #### Рекомендуемая литература
 
 * Кей Хорстманн - [Java. Библиотека профессионала. Том 1. Основы (десятое издание)](https://www.ozon.ru/context/detail/id/137377512/).
