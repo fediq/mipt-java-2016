@@ -2,7 +2,7 @@
  * Created by Artem Kupriyanov on 12.10.2016.
  */
 
-package ru.mipt.java2016.homowork.g596.kupriyanov.task1;
+package ru.mipt.java2016.homework.g596.kupriyanov.task1;
 
 
 import ru.mipt.java2016.homework.base.task1.Calculator;
