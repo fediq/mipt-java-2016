@@ -6,5 +6,6 @@ import java.io.IOException;
 
 abstract class Identification<Value> {
     abstract Value read(DataInputStream input) throws IOException;
+
     abstract void write(DataOutputStream output, Value value) throws IOException;
 }
