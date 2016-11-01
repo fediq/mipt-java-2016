@@ -23,11 +23,7 @@ class FileMap<K, V> {
         }
         pathToStorage = currentPath + "/storage.db";
         fileForStorage = new File(pathToStorage);
-        if (!fileForStorage.exists()) {
-            if (!fileForStorage.createNewFile()) {
-                throw new IOException("Can't create file");
-            }
-        }
+        fileForStorage.createNewFile();
         checkAccess(currentPath);
         readMapFromFile(fileForStorage);
     }
@@ -84,30 +80,26 @@ class FileMap<K, V> {
     }
 
     private void readMapFromFile(File fileForStorage) throws IOException {
-        try (FileInputStream fileStream = new FileInputStream(fileForStorage)) {
-            try (BufferedInputStream bufferedStream = new BufferedInputStream(fileStream)) {
-                try (DataInputStream fileInput = new DataInputStream(bufferedStream)) {
-                    while (fileInput.available() != 0) {
-                        storageMap.put(
-                                keySerializer.deserialize(fileInput),
-                                valueSerializer.deserialize(fileInput)
-                        );
-                    }
+        try (FileInputStream fileStream = new FileInputStream(fileForStorage);
+             BufferedInputStream bufferedStream = new BufferedInputStream(fileStream);
+             DataInputStream fileInput = new DataInputStream(bufferedStream)) {
+                while (fileInput.available() != 0) {
+                    storageMap.put(
+                            keySerializer.deserialize(fileInput),
+                            valueSerializer.deserialize(fileInput)
+                    );
                 }
-            }
         }
     }
 
     private void writeMapToFile() throws IOException {
-        try (FileOutputStream outputStream = new FileOutputStream((pathToStorage))) {
-            try (BufferedOutputStream bufferedStream = new BufferedOutputStream(outputStream)) {
-                try (DataOutputStream outputFile = new DataOutputStream(bufferedStream)) {
+        try (FileOutputStream outputStream = new FileOutputStream((pathToStorage));
+             BufferedOutputStream bufferedStream = new BufferedOutputStream(outputStream);
+             DataOutputStream outputFile = new DataOutputStream(bufferedStream)) {
                     for (HashMap.Entry<K, V> entry : storageMap.entrySet()) {
                         keySerializer.serialize(outputFile, entry.getKey());
                         valueSerializer.serialize(outputFile, entry.getValue());
                     }
-                }
-            }
         }
     }
 
