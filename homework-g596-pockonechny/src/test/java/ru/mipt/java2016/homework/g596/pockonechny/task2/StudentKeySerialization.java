@@ -10,7 +10,7 @@ import java.io.IOException;
  * Created by celidos on 30.10.16.
  */
 
-public class StudentKeySerialization extends SerializationStrategy<StudentKey> {
+public class StudentKeySerialization implements SerializationStrategy<StudentKey> {
 
     @Override
     public StudentKey read(DataInputStream readingDevice) throws IOException {
@@ -21,5 +21,10 @@ public class StudentKeySerialization extends SerializationStrategy<StudentKey> {
     public void write(DataOutputStream writingDevice, StudentKey obj) throws IOException {
         writingDevice.writeInt(obj.getGroupId());
         writingDevice.writeUTF(obj.getName());
+    }
+
+    @Override
+    public String getType() {
+        return "STUDENTKEY";
     }
 }

@@ -10,7 +10,7 @@ import java.util.Date;
 /**
  * Created by celidos on 30.10.16.
  */
-public class StudentSerialization extends SerializationStrategy<Student> {
+public class StudentSerialization implements SerializationStrategy<Student> {
 
     @Override
     public Student read(DataInputStream readingDevice) throws IOException {
@@ -26,5 +26,10 @@ public class StudentSerialization extends SerializationStrategy<Student> {
         writingDevice.writeLong(obj.getBirthDate().getTime());
         writingDevice.writeBoolean(obj.isHasDormitory());
         writingDevice.writeDouble(obj.getAverageScore());
+    }
+
+    @Override
+    public String getType() {
+        return "STUDENT";
     }
 }

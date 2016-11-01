@@ -13,19 +13,19 @@ public class AdvancedKeyValueStorageTest extends AbstractSingleFileStorageTest {
     @Override
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) {
         return new AdvancedKeyValueStorage(path, new IntSerialization(),
-                new DoubleSerialization(), "INT_TO_DOUBLE");
+                new DoubleSerialization());
     }
 
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String path) {
         return new AdvancedKeyValueStorage(path, new StringSerialization(),
-                new StringSerialization(), "STRING_TO_STRING");
+                new StringSerialization());
     }
 
     @Override
     protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) {
         return new AdvancedKeyValueStorage(path, new StudentKeySerialization(),
-                new StudentSerialization(), "STUDENTKEY_TO_STUDENT");
+                new StudentSerialization());
     }
 }
 //INT_TO_DOUBLE, STRING_TO_STRING, STUDENTKEY_TO_STUDENT

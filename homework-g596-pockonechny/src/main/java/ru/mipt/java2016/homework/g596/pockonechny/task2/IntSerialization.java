@@ -7,7 +7,7 @@ import java.io.IOException;
 /**
  * Created by celidos on 30.10.16.
  */
-public class IntSerialization extends SerializationStrategy<Integer> {
+public class IntSerialization implements SerializationStrategy<Integer> {
 
     @Override
     public Integer read(DataInputStream readingDevice) throws IOException {
@@ -17,5 +17,10 @@ public class IntSerialization extends SerializationStrategy<Integer> {
     @Override
     public void write(DataOutputStream writingDevice, Integer obj) throws IOException {
         writingDevice.writeInt(obj);
+    }
+
+    @Override
+    public String getType() {
+        return "INT";
     }
 }

@@ -8,8 +8,10 @@ import java.io.IOException;
  * Created by celidos on 30.10.16.
  */
 
-public abstract class SerializationStrategy<T> {
-    abstract T read(DataInputStream readingDevice) throws IOException;
+public interface SerializationStrategy<T> {
+    T read(DataInputStream readingDevice) throws IOException;
 
-    abstract void write(DataOutputStream writingDevice, T obj) throws IOException;
+    void write(DataOutputStream writingDevice, T obj) throws IOException;
+
+    String getType();
 }

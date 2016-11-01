@@ -22,16 +22,14 @@ public class AdvancedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private static final String DEFAULT_FILENAME = "storage.txt";
 
-    private enum ContentType { STRING_TO_STRING, INT_TO_DOUBLE, STUDENTKEY_TO_STUDENT }
-
     // ---------------------------------
 
     private String filename;
-    private ContentType contentType;
-    private HashMap<K, V> hashmap;
+    private Map<K, V> hashmap;
     private boolean isStreamingNow;
     private SerializationStrategy<K> keySerializator;
     private SerializationStrategy<V> valueSerializator;
+    private String contentType;
 
     // ---------------------------------
 
@@ -54,7 +52,7 @@ public class AdvancedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             }
 
             try (DataOutputStream writerDevice = new DataOutputStream(new FileOutputStream(fileName))) {
-                writerDevice.writeUTF(contentType.toString());
+                writerDevice.writeUTF(contentType);
                 writerDevice.writeInt(0);
             } catch (IOException e) {
                 throw new IllegalStateException("Error: no acсess to the file");
@@ -83,7 +81,7 @@ public class AdvancedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void writeDataToDevice(DataOutputStream writingDevice) throws IOException {
-        writingDevice.writeUTF(contentType.toString());
+        writingDevice.writeUTF(contentType);
         writingDevice.writeInt(hashmap.size());
 
         for (Map.Entry<K, V> entry: hashmap.entrySet()) {
@@ -93,27 +91,25 @@ public class AdvancedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     public AdvancedKeyValueStorage(String path, SerializationStrategy serialKey,
-                                   SerializationStrategy serialValue, String content) {
-
-        // -------------------------
-
-        filename = path + "/" + DEFAULT_FILENAME;
-        contentType = ContentType.valueOf(content);
-        checkPathExistance(path);
-        checkFileIsOk(filename);
+                                   SerializationStrategy serialValue) {
 
         // -------------------------
 
         keySerializator = serialKey;
         valueSerializator = serialValue;
-
         hashmap = new HashMap<K, V>();
+
+        filename = path + File.separator + DEFAULT_FILENAME;
+        contentType = keySerializator.getType() + "_TO_" + valueSerializator.getType();
+        checkPathExistance(path);
+        checkFileIsOk(filename);
+
         isStreamingNow = true;
 
         // -------------------------------
 
         try (DataInputStream readingDevice = new DataInputStream(new FileInputStream(filename))) {
-            if (!readingDevice.readUTF().equals(contentType.toString())) {
+            if (!readingDevice.readUTF().equals(contentType)) {
                 throw new IllegalStateException("Error: Invalid file");
             }
             readDataFromDevice(readingDevice);
@@ -129,6 +125,8 @@ public class AdvancedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
             writeDataToDevice(writingDevice);
             isStreamingNow = false;
+
+            hashmap = new HashMap<K, V>(); // освобождение hashmap
 
         } catch (IOException e) {
             throw new IllegalStateException("Error: couldn't write to file");
@@ -165,9 +163,10 @@ public class AdvancedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         return hashmap.keySet().contains(key);
     }
 
-    @Override // итератор
+    @Override
     public Iterator readKeys() {
         checkStorageAviability();
         return hashmap.keySet().iterator();
     }
 }
+//

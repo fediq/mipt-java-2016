@@ -8,7 +8,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-public class StringSerialization extends SerializationStrategy<String> {
+public class StringSerialization implements SerializationStrategy<String> {
 
     @Override
     public String read(DataInputStream readingDevice) throws IOException {
@@ -18,5 +18,10 @@ public class StringSerialization extends SerializationStrategy<String> {
     @Override
     public void write(DataOutputStream writingDevice, String obj) throws IOException {
         writingDevice.writeUTF(obj);
+    }
+
+    @Override
+    public String getType() {
+        return "STRING";
     }
 }
