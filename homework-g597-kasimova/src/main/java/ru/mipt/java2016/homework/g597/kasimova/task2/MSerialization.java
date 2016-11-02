@@ -1,12 +1,8 @@
 package ru.mipt.java2016.homework.g597.kasimova.task2;
 
-import ru.mipt.java2016.homework.tests.task2.Student;
-import ru.mipt.java2016.homework.tests.task2.StudentKey;
-
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.Date;
 
 /**
  * Created by Надежда on 29.10.2016.
@@ -73,61 +69,6 @@ public interface MSerialization<Type> {
         public Double deserializeFromStream(DataInputStream inStream) {
             try {
                 return inStream.readDouble();
-            } catch (IOException exp) {
-                System.out.println(exp.getMessage());
-            }
-            return null;
-        }
-    };
-
-    MSerialization<Student> STUDENT_SERIALIZER = new MSerialization<Student>() {
-        @Override
-        public void serializeToStream(Student value, DataOutputStream outStream) {
-            try {
-                outStream.writeInt(value.getGroupId());
-                outStream.writeUTF(value.getName());
-                outStream.writeUTF(value.getHometown());
-                outStream.writeLong(value.getBirthDate().getTime());
-                outStream.writeBoolean(value.isHasDormitory());
-                outStream.writeDouble(value.getAverageScore());
-            } catch (IOException exp) {
-                System.out.println(exp.getMessage());
-            }
-        }
-
-        @Override
-        public Student deserializeFromStream(DataInputStream inStream) {
-            try {
-                return new Student(
-                        inStream.readInt(),
-                        inStream.readUTF(),
-                        inStream.readUTF(),
-                        new Date(inStream.readLong()),
-                        inStream.readBoolean(),
-                        inStream.readDouble()
-                );
-            } catch (IOException exp) {
-                System.out.println(exp.getMessage());
-            }
-            return null;
-        }
-    };
-
-    MSerialization<StudentKey> STUDENT_KEY_SERIALIZER = new MSerialization<StudentKey>() {
-        @Override
-        public void serializeToStream(StudentKey value, DataOutputStream outStream) {
-            try {
-                outStream.writeInt(value.getGroupId());
-                outStream.writeUTF(value.getName());
-            } catch (IOException exp) {
-                System.out.println(exp.getMessage());
-            }
-        }
-
-        @Override
-        public StudentKey deserializeFromStream(DataInputStream inStream) {
-            try {
-                return new StudentKey(inStream.readInt(), inStream.readUTF());
             } catch (IOException exp) {
                 System.out.println(exp.getMessage());
             }

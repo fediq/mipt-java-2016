@@ -36,8 +36,8 @@ public class KeyValueStorageTests extends AbstractSingleFileStorageTest {
     @Override
     protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) {
         try {
-            return new MKeyValueStorage<StudentKey, Student>(path, MSerialization.STUDENT_KEY_SERIALIZER,
-                    MSerialization.STUDENT_SERIALIZER);
+            return new MKeyValueStorage<>(path, new StudentKeySerialization(),
+                    new StudentSerialization());
         } catch (IOException e) {
             e.printStackTrace();
         }
