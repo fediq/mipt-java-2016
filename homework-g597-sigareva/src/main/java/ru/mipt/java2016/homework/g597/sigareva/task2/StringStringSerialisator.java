@@ -7,9 +7,9 @@ import java.io.IOException;
 /**
  * Created by 1 on 31.10.2016.
  */
-public class StringStringSerialisator extends ObjectSerialisator<String, String> {
+ class StringStringSerializer extends ObjectSerializer<String, String> {
 
-    StringStringSerialisator(String newPath) {
+    StringStringSerializer(String newPath) {
         super(newPath);
     }
 

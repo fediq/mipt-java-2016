@@ -13,16 +13,34 @@ import java.io.IOException;
 public class TestClass extends AbstractSingleFileStorageTest {
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String path) {
-        return new KeyValueStorageImpl(new StringStringSerialisator(path));
+        try {
+            return new KeyValueStorageImpl(new StringStringSerializer(path));
+        }
+        catch(IOException e){
+            System.out.println(e.getMessage());
+            return null;
+        }
     }
 
     @Override
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) {
-        return new KeyValueStorageImpl(new IntegerDoubleSerialisator(path));
+        try {
+            return new KeyValueStorageImpl(new IntegerDoubleSerializer(path));
+        }
+        catch(IOException e){
+            System.out.println(e.getMessage());
+            return null;
+        }
     }
 
     @Override
     protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) {
-        return new KeyValueStorageImpl(new StudentSerialisator(path));
+        try {
+            return new KeyValueStorageImpl(new StudentSerializer(path));
+        }
+        catch(IOException e){
+            System.out.println(e.getMessage());
+            return null;
+        }
     }
 }

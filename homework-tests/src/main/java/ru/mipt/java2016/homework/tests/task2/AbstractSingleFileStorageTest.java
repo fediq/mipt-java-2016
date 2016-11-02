@@ -6,6 +6,7 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.tests.task2.StorageTestUtils.*;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
@@ -23,9 +24,9 @@ import static ru.mipt.java2016.homework.tests.task2.StorageTestUtils.*;
  */
 public abstract class AbstractSingleFileStorageTest {
 
-    protected abstract KeyValueStorage<String, String> buildStringsStorage(String path);
+    protected abstract KeyValueStorage<String, String> buildStringsStorage(String path) throws IOException;
 
-    protected abstract KeyValueStorage<Integer, Double> buildNumbersStorage(String path);
+    protected abstract KeyValueStorage<Integer, Double> buildNumbersStorage(String path) throws IOException;
 
     protected abstract KeyValueStorage<StudentKey, Student> buildPojoStorage(String path);
 

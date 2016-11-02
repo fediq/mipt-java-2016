@@ -11,31 +11,30 @@ import java.util.Map;
 public class KeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
 
     private Boolean fileOpen = true;
-    private HashMap<K, V> mapa;
-    private ObjectSerialisator<K, V> serialisator;
+    private Map<K, V> mapa;
+    private ObjectSerializer<K, V> serializer;
 
-    KeyValueStorageImpl(ObjectSerialisator newSerializator) {
+        KeyValueStorageImpl(ObjectSerializer newSerializer) throws IOException {
 
-        serialisator = newSerializator;
+        serializer = newSerializer;
         mapa = new HashMap<K, V>();
         try {
-            serialisator.checkBeforeRead();
-        } catch (IOException e){
+            serializer.checkBeforeRead();
+        } catch (IOException e) {
             System.out.println(e.getMessage());
         }
-        while (serialisator.canRead()) {
-            Pair<K, V> currPair = serialisator.convert();
+        while (serializer.canRead()) {
+            Pair<K, V> currPair = serializer.convert();
             mapa.put(currPair.getKey(), currPair.getValue());
         }
     }
-
-
 
     public void checkState() {
         if (!fileOpen) {
             throw new IllegalStateException("The storage is closed.");
         }
     }
+
 
     @Override
     public V read(K key) {
@@ -62,7 +61,7 @@ public class KeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
     }
 
     @Override
-    public Iterator readKeys() {
+    public Iterator<K> readKeys() {
         checkState();
         return mapa.keySet().iterator();
     }
@@ -75,14 +74,13 @@ public class KeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public void close() throws IOException {
-        serialisator.checkBeforeWrite();
+        serializer.checkBeforeWrite();
 
-        Iterator currIter = mapa.entrySet().iterator();
-        while (currIter.hasNext()) {
-            Map.Entry<K, V> thisEntry = (Map.Entry) currIter.next();
-            serialisator.write(thisEntry.getKey(), thisEntry.getValue());
+        for (Object o : mapa.entrySet()) {
+            Map.Entry<K, V> thisEntry = (Map.Entry) o;
+            serializer.write(thisEntry.getKey(), thisEntry.getValue());
         }
-        serialisator.outputStream.close();
+        serializer.outputStream.close();
         fileOpen = false;
     }
 }

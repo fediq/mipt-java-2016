@@ -6,9 +6,9 @@ import ru.mipt.java2016.homework.tests.task2.StudentKey;
 import javafx.util.Pair;
 import java.util.Date;
 
-class StudentSerialisator extends ObjectSerialisator<StudentKey, Student> {
+class StudentSerializer extends ObjectSerializer<StudentKey, Student> {
 
-    StudentSerialisator(String newPath) {
+    StudentSerializer(String newPath) {
         super(newPath);
     }
 

@@ -2,9 +2,9 @@ package ru.mipt.java2016.homework.g597.sigareva.task2;
 
 import javafx.util.Pair;
 
-public class IntegerDoubleSerialisator extends ObjectSerialisator<Integer, Double> {
+class IntegerDoubleSerializer extends ObjectSerializer<Integer, Double> {
 
-    IntegerDoubleSerialisator(String newPath) {
+    IntegerDoubleSerializer(String newPath) {
         super(newPath);
     }
 

@@ -4,7 +4,7 @@ import javafx.util.Pair;
 
 import java.io.*;
 
-abstract class ObjectSerialisator<K, V> {
+abstract class ObjectSerializer<K, V> {
 
     abstract void write(K key, V value);
 
@@ -16,7 +16,7 @@ abstract class ObjectSerialisator<K, V> {
     private boolean openInputStream = false;
     private boolean openOutputStream = false;
 
-    protected ObjectSerialisator(String newPath) {
+    protected ObjectSerializer(String newPath) {
         myFilePath =  newPath + File.separator + "Lenin";
         File file = new File(myFilePath);
 
