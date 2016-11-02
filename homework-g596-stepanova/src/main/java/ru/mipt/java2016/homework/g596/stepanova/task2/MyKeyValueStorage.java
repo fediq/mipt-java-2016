@@ -21,9 +21,8 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private SerializationStrategy<K> keySerializationStrategy;
     private SerializationStrategy<V> valueSerializationStrategy;
 
-    public MyKeyValueStorage(String path,
-                             SerializationStrategy<K> keySerializationStrategy,
-                             SerializationStrategy<V> valueSerializationStrategy) {
+    public MyKeyValueStorage(String path, SerializationStrategy<K> keySerializationStrategy,
+            SerializationStrategy<V> valueSerializationStrategy) {
         this.keySerializationStrategy = keySerializationStrategy;
         this.valueSerializationStrategy = valueSerializationStrategy;
 

@@ -49,48 +49,49 @@ public class MySingleFileStorageTest extends AbstractSingleFileStorageTest {
         }
     };
 
-    private static SerializationStrategy<StudentKey> STUDENT_KEY_STRATEGY = new SerializationStrategy<StudentKey>() {
-        @Override
-        public void serializeToFile(StudentKey studentKey, DataOutputStream output) throws IOException {
-            output.writeInt(studentKey.getGroupId());
-            output.writeUTF(studentKey.getName());
-        }
+    private static SerializationStrategy<StudentKey> STUDENT_KEY_STRATEGY =
+            new SerializationStrategy<StudentKey>() {
+                @Override
+                public void serializeToFile(StudentKey studentKey, DataOutputStream output)
+                        throws IOException {
+                    output.writeInt(studentKey.getGroupId());
+                    output.writeUTF(studentKey.getName());
+                }
 
-        @Override
-        public StudentKey deserializeFromFile(DataInputStream input) throws IOException {
-            return new StudentKey(input.readInt(), input.readUTF());
-        }
-    };
+                @Override
+                public StudentKey deserializeFromFile(DataInputStream input) throws IOException {
+                    return new StudentKey(input.readInt(), input.readUTF());
+                }
+            };
 
-    private static SerializationStrategy<Student> STUDENT_STRATEGY = new SerializationStrategy<Student>() {
-        @Override
-        public void serializeToFile(Student student, DataOutputStream output) throws IOException {
-            output.writeInt(student.getGroupId());
-            output.writeUTF(student.getName());
-            output.writeUTF(student.getHometown());
-            output.writeLong(student.getBirthDate().getTime());
-            output.writeBoolean(student.isHasDormitory());
-            output.writeDouble(student.getAverageScore());
-        }
+    private static SerializationStrategy<Student> STUDENT_STRATEGY =
+            new SerializationStrategy<Student>() {
+                @Override
+                public void serializeToFile(Student student, DataOutputStream output)
+                        throws IOException {
+                    output.writeInt(student.getGroupId());
+                    output.writeUTF(student.getName());
+                    output.writeUTF(student.getHometown());
+                    output.writeLong(student.getBirthDate().getTime());
+                    output.writeBoolean(student.isHasDormitory());
+                    output.writeDouble(student.getAverageScore());
+                }
 
-        @Override
-        public Student deserializeFromFile(DataInputStream input) throws IOException {
-            return new Student(input.readInt(), input.readUTF(), input.readUTF(), new Date(input.readLong()), input.readBoolean(), input.readDouble());
-        }
-    };
+                @Override
+                public Student deserializeFromFile(DataInputStream input) throws IOException {
+                    return new Student(input.readInt(), input.readUTF(), input.readUTF(),
+                            new Date(input.readLong()), input.readBoolean(), input.readDouble());
+                }
+            };
 
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String path) {
-        return new MyKeyValueStorage<>(path,
-                STRING_STRATEGY,
-                STRING_STRATEGY);
+        return new MyKeyValueStorage<>(path, STRING_STRATEGY, STRING_STRATEGY);
     }
 
     @Override
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) {
-        return new MyKeyValueStorage<>(path,
-                INTEGER_STRATEGY,
-                DOUBLE_STRATEGY);
+        return new MyKeyValueStorage<>(path, INTEGER_STRATEGY, DOUBLE_STRATEGY);
     }
 
     @Override
