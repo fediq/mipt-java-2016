@@ -36,7 +36,7 @@ public class MyHashTable<K, V> implements KeyValueStorage<K, V> {
         }
 
         lock = new File(pathGiven + File.separator + "lock.check");
-        if (!lock.createNewFile()) {
+        if (!lock.createNewFile()){
             throw new IllegalArgumentException("Already opened in other process");
         }
 
@@ -85,15 +85,23 @@ public class MyHashTable<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public void close() throws IOException {
-        file.setLength(0);
-        for (K key : hashMap.keySet()) {
-            keySerializator.write(file, key);
-            valueSerializator.write(file, hashMap.get(key));
+        if (!isOpened) {
+            throw new IOException("file is not opened");
         }
-        hashMap.clear();
-        file.close();
-        lock.delete();
-        isOpened = false;
+
+        try{
+        file.setLength(0);
+            for (K key : hashMap.keySet()) {
+                keySerializator.write(file, key);
+                valueSerializator.write(file, hashMap.get(key));
+            }
+        } finally {
+            hashMap.clear();
+            file.close();
+            lock.delete();
+            isOpened = false;
+        }
+
     }
 
     private void readData() throws IOException {
