@@ -56,10 +56,6 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void putDatabase() throws IOException {
-        if (lock.exists()) {
-            lock.delete();
-        }
-
         if (file.exists()) {
             file.delete();
         }
@@ -78,6 +74,10 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
             }
         } finally {
             out.close();
+        }
+
+        if (lock.exists()) {
+            lock.delete();
         }
     }
 
