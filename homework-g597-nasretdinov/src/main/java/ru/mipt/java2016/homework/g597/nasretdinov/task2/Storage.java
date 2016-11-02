@@ -76,14 +76,6 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
                 lock.delete();
             }
         }
-
-        try {
-
-        } finally {
-            if (lock.exists()) {
-                lock.delete();
-            }
-        }
     }
 
     @Override
