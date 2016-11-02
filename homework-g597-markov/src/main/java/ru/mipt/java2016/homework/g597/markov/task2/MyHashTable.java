@@ -89,19 +89,18 @@ public class MyHashTable<K, V> implements KeyValueStorage<K, V> {
             throw new IOException("file is not opened");
         }
 
-        try{
-        file.setLength(0);
-            for (K key : hashMap.keySet()) {
-                keySerializator.write(file, key);
-                valueSerializator.write(file, hashMap.get(key));
-            }
+        try {
+            file.setLength(0);
+                for (K key : hashMap.keySet()) {
+                    keySerializator.write(file, key);
+                    valueSerializator.write(file, hashMap.get(key));
+                }
         } finally {
             hashMap.clear();
             file.close();
             lock.delete();
             isOpened = false;
         }
-
     }
 
     private void readData() throws IOException {
