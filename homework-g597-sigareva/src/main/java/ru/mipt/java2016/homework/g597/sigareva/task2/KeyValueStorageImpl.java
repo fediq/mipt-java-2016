@@ -11,18 +11,13 @@ import java.util.Map;
 public class KeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
 
     private Boolean fileOpen = true;
-    private Map<K, V> mapa;
+    private Map<K, V> mapa = new HashMap<>();
     private ObjectSerializer<K, V> serializer;
 
         KeyValueStorageImpl(ObjectSerializer newSerializer) throws IOException {
 
         serializer = newSerializer;
-        mapa = new HashMap<K, V>();
-        try {
-            serializer.checkBeforeRead();
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-        }
+        serializer.checkBeforeRead();
         while (serializer.canRead()) {
             Pair<K, V> currPair = serializer.convert();
             mapa.put(currPair.getKey(), currPair.getValue());
@@ -76,8 +71,8 @@ public class KeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
     public void close() throws IOException {
         serializer.checkBeforeWrite();
 
-        for (Object o : mapa.entrySet()) {
-            Map.Entry<K, V> thisEntry = (Map.Entry) o;
+        for (Map.Entry<K, V>  o : mapa.entrySet()) {
+            Map.Entry<K, V> thisEntry = o;
             serializer.write(thisEntry.getKey(), thisEntry.getValue());
         }
         serializer.outputStream.close();
