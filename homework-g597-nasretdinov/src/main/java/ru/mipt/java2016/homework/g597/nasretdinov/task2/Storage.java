@@ -74,10 +74,9 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
             }
         } finally {
             out.close();
-        }
-
-        if (lock.exists()) {
-            lock.delete();
+            if (lock.exists()) {
+                lock.delete();
+            }
         }
     }
 
