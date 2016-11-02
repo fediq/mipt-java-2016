@@ -34,9 +34,8 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
         dbOpen = true;
         if (file.exists()) {
-            try {
-                FileInputStream fin = new FileInputStream(file);
-                DataInputStream in = new DataInputStream(fin);
+            try (FileInputStream fin = new FileInputStream(file);
+                 DataInputStream in = new DataInputStream(fin)) {
                 int cntElems = in.readInt();
                 for (int i = 0; i < cntElems; ++i) {
                     db.put(keySerializer.read(in), valueSerializer.read(in));
