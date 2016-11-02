@@ -102,7 +102,6 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 valueSerializer.write(pair.getValue(), out);
             }
             dbOpen = false;
-            out.close();
             db.clear();
         } catch (IOException exp) {
             throw new RuntimeException("COULDN'T CLOSE DB");
