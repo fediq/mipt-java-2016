@@ -60,20 +60,23 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
             file.delete();
         }
 
-        file.createNewFile();
-
-        DataOutputStream out = new DataOutputStream(new FileOutputStream(file));
         try {
-            out.writeUTF(myStorageCode);
+            file.createNewFile();
 
-            out.writeUTF(Integer.toString(hashMap.size()));
+            DataOutputStream out = new DataOutputStream(new FileOutputStream(file));
+            try {
+                out.writeUTF(myStorageCode);
 
-            for (HashMap.Entry<K, V> it : hashMap.entrySet()) {
-                keySerializer.write(out, it.getKey());
-                valueSerializer.write(out, it.getValue());
+                out.writeUTF(Integer.toString(hashMap.size()));
+
+                for (HashMap.Entry<K, V> it : hashMap.entrySet()) {
+                    keySerializer.write(out, it.getKey());
+                    valueSerializer.write(out, it.getValue());
+                }
+            } finally {
+                out.close();
             }
         } finally {
-            out.close();
             if (lock.exists()) {
                 lock.delete();
             }
