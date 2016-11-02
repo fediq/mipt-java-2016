@@ -39,7 +39,6 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 for (int i = 0; i < cntElems; ++i) {
                     db.put(keySerializer.read(in), valueSerializer.read(in));
                 }
-                in.close();
             } catch (IOException e) {
                 throw new RuntimeException("CAN'T PUT IN DB");
             }
@@ -93,9 +92,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public void close() throws IOException {
         checkOpened();
-        try {
-            FileOutputStream fout = new FileOutputStream(file);
-            DataOutputStream out = new DataOutputStream(fout);
+        try (DataOutputStream out = new DataOutputStream(new FileOutputStream(file))) {
             out.writeInt(db.size());
             for (HashMap.Entry<K, V> pair: db.entrySet()) {
                 keySerializer.write(pair.getKey(), out);
