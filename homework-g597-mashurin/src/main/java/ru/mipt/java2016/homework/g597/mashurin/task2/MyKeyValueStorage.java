@@ -36,6 +36,19 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
+    private  void read() {
+        try (DataInputStream input = new DataInputStream(new FileInputStream(file))) {
+            int readSize = input.readInt();
+            for (int i = 0; i < readSize; i++) {
+                K key = keyIdentification.read(input);
+                V value = valueIdentification.read(input);
+                hashmap.put(key, value);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Error read");
+        }
+    }
+
     private void write() {
         try (DataOutputStream output = new DataOutputStream(new FileOutputStream(file))) {
             output.writeInt(hashmap.size());
@@ -47,19 +60,6 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             throw new RuntimeException("Error write");
         } finally {
             security.delete();
-        }
-    }
-
-    private  void read() {
-        try (DataInputStream input = new DataInputStream(new FileInputStream(file))) {
-            int readSize = input.readInt();
-            for (int i = 0; i < readSize; i++) {
-                K key = keyIdentification.read(input);
-                V value = valueIdentification.read(input);
-                hashmap.put(key, value);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("Error read");
         }
     }
 
