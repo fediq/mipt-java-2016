@@ -52,43 +52,64 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V>, AutoClose
 
     @Override
     public V read(K key) {
+        if (contents == null) {
+            throw new IllegalStateException("Something went wrong");
+        }
         return contents.get(key);
     }
 
     @Override
     public boolean exists(K key) {
+        if (contents == null) {
+            throw new IllegalStateException("Something went wrong");
+        }
         return contents.containsKey(key);
     }
 
     @Override
     public void write(K key, V value) {
+        if (contents == null) {
+            throw new IllegalStateException("Something went wrong");
+        }
         contents.put(key, value);
     }
 
     @Override
     public void delete(K key) {
+        if (contents == null) {
+            throw new IllegalStateException("Something went wrong");
+        }
         contents.remove(key);
     }
 
     @Override
     public Iterator<K> readKeys() {
+        if (contents == null) {
+            throw new IllegalStateException("Something went wrong");
+        }
         return contents.keySet().iterator();
     }
 
     @Override
     public int size() {
+        if (contents == null) {
+            throw new IllegalStateException("Something went wrong");
+        }
         return contents.size();
     }
 
     @Override
     public void close() throws IOException {
-        file.seek(0);
-        file.setLength(0);
-        for (HashMap.Entry<K, V> entry : contents.entrySet()) {
-            serializationStrategy.write(file, entry.getKey(), entry.getValue());
+        try {
+            file.seek(0);
+            file.setLength(0);
+            for (HashMap.Entry<K, V> entry : contents.entrySet()) {
+                serializationStrategy.write(file, entry.getKey(), entry.getValue());
+            }
+        } finally {
+            Files.delete(lock.toPath());
+            contents.clear();
+            file.close();
         }
-        Files.delete(lock.toPath());
-        contents.clear();
-        file.close();
     }
 }
