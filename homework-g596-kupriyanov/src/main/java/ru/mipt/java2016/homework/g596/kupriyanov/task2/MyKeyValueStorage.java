@@ -33,16 +33,20 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             throw new RuntimeException("NO DIRECTORY");
         }
         dbOpen = true;
-        try {
-            FileInputStream fin = new FileInputStream(file);
-            DataInputStream in = new DataInputStream(fin);
-            int cntElems = in.readInt();
-            for (int i = 0; i < cntElems; ++i) {
-                db.put(keySerializer.read(in), valueSerializer.read(in));
+        if (file.exists()) {
+            try {
+                FileInputStream fin = new FileInputStream(file);
+                DataInputStream in = new DataInputStream(fin);
+                int cntElems = in.readInt();
+                for (int i = 0; i < cntElems; ++i) {
+                    db.put(keySerializer.read(in), valueSerializer.read(in));
+                }
+                in.close();
+            } catch (IOException e) {
+                throw new RuntimeException("CAN'T PUT IN DB");
             }
-            in.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+        } else {
+            file.createNewFile();
         }
     }
 
