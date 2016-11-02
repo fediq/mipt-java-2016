@@ -60,22 +60,25 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
             file.delete();
         }
 
-        try {
-            file.createNewFile();
+        file.createNewFile();
 
-            DataOutputStream out = new DataOutputStream(new FileOutputStream(file));
-            try {
-                out.writeUTF(myStorageCode);
+        try (DataOutputStream out = new DataOutputStream(new FileOutputStream(file))) {
+            out.writeUTF(myStorageCode);
 
-                out.writeUTF(Integer.toString(hashMap.size()));
+            out.writeUTF(Integer.toString(hashMap.size()));
 
-                for (HashMap.Entry<K, V> it : hashMap.entrySet()) {
-                    keySerializer.write(out, it.getKey());
-                    valueSerializer.write(out, it.getValue());
-                }
-            } finally {
-                out.close();
+            for (HashMap.Entry<K, V> it : hashMap.entrySet()) {
+                keySerializer.write(out, it.getKey());
+                valueSerializer.write(out, it.getValue());
             }
+        } finally {
+            if (lock.exists()) {
+                lock.delete();
+            }
+        }
+
+        try {
+
         } finally {
             if (lock.exists()) {
                 lock.delete();
@@ -132,10 +135,3 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
         }
     }
 }
-/*
-* в 37 строке и 61
-* int fileElementsCount = in.readInt();
-* и
-* out.write(hashMap.size());
-* не работает O_o
-* */
