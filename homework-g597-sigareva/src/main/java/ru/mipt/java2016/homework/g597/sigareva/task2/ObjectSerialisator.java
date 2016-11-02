@@ -32,14 +32,10 @@ abstract class ObjectSerializer<K, V> {
     public boolean canRead() {
         try {
             lastRead = inputStream.readLine();
-        } catch (IOException e){
+        } catch (IOException e) {
             System.out.println(e.getMessage());
         }
-        if(lastRead == null) {
-            return false;
-        } else {
-            return true;
-        }
+        return lastRead != null;
     }
 
     protected abstract Pair<K, V> convert();
@@ -63,7 +59,7 @@ abstract class ObjectSerializer<K, V> {
         }
     }
 
-    public void checkBeforeWrite() throws IOException{
+    public void checkBeforeWrite() throws IOException {
         if (openInputStream) {
             try {
                 inputStream.close();

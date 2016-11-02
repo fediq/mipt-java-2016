@@ -14,8 +14,7 @@ public class KeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
     private Map<K, V> mapa = new HashMap<>();
     private ObjectSerializer<K, V> serializer;
 
-        KeyValueStorageImpl(ObjectSerializer newSerializer) throws IOException {
-
+    KeyValueStorageImpl(ObjectSerializer newSerializer) throws IOException {
         serializer = newSerializer;
         serializer.checkBeforeRead();
         while (serializer.canRead()) {
@@ -72,8 +71,7 @@ public class KeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
         serializer.checkBeforeWrite();
 
         for (Map.Entry<K, V>  o : mapa.entrySet()) {
-            Map.Entry<K, V> thisEntry = o;
-            serializer.write(thisEntry.getKey(), thisEntry.getValue());
+            serializer.write(o.getKey(), o.getValue());
         }
         serializer.outputStream.close();
         fileOpen = false;

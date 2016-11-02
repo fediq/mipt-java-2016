@@ -2,12 +2,7 @@ package ru.mipt.java2016.homework.g597.sigareva.task2;
 
 import javafx.util.Pair;
 
-import java.io.IOException;
-
-/**
- * Created by 1 on 31.10.2016.
- */
- class StringStringSerializer extends ObjectSerializer<String, String> {
+class StringStringSerializer extends ObjectSerializer<String, String> {
 
     StringStringSerializer(String newPath) {
         super(newPath);
