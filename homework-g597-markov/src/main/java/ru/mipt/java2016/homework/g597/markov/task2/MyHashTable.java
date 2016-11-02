@@ -85,11 +85,11 @@ public class MyHashTable<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public void close() throws IOException {
-        if (!isOpened) {
-            throw new IOException("file is not opened");
-        }
-
         try {
+            if (!isOpened) {
+                throw new IOException("file is not opened");
+            }
+
             file.setLength(0);
                 for (K key : hashMap.keySet()) {
                     keySerializator.write(file, key);
