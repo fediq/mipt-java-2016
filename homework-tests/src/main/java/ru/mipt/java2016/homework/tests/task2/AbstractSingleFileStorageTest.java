@@ -42,7 +42,9 @@ public abstract class AbstractSingleFileStorageTest {
     public void testReadWrite() {
         doInTempDirectory(path -> doWithStrings(path, storage -> {
             storage.write("foo", "bar");
-
+            assertEquals("bar", storage.read("foo"));
+            assertEquals(1, storage.size());
+            assertFullyMatch(storage.readKeys(), "foo");
         }));
     }
 

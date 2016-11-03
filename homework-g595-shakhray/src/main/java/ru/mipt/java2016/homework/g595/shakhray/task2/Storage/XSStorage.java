@@ -5,7 +5,7 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import java.io.*;
 import java.util.*;
 
-import ru.mipt.java2016.homework.g595.shakhray.task2.FileLocking.FileLocker;
+import ru.mipt.java2016.homework.g595.shakhray.task2.FileLocker.FileLocker;
 import ru.mipt.java2016.homework.g595.shakhray.task2.Serialization.Classes.IntegerSerialization;
 import ru.mipt.java2016.homework.g595.shakhray.task2.Serialization.Interface.StorageSerialization;
 

@@ -1,4 +1,4 @@
-package ru.mipt.java2016.homework.g595.shakhray.task2.FileLocking;
+package ru.mipt.java2016.homework.g595.shakhray.task2.FileLocker;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -14,7 +14,7 @@ public class FileLocker {
 
     private final String lockFilename = ".lock";
 
-    private static FileLocker locker = new FileLocker();
+    private static final FileLocker locker = new FileLocker();
 
     private FileLocker() {
     }
