@@ -4,6 +4,7 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 
 import java.io.*;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.HashMap;
 
 
@@ -11,22 +12,26 @@ import java.util.HashMap;
  * Created by Ivan on 30.10.2016.
  */
 public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
-    public HashMap<K, V> map;
+    private Map<K, V> map = new HashMap<>();
     private SerializationInterface<K> keySerializer;
     private SerializationInterface<V> valueSerializer;
     private File file;
+    private File flagFile;
     private static String secretString = "thisFileIsMy.LondonIsTheCapitalOfGreatBritain";
 
 
-    public MyKeyValueStorage(String path, String name,
-                             SerializationInterface<K> keySerializer,
+    public MyKeyValueStorage(String path, SerializationInterface<K> keySerializer,
                              SerializationInterface<V> valueSerializer) throws IOException {
+        flagFile = new File(path + File.separator + "myDataBase.flag");
+        if (flagFile.exists()) {
+            throw new IOException("File is open in this time");
+        }
+        flagFile.createNewFile();
         this.keySerializer = keySerializer;
         this.valueSerializer = valueSerializer;
-        file = new File(path + File.separator + name);
-        map = new HashMap<K, V>();
+        file = new File(path + File.separator + "myDataBase.db");
 
-        if(!file.exists()){
+        if (!file.exists()) {
             PrintWriter output;
             file.createNewFile();
             output = new PrintWriter(new FileWriter(file));
@@ -40,8 +45,8 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         input = new BufferedReader(new FileReader(file));
         String secret = input.readLine();
 
-        if (!secret.equals(secretString)){
-            throw new IOException("It is not my file\n");
+        if (!secret.equals(secretString)) {
+            throw new IOException("It is not my file");
         }
         Integer size = Integer.parseInt(input.readLine());
 
@@ -90,17 +95,18 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public void close() throws IOException {
         checkNotClosed();
-        PrintWriter output = new PrintWriter(new FileWriter(file));
-        output.println(secretString);
-        output.println((Integer.valueOf(this.size())).toString());
-        for (HashMap.Entry<K, V> entry : map.entrySet()) {
-            keySerializer.serialize(output, entry.getKey());
-            valueSerializer.serialize(output, entry.getValue());
+        try (PrintWriter output = new PrintWriter(new FileWriter(file))) {
+            output.println(secretString);
+            output.println((Integer.valueOf(this.size())).toString());
+            for (HashMap.Entry<K, V> entry : map.entrySet()) {
+                keySerializer.serialize(output, entry.getKey());
+                valueSerializer.serialize(output, entry.getValue());
+            }
+        } finally {
+            map = null;
+            flagFile.delete();
         }
-        map = null;
-        output.close();
     }
-
 
     private void checkNotClosed() {
         if (map == null) {

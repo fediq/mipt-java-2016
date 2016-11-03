@@ -1,7 +1,5 @@
 package ru.mipt.java2016.homework.g597.povarnitsyn.task2;
 
-import com.sun.org.apache.xpath.internal.operations.Bool;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -14,8 +12,9 @@ public class BooleanSerialization implements SerializationInterface<Boolean> {
     public Boolean deserialize(BufferedReader input) throws IOException {
         return Boolean.parseBoolean(input.readLine());
     }
+
     @Override
-    public void serialize(PrintWriter output, Boolean object) throws IOException{
+    public void serialize(PrintWriter output, Boolean object) throws IOException {
         output.println(object.toString());
     }
 }

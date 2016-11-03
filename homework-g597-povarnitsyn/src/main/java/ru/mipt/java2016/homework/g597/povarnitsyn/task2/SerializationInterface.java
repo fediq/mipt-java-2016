@@ -1,4 +1,5 @@
 package ru.mipt.java2016.homework.g597.povarnitsyn.task2;
+
 import java.io.*;
 
 /**
@@ -6,5 +7,6 @@ import java.io.*;
  */
 public interface SerializationInterface<T> {
     T deserialize(BufferedReader input) throws IOException;
+
     void serialize(PrintWriter output, T object) throws IOException;
 }

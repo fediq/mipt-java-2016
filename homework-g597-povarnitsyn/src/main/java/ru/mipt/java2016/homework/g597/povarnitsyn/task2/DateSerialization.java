@@ -14,8 +14,9 @@ public class DateSerialization implements SerializationInterface<Date> {
     public Date deserialize(BufferedReader input) throws IOException {
         return new Date(Long.parseLong(input.readLine()));
     }
+
     @Override
-    public void serialize(PrintWriter output, Date object) throws IOException{
-        output.println(object.toString());
+    public void serialize(PrintWriter output, Date object) throws IOException {
+        output.println(String.valueOf(object.getTime()));
     }
 }

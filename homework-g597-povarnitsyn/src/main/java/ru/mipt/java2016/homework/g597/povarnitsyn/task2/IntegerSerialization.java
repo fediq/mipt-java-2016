@@ -8,14 +8,13 @@ import java.io.PrintWriter;
  * Created by Ivan on 30.10.2016.
  */
 public class IntegerSerialization implements SerializationInterface<Integer> {
+    @Override
+    public Integer deserialize(BufferedReader input) throws IOException {
+        return Integer.parseInt(input.readLine());
+    }
 
-    IntegerSerialization(){}
     @Override
-    public Integer deserialize(BufferedReader input) throws IOException{
-         return Integer.parseInt(input.readLine());
-     }
-    @Override
-    public void serialize(PrintWriter output, Integer object) throws IOException{
+    public void serialize(PrintWriter output, Integer object) throws IOException {
         output.println(object.toString());
     }
 }

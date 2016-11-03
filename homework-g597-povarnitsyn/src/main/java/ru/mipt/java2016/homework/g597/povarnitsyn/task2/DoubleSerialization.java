@@ -9,11 +9,12 @@ import java.io.PrintWriter;
  */
 public class DoubleSerialization implements SerializationInterface<Double> {
     @Override
-    public Double deserialize(BufferedReader input) throws IOException{
+    public Double deserialize(BufferedReader input) throws IOException {
         return Double.parseDouble(input.readLine());
     }
+
     @Override
-    public void serialize(PrintWriter output, Double object) throws IOException{
+    public void serialize(PrintWriter output, Double object) throws IOException {
         output.println(object.toString());
     }
 }

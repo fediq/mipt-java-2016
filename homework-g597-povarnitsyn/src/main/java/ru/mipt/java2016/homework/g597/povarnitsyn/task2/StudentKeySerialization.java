@@ -10,8 +10,8 @@ import java.io.PrintWriter;
  * Created by Ivan on 30.10.2016.
  */
 public class StudentKeySerialization  implements SerializationInterface<StudentKey> {
-    IntegerSerialization intSerializer = new IntegerSerialization();
-    StringSerialization strSerializer = new StringSerialization();
+    private IntegerSerialization intSerializer = new IntegerSerialization();
+    private StringSerialization strSerializer = new StringSerialization();
 
     @Override
     public StudentKey deserialize(BufferedReader input) throws IOException {
