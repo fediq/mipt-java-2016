@@ -14,13 +14,13 @@ public class FileLocker {
 
     private final String lockFilename = ".lock";
 
-    private static final FileLocker Locker = new FileLocker();
+    private static final FileLocker LOCKER = new FileLocker();
 
     private FileLocker() {
     }
 
     public static FileLocker getFileLocker() {
-        return Locker;
+        return LOCKER;
     }
 
     public boolean checkLock(String path) throws FileNotFoundException {
