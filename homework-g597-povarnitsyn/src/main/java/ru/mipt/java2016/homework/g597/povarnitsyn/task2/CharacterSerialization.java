@@ -6,6 +6,7 @@ import java.io.PrintWriter;
 /**
  * Created by Ivan on 03.11.2016.
  */
+
 public class CharacterSerialization implements SerializationInterface<Character> {
     @Override
     public Character deserialize(BufferedReader input) throws IOException {
