@@ -1,5 +1,7 @@
-package ru.mipt.java2016.homework.g595.shakhray.task2.Serialization.Classes;
+package ru.mipt.java2016.homework.g595.shakhray.task2;
 
+import ru.mipt.java2016.homework.g595.shakhray.task2.Serialization.Classes.IntegerSerialization;
+import ru.mipt.java2016.homework.g595.shakhray.task2.Serialization.Classes.StringSerialization;
 import ru.mipt.java2016.homework.g595.shakhray.task2.Serialization.Interface.StorageSerialization;
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
 
