@@ -53,13 +53,10 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private void writeToFile() throws IOException {
         try (DataOutputStream output = new DataOutputStream(new FileOutputStream(file))) {
             output.writeInt(database.size());
-
             for (Map.Entry<K, V> entry : database.entrySet()) {
                 keySerializationStrategy.serializeToFile(entry.getKey(), output);
                 valueSerializationStrategy.serializeToFile(entry.getValue(), output);
             }
-
-            output.close();
         } catch (IOException e) {
             throw new IOException("Can't write to file");
         }
@@ -112,11 +109,6 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         checkState();
         writeToFile();
         isClosed = true;
-    }
-
-    @Override
-    public String toString() {
-        checkState();
-        return database.toString();
+        database.clear();
     }
 }
