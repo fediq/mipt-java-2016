@@ -194,7 +194,7 @@ public class StackCalculator implements Calculator {
         if (stack.size() == 1) {
             return stack.lastElement();
         } else {
-            // Если нет, то случилось что-то плохое.
+        // Если нет, то случилось что-то плохое
             throw new ParsingException("Invalid expression");
         }
     }
