@@ -38,7 +38,7 @@ public class SSTable<Key, Value> {
 
     private void readIndices() throws IOException {
         int totalAmount = storage.readInt();
-        InputStream stream = Channels.newInputStream(storage.getChannel());
+        BufferedInputStream stream = new BufferedInputStream(Channels.newInputStream(storage.getChannel()));
         IntegerSerializer serializer = IntegerSerializer.getInstance();
         for (int i = 0; i < totalAmount; i++) {
             Key key = keySerializationStrategy.deserializeFromStream(stream);
@@ -87,7 +87,8 @@ public class SSTable<Key, Value> {
             storage.setLength(0);
             IntegerSerializer integerSerializer = IntegerSerializer.getInstance();
 
-            OutputStream outputStream = Channels.newOutputStream(storage.getChannel());
+            BufferedOutputStream outputStream = new BufferedOutputStream(
+                    Channels.newOutputStream(storage.getChannel()));
 
             integerSerializer.serializeToStream(toFlip.size(), outputStream);
 
@@ -139,10 +140,10 @@ public class SSTable<Key, Value> {
         Integer offset = indices.get(key);
         Value result;
         try {
-            storage.seek(0);
+            storage.seek(offset);
             InputStream stream = Channels.newInputStream(storage.getChannel());
-            stream.skip(offset);
             result = valueSerializationStrategy.deserializeFromStream(stream);
+
         } catch (IOException e) {
             throw new IllegalStateException();
         }
@@ -151,9 +152,11 @@ public class SSTable<Key, Value> {
 
     private void rewriteIndices() {
         try {
-            IntegerSerializer integerSerializer = IntegerSerializer.getInstance();
+            storage.seek(0);
 
-            OutputStream outputStream = Channels.newOutputStream(storage.getChannel());
+            IntegerSerializer integerSerializer = IntegerSerializer.getInstance();
+            BufferedOutputStream outputStream = new BufferedOutputStream(
+                    Channels.newOutputStream(storage.getChannel()));
 
             integerSerializer.serializeToStream(indices.size(), outputStream);
 
@@ -161,6 +164,8 @@ public class SSTable<Key, Value> {
                 keySerializationStrategy.serializeToStream(entry.getKey(), outputStream);
                 integerSerializer.serializeToStream(entry.getValue(), outputStream);
             }
+            outputStream.flush();
+
         } catch (IOException e) {
             System.out.println(e.getMessage());
             e.printStackTrace();
