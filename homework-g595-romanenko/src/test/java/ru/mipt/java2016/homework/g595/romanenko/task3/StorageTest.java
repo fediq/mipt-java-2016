@@ -77,7 +77,7 @@ public class StorageTest extends AbstractSingleFileStorageTest {
 
     @Test
     public void testBigAmountWrites() {
-        int totalAmount = 20 * chunkSize;
+        int totalAmount = 50 * chunkSize;
         Random random = new Random();
         Map<Integer, Double> mp = new HashMap<>();
         doInTempDirectory(path -> doWithNumbers(path, storage -> {
@@ -94,7 +94,7 @@ public class StorageTest extends AbstractSingleFileStorageTest {
 
     @Test
     public void testSameKeys() {
-        int mod = 2048;
+        int mod = 50;
         Random random = new Random(chunkSize * mod);
         int totalAmount = 20 * mod;
         Map<Integer, Double> mp = new HashMap<>();
@@ -118,7 +118,7 @@ public class StorageTest extends AbstractSingleFileStorageTest {
     @SuppressWarnings("Duplicates")
     @Test
     public void testEraseKeys() {
-        int totalAmount = 8 * chunkSize;//* 2048;
+        int totalAmount = 50 * chunkSize;//* 2048;
         Random random = new Random(chunkSize);
         Map<Integer, Double> mp = new HashMap<>();
         List<Integer> keys = new ArrayList<>();
@@ -138,7 +138,7 @@ public class StorageTest extends AbstractSingleFileStorageTest {
             });
             keys.sort(Integer::compareTo);
             doWithNumbers(path, storage -> {
-                for (int i = 0; i < totalAmount / 8; i++) {
+                for (int i = 0; i < chunkSize * 2; i++) {
                     Integer key = keys.get(Math.abs(random.nextInt()) % keys.size());
                     mp.remove(key);
                     storage.delete(key);
@@ -152,7 +152,7 @@ public class StorageTest extends AbstractSingleFileStorageTest {
     @SuppressWarnings("Duplicates")
     @Test
     public void testBigAmountWritesPersistent() {
-        int totalAmount = 15 * chunkSize;//* 2048;
+        int totalAmount = 50 * chunkSize;//* 2048;
         Random random = new Random(chunkSize);
         Map<Integer, Double> mp = new HashMap<>();
         List<Integer> keys = new ArrayList<>();
