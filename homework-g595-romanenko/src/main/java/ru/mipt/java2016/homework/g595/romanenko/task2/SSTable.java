@@ -26,8 +26,8 @@ Values
 */
 public class SSTable<Key, Value> {
 
-    private RandomAccessFile storage;
-    private final Map<Key, Integer> indexes = new HashMap<>();
+    private final RandomAccessFile storage;
+    private final Map<Key, Integer> indices = new HashMap<>();
 
     private final SerializationStrategy<Key> keySerializationStrategy;
     private final SerializationStrategy<Value> valueSerializationStrategy;
@@ -36,14 +36,14 @@ public class SSTable<Key, Value> {
     private String path;
     private String dbName = null;
 
-    private void readIndexes() throws IOException {
+    private void readIndices() throws IOException {
         int totalAmount = storage.readInt();
         InputStream stream = Channels.newInputStream(storage.getChannel());
         IntegerSerializer serializer = IntegerSerializer.getInstance();
         for (int i = 0; i < totalAmount; i++) {
             Key key = keySerializationStrategy.deserializeFromStream(stream);
             Integer offset = serializer.deserializeFromStream(stream);
-            indexes.put(key, offset);
+            indices.put(key, offset);
         }
     }
 
@@ -68,7 +68,7 @@ public class SSTable<Key, Value> {
 
         storage = new RandomAccessFile(path, "rw");
         if (storage.length() != 0) {
-            readIndexes();
+            readIndices();
         }
     }
 
@@ -82,7 +82,7 @@ public class SSTable<Key, Value> {
         checkClosed();
 
         try {
-            indexes.clear();
+            indices.clear();
 
             storage.setLength(0);
             IntegerSerializer integerSerializer = IntegerSerializer.getInstance();
@@ -102,7 +102,7 @@ public class SSTable<Key, Value> {
             }
 
             for (Key key : cachedKeys) {
-                indexes.put(key, totalLength);
+                indices.put(key, totalLength);
                 offsets.add(totalLength);
                 totalLength += valueSerializationStrategy.getBytesSize(toFlip.get(key));
             }
@@ -133,10 +133,10 @@ public class SSTable<Key, Value> {
 
     public Value getValue(Key key) {
         checkClosed();
-        if (!indexes.containsKey(key)) {
+        if (!indices.containsKey(key)) {
             return null;
         }
-        Integer offset = indexes.get(key);
+        Integer offset = indices.get(key);
         Value result;
         try {
             storage.seek(0);
@@ -149,12 +149,32 @@ public class SSTable<Key, Value> {
         return result;
     }
 
+    private void rewriteIndices() {
+        try {
+            IntegerSerializer integerSerializer = IntegerSerializer.getInstance();
+
+            OutputStream outputStream = Channels.newOutputStream(storage.getChannel());
+
+            integerSerializer.serializeToStream(indices.size(), outputStream);
+
+            for (Map.Entry<Key, Integer> entry : indices.entrySet()) {
+                keySerializationStrategy.serializeToStream(entry.getKey(), outputStream);
+                integerSerializer.serializeToStream(entry.getValue(), outputStream);
+            }
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+            throw new IllegalStateException();
+        }
+    }
+
     public void close() {
         if (isClosed) {
             return;
         }
         isClosed = true;
         try {
+            rewriteIndices();
             storage.close();
             FileDigitalSignature.getInstance().signFileWithDefaultSignName(path);
         } catch (IOException e) {
@@ -164,22 +184,22 @@ public class SSTable<Key, Value> {
 
     public int size() {
         checkClosed();
-        return indexes.size();
+        return indices.size();
     }
 
-    public void removeKeyFromIndexes(Key key) {
+    public void removeKeyFromIndices(Key key) {
         checkClosed();
-        indexes.remove(key);
+        indices.remove(key);
     }
 
     public boolean exists(Key key) {
         checkClosed();
-        return indexes.containsKey(key);
+        return indices.containsKey(key);
     }
 
     public Iterator<Key> readKeys() {
         checkClosed();
-        return indexes.keySet().iterator();
+        return indices.keySet().iterator();
     }
 
     public String getPath() {

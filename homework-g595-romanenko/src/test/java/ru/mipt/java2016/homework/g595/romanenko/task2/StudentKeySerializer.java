@@ -1,5 +1,8 @@
-package ru.mipt.java2016.homework.g595.romanenko.task2.serialization;
+package ru.mipt.java2016.homework.g595.romanenko.task2;
 
+import ru.mipt.java2016.homework.g595.romanenko.task2.serialization.IntegerSerializer;
+import ru.mipt.java2016.homework.g595.romanenko.task2.serialization.SerializationStrategy;
+import ru.mipt.java2016.homework.g595.romanenko.task2.serialization.StringSerializer;
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
 
 import java.io.IOException;

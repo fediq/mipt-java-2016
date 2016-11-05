@@ -68,7 +68,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         if (cachedValues.containsKey(key)) {
             cachedValues.remove(key);
         }
-        table.removeKeyFromIndexes(key);
+        table.removeKeyFromIndices(key);
     }
 
     @Override

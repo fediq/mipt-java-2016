@@ -1,11 +1,22 @@
 package ru.mipt.java2016.homework.g595.romanenko.task3;
 
+import org.junit.Test;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
-import ru.mipt.java2016.homework.g595.romanenko.task2.serialization.*;
+import ru.mipt.java2016.homework.g595.romanenko.task2.StudentKeySerializer;
+import ru.mipt.java2016.homework.g595.romanenko.task2.StudentSerializer;
+import ru.mipt.java2016.homework.g595.romanenko.task2.serialization.DoubleSerializer;
+import ru.mipt.java2016.homework.g595.romanenko.task2.serialization.IntegerSerializer;
+import ru.mipt.java2016.homework.g595.romanenko.task2.serialization.StringSerializer;
 import ru.mipt.java2016.homework.g595.romanenko.task3.comapators.StudentKeyComparator;
 import ru.mipt.java2016.homework.tests.task2.AbstractSingleFileStorageTest;
 import ru.mipt.java2016.homework.tests.task2.Student;
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
+
+import java.util.*;
+
+import static org.junit.Assert.assertEquals;
+import static ru.mipt.java2016.homework.tests.task2.StorageTestUtils.assertFullyMatch;
+import static ru.mipt.java2016.homework.tests.task2.StorageTestUtils.doInTempDirectory;
 
 /**
  * ru.mipt.java2016.homework.g595.romanenko.task3
@@ -47,5 +58,136 @@ public class StorageTest extends AbstractSingleFileStorageTest {
                 new MergerSST<>(new StudentKeyComparator())
         );
         return result;
+    }
+
+    private final int chunkSize = 2048;
+
+    @Test
+    public void testOne() {
+        doInTempDirectory(path -> doWithNumbers(path, storage -> {
+            for (int i = 0; i < 3 * chunkSize; i++) {
+                storage.write(0, 1e-7);
+            }
+            assertEquals(storage.size(), 1);
+            Set<Integer> keys = new HashSet<>();
+            keys.add(0);
+            assertFullyMatch(storage.readKeys(), keys);
+        }));
+    }
+
+    @Test
+    public void testBigAmountWrites() {
+        int totalAmount = 20 * chunkSize;
+        Random random = new Random();
+        Map<Integer, Double> mp = new HashMap<>();
+        doInTempDirectory(path -> doWithNumbers(path, storage -> {
+            for (int i = 0; i < totalAmount; i++) {
+                Integer key = random.nextInt();
+                Double value = random.nextDouble();
+                mp.put(key, value);
+                storage.write(key, value);
+            }
+            assertEquals(storage.size(), mp.size());
+            assertFullyMatch(storage.readKeys(), mp.keySet());
+        }));
+    }
+
+    @Test
+    public void testSameKeys() {
+        int mod = 2048;
+        Random random = new Random(chunkSize * mod);
+        int totalAmount = 20 * mod;
+        Map<Integer, Double> mp = new HashMap<>();
+
+        doInTempDirectory(path -> {
+            doWithNumbers(path, storage -> {
+                for (int i = 0; i < totalAmount; i++) {
+                    Integer key = i % mod;
+                    Double value = random.nextDouble();
+                    mp.put(key, value);
+                    storage.write(key, value);
+                }
+                assertFullyMatch(storage.readKeys(), mp.keySet());
+                for (Map.Entry<Integer, Double> entry : mp.entrySet()) {
+                    assertEquals(entry.getValue(), storage.read(entry.getKey()));
+                }
+            });
+        });
+    }
+
+    @SuppressWarnings("Duplicates")
+    @Test
+    public void testEraseKeys() {
+        int totalAmount = 8 * chunkSize;//* 2048;
+        Random random = new Random(chunkSize);
+        Map<Integer, Double> mp = new HashMap<>();
+        List<Integer> keys = new ArrayList<>();
+
+        doInTempDirectory(path -> {
+            doWithNumbers(path, storage -> {
+                for (int i = 0; i < totalAmount; i++) {
+                    Integer key = random.nextInt();
+                    Double value = random.nextDouble();
+                    if (!mp.containsKey(key)) {
+                        keys.add(key);
+                    }
+                    mp.put(key, value);
+                    storage.write(key, value);
+                }
+                assertFullyMatch(storage.readKeys(), mp.keySet());
+            });
+            keys.sort(Integer::compareTo);
+            doWithNumbers(path, storage -> {
+                for (int i = 0; i < totalAmount / 8; i++) {
+                    Integer key = keys.get(Math.abs(random.nextInt()) % keys.size());
+                    mp.remove(key);
+                    storage.delete(key);
+                    keys.remove(key);
+                }
+                assertFullyMatch(storage.readKeys(), mp.keySet());
+            });
+        });
+    }
+
+    @SuppressWarnings("Duplicates")
+    @Test
+    public void testBigAmountWritesPersistent() {
+        int totalAmount = 15 * chunkSize;//* 2048;
+        Random random = new Random(chunkSize);
+        Map<Integer, Double> mp = new HashMap<>();
+        List<Integer> keys = new ArrayList<>();
+
+        doInTempDirectory(path -> {
+            doWithNumbers(path, storage -> {
+                for (int i = 0; i < totalAmount; i++) {
+                    Integer key = random.nextInt();
+                    Double value = random.nextDouble();
+                    if (!mp.containsKey(key)) {
+                        keys.add(key);
+                    }
+                    mp.put(key, value);
+                    storage.write(key, value);
+                }
+                assertFullyMatch(storage.readKeys(), mp.keySet());
+            });
+            keys.sort(Integer::compareTo);
+
+            doWithNumbers(path, storage -> {
+                assertEquals(mp.size(), storage.size());
+                assertFullyMatch(storage.readKeys(), mp.keySet());
+
+                for (int i = 0; i < totalAmount; i++) {
+                    Integer key = keys.get(Math.abs(random.nextInt()) % keys.size());
+                    Double value = random.nextDouble();
+                    mp.put(key, value);
+                    storage.write(key, value);
+                }
+                assertFullyMatch(storage.readKeys(), mp.keySet());
+
+                for (Map.Entry<Integer, Double> entry : mp.entrySet()) {
+                    assertEquals(entry.getValue(), storage.read(entry.getKey()));
+                }
+            });
+        });
     }
 }
