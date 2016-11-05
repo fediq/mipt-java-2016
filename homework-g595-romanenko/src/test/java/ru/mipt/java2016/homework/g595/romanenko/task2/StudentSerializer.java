@@ -1,5 +1,6 @@
-package ru.mipt.java2016.homework.g595.romanenko.task2.serialization;
+package ru.mipt.java2016.homework.g595.romanenko.task2;
 
+import ru.mipt.java2016.homework.g595.romanenko.task2.serialization.*;
 import ru.mipt.java2016.homework.tests.task2.Student;
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
 

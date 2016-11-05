@@ -44,7 +44,7 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
     /**
      * Constants
      */
-    private final int maxCountObjectsInMemory = 2048;
+    private final int maxCountObjectsInMemory = 8192; //4095;//2048;
 
     /**
      * Internal state
@@ -71,9 +71,7 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
             }
         } catch (IOException ignore) {
             throw new IllegalStateException("File tableList exist, but subtables are uncorrected");
-            // all right, empty storage
         }
-
     }
 
     /**
@@ -146,6 +144,12 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
         if (cachedValues.containsKey(key)) {
             value = cachedValues.get(key);
         }
+        if (updatedValues.containsKey(key)) {
+            value = updatedValues.get(key);
+        }
+        if (value != null) {
+            return value;
+        }
         for (SSTable<K, V> table : tables) {
             if (table != null) {
                 value = table.getValue(key);
@@ -168,7 +172,9 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
      * @param value value to cache
      */
     private void addCachedValue(K key, V value) {
-        roundRobin.add(key);
+        if (!cachedValues.containsKey(key)) {
+            roundRobin.add(key);
+        }
         if (roundRobin.size() > maxCountObjectsInMemory) {
             K rRKey = roundRobin.poll();
             cachedValues.remove(rRKey);
@@ -186,12 +192,12 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public boolean exists(K key) {
         checkClosed();
-        if (cachedValues.containsKey(key)) {
+        if (updatedValues.containsKey(key)) {
             return true;
         }
         boolean isExists = false;
         for (SSTable<K, V> table : tables) {
-            if (table.exists(key)) {
+            if (table != null && table.exists(key)) {
                 isExists = true;
                 break;
             }
@@ -210,9 +216,9 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public void write(K key, V value) {
         checkClosed();
-        epochNumber += 1;
         if (!exists(key)) {
             totalAmount++;
+            epochNumber += 1;
         }
         updatedValues.put(key, value);
         addCachedValue(key, value);
@@ -313,19 +319,13 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
         if (cachedValues.containsKey(key)) {
             cachedValues.remove(key);
         }
-        tables.stream().filter(table -> table != null).forEach(table -> table.removeKeyFromIndexes(key));
+        tables.stream().filter(table -> table != null).forEach(table -> table.removeKeyFromIndices(key));
     }
 
     @Override
     public Iterator<K> readKeys() {
         checkClosed();
-        tables.stream().filter(table -> table != null).forEach(table -> {
-            Iterator<K> it = table.readKeys();
-            while (it.hasNext()) {
-                read(it.next());
-            }
-        });
-        return cachedValues.keySet().iterator();
+        return new StorageIterator();
     }
 
     /**
@@ -377,6 +377,83 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
         } catch (IOException exp) {
             System.out.println(exp.getMessage());
             exp.printStackTrace();
+        }
+    }
+
+    public class StorageIterator implements Iterator<K> {
+
+        private final Set<K> cachedKeys = new HashSet<>();
+        private Iterator<K> updatedValuesIterator;
+        private Iterator<K> tableIterator;
+        private int tableNumber;
+        private final int currentEpochNumber;
+        private K nextValue = null;
+
+        private StorageIterator() {
+            currentEpochNumber = epochNumber;
+            updatedValuesIterator = updatedValues.keySet().iterator();
+            tableIterator = null;
+            for (tableNumber = 0; tableNumber != tables.size(); tableNumber++) {
+                SSTable<K, V> table = tables.get(tableNumber);
+                if (table != null) {
+                    tableIterator = table.readKeys();
+                    break;
+                }
+            }
+
+            getNext();
+        }
+
+        private void checkEpochNumber() {
+            if (currentEpochNumber != epochNumber) {
+                throw new ConcurrentModificationException();
+            }
+        }
+
+        private void getNext() {
+            checkEpochNumber();
+            nextValue = null;
+            if (updatedValuesIterator.hasNext()) {
+                nextValue = updatedValuesIterator.next();
+                cachedKeys.add(nextValue);
+                return;
+            }
+            boolean findValue = false;
+            while (tableNumber < tables.size()) {
+                while (tableIterator.hasNext()) {
+                    nextValue = tableIterator.next();
+                    if (cachedKeys.contains(nextValue)) {
+                        nextValue = null;
+                    } else {
+                        findValue = true;
+                        break;
+                    }
+                }
+                if (findValue) {
+                    cachedKeys.add(nextValue);
+                    break;
+                }
+                for (tableNumber++; tableNumber < tables.size(); tableNumber++) {
+                    SSTable<K, V> table = tables.get(tableNumber);
+                    if (table != null) {
+                        tableIterator = table.readKeys();
+                        break;
+                    }
+                }
+            }
+        }
+
+        @Override
+        public boolean hasNext() {
+            checkEpochNumber();
+            return nextValue != null;
+        }
+
+        @Override
+        public K next() {
+            K result = nextValue;
+            getNext();
+            return result;
         }
     }
 }
