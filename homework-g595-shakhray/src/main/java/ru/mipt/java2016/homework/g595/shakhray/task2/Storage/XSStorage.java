@@ -5,7 +5,6 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import java.io.*;
 import java.util.*;
 
-import ru.mipt.java2016.homework.g595.shakhray.task2.FileLocker.FileLocker;
 import ru.mipt.java2016.homework.g595.shakhray.task2.Serialization.Classes.IntegerSerialization;
 import ru.mipt.java2016.homework.g595.shakhray.task2.Serialization.Interface.StorageSerialization;
 
@@ -17,7 +16,7 @@ public class XSStorage<K, V> implements KeyValueStorage<K, V> {
     /**
      * Dealing with concurrency support
      */
-    private FileLocker locker = FileLocker.getFileLocker();
+    private File lockfile = new File("lock.me");
 
     /**
      * TRUE is the database is closed.
@@ -61,10 +60,9 @@ public class XSStorage<K, V> implements KeyValueStorage<K, V> {
     public XSStorage(String pathPassed, StorageSerialization<K> passedKeySerialization,
                         StorageSerialization<V> passedValueSerialization) throws IOException {
         path = pathPassed;
-        if (locker.checkLock(path)) {
-            throw new IOException("Storage is locked.");
+        if (!lockfile.createNewFile()) {
+            throw new IOException("Another process is working.");
         }
-        locker.setLock(path);
         keySerialization = passedKeySerialization;
         valueSerialization = passedValueSerialization;
         File directory = new File(path);
@@ -154,7 +152,7 @@ public class XSStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public void close() throws IOException {
         checkIfStorageIsClosed();
-        locker.unsetLock(path);
+        lockfile.delete();
         isStorageClosed = true;
         save();
         file.close();
