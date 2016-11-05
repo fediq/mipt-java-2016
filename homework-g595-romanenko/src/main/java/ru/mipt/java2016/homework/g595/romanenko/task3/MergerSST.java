@@ -50,6 +50,10 @@ public class MergerSST<K, V> {
             }
             resultKeys.add(newerKey);
         }
+        while (olderKeysPos < olderKeys.size()) {
+            resultKeys.add(olderKeys.get(olderKeysPos));
+            olderKeysPos += 1;
+        }
         Set<K> keySet = new HashSet<>(resultKeys);
         result.rewrite(new Producer<K, V>() {
             @Override
