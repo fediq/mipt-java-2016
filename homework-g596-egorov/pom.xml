@@ -10,7 +10,6 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>homework-g596-egorov</artifactId>
-
     <dependencies>
         <dependency>
             <groupId>ru.mipt.java2016</groupId>
@@ -21,6 +20,7 @@
             <groupId>ru.mipt.java2016</groupId>
             <artifactId>homework-tests</artifactId>
             <version>1.0.0</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
