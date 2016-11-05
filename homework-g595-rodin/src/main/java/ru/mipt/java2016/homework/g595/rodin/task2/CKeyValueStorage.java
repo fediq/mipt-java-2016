@@ -4,6 +4,7 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.g595.rodin.task2.Serializer.CJSONCreator;
 import ru.mipt.java2016.homework.g595.rodin.task2.Serializer.ISerialize;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
@@ -14,6 +15,7 @@ import java.util.StringTokenizer;
 /**
  * Created by Dmitry on 26.10.16.
  */
+
 public class CKeyValueStorage<KeyType, ValueType> implements KeyValueStorage<KeyType, ValueType> {
 
 
@@ -41,7 +43,7 @@ public class CKeyValueStorage<KeyType, ValueType> implements KeyValueStorage<Key
         this.keyName = keyName;
         this.valueName = valueName;
         this.closeFlag = false;
-        diskWriter = new CDiskTable(directoryPath + "/storage.db");
+        diskWriter = new CDiskTable(directoryPath + File.separator + "storage.db");
         if (diskWriter.exists()) {
             scanFile();
         } else {
