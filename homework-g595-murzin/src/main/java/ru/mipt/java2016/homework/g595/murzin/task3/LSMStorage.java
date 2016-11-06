@@ -2,8 +2,17 @@ package ru.mipt.java2016.homework.g595.murzin.task3;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 
-import java.io.*;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -14,31 +23,17 @@ import java.util.Map;
 public class LSMStorage<K, V> implements KeyValueStorage<K, V> {
 
     public static final String KEYS_FILE_NAME = "keys.dat";
-
     private SerializationStrategy<K> keySerializationStrategy;
+
     private SerializationStrategy<V> valueSerializationStrategy;
-
     private FileLock lock;
+
     private File storageDirectory;
-    private LSMBackgroundThread backgroundThread = new LSMBackgroundThread();
-
-    private static class Offset {
-        public static SerializationStrategy<Offset> STRATEGY = new SerializationStrategy<Offset>() {
-            @Override
-            public void serializeToStream(Offset offset, DataOutputStream output) throws IOException {
-
-            }
-
-            @Override
-            public Offset deserializeFromStream(DataInputStream input) throws IOException {
-                return null;
-            }
-        };
-    }
 
     private Map<K, Offset> keys = new HashMap<>();
     private Map<K, V> cache = new HashMap<>();
     private int numberTablesOnDisk;
+    private ArrayList<BufferedRandomAccessFile> sstableFiles = new ArrayList<>();
 
     public LSMStorage(String path,
                       SerializationStrategy<K> keySerializationStrategy,
@@ -61,7 +56,24 @@ public class LSMStorage<K, V> implements KeyValueStorage<K, V> {
         }
 
         readAllKeys();
-        numberTablesOnDisk = new File(storageDirectory, "storage0.db").exists() ? 1 : 0;
+        if (new File(storageDirectory, getStorageFileName(0)).exists()) {
+            numberTablesOnDisk = 1;
+            try {
+                sstableFiles.add(new BufferedRandomAccessFile(getStorageFile(0)));
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException("Кажется вы умудрились удалить файл базы сразу после того, как мы проверили, что он существует...", e);
+            }
+        } else {
+            numberTablesOnDisk = 0;
+        }
+    }
+
+    private String getStorageFileName(int index) {
+        return "storage" + index + ".dat";
+    }
+
+    private File getStorageFile(int index) {
+        return new File(storageDirectory, getStorageFileName(index));
     }
 
     private void readAllKeys() {
@@ -83,13 +95,8 @@ public class LSMStorage<K, V> implements KeyValueStorage<K, V> {
             return;
         }
 
-        File newStorageFile = new File(storageDirectory, "storage" + numberTablesOnDisk++ + ".dat");
-        backgroundThread.submit(() -> pushCacheToDisk(cache, newStorageFile, keySerializationStrategy, valueSerializationStrategy));
-
-        cache = new HashMap<>();
-    }
-
-    private static <K, V> void pushCacheToDisk(Map<K, V> cache, File newStorageFile, SerializationStrategy<K> keySerializationStrategy, SerializationStrategy<V> valueSerializationStrategy) {
+        int newStorageIndex = numberTablesOnDisk++;
+        File newStorageFile = getStorageFile(newStorageIndex);
         try {
             boolean exists = newStorageFile.createNewFile();
             if (exists) {
@@ -99,15 +106,19 @@ public class LSMStorage<K, V> implements KeyValueStorage<K, V> {
             throw new RuntimeException("Can't create one of storage file " + newStorageFile.getAbsolutePath(), e);
         }
 
-        try (DataOutputStream output = new DataOutputStream(new FileOutputStream(newStorageFile))) {
+        try (FileOutputStream fileOutput = new FileOutputStream(newStorageFile);
+             FileChannel fileChannel = fileOutput.getChannel();
+             DataOutputStream output = new DataOutputStream(fileOutput)) {
             output.writeInt(cache.size());
             for (Map.Entry<K, V> entry : cache.entrySet()) {
                 keySerializationStrategy.serializeToStream(entry.getKey(), output);
+                keys.put(entry.getKey(), new Offset(newStorageIndex, fileChannel.position()));
                 valueSerializationStrategy.serializeToStream(entry.getValue(), output);
             }
         } catch (IOException e) {
             throw new RuntimeException("Can't write to one of storage files " + newStorageFile.getAbsolutePath(), e);
         }
+        cache = new HashMap<>();
     }
 
     @Override
@@ -118,6 +129,11 @@ public class LSMStorage<K, V> implements KeyValueStorage<K, V> {
         if (cache.containsKey(key)) {
             return cache.get(key);
         }
+        Offset offset = keys.get(key);
+        BufferedRandomAccessFile bufferedRandomAccessFile = sstableFiles.get(offset.fileIndex);
+bufferedRandomAccessFile.seek(offset.fileOffset);
+//        cache.put(key, value);
+        checkForCacheSize();
         throw new RuntimeException();
     }
 
@@ -128,6 +144,7 @@ public class LSMStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public synchronized void write(K key, V value) {
+//        keys.put(key, Offset.NONE);
         cache.put(key, value);
         checkForCacheSize();
     }
@@ -151,7 +168,6 @@ public class LSMStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public synchronized void close() throws IOException {
 //        writeAllKeys();
-        backgroundThread.shutdown();
         lock.release();
     }
 }
