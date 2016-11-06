@@ -78,9 +78,6 @@
         <module>homework-g597-spirin</module>
         <module>homework-g597-kirilenko</module>
         <module>homework-g597-bogdanov</module>
-<<<<<<< HEAD
-        <module>homework-g599-trotsiuk</module>
-=======
         <module>homework-g596-egorov</module>
         <module>homework-g597-zakharkin</module>
         <module>homework-g597-grishutin</module>
@@ -91,9 +88,9 @@
         <module>homework-g596-grebenshchikova</module>
         <module>homework-g597-kochukov</module>
         <module>homework-g597-sigareva</module>
+        <module>homework-g599-trotsiuk</module>
         <module>workshop-materials</module>
 
->>>>>>> refs/remotes/fediq/revert-121-master
     </modules>
 
     <build>
