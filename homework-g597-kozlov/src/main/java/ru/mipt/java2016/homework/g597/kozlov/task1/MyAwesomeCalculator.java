@@ -60,6 +60,9 @@ public class MyAwesomeCalculator implements Calculator {
             if (!isCorrectCharacter(chr)) {  // если это вообще какой-то левый символ
                 throw new ParsingException("Invalid expression.");
             }
+            if (badnumber == 1 && chr == ' ') {    // если после точки есть пробел
+                badnumber++;
+            }
             if (chr == ' ' || chr == '\n' || chr == '\t') {  // если пробел - пропускаем
                 continue;
             }
