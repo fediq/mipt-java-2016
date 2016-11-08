@@ -3,54 +3,54 @@ package ru.mipt.java2016.homework.g595.zueva.task2;
 /*сreated by nestyme*/
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
-import ru.mipt.java2016.homework.g595.zueva.task2.Serializer;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.io.*;
 import java.util.HashMap;
 
 
-public class MyKVStorage<K, V> implements KeyValueStorage<K, V> {
+public class MyKVStorage<K, V>
+        implements KeyValueStorage<K, V> {
     private static final String VALIDATION_STRING;
 
     static {
         VALIDATION_STRING = "My strange storage";
     }
 
-    private String FileName;
-    public HashMap<K, V> CurrentStorage;
-    public Serializer<K> keySerializer;
-    public Serializer<V> valueSerializer;
-    public boolean ifOpen = false;
+    private String filename;
+    private HashMap<K, V> currentstorage;
+    private Serializer<K> keySerializer;
+    private Serializer<V> valueSerializer;
+    private boolean ifOpen = false;
 
     /*Конструктор класс хранилища*/
 
     public MyKVStorage(String newFileName,
                        Serializer newKeySerialisation,
-                       Serializer newValueSerialisation) throws IOException {
+                       Serializer newValueSerialisation) throws IOException, Exception {
         keySerializer = newKeySerialisation;
         valueSerializer = newValueSerialisation;
-        FileName = newFileName + "/note.txt";
-        CurrentStorage = new HashMap<K, V>();
+        filename = newFileName + "/note.txt";
+        currentstorage = new HashMap<K, V>();
         ifOpen = true;
 
         /*проверка, возможно ли открыть и создать файл*/
 
-        File destination = new File(FileName);
+        File destination = new File(filename);
         if (!destination.exists()) {
             destination.createNewFile();
 
-            try (DataOutputStream out = new DataOutputStream(new FileOutputStream(FileName))) {
+            try (DataOutputStream out = new DataOutputStream(new FileOutputStream(filename))) {
 
                 out.writeUTF(VALIDATION_STRING);
                 out.writeInt(0b0);
 
-            } catch (Exception e) {
-                throw new IllegalStateException("Cannot write to file");
             }
         }
-        /* Существует ли наша валидирующая строка в файле && проверка, возможно ли читать из файла*/
-        try (DataInputStream in = new DataInputStream(new FileInputStream(FileName))) {
+        /* Существует ли наша валидирующая строка в файле &&
+        проверка, возможно ли читать из файла*/
+        try (DataInputStream in = new DataInputStream(new FileInputStream(filename))) {
             if (!in.readUTF().equals(VALIDATION_STRING)) {
                 throw new IllegalStateException("Unknown validation");
             }
@@ -59,20 +59,18 @@ public class MyKVStorage<K, V> implements KeyValueStorage<K, V> {
 
                 K keyToInsert = keySerializer.readFromStream(in);
                 V valueToInsert = valueSerializer.readFromStream(in);
-                CurrentStorage.put(keyToInsert, valueToInsert);
+                currentstorage.put(keyToInsert, valueToInsert);
             }
-        } catch (Exception exception) {
-            throw new IllegalStateException("Cannot read from file");
         }
     }
     @Override
     public void close() throws IOException {
         isFileClosed();
         try
-                (DataOutputStream out = new DataOutputStream(new FileOutputStream(FileName))) {
+                (DataOutputStream out = new DataOutputStream(new FileOutputStream(filename))) {
             out.writeUTF(VALIDATION_STRING);
-            out.writeInt(CurrentStorage.size());
-            for (Map.Entry<K, V> i : CurrentStorage.entrySet()) {
+            out.writeInt(currentstorage.size());
+            for (Map.Entry<K, V> i : currentstorage.entrySet()) {
 
                 keySerializer.writeToStream(out, i.getKey());
                 valueSerializer.writeToStream(out, i.getValue());
@@ -80,44 +78,44 @@ public class MyKVStorage<K, V> implements KeyValueStorage<K, V> {
             }
             ifOpen = false;
 
-        } catch (Exception e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
     @Override
     public V read(K key) {
         isFileClosed();
-        return CurrentStorage.get(key);
+        return currentstorage.get(key);
     }
 
     @Override
     public boolean exists(K key) {
         isFileClosed();
-        return CurrentStorage.keySet().contains(key);
+        return currentstorage.keySet().contains(key);
     }
 
     @Override
     public void write(K key, V value) {
         isFileClosed();
-        CurrentStorage.put(key, value);
+        currentstorage.put(key, value);
     }
 
     @Override
     public void delete(K key) {
         isFileClosed();
-        CurrentStorage.remove(key);
+        currentstorage.remove(key);
     }
 
     @Override
     public Iterator<K> readKeys() {
         isFileClosed();
-        return CurrentStorage.keySet().iterator();
+        return currentstorage.keySet().iterator();
     }
 
     @Override
     public int size() {
         isFileClosed();
-        return CurrentStorage.size();
+        return currentstorage.size();
     }
 
 

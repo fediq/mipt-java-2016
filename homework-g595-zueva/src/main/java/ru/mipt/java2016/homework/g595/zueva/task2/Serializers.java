@@ -11,7 +11,7 @@ import ru.mipt.java2016.homework.tests.task2.Student;
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
 
 
-public class Specified_serializers{
+public class Serializers {
 
     public static class SerialiserInt implements Serializer<Integer> {
 

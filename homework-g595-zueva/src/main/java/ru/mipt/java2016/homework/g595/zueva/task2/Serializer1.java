@@ -1,7 +1,6 @@
 package ru.mipt.java2016.homework.g595.zueva.task2;
 
 import java.io.DataInputStream;
-import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
