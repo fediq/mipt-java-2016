@@ -5,8 +5,8 @@ import ru.mipt.java2016.homework.tests.task2.AbstractSingleFileStorageTest;
 import ru.mipt.java2016.homework.tests.task2.Student;
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Date;
 
@@ -15,36 +15,36 @@ public class MySingleFileStorageTest extends AbstractSingleFileStorageTest {
 
     SerializationStrategy<String> STRING_STRATEGY = new SerializationStrategy<String>() {
         @Override
-        public void serializeToFile(String s, DataOutputStream output) throws IOException {
+        public void serializeToFile(String s, DataOutput output) throws IOException {
             output.writeUTF(s);
         }
 
         @Override
-        public String deserializeFromFile(DataInputStream input) throws IOException {
+        public String deserializeFromFile(DataInput input) throws IOException {
             return input.readUTF();
         }
     };
 
     SerializationStrategy<Integer> INTEGER_STRATEGY = new SerializationStrategy<Integer>() {
         @Override
-        public void serializeToFile(Integer integer, DataOutputStream output) throws IOException {
+        public void serializeToFile(Integer integer, DataOutput output) throws IOException {
             output.writeInt(integer);
         }
 
         @Override
-        public Integer deserializeFromFile(DataInputStream input) throws IOException {
+        public Integer deserializeFromFile(DataInput input) throws IOException {
             return input.readInt();
         }
     };
 
     SerializationStrategy<Double> DOUBLE_STRATEGY = new SerializationStrategy<Double>() {
         @Override
-        public void serializeToFile(Double value, DataOutputStream output) throws IOException {
+        public void serializeToFile(Double value, DataOutput output) throws IOException {
             output.writeDouble(value);
         }
 
         @Override
-        public Double deserializeFromFile(DataInputStream input) throws IOException {
+        public Double deserializeFromFile(DataInput input) throws IOException {
             return input.readDouble();
         }
     };
@@ -52,14 +52,14 @@ public class MySingleFileStorageTest extends AbstractSingleFileStorageTest {
     private static SerializationStrategy<StudentKey> STUDENT_KEY_STRATEGY =
             new SerializationStrategy<StudentKey>() {
                 @Override
-                public void serializeToFile(StudentKey studentKey, DataOutputStream output)
+                public void serializeToFile(StudentKey studentKey, DataOutput output)
                         throws IOException {
                     output.writeInt(studentKey.getGroupId());
                     output.writeUTF(studentKey.getName());
                 }
 
                 @Override
-                public StudentKey deserializeFromFile(DataInputStream input) throws IOException {
+                public StudentKey deserializeFromFile(DataInput input) throws IOException {
                     return new StudentKey(input.readInt(), input.readUTF());
                 }
             };
@@ -67,7 +67,7 @@ public class MySingleFileStorageTest extends AbstractSingleFileStorageTest {
     private static SerializationStrategy<Student> STUDENT_STRATEGY =
             new SerializationStrategy<Student>() {
                 @Override
-                public void serializeToFile(Student student, DataOutputStream output)
+                public void serializeToFile(Student student, DataOutput output)
                         throws IOException {
                     output.writeInt(student.getGroupId());
                     output.writeUTF(student.getName());
@@ -78,7 +78,7 @@ public class MySingleFileStorageTest extends AbstractSingleFileStorageTest {
                 }
 
                 @Override
-                public Student deserializeFromFile(DataInputStream input) throws IOException {
+                public Student deserializeFromFile(DataInput input) throws IOException {
                     return new Student(input.readInt(), input.readUTF(), input.readUTF(),
                             new Date(input.readLong()), input.readBoolean(), input.readDouble());
                 }
