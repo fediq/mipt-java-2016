@@ -2,9 +2,13 @@ package ru.mipt.java2016.homework.g595.romanenko.task3;
 
 import ru.mipt.java2016.homework.g595.romanenko.task2.Producer;
 import ru.mipt.java2016.homework.g595.romanenko.task2.SSTable;
+import ru.mipt.java2016.homework.g595.romanenko.utils.FileDigitalSignature;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * ru.mipt.java2016.homework.g595.romanenko.task3
@@ -20,21 +24,19 @@ public class MergerSST<K, V> {
         this.keyComparator = keyComparator;
     }
 
-    public SSTable<K, V> merge(String path, SSTable<K, V> newer, SSTable<K, V> older) throws IOException {
+    public SSTable<K, V> merge(String path, SSTable<K, V> newer, SSTable<K, V> older,
+                               FileDigitalSignature fileDigitalSignature) throws IOException {
         SSTable<K, V> result = new SSTable<>(
                 path,
                 newer.getKeySerializationStrategy(),
-                newer.getValueSerializationStrategy());
+                newer.getValueSerializationStrategy(),
+                fileDigitalSignature);
 
         List<K> newerKeys = getKeys(newer.readKeys());
         List<K> olderKeys = getKeys(older.readKeys());
         List<K> resultKeys = new ArrayList<>();
 
-        newerKeys.sort(keyComparator);
-        olderKeys.sort(keyComparator);
-
         int olderKeysPos = 0;
-
         for (K newerKey : newerKeys) {
             while (olderKeysPos < olderKeys.size()) {
                 int compareResult = keyComparator.compare(newerKey, olderKeys.get(olderKeysPos));
@@ -54,11 +56,18 @@ public class MergerSST<K, V> {
             resultKeys.add(olderKeys.get(olderKeysPos));
             olderKeysPos += 1;
         }
-        Set<K> keySet = new HashSet<>(resultKeys);
+
+        /* //Check for correct merge
+        for (int i = 1; i < resultKeys.size(); i++)
+            if (keyComparator.compare(resultKeys.get(i - 1), resultKeys.get(i)) >= 0) {
+                assert false;
+            }
+        */
+
         result.rewrite(new Producer<K, V>() {
             @Override
-            public Set<K> keySet() {
-                return keySet;
+            public List<K> keyList() {
+                return resultKeys;
             }
 
             @Override
@@ -71,7 +80,7 @@ public class MergerSST<K, V> {
 
             @Override
             public int size() {
-                return keySet.size();
+                return resultKeys.size();
             }
         });
 
@@ -84,5 +93,9 @@ public class MergerSST<K, V> {
             result.add(it.next());
         }
         return result;
+    }
+
+    public Comparator<? super K> getComparator() {
+        return keyComparator;
     }
 }

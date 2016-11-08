@@ -1,6 +1,6 @@
 package ru.mipt.java2016.homework.g595.romanenko.task2;
 
-import java.util.Set;
+import java.util.List;
 
 /**
  * ru.mipt.java2016.homework.g595.romanenko.task2
@@ -10,9 +10,10 @@ import java.util.Set;
  **/
 
 public interface Producer<Key, Value> {
-    Set<Key> keySet();
 
     Value get(Key key);
 
     int size();
+
+    List<Key> keyList();
 }
