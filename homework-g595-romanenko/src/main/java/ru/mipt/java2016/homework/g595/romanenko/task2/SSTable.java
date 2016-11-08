@@ -6,10 +6,7 @@ import ru.mipt.java2016.homework.g595.romanenko.utils.FileDigitalSignature;
 
 import java.io.*;
 import java.nio.channels.Channels;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Sorted strings table
@@ -28,13 +25,19 @@ public class SSTable<Key, Value> {
 
     private final RandomAccessFile storage;
     private final Map<Key, Integer> indices = new HashMap<>();
+    private final List<Key> sortedKeys = new ArrayList<>();
 
     private final SerializationStrategy<Key> keySerializationStrategy;
     private final SerializationStrategy<Value> valueSerializationStrategy;
 
+    private int epochNumber = 0;
+
     private boolean isClosed = false;
+    private boolean hasUncommittedChanges = false;
     private String path;
     private String dbName = null;
+
+    private final FileDigitalSignature fileDigitalSignature;
 
     private void readIndices() throws IOException {
         int totalAmount = storage.readInt();
@@ -44,22 +47,25 @@ public class SSTable<Key, Value> {
             Key key = keySerializationStrategy.deserializeFromStream(stream);
             Integer offset = serializer.deserializeFromStream(stream);
             indices.put(key, offset);
+            sortedKeys.add(key);
         }
     }
 
     public SSTable(String path,
                    SerializationStrategy<Key> keySerializationStrategy,
-                   SerializationStrategy<Value> valueSerializationStrategy) throws IOException {
+                   SerializationStrategy<Value> valueSerializationStrategy,
+                   FileDigitalSignature fileDigitalSignature) throws IOException {
 
         this.keySerializationStrategy = keySerializationStrategy;
         this.valueSerializationStrategy = valueSerializationStrategy;
+        this.fileDigitalSignature = fileDigitalSignature;
 
         File tryFile = new File(path);
         if (tryFile.exists() && tryFile.isDirectory()) {
             path += "/storage.db";
         }
         if ((new File(path)).exists()) {
-            boolean validationOk = FileDigitalSignature.getInstance().validateFileSignWithDefaultSignName(path);
+            boolean validationOk = fileDigitalSignature.validateFileSignWithDefaultSignName(path);
             if (!validationOk) {
                 throw new IllegalStateException("Invalid database");
             }
@@ -81,8 +87,10 @@ public class SSTable<Key, Value> {
     public void rewrite(Producer<Key, Value> toFlip) {
         checkClosed();
 
+        epochNumber++;
         try {
             indices.clear();
+            sortedKeys.clear();
 
             storage.setLength(0);
             IntegerSerializer integerSerializer = IntegerSerializer.getInstance();
@@ -92,10 +100,12 @@ public class SSTable<Key, Value> {
 
             integerSerializer.serializeToStream(toFlip.size(), outputStream);
 
-            ArrayList<Integer> offsets = new ArrayList<>();
+            List<Integer> offsets = new ArrayList<>();
             Integer totalLength = integerSerializer.getBytesSize(toFlip.size());
 
-            ArrayList<Key> cachedKeys = new ArrayList<>(toFlip.keySet());
+
+            List<Key> cachedKeys = toFlip.keyList();
+            sortedKeys.addAll(cachedKeys);
 
             for (Key key : cachedKeys) {
                 totalLength += keySerializationStrategy.getBytesSize(key);
@@ -119,7 +129,9 @@ public class SSTable<Key, Value> {
 
             outputStream.flush();
 
-            FileDigitalSignature.getInstance().signFileWithDefaultSignName(path);
+            fileDigitalSignature.signFileWithDefaultSignName(path);
+
+            hasUncommittedChanges = false;
 
         } catch (IOException e) {
             throw new IllegalStateException();
@@ -151,6 +163,10 @@ public class SSTable<Key, Value> {
     }
 
     private void rewriteIndices() {
+        if (!hasUncommittedChanges) {
+            return;
+        }
+
         try {
             storage.seek(0);
 
@@ -165,7 +181,7 @@ public class SSTable<Key, Value> {
                 integerSerializer.serializeToStream(entry.getValue(), outputStream);
             }
             outputStream.flush();
-
+            hasUncommittedChanges = false;
         } catch (IOException e) {
             System.out.println(e.getMessage());
             e.printStackTrace();
@@ -177,11 +193,12 @@ public class SSTable<Key, Value> {
         if (isClosed) {
             return;
         }
+        epochNumber++;
         isClosed = true;
         try {
             rewriteIndices();
             storage.close();
-            FileDigitalSignature.getInstance().signFileWithDefaultSignName(path);
+            fileDigitalSignature.signFileWithDefaultSignName(path);
         } catch (IOException e) {
             throw new IllegalStateException();
         }
@@ -194,6 +211,8 @@ public class SSTable<Key, Value> {
 
     public void removeKeyFromIndices(Key key) {
         checkClosed();
+        epochNumber++;
+        hasUncommittedChanges = true;
         indices.remove(key);
     }
 
@@ -204,7 +223,7 @@ public class SSTable<Key, Value> {
 
     public Iterator<Key> readKeys() {
         checkClosed();
-        return indices.keySet().iterator();
+        return new SSTableIterator(); //indices.keySet().iterator();
     }
 
     public String getPath() {
@@ -225,5 +244,50 @@ public class SSTable<Key, Value> {
 
     public String getDatabaseName() {
         return dbName;
+    }
+
+    public class SSTableIterator implements Iterator<Key> {
+
+        private final int currentEpochNumber;
+        private Key nextValue = null;
+        private final Iterator<Key> sortedKeysIterator;
+
+        private SSTableIterator() {
+            currentEpochNumber = epochNumber;
+            sortedKeysIterator = sortedKeys.iterator();
+            getNext();
+        }
+
+        private void checkEpochNumber() {
+            if (currentEpochNumber != epochNumber) {
+                throw new ConcurrentModificationException();
+            }
+        }
+
+        private void getNext() {
+            checkEpochNumber();
+            nextValue = null;
+            while (sortedKeysIterator.hasNext()) {
+                nextValue = sortedKeysIterator.next();
+                if (indices.containsKey(nextValue)) {
+                    return;
+                }
+            }
+            nextValue = null;
+        }
+
+        @Override
+        public boolean hasNext() {
+            checkEpochNumber();
+            return nextValue != null;
+        }
+
+        @Override
+        public Key next() {
+            Key result = nextValue;
+            getNext();
+            return result;
+        }
+
     }
 }

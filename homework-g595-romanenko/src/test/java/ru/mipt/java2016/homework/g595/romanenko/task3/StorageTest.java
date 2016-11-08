@@ -8,6 +8,7 @@ import ru.mipt.java2016.homework.g595.romanenko.task2.serialization.DoubleSerial
 import ru.mipt.java2016.homework.g595.romanenko.task2.serialization.IntegerSerializer;
 import ru.mipt.java2016.homework.g595.romanenko.task2.serialization.StringSerializer;
 import ru.mipt.java2016.homework.g595.romanenko.task3.comapators.StudentKeyComparator;
+import ru.mipt.java2016.homework.g595.romanenko.utils.FileDigitalSignatureMD5;
 import ru.mipt.java2016.homework.tests.task2.AbstractSingleFileStorageTest;
 import ru.mipt.java2016.homework.tests.task2.Student;
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
@@ -31,6 +32,7 @@ public class StorageTest extends AbstractSingleFileStorageTest {
                 path,
                 StringSerializer.getInstance(),
                 StringSerializer.getInstance(),
+                FileDigitalSignatureMD5.getInstance(),
                 new MergerSST<>(String::compareTo)
         );
 
@@ -43,6 +45,7 @@ public class StorageTest extends AbstractSingleFileStorageTest {
                 path,
                 IntegerSerializer.getInstance(),
                 DoubleSerializer.getInstance(),
+                FileDigitalSignatureMD5.getInstance(),
                 new MergerSST<>(Integer::compareTo)
         );
 
@@ -55,6 +58,7 @@ public class StorageTest extends AbstractSingleFileStorageTest {
                 path,
                 StudentKeySerializer.getInstance(),
                 StudentSerializer.getInstance(),
+                FileDigitalSignatureMD5.getInstance(),
                 new MergerSST<>(new StudentKeyComparator())
         );
         return result;
@@ -189,5 +193,19 @@ public class StorageTest extends AbstractSingleFileStorageTest {
                 }
             });
         });
+    }
+
+    @Test
+    public void testVeryBigAmountWrites() {
+        int totalAmount = 100 * chunkSize; // 500 * 2048 ~ 10^6
+        // only for speed check
+        // MD5 hash runs more than 10 second quickly than RSA
+        doInTempDirectory(path -> doWithNumbers(path, storage -> {
+            for (int i = 0; i < totalAmount; i++) {
+                Integer key = totalAmount - i;
+                Double value = i / (double) totalAmount;
+                storage.write(key, value);
+            }
+        }));
     }
 }

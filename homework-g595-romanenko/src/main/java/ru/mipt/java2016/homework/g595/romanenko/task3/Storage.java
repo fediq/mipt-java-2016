@@ -5,6 +5,7 @@ import ru.mipt.java2016.homework.g595.romanenko.task2.MapProducer;
 import ru.mipt.java2016.homework.g595.romanenko.task2.SSTable;
 import ru.mipt.java2016.homework.g595.romanenko.task2.serialization.SerializationStrategy;
 import ru.mipt.java2016.homework.g595.romanenko.task2.serialization.StringSerializer;
+import ru.mipt.java2016.homework.g595.romanenko.utils.FileDigitalSignature;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,6 +29,7 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
     private final String currentDirectoryPath;
     private final SerializationStrategy<K> keySerializationStrategy;
     private final SerializationStrategy<V> valueSerializationStrategy;
+    private final FileDigitalSignature fileDigitalSignature;
 
     /**
      * Cache variables
@@ -38,13 +40,13 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
     /**
      * Updated values
      */
-    private final Map<K, V> updatedValues = new HashMap<>();
+    private final Map<K, V> updatedValues;
 
 
     /**
      * Constants
      */
-    private final int maxCountObjectsInMemory = 8192; //4095;//2048;
+    private final int maxCountObjectsInMemory = 2047; //4095;//2048;
 
     /**
      * Internal state
@@ -56,13 +58,16 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
     public Storage(String path,
                    SerializationStrategy<K> keySerializationStrategy,
                    SerializationStrategy<V> valueSerializationStrategy,
+                   FileDigitalSignature fileDigitalSignature,
                    MergerSST<K, V> mergerSST) {
 
         this.currentDirectoryPath = path;
+        this.fileDigitalSignature = fileDigitalSignature;
         this.mergerSST = mergerSST;
         this.tables = new ArrayList<>();
         this.keySerializationStrategy = keySerializationStrategy;
         this.valueSerializationStrategy = valueSerializationStrategy;
+        this.updatedValues = new TreeMap<>(mergerSST.getComparator());
 
         String tableListDBPath = path + "/tableList.db";
         try {
@@ -75,7 +80,7 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
     }
 
     /**
-     * Read tableList databse and validate all
+     * Read tableList database and validate all
      *
      * @param tableListDBPath path to tableListDB
      * @return true if all is ok, false otherwise
@@ -83,7 +88,7 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
      */
     private boolean readTableList(String tableListDBPath) throws IOException {
         SSTable<String, String> tablesList = new SSTable<>(tableListDBPath,
-                StringSerializer.getInstance(), StringSerializer.getInstance());
+                StringSerializer.getInstance(), StringSerializer.getInstance(), fileDigitalSignature);
 
         HashSet<String> keySet = new HashSet<>();
         Iterator<String> it = tablesList.readKeys();
@@ -119,7 +124,8 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
             SSTable<K, V> tempTable = new SSTable<>(
                     currentDirectoryPath + "/" + tableName,
                     keySerializationStrategy,
-                    valueSerializationStrategy);
+                    valueSerializationStrategy,
+                    fileDigitalSignature);
             tempTable.setDatabaseName(tableName);
 
             tables.set(pos, tempTable);
@@ -231,13 +237,15 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
 
     private void flipUpdatedValues() {
         SSTable<K, V> flipTable;
-        String mergedTableName = "flipDP_" + Instant.now().toString() + "_.db";
+        String mergedTableName = "flipDP_" + Instant.now().toString() + "_" +
+                Instant.now().getNano() + "_" + epochNumber + "_" + hashCode() + "_.db";
 
         try {
             flipTable = new SSTable<>(
                     currentDirectoryPath + "/" + mergedTableName,
                     keySerializationStrategy,
-                    valueSerializationStrategy);
+                    valueSerializationStrategy,
+                    fileDigitalSignature);
             flipTable.setDatabaseName(mergedTableName);
             flipTable.rewrite(new MapProducer<>(updatedValues));
 
@@ -256,10 +264,12 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
             }
             try {
                 mergedTableName = "mergeDB_stage_" + Integer.toString(i)
-                        + "_time_" + Instant.now().toString() + "_.db";
+                        + "_time_" + Instant.now().toString() + "_" +
+                        Instant.now().getNano() + "_" + epochNumber + "_" + hashCode() + "_.db";
+
                 //Merge 2 tables into one new
                 SSTable<K, V> mergedTable = mergerSST.merge(currentDirectoryPath + "/" + mergedTableName,
-                        flipTable, toMergeTable);
+                        flipTable, toMergeTable, fileDigitalSignature);
                 mergedTable.setDatabaseName(mergedTableName);
 
                 flipTable.close();
@@ -291,7 +301,7 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
         File delFile = new File(table.getPath());
         if (!delFile.delete()) {
             System.out.println("Can't erase old table file " + table.getPath());
-            throw new RuntimeException("Can't erase old table file");
+            //throw new RuntimeException("Can't erase old table file");
         }
     }
 
@@ -353,7 +363,8 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
             SSTable<String, String> tablesDB = new SSTable<>(
                     currentDirectoryPath + "/tableList.db",
                     StringSerializer.getInstance(),
-                    StringSerializer.getInstance());
+                    StringSerializer.getInstance(),
+                    fileDigitalSignature);
 
             Map<String, String> tablesListMap = new HashMap<>();
             tablesListMap.put("TablesListSize", Integer.toString(tables.size()));

@@ -1,7 +1,8 @@
 package ru.mipt.java2016.homework.g595.romanenko.task2;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * ru.mipt.java2016.homework.g595.romanenko.task2
@@ -18,8 +19,8 @@ public class MapProducer<Key, Value> implements Producer<Key, Value> {
     }
 
     @Override
-    public Set<Key> keySet() {
-        return map.keySet();
+    public List<Key> keyList() {
+        return new ArrayList<>(map.keySet());
     }
 
     @Override
