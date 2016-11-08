@@ -13,45 +13,8 @@ class AzazaCalculator implements Calculator {
 
     @Override
     public double calculate(String s) throws ParsingException {
-        /*if (s == null) {
-            throw new ParsingException("null");
-        }
-        if (s == ""){
-            throw new ParsingException("empty string");
-        }
-        if (s == " "){
-            throw new ParsingException("empty string");
-        }
-        for(int i = 1; i < s.length() - 1; ++i){
-            if(s.charAt(i) == ' ' || s.charAt(i) == '\n' ||  s.charAt(i) == '\t'){
-                s = s.substring(0, i - 1) + s.substring(i + 1, s.length() - 1);
-            }
-        }
-        if(s.charAt(0) == ' ' || s.charAt(0) == '\n' ||  s.charAt(0) == '\t'){
-            s = s.substring(1,s.length() - 1);
-        }
-        if(s.charAt(s.length() - 1) == ' ' || s.charAt(s.length() - 1) == '\n' ||  s.charAt(s.length()  - 1) == '\t'){
-            s = s.substring(0, s.length() - 2);
-        }
-        for(int i = 0; i < s.length(); ++i) {
-            if(!(s.charAt(i) == '+' || s.charAt(i) == '-' || s.charAt(i) == '*' ||s.charAt(i) == '/' || s.charAt(i) == '('
-                    ||s.charAt(i) == ')'||s.charAt(i) == '.'||s.charAt(i) == '1' || s.charAt(i) == '2' || s.charAt(i) == '0' ||
-                    s.charAt(i) == '3' || s.charAt(i) == '4' || s.charAt(i) == '5' || s.charAt(i) == '6' || s.charAt(i) == '7' ||
-                    s.charAt(i) == '8' || s.charAt(i) == '9')){
-                throw new ParsingException("Bad symbol");
-            }
-        }
-        for(int i = 0; i < s.length() - 1; ++i){
-            if(s.charAt(i) == '/' && s.charAt(i + 1) == '0') {
-                return Double.POSITIVE_INFINITY;
-            }
-        }
-        for(int i =0; i < s.length() - 2; ++i) {
-            if(s.charAt(i) == '/' && s.charAt(i + 2) == '0' && s.charAt(i + 1) == '-') {
-                return Double.NEGATIVE_INFINITY;
-            }
-        }*/
-        s = to_polish(s);
+
+        s = topolish(s);
         String buffer;
         double num_1 = 0;
         double num_2 = 0;
@@ -120,7 +83,7 @@ class AzazaCalculator implements Calculator {
         }
     }
 
-    public static String to_polish(String input_string)  {
+    public static String topolish(String input_string)  {
 
         char c;
         char t;
