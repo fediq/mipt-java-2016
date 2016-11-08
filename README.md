@@ -59,6 +59,10 @@
 5. [Средства синхронизации в Java](https://yadi.sk/d/2YAOFlpSxx73h)  
 [Примеры кода](https://github.com/DanAnastasyev/mipt-java-2016/tree/master/seminars/src/ru/mipt/java2016/seminars/seminar5)
 
+6. [Рефлексия и сборка мусора в Java](https://yadi.sk/d/1cpd_baDyHELV)  
+[Примеры кода](https://github.com/DanAnastasyev/mipt-java-2016/tree/master/seminars/src/ru/mipt/java2016/seminars/seminar6)  
+[Хорошая статья про ссылки в Java](http://www.kdgregory.com/?page=java.refobj)
+
 #### Рекомендуемая литература
 
 * Кей Хорстманн - [Java. Библиотека профессионала. Том 1. Основы (десятое издание)](https://www.ozon.ru/context/detail/id/137377512/).
