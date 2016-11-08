@@ -2,7 +2,6 @@ package ru.mipt.java2016.homework.g595.zueva.task2;
 
 /*сreated by nestyme*/
 
-import org.apache.commons.io.IOExceptionWithCause;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.g595.zueva.task2.Serializer;
 import java.util.Iterator;

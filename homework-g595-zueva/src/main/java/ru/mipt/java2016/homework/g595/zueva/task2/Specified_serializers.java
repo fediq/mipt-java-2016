@@ -3,11 +3,13 @@ package ru.mipt.java2016.homework.g595.zueva.task2;
 /**
  * Created by nestyme on 30.10.2016.
  */
-import ru.mipt.java2016.homework.tests.task2.Student;
-import ru.mipt.java2016.homework.tests.task2.StudentKey;
+
 
 import java.io.*;
 import java.util.Date;
+import ru.mipt.java2016.homework.tests.task2.Student;
+import ru.mipt.java2016.homework.tests.task2.StudentKey;
+
 
 public class Specified_serializers{
 
