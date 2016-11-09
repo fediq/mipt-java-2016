@@ -34,72 +34,72 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
         fileWorker = new FileWorker(directoryPath, "storage.db");
         this.keySerializer = keySerializer;
         this.valueSerializer = valueSerializer;
-        this.readAllFile();
+        readAllFile();
     }
 
     @Override
     public V read(K key) throws RuntimeException {
-        this.checkClosed();
-        return this.hashMap.get(key);
+        checkClosed();
+        return hashMap.get(key);
     }
 
     @Override
     public boolean exists(K key) throws RuntimeException {
-        this.checkClosed();
-        return this.hashMap.containsKey(key);
+        checkClosed();
+        return hashMap.containsKey(key);
     }
 
     @Override
     public void write(K key, V value) throws RuntimeException {
-        this.checkClosed();
-        this.hashMap.put(key, value);
+        checkClosed();
+        hashMap.put(key, value);
     }
 
     @Override
     public void delete(K key) throws RuntimeException {
-        this.checkClosed();
-        this.hashMap.remove(key);
+        checkClosed();
+        hashMap.remove(key);
     }
 
     @Override
     public Iterator<K> readKeys() throws RuntimeException {
-        this.checkClosed();
-        return this.hashMap.keySet().iterator();
+        checkClosed();
+        return hashMap.keySet().iterator();
     }
 
     @Override
     public int size() throws RuntimeException {
-        this.checkClosed();
-        return this.hashMap.size();
+        checkClosed();
+        return hashMap.size();
     }
 
     @Override
     public void close() throws RuntimeException, IOException {
-        this.checkClosed();
+        checkClosed();
         isClosed = true;
-        this.writeStorageToFile();
+        writeStorageToFile();
     }
 
     private int readFieldSize() throws IOException {
-        return this.fileWorker.read();
+        return fileWorker.read();
     }
 
     private ByteBuffer readField(int size) throws IOException {
-        return this.fileWorker.read(size);
+        return fileWorker.read(size);
     }
 
     private void readAllFile() throws IOException {
         while (true) {
             int size;
             try {
-                size = this.readFieldSize();
+                size = readFieldSize();
             } catch (EOFException e) {
                 break;
             }
-            K key = this.keySerializer.deserialize(this.readField(size));
-            size = this.readFieldSize();
-            V value = this.valueSerializer.deserialize(this.readField(size));
-            this.hashMap.put(key, value);
+            K key = keySerializer.deserialize(readField(size));
+            size = readFieldSize();
+            V value = valueSerializer.deserialize(readField(size));
+            hashMap.put(key, value);
         }
     }
 
@@ -110,17 +110,17 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
     }
 
     private void writeField(K key, V value) throws IOException {
-        this.fileWorker.write(this.keySerializer.sizeOfSerialize(key));
-        this.fileWorker.write(this.keySerializer.serialize(key));
+        fileWorker.write(keySerializer.sizeOfSerialize(key));
+        fileWorker.write(keySerializer.serialize(key));
 
-        this.fileWorker.write(this.valueSerializer.sizeOfSerialize(value));
-        this.fileWorker.write(this.valueSerializer.serialize(value));
+        fileWorker.write(valueSerializer.sizeOfSerialize(value));
+        fileWorker.write(valueSerializer.serialize(value));
     }
 
     private void writeStorageToFile() throws IOException {
-        this.fileWorker.clear();
-        for (Map.Entry<K, V> entry : this.hashMap.entrySet()) {
-            this.writeField(entry.getKey(), entry.getValue());
+        fileWorker.clear();
+        for (Map.Entry<K, V> entry : hashMap.entrySet()) {
+            writeField(entry.getKey(), entry.getValue());
         }
     }
 }

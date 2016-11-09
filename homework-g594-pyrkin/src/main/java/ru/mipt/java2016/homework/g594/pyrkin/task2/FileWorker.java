@@ -10,50 +10,50 @@ import java.nio.file.NotDirectoryException;
  * FileWorker
  * Created by randan on 10/30/16.
  */
-class FileWorker {
+public class FileWorker {
 
     private final File file;
 
     private RandomAccessFile randomAccessFile;
 
-    FileWorker(String directoryPath, String fileName) throws IOException {
+    public FileWorker(String directoryPath, String fileName) throws IOException {
         File directory = new File(directoryPath);
         if (!directory.exists()) {
             throw new NotDirectoryException("directory not found");
         }
-        this.file = new File(directoryPath, fileName);
-        this.file.createNewFile();
-        this.randomAccessFile = new RandomAccessFile(this.file, "r");
+        file = new File(directoryPath, fileName);
+        file.createNewFile();
+        randomAccessFile = new RandomAccessFile(file, "r");
     }
 
-    ByteBuffer read(int bytesToRead) throws IOException {
+    public ByteBuffer read(int bytesToRead) throws IOException {
         ByteBuffer resultBuffer = ByteBuffer.allocate(bytesToRead);
 
         while (bytesToRead != 0) {
             --bytesToRead;
-            resultBuffer.put(this.randomAccessFile.readByte());
+            resultBuffer.put(randomAccessFile.readByte());
         }
 
         resultBuffer.rewind();
         return resultBuffer;
     }
 
-    int read() throws IOException {
-        return this.randomAccessFile.readInt();
+    public int read() throws IOException {
+        return randomAccessFile.readInt();
     }
 
-    void write(ByteBuffer buffer) throws IOException {
-        this.randomAccessFile.write(buffer.array());
+    public void write(ByteBuffer buffer) throws IOException {
+        randomAccessFile.write(buffer.array());
     }
 
-    void write(int size) throws IOException {
-        this.randomAccessFile.writeInt(size);
+    public void write(int size) throws IOException {
+        randomAccessFile.writeInt(size);
     }
 
-    void clear() throws IOException {
-        this.randomAccessFile.close();
-        this.file.delete();
-        this.file.createNewFile();
-        this.randomAccessFile = new RandomAccessFile(this.file, "rw");
+    public void clear() throws IOException {
+        randomAccessFile.close();
+        file.delete();
+        file.createNewFile();
+        randomAccessFile = new RandomAccessFile(file, "rw");
     }
 }
