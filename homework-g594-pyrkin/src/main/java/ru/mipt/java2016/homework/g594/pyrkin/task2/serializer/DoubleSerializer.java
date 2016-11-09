@@ -15,7 +15,7 @@ public class DoubleSerializer implements SerializerInterface<Double> {
 
     @Override
     public ByteBuffer serialize(Double object) {
-        ByteBuffer resultBuffer = ByteBuffer.allocate(this.sizeOfSerialize(object));
+        ByteBuffer resultBuffer = ByteBuffer.allocate(sizeOfSerialize(object));
         resultBuffer.putDouble(object);
         return resultBuffer;
     }

@@ -22,7 +22,7 @@ public class StudentSerializer implements SerializerInterface<Student> {
 
     @Override
     public ByteBuffer serialize(Student object) {
-        ByteBuffer resultBuffer = ByteBuffer.allocate(this.sizeOfSerialize(object));
+        ByteBuffer resultBuffer = ByteBuffer.allocate(sizeOfSerialize(object));
 
         StudentKeySerializer studentKeySerializer = new StudentKeySerializer();
         resultBuffer.put(studentKeySerializer.serialize(new StudentKey(object.getGroupId(),

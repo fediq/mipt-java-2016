@@ -15,7 +15,7 @@ public class StringSerializer implements SerializerInterface<String> {
 
     @Override
     public ByteBuffer serialize(String object) {
-        ByteBuffer resultBuffer = ByteBuffer.allocate(this.sizeOfSerialize(object));
+        ByteBuffer resultBuffer = ByteBuffer.allocate(sizeOfSerialize(object));
         for (char symbol : object.toCharArray()) {
             resultBuffer.putChar(symbol);
         }

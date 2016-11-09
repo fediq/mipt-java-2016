@@ -15,7 +15,7 @@ public class IntegerSerializer implements SerializerInterface<Integer> {
 
     @Override
     public ByteBuffer serialize(Integer object) {
-        ByteBuffer resultBuffer = ByteBuffer.allocate(this.sizeOfSerialize(object));
+        ByteBuffer resultBuffer = ByteBuffer.allocate(sizeOfSerialize(object));
         resultBuffer.putInt(object);
         return resultBuffer;
     }

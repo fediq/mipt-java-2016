@@ -17,7 +17,7 @@ public class StudentKeySerializer implements SerializerInterface<StudentKey> {
 
     @Override
     public ByteBuffer serialize(StudentKey object) {
-        ByteBuffer resultBuffer = ByteBuffer.allocate(this.sizeOfSerialize(object));
+        ByteBuffer resultBuffer = ByteBuffer.allocate(sizeOfSerialize(object));
 
         resultBuffer.putInt(object.getGroupId());
 
