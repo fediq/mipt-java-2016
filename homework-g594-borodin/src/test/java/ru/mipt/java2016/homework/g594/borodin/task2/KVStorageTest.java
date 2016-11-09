@@ -4,8 +4,6 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.g594.borodin.task2.SerializationStrategies.DoubleSerialization;
 import ru.mipt.java2016.homework.g594.borodin.task2.SerializationStrategies.IntSerialization;
 import ru.mipt.java2016.homework.g594.borodin.task2.SerializationStrategies.StringSerialization;
-import ru.mipt.java2016.homework.g594.borodin.task2.SerializationStrategies.StudentKeySerialization;
-import ru.mipt.java2016.homework.g594.borodin.task2.SerializationStrategies.StudentSerialization;
 import ru.mipt.java2016.homework.tests.task2.AbstractSingleFileStorageTest;
 import ru.mipt.java2016.homework.tests.task2.Student;
 import ru.mipt.java2016.homework.tests.task2.StudentKey;

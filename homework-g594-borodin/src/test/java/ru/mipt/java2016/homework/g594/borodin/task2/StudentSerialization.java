@@ -1,10 +1,11 @@
-package ru.mipt.java2016.homework.g594.borodin.task2.SerializationStrategies;
+package ru.mipt.java2016.homework.g594.borodin.task2;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Date;
 
+import ru.mipt.java2016.homework.g594.borodin.task2.SerializationStrategies.SerializationStrategy;
 import ru.mipt.java2016.homework.tests.task2.Student;
 
 /**

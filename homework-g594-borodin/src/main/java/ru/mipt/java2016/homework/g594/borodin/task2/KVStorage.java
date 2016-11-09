@@ -25,7 +25,7 @@ public class KVStorage<K, V> implements  KeyValueStorage<K, V> {
         this.valueStrategy = valueStrategy;
         isOpen = true;
         storage = new HashMap<K, V>();
-        fileName = directory + "/storage.db";
+        fileName = directory + File.separator + "storage.db";
         File file = new File(fileName);
         if (file.exists()) {
             try {
