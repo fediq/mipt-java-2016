@@ -15,7 +15,7 @@ public class KVStorage<K, V> implements KeyValueStorage<K, V> {
     private SerializerAndDeserializer<K> serializerAndDeserializerForKey;
     private SerializerAndDeserializer<V> serializerAndDeserializerForValue;
     private HashMap<K, V> map;
-    private Boolean dateInMap = true;
+    private Boolean baseClosed = false;
 
     private void addData() throws IOException {
         map = new HashMap<K, V>();
@@ -34,7 +34,7 @@ public class KVStorage<K, V> implements KeyValueStorage<K, V> {
         if (!f.exists() || !f.isDirectory()) {
             throw new IOException("this path is incorrect");
         }
-        f = new File(path + "/storage.txt");
+        f = new File(path + File.separator + "storage.txt");
         serializerAndDeserializerForKey = forKey;
         serializerAndDeserializerForValue = forValue;
         try {
@@ -47,19 +47,16 @@ public class KVStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public V read(K key) {
-        if (!dateInMap) {
+        if (baseClosed) {
             throw new RuntimeException("base closed");
         }
-        if (!map.containsKey(key)) {
-            return null;
-        } else {
-            return map.get(key);
-        }
+        return map.get(key);
+
     }
 
     @Override
     public boolean exists(K key) {
-        if (!dateInMap) {
+        if (baseClosed) {
             throw new RuntimeException("base closed");
         }
         return map.containsKey(key);
@@ -67,19 +64,15 @@ public class KVStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public void write(K key, V value) {
-        if (!dateInMap) {
+        if (baseClosed) {
             throw new RuntimeException("base closed");
         }
-        if (map.containsKey(key)) {
-            map.replace(key, value);
-        } else {
-            map.put(key, value);
-        }
+        map.put(key, value);
     }
 
     @Override
     public void delete(K key) {
-        if (!dateInMap) {
+        if (baseClosed) {
             throw new RuntimeException("base closed");
         }
         if (map.containsKey(key)) {
@@ -89,7 +82,7 @@ public class KVStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public Iterator<K> readKeys() {
-        if (!dateInMap) {
+        if (baseClosed) {
             throw new RuntimeException("base closed");
         }
         return map.keySet().iterator();
@@ -97,7 +90,7 @@ public class KVStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public int size() {
-        if (!dateInMap) {
+        if (baseClosed) {
             throw new RuntimeException("base closed");
         }
         return map.size();
@@ -105,7 +98,7 @@ public class KVStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public void close() throws IOException {
-        if (!dateInMap) {
+        if (baseClosed) {
             throw new RuntimeException("base closed");
         }
         try {
@@ -116,7 +109,7 @@ public class KVStorage<K, V> implements KeyValueStorage<K, V> {
                 serializerAndDeserializerForValue.serialize(map.get(entry), output);
             }
             output.close();
-            dateInMap = false;
+            baseClosed = true;
         } catch (IOException exp) {
             System.out.println(exp.getMessage());
         }
