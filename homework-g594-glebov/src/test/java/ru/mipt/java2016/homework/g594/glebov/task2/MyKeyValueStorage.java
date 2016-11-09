@@ -12,13 +12,13 @@ import java.util.Map;
  */
 
 public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
-    private String checkString = "The file hasn't been changed";
-    private HashMap<K, V> map = new HashMap<>();
-    private File storage;
-    private int mapSize = 0;
-    private boolean isOpen = false;
-    private MySerializer<K> keySerializer;
-    private MySerializer<V> valueSerializer;
+    public String checkString = "The file hasn't been changed";
+    public HashMap<K, V> map = new HashMap<>();
+    public File storage;
+    public int mapSize = 0;
+    public boolean isOpen = false;
+    public MySerializer<K> keySerializer;
+    public MySerializer<V> valueSerializer;
 
     public MyKeyValueStorage(String path, MySerializer<K> keySerializer,
                              MySerializer<V> valueSerializer) {
@@ -49,7 +49,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
-    private void readFromStorage(DataInputStream input) throws IOException {
+    public void readFromStorage(DataInputStream input) throws IOException {
         for (int i = 0; i < mapSize; i++) {
             K key = keySerializer.streamDeserialize(input);
             V value = valueSerializer.streamDeserialize(input);
@@ -57,7 +57,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
-    private void writeToStorage() {
+    public void writeToStorage() {
         isOpen = false;
         try (DataOutputStream output = new DataOutputStream(new FileOutputStream(storage))) {
             output.writeUTF(checkString);
@@ -72,7 +72,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
-    private boolean storageOpen() {
+    public boolean storageOpen() {
         return isOpen;
     }
 
