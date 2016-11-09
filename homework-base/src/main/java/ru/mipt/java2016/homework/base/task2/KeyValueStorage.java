@@ -46,5 +46,5 @@ public interface KeyValueStorage<K, V> extends Closeable {
     /**
      * Возвращает число ключей, которые сейчас в хранилище.
      */
-    int size() throws Exception;
+    int size();
 }
