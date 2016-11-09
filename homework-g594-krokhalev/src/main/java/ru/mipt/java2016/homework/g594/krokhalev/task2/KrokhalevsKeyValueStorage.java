@@ -3,11 +3,10 @@ package ru.mipt.java2016.homework.g594.krokhalev.task2;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 
 import java.io.*;
-import java.lang.reflect.*;
-import java.nio.*;
 import java.util.ConcurrentModificationException;
-import java.util.Date;
 import java.util.Iterator;
+
+import static java.io.File.separatorChar;
 
 public class KrokhalevsKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private static final String STORAGE_NAME = "storage.db";
@@ -40,15 +39,15 @@ public class KrokhalevsKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
             try {
 
-                keysFile = new File(workDirectory.getAbsolutePath() + "/KEYS" + STORAGE_NAME);
-                valuesFile = new File(workDirectory.getAbsolutePath() + "/VALUES" + STORAGE_NAME);
+                keysFile = new File(workDirectory.getAbsolutePath() + separatorChar + "KEYS" + STORAGE_NAME);
+                valuesFile = new File(workDirectory.getAbsolutePath() + separatorChar + "VALUES" + STORAGE_NAME);
 
                 if (!keysFile.createNewFile() || !valuesFile.createNewFile()) {
                     throw new IOException();
                 }
 
                 if (storageFile == null) {
-                    storageFile = new File(workDirectory.getAbsolutePath() + "/" + STORAGE_NAME);
+                    storageFile = new File(workDirectory.getAbsolutePath() + separatorChar + STORAGE_NAME);
 
                     if (!storageFile.createNewFile()) {
                         throw new IOException();
