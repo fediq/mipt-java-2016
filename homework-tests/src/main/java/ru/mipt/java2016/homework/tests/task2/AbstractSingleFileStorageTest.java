@@ -4,6 +4,7 @@ import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.tests.task2.StorageTestUtils.*;
+import ru.mipt.java2016.homework.tests.task3.KeyValueStorageFactories;
 
 import java.io.File;
 import java.util.Arrays;
@@ -21,13 +22,7 @@ import static ru.mipt.java2016.homework.tests.task2.StorageTestUtils.*;
  * @author Fedor S. Lavrentyev
  * @since 13.10.16
  */
-public abstract class AbstractSingleFileStorageTest {
-
-    protected abstract KeyValueStorage<String, String> buildStringsStorage(String path);
-
-    protected abstract KeyValueStorage<Integer, Double> buildNumbersStorage(String path);
-
-    protected abstract KeyValueStorage<StudentKey, Student> buildPojoStorage(String path);
+public abstract class AbstractSingleFileStorageTest extends KeyValueStorageFactories {
 
     public static final StudentKey KEY_1 = new StudentKey(591, "Vasya Pukin");
     public static final Student VALUE_1 = new Student(591, "Vasya Pukin", "Vasyuki", date(1996, 4, 14), true, 7.8);
@@ -123,7 +118,7 @@ public abstract class AbstractSingleFileStorageTest {
             });
             doInTempDirectory(path2 -> {
                 File from = new File(path1);
-                String path2ext = path2 + File.pathSeparator + "trololo/";
+                String path2ext = path2 + File.separator + "trololo/";
                 File to = new File(path2ext);
                 FileUtils.copyDirectory(from, to);
                 doWithPojo(path2ext, storage -> {
@@ -201,7 +196,7 @@ public abstract class AbstractSingleFileStorageTest {
         }));
     }
 
-    protected final <K, V> KeyValueStorage<K, V> storageCallback(
+    protected final <K extends Comparable<K>, V> KeyValueStorage<K, V> storageCallback(
             String path, Callback<KeyValueStorage<K, V>> callback, Function<String, KeyValueStorage<K, V>> builder)
             throws Exception {
         KeyValueStorage<K, V> storage = builder.apply(path);
