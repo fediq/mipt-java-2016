@@ -1,6 +1,5 @@
 package ru.mipt.java2016.homework.g595.romanenko.task3;
 
-import org.junit.Test;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.g595.romanenko.task2.StudentKeySerializer;
 import ru.mipt.java2016.homework.g595.romanenko.task2.StudentSerializer;
@@ -9,15 +8,9 @@ import ru.mipt.java2016.homework.g595.romanenko.task2.serialization.IntegerSeria
 import ru.mipt.java2016.homework.g595.romanenko.task2.serialization.StringSerializer;
 import ru.mipt.java2016.homework.g595.romanenko.task3.comapators.StudentKeyComparator;
 import ru.mipt.java2016.homework.g595.romanenko.utils.FileDigitalSignatureMD5;
-import ru.mipt.java2016.homework.tests.task2.AbstractSingleFileStorageTest;
 import ru.mipt.java2016.homework.tests.task2.Student;
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
-
-import java.util.*;
-
-import static org.junit.Assert.assertEquals;
-import static ru.mipt.java2016.homework.tests.task2.StorageTestUtils.assertFullyMatch;
-import static ru.mipt.java2016.homework.tests.task2.StorageTestUtils.doInTempDirectory;
+import ru.mipt.java2016.homework.tests.task3.KeyValueStoragePerformanceTest;
 
 /**
  * ru.mipt.java2016.homework.g595.romanenko.task3
@@ -25,7 +18,7 @@ import static ru.mipt.java2016.homework.tests.task2.StorageTestUtils.doInTempDir
  * @author Ilya I. Romanenko
  * @since 30.10.16
  **/
-public class StorageTest extends AbstractSingleFileStorageTest {
+public class StorageTest extends KeyValueStoragePerformanceTest {
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String path) {
         Storage<String, String> result = new Storage<>(
@@ -65,7 +58,7 @@ public class StorageTest extends AbstractSingleFileStorageTest {
     }
 
     private final int chunkSize = 2048;
-
+/*
     @Test
     public void testOne() {
         doInTempDirectory(path -> doWithNumbers(path, storage -> {
@@ -207,5 +200,5 @@ public class StorageTest extends AbstractSingleFileStorageTest {
                 storage.write(key, value);
             }
         }));
-    }
+    }*/
 }

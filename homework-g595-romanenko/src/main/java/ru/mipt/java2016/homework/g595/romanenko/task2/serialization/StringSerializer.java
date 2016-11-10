@@ -14,25 +14,27 @@ public class StringSerializer implements SerializationStrategy<String> {
 
     private static final StringSerializer STRING_SERIALIZER = new StringSerializer();
 
+    private static final IntegerSerializer INTEGER_SERIALIZER = IntegerSerializer.getInstance();
+
     public static StringSerializer getInstance() {
         return STRING_SERIALIZER;
     }
 
     @Override
     public void serializeToStream(String s, OutputStream outputStream) throws IOException {
-        IntegerSerializer.getInstance().serializeToStream(s.length(), outputStream);
+        INTEGER_SERIALIZER.serializeToStream(s.length(), outputStream);
         outputStream.write(s.getBytes());
     }
 
     @Override
     public int getBytesSize(String s) {
         return s.length() +
-                IntegerSerializer.getInstance().getBytesSize(s.length()); //for serialize length of string
+                INTEGER_SERIALIZER.getBytesSize(s.length()); //for serialize length of string
     }
 
     @Override
     public String deserializeFromStream(InputStream inputStream) throws IOException {
-        Integer length = IntegerSerializer.getInstance().deserializeFromStream(inputStream);
+        Integer length = INTEGER_SERIALIZER.deserializeFromStream(inputStream);
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
         return new String(bytes);
