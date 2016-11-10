@@ -6,19 +6,19 @@ import java.util.EmptyStackException;
 import java.util.Stack;
 
 
-public final class PlusOperator extends Lexeme {
+public final class PlusOperator extends Operator {
 
     @Override
-    protected int priority() {
+    public int priority() {
         return 1;
     }
 
     @Override
-    protected void makeOperation(Stack<NumberLexeme> results) throws ParsingException {
+    public void makeOperation(Stack<NumberOperator> results) throws ParsingException {
         try {
-            NumberLexeme second = results.pop();
-            NumberLexeme first = results.pop();
-            results.push(new NumberLexeme(first.value + second.value));
+            NumberOperator second = results.pop();
+            NumberOperator first = results.pop();
+            results.push(new NumberOperator(first.getValue() + second.getValue()));
         } catch (EmptyStackException e) {
             throw new ParsingException("Not enough arguments for plus operation");
         }

@@ -17,11 +17,11 @@ public class CalculatorMain implements Calculator {
         expression = "(" + expression.replaceAll(" ", "").replaceAll("\n", "").replaceAll("\t", "") + ")";
         expression = markUnaryMinuses(expression, '~');
         StringTokenizer tokenizer = new StringTokenizer(expression, "+-*/()~", true);
-        Stack<NumberLexeme> results = new Stack<NumberLexeme>();
-        Stack<Lexeme> operations = new Stack<Lexeme>();
+        Stack<NumberOperator> results = new Stack<>();
+        Stack<Operator> operations = new Stack<>();
         while (tokenizer.hasMoreTokens()) {
             String t = tokenizer.nextToken();
-            Lexeme lex = Lexeme.fromString(t);
+            Operator lex = Lexeme.fromString(t);
             lex.addLexeme(results, operations);
         }
         if (!operations.isEmpty()) {
@@ -33,7 +33,7 @@ public class CalculatorMain implements Calculator {
         if (results.size() > 1) {
             throw new ParsingException("Not enough operators for these numbers");
         }
-        return results.peek().value;
+        return results.peek().getValue();
     }
 
     private static String markUnaryMinuses(String s, char newSymbol) throws ParsingException {
@@ -52,7 +52,9 @@ public class CalculatorMain implements Calculator {
                 current = newSymbol;
             }
 
-            result = result + current;
+            StringBuilder builder = new StringBuilder();
+            builder.append(result).append(current);
+            result = builder.toString();
         }
         return result;
     }

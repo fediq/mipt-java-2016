@@ -5,29 +5,22 @@ import ru.mipt.java2016.homework.base.task1.ParsingException;
 import java.util.EmptyStackException;
 import java.util.Stack;
 
+public abstract class Operator {
 
-public final class CloseParenthesisOperator extends Operator {
+    protected abstract int priority() throws ParsingException;
 
-    @Override
-    protected int priority() throws ParsingException {
-        throw new ParsingException("Logical error: close parenthesis is never checked for priority");
-    }
+    protected abstract void makeOperation(Stack<NumberOperator> results) throws ParsingException;
 
-    @Override
-    protected void makeOperation(Stack<NumberOperator> results) throws ParsingException {
-        throw new ParsingException("Logical error: close parenthesis can't make any operation");
-    }
-
-    @Override
     public void addLexeme(Stack<NumberOperator> results, Stack<Operator> operations) throws ParsingException {
         try {
-            while (operations.peek().priority() != 0) {
+            while (operations.peek().priority() >= this.priority()) {
                 Operator operation = operations.pop();
                 operation.makeOperation(results);
             }
+            operations.push(this);
         } catch (EmptyStackException e) {
             throw new ParsingException("No parenthesis balance");
         }
-        operations.pop();
     }
+
 }

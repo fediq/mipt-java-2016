@@ -6,25 +6,25 @@ import java.util.EmptyStackException;
 import java.util.Stack;
 
 
-public final class UnaryMinusOperator extends Lexeme {
+public final class UnaryMinusOperator extends Operator {
 
     @Override
-    protected int priority() {
+    public int priority() {
         return 3;
     }
 
     @Override
-    protected void makeOperation(Stack<NumberLexeme> results) throws ParsingException {
+    public void makeOperation(Stack<NumberOperator> results) throws ParsingException {
         try {
-            NumberLexeme item = results.pop();
-            results.push(new NumberLexeme(-item.value));
+            NumberOperator item = results.pop();
+            results.push(new NumberOperator(-item.getValue()));
         } catch (EmptyStackException e) {
             throw new ParsingException("No argument for unary minus operation");
         }
     }
 
     @Override
-    public void addLexeme(Stack<NumberLexeme> results, Stack<Lexeme> operations) throws ParsingException {
+    public void addLexeme(Stack<NumberOperator> results, Stack<Operator> operations) throws ParsingException {
         operations.push(this);
     }
 }
