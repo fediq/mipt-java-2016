@@ -22,7 +22,7 @@ abstract class MillerStorageAbstract<K, V> implements KeyValueStorage<K, V> {
     protected boolean isClosed;
 
     // Конструкторы.
-    public MillerStorageAbstract(String directoryName) {
+    MillerStorageAbstract(String directoryName) {
         map = null;
         file = null;
         pathName = null;
@@ -68,7 +68,7 @@ abstract class MillerStorageAbstract<K, V> implements KeyValueStorage<K, V> {
                 file.close();
                 file = null;
             }
-        } catch(IOException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
         isClosed = false;
@@ -151,7 +151,10 @@ abstract class MillerStorageAbstract<K, V> implements KeyValueStorage<K, V> {
     }
 
     protected abstract K readKey();
+
     protected abstract V readValue();
+
     protected abstract void writeKey(K key);
+
     protected abstract void writeValue(V value);
 }
