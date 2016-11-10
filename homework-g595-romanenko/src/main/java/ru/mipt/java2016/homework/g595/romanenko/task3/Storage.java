@@ -46,7 +46,7 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
     /**
      * Constants
      */
-    private final int maxCountObjectsInMemory = 2047; //4095;//2048;
+    private final int maxCountObjectsInMemory = 1000; //4095;//2048;
 
     /**
      * Internal state
@@ -237,7 +237,7 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
 
     private void flipUpdatedValues() {
         SSTable<K, V> flipTable;
-        String mergedTableName = "flipDP_" + Instant.now().toString() + "_" +
+        String mergedTableName = "flipDP_" + Instant.now().getEpochSecond() + "_" +
                 Instant.now().getNano() + "_" + epochNumber + "_" + hashCode() + "_.db";
 
         try {
@@ -264,7 +264,7 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
             }
             try {
                 mergedTableName = "mergeDB_stage_" + Integer.toString(i)
-                        + "_time_" + Instant.now().toString() + "_" +
+                        + "_time_" + Instant.now().getEpochSecond() + "_" +
                         Instant.now().getNano() + "_" + epochNumber + "_" + hashCode() + "_.db";
 
                 //Merge 2 tables into one new
