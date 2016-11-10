@@ -10,19 +10,22 @@ public abstract class Lexeme {
             throw new ParsingException("Empty string is not a lexeme");
         }
         switch (s.charAt(0)) {
-            case '+': return new PlusOperator();
-            case '-': return new BinaryMinusOperator();
-            case '*': return new MultiplyOperator();
-            case '/': return new DivideOperator();
-            case '~': return new UnaryMinusOperator();
-            case '(': return new OpenParenthesisOperator();
-            case ')': return new CloseParenthesisOperator();
+            case '+':
+                return new PlusOperator();
+            case '-':
+                return new BinaryMinusOperator();
+            case '*':
+                return new MultiplyOperator();
+            case '/':
+                return new DivideOperator();
+            case '~':
+                return new UnaryMinusOperator();
+            case '(':
+                return new OpenParenthesisOperator();
+            case ')':
+                return new CloseParenthesisOperator();
             default:
-                try {
-                    return new NumberOperator(s);
-                } catch (NumberFormatException e) {
-                    throw new ParsingException(s + " - incorrect lexeme");
-                }
+                return new NumberOperator(s);
         }
     }
 

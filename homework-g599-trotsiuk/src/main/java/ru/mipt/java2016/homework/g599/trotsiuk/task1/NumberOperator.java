@@ -12,8 +12,12 @@ public final class NumberOperator extends Operator {
         this.value = value;
     }
 
-    public NumberOperator(String s) {
-        this.value = Double.parseDouble(s);
+    public NumberOperator(String s) throws ParsingException {
+        try {
+            this.value = Double.parseDouble(s);
+        } catch (NumberFormatException e) {
+            throw new ParsingException(s + " - incorrect lexeme");
+        }
     }
 
 
