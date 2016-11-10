@@ -2,7 +2,9 @@ package ru.mipt.java2016.homework.g595.murzin.task3;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Created by Дмитрий Мурзин on 24.10.16.
@@ -22,12 +24,21 @@ public interface SerializationStrategy<Value> {
     SerializationStrategy<String> FOR_STRING = new SerializationStrategy<String>() {
         @Override
         public void serializeToStream(String s, DataOutputStream output) throws IOException {
-            output.writeUTF(s);
+            output.writeInt(s.length());
+            output.write(s.getBytes(StandardCharsets.UTF_8));
+//            this method doesn't work with strings longer than 65535
+//            output.writeUTF(s);
         }
 
         @Override
         public String deserializeFromStream(DataInputStream input) throws IOException {
-            return input.readUTF();
+            int length = input.readInt();
+            byte[] bytes = new byte[length];
+            int actualLength = input.read(bytes);
+            if (actualLength < length) {
+                throw new EOFException("Can't read UTF string: required " + length + " bytes, but only " + actualLength + " available");
+            }
+            return new String(bytes, StandardCharsets.UTF_8);
         }
     };
 

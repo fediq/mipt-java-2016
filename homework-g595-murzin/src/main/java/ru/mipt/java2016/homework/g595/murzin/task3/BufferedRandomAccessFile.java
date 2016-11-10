@@ -1,49 +1,53 @@
 package ru.mipt.java2016.homework.g595.murzin.task3;
 
-import java.io.BufferedInputStream;
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.InputStream;
+import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
 
 /**
  * Created by dima on 05.11.16.
  */
-class BufferedRandomAccessFile {
-    private static class MyBufferedInputStream extends BufferedInputStream {
-        public MyBufferedInputStream(InputStream in) {
-            super(in);
-        }
+public class BufferedRandomAccessFile {
 
-        public long getPositionInBuffer() {
-            return pos;
-        }
+    public static final int BUFFER_SIZE = 8192;
 
-        public long getBufferSize() {
-            return count;
-        }
-    }
-
-    public RandomAccessFile randomAccessFile;
-
-    public MyBufferedInputStream bufferedInputStream;
+    private RandomAccessFile randomAccessFile;
+    private HackedBufferedInputStream bufferedInputStream;
+    public DataInputStream dataInputStream;
+    private FileChannel fileChannel;
 
     public BufferedRandomAccessFile(File storageFile) throws FileNotFoundException {
         randomAccessFile = new RandomAccessFile(storageFile, "rw");
-        bufferedInputStream = new MyBufferedInputStream(Channels.newInputStream(randomAccessFile.getChannel()));
+        fileChannel = randomAccessFile.getChannel();
+        createBufferedInputStream();
     }
 
-    public void seek(long fileOffset) {
+    private void createBufferedInputStream() {
+        bufferedInputStream = new HackedBufferedInputStream(Channels.newInputStream(randomAccessFile.getChannel()), BUFFER_SIZE);
+        dataInputStream = new DataInputStream(bufferedInputStream);
+    }
+
+    public void seek(long fileOffset) throws IOException {
         // randomAccessFile             $..........[.........#........)...........^
         // buffer                                  [.........#........)
         // buffer[positionInBuffer]                          #
         // bufferSize                              <------------------>
         // positionInBuffer                        <--------->
         // endPosition                  <----------------------------->
+        // startPosition                <---------->
 
         long bufferSize = bufferedInputStream.getBufferSize();
-        long positionInBuffer = bufferedInputStream.getPositionInBuffer();
-        long endPosition = randomAccessFile.getChannel().position();
+        long endPosition = fileChannel.position();
+        long startPosition = endPosition - bufferSize;
+        if (fileOffset < startPosition || fileOffset >= endPosition) {
+            randomAccessFile.seek(fileOffset);
+            createBufferedInputStream();
+        } else {
+            bufferedInputStream.setPositionInBuffer((int) (fileOffset - startPosition));
+        }
     }
 }

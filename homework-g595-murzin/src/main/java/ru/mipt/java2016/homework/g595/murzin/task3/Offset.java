@@ -7,21 +7,24 @@ import java.io.IOException;
 /**
  * Created by dima on 05.11.16.
  */
-class Offset {
-    public static SerializationStrategy<Offset> STRATEGY = new SerializationStrategy<Offset>() {
+public class Offset {
+    public static final SerializationStrategy<Offset> STRATEGY = new SerializationStrategy<Offset>() {
         @Override
         public void serializeToStream(Offset offset, DataOutputStream output) throws IOException {
-
+            output.writeInt(offset.fileIndex);
+            output.writeLong(offset.fileOffset);
         }
 
         @Override
         public Offset deserializeFromStream(DataInputStream input) throws IOException {
-            return null;
+            return new Offset(input.readInt(), input.readLong());
         }
     };
 
-    public int fileIndex;
-    public long fileOffset;
+    public static final Offset NONE = new Offset(-1, -1);
+
+    public final int fileIndex;
+    public final long fileOffset;
 
     public Offset(int fileIndex, long fileOffset) {
         this.fileIndex = fileIndex;
