@@ -34,25 +34,28 @@ public class JMyKVStorage<K, V> implements KeyValueStorage<K, V> {
         keySerializer = keySerializerArguement;
         valueSerializer = valueSerializerArguement;
         file = new File(pathArguement, FILE_NAME);
-        boolean justCreated = false;
-        if (!file.exists()) {
+        storageMap = new HashMap<>();
+        if (file.exists()) {
+            
+            makeRandomAccessFile();
+            getData();
+        } else {
             try {
                 file.createNewFile();
             } catch (IOException e) {
                 throw new RuntimeException("Cannot create file");
             }
-            justCreated = true;
+            makeRandomAccessFile();
+            
         }
-        storageMap = new HashMap<>();
+    }
+                
+    private void makeRandomAccessFile() {
         try {
             storage = new RandomAccessFile(file.getName(), "rw");
         } catch (IOException e) {
             throw new RuntimeException("Cannot create random access file");
         }
-        if (!justCreated) {
-            getData();
-        }
-            
     }
 
     private void getData() throws IOException {

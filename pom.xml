@@ -12,17 +12,16 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>homework-g595-kryloff</module>
         <module>homework-base</module>
         <module>homework-tests</module>
-        <module>homework-g000-lavrentyev</module>
-        <module>workshop-materials</module>
         <module>homework-g597-povarnitsyn</module>
         <module>homework-g596-kupriyanov</module>
+        <module>homework-g595-kryloff</module>
         <module>homework-g596-kravets</module>
         <module>homework-g596-litvinov</module>
         <module>homework-g594-kozlov</module>
         <module>homework-g596-proskurina</module>
+        <module>homework-g000-lavrentyev</module>
         <module>homework-g594-borodin</module>
         <module>homework-g597-vasilyev</module>
         <module>homework-g594-stepanov</module>
@@ -84,10 +83,12 @@
         <module>homework-g597-grishutin</module>
         <module>homework-g595-tkachenko</module>
         <module>homework-g597-miller</module>
+        <module>homework-g596-pockonechny</module>
         <module>homework-g597-smirnova</module>
         <module>homework-g596-grebenshchikova</module>
-        <module>homework-g597-kochukov</module> 
-        
+        <module>homework-g597-kochukov</module>
+        <module>homework-g597-sigareva</module>
+        <module>workshop-materials</module>
 
     </modules>
 
