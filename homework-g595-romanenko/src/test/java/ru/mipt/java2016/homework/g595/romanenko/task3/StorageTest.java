@@ -1,5 +1,6 @@
 package ru.mipt.java2016.homework.g595.romanenko.task3;
 
+import org.junit.Test;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.g595.romanenko.task2.StudentKeySerializer;
 import ru.mipt.java2016.homework.g595.romanenko.task2.StudentSerializer;
@@ -7,10 +8,16 @@ import ru.mipt.java2016.homework.g595.romanenko.task2.serialization.DoubleSerial
 import ru.mipt.java2016.homework.g595.romanenko.task2.serialization.IntegerSerializer;
 import ru.mipt.java2016.homework.g595.romanenko.task2.serialization.StringSerializer;
 import ru.mipt.java2016.homework.g595.romanenko.task3.comapators.StudentKeyComparator;
-import ru.mipt.java2016.homework.g595.romanenko.utils.FileDigitalSignatureMD5;
+import ru.mipt.java2016.homework.g595.romanenko.utils.FileDigitalSignatureAdler32;
 import ru.mipt.java2016.homework.tests.task2.Student;
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
 import ru.mipt.java2016.homework.tests.task3.KeyValueStoragePerformanceTest;
+
+import java.util.*;
+
+import static org.junit.Assert.assertEquals;
+import static ru.mipt.java2016.homework.tests.task2.StorageTestUtils.assertFullyMatch;
+import static ru.mipt.java2016.homework.tests.task2.StorageTestUtils.doInTempDirectory;
 
 /**
  * ru.mipt.java2016.homework.g595.romanenko.task3
@@ -25,7 +32,7 @@ public class StorageTest extends KeyValueStoragePerformanceTest {
                 path,
                 StringSerializer.getInstance(),
                 StringSerializer.getInstance(),
-                FileDigitalSignatureMD5.getInstance(),
+                FileDigitalSignatureAdler32.getInstance(),
                 new MergerSST<>(String::compareTo)
         );
 
@@ -38,7 +45,7 @@ public class StorageTest extends KeyValueStoragePerformanceTest {
                 path,
                 IntegerSerializer.getInstance(),
                 DoubleSerializer.getInstance(),
-                FileDigitalSignatureMD5.getInstance(),
+                FileDigitalSignatureAdler32.getInstance(),
                 new MergerSST<>(Integer::compareTo)
         );
 
@@ -51,14 +58,14 @@ public class StorageTest extends KeyValueStoragePerformanceTest {
                 path,
                 StudentKeySerializer.getInstance(),
                 StudentSerializer.getInstance(),
-                FileDigitalSignatureMD5.getInstance(),
+                FileDigitalSignatureAdler32.getInstance(),
                 new MergerSST<>(new StudentKeyComparator())
         );
         return result;
     }
 
     private final int chunkSize = 2048;
-/*
+
     @Test
     public void testOne() {
         doInTempDirectory(path -> doWithNumbers(path, storage -> {
@@ -200,5 +207,5 @@ public class StorageTest extends KeyValueStoragePerformanceTest {
                 storage.write(key, value);
             }
         }));
-    }*/
+    }
 }
