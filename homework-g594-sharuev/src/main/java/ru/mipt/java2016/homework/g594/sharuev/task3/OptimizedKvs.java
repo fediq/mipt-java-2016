@@ -471,7 +471,7 @@ public class OptimizedKvs<K, V> implements
                 // Проверка.
                 byte[] digest = countHash();
                 if (!Arrays.equals(digest, hashString.toByteArray())) {
-                    throw new RuntimeException("Hash mismatch");
+                    throw new KVSException("Hash mismatch");
                 }
             } catch (FileNotFoundException e) {
                 throw new KVSException(
@@ -493,7 +493,7 @@ public class OptimizedKvs<K, V> implements
 
             } catch (FileNotFoundException e) {
                 throw new KVSException(
-                        String.format("Can't find hash file %s\n", DBName + Names.StorageHashSuff));
+                        String.format("Can't find hash file %s", DBName + Names.StorageHashSuff));
             } catch (IOException e) {
                 throw new KVSException("Some IO error while reading hash");
             }
