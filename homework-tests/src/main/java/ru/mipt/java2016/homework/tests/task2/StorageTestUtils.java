@@ -78,7 +78,7 @@ public class StorageTestUtils {
     }
 
     @FunctionalInterface
-    public static interface Measureable {
+    public interface Measureable {
         void doSomething();
     }
 }
