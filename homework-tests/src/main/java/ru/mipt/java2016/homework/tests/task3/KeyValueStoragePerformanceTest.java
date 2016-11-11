@@ -107,7 +107,7 @@ public abstract class KeyValueStoragePerformanceTest extends AbstractSingleFileS
         print("%5d millis for single 1kW 1kR iteration", iterationTimeMillis);
     }
 
-    @Ignore
+    //@Ignore
     @Test
     public void measure10kWDump10kR() {
         AtomicLong summaryWriteTime = new AtomicLong(0L);
@@ -194,7 +194,7 @@ public abstract class KeyValueStoragePerformanceTest extends AbstractSingleFileS
         print("%5d millis for single 100kW 100kR iteration", iterationTimeMillis);
     }
 
-    @Ignore
+    //@Ignore
     @Test
     public void measure10W20Rx1k() {
         AtomicLong summaryWriteTime = new AtomicLong(0L);
@@ -242,7 +242,7 @@ public abstract class KeyValueStoragePerformanceTest extends AbstractSingleFileS
         print("%5d millis for single 10W 20R x1k iteration", iterationTimeMillis);
     }
 
-    @Ignore
+    //@Ignore
     @Test
     public void measure10kWAnd100Rx100() {
         AtomicLong summaryWriteTime = new AtomicLong(0L);
