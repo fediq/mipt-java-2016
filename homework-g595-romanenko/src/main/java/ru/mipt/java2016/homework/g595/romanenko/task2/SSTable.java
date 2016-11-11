@@ -34,6 +34,7 @@ public class SSTable<Key, Value> {
 
     private boolean isClosed = false;
     private boolean hasUncommittedChanges = false;
+    private boolean needToSign = false;
     private String path;
     private String dbName = null;
 
@@ -101,7 +102,7 @@ public class SSTable<Key, Value> {
             integerSerializer.serializeToStream(toFlip.size(), outputStream);
 
             List<Integer> offsets = new ArrayList<>();
-            Integer totalLength = integerSerializer.getBytesSize(toFlip.size());
+            int totalLength = integerSerializer.getBytesSize(toFlip.size());
 
 
             List<Key> cachedKeys = toFlip.keyList();
@@ -109,8 +110,8 @@ public class SSTable<Key, Value> {
 
             for (Key key : cachedKeys) {
                 totalLength += keySerializationStrategy.getBytesSize(key);
-                totalLength += integerSerializer.getBytesSize(0);
             }
+            totalLength += integerSerializer.getBytesSize(0) * cachedKeys.size();
 
             for (Key key : cachedKeys) {
                 indices.put(key, totalLength);
@@ -129,7 +130,8 @@ public class SSTable<Key, Value> {
 
             outputStream.flush();
 
-            fileDigitalSignature.signFileWithDefaultSignName(path);
+            //fileDigitalSignature.signFileWithDefaultSignName(path);
+            needToSign = true;
 
             hasUncommittedChanges = false;
 
@@ -182,9 +184,24 @@ public class SSTable<Key, Value> {
             }
             outputStream.flush();
             hasUncommittedChanges = false;
+            needToSign = true;
+
         } catch (IOException e) {
             System.out.println(e.getMessage());
             e.printStackTrace();
+            throw new IllegalStateException();
+        }
+    }
+
+    public void forceClose() {
+        if (isClosed) {
+            return;
+        }
+        epochNumber++;
+        isClosed = true;
+        try {
+            storage.close();
+        } catch (IOException e) {
             throw new IllegalStateException();
         }
     }
@@ -198,7 +215,9 @@ public class SSTable<Key, Value> {
         try {
             rewriteIndices();
             storage.close();
-            fileDigitalSignature.signFileWithDefaultSignName(path);
+            if (needToSign) {
+                fileDigitalSignature.signFileWithDefaultSignName(path);
+            }
         } catch (IOException e) {
             throw new IllegalStateException();
         }
