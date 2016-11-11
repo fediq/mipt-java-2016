@@ -46,7 +46,9 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
     /**
      * Constants
      */
-    private final int maxCountObjectsInMemory = 1000; //4095;//2048;
+    private int maxUpdatedObjectsInMemory = 1900; //4095;//2048;
+    private int maxCachedObjectsInMemory = 500; //4095;//2048;
+
 
     /**
      * Internal state
@@ -54,6 +56,36 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
     private boolean isClosed = false;
     private int epochNumber = 0;
     private int totalAmount = 0;
+
+    public Storage(String path,
+                   SerializationStrategy<K> keySerializationStrategy,
+                   SerializationStrategy<V> valueSerializationStrategy,
+                   FileDigitalSignature fileDigitalSignature,
+                   MergerSST<K, V> mergerSST,
+                   int maxCachedObjectsInMemory,
+                   int maxUpdatedObjectsInMemory) {
+
+        this.maxCachedObjectsInMemory = maxCachedObjectsInMemory;
+        this.maxUpdatedObjectsInMemory = maxUpdatedObjectsInMemory;
+
+        this.currentDirectoryPath = path;
+        this.fileDigitalSignature = fileDigitalSignature;
+        this.mergerSST = mergerSST;
+        this.tables = new ArrayList<>();
+        this.keySerializationStrategy = keySerializationStrategy;
+        this.valueSerializationStrategy = valueSerializationStrategy;
+        this.updatedValues = new TreeMap<>(mergerSST.getComparator());
+
+        String tableListDBPath = path + "/tableList.db";
+        try {
+            if (!readTableList(tableListDBPath)) {
+                throw new RuntimeException();
+            }
+        } catch (IOException ignore) {
+            throw new IllegalStateException("File tableList exist, but subtables are uncorrected");
+        }
+    }
+
 
     public Storage(String path,
                    SerializationStrategy<K> keySerializationStrategy,
@@ -89,6 +121,7 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
     private boolean readTableList(String tableListDBPath) throws IOException {
         SSTable<String, String> tablesList = new SSTable<>(tableListDBPath,
                 StringSerializer.getInstance(), StringSerializer.getInstance(), fileDigitalSignature);
+        fileDigitalSignature.signFileWithDefaultSignName(tableListDBPath);
 
         HashSet<String> keySet = new HashSet<>();
         Iterator<String> it = tablesList.readKeys();
@@ -181,7 +214,7 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
         if (!cachedValues.containsKey(key)) {
             roundRobin.add(key);
         }
-        if (roundRobin.size() > maxCountObjectsInMemory) {
+        if (roundRobin.size() > maxCachedObjectsInMemory) {
             K rRKey = roundRobin.poll();
             cachedValues.remove(rRKey);
         }
@@ -230,7 +263,7 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
         addCachedValue(key, value);
 
         //prepare to flip
-        if (updatedValues.size() > maxCountObjectsInMemory) {
+        if (updatedValues.size() > maxUpdatedObjectsInMemory) {
             flipUpdatedValues();
         }
     }
@@ -272,8 +305,8 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
                         flipTable, toMergeTable, fileDigitalSignature);
                 mergedTable.setDatabaseName(mergedTableName);
 
-                flipTable.close();
-                toMergeTable.close();
+                flipTable.forceClose();
+                toMergeTable.forceClose();
                 //remove 2 old tables
                 removeOldTable(flipTable);
                 removeOldTable(toMergeTable);

@@ -34,7 +34,7 @@ public class StringSerializer implements SerializationStrategy<String> {
 
     @Override
     public String deserializeFromStream(InputStream inputStream) throws IOException {
-        Integer length = INTEGER_SERIALIZER.deserializeFromStream(inputStream);
+        int length = INTEGER_SERIALIZER.deserializeFromStream(inputStream);
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
         return new String(bytes);
