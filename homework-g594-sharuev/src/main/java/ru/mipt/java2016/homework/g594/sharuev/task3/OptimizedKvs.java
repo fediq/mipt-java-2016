@@ -34,25 +34,48 @@ public class OptimizedKvs<K, V> implements
             raf = rafVal;
             indexMap = indexMapVal;
             file = fileVal;
+            dis = DISfromRAF(rafVal);
+            dis.mark(Consts.BufferSize);
+            curPos = 0;
         }
 
         RandomAccessFile raf;
         File file;
+        DataInputStream dis;
+        long curPos;
         SortedMap<K, Long> indexMap;
+
+        public V read(long offset) {
+            try {
+
+                if (offset - curPos>= 0 && offset - curPos<Consts.BufferSize) {
+                    dis.reset();
+                    dis.skip(offset-curPos);
+                } else {
+                    raf.seek(offset);
+                    curPos = raf.getFilePointer();
+                    dis = DISfromRAF(raf);
+                    dis.mark(Consts.BufferSize);
+                }
+                return valueSerializationStrategy.deserializeFromStream(dis);
+            } catch (Exception e) {
+                throw new KVSException("Failed to read from disk", e);
+            }
+        }
     }
 
-    private class Address
-    {
+    private class Address {
         Address(Part part, long offset) {
             this.part = part;
             this.offset = offset;
         }
+
         long offset;
         Part part;
     }
 
     private Map<K, V> memTable;
-    LoadingCache<K,V> cache;
+    private LoadingCache<K, V> cache;
     private Set<K> indexTable;
     private RandomAccessFile keyStorageRaf;
     private SerializationStrategy<K> keySerializationStrategy;
@@ -60,7 +83,6 @@ public class OptimizedKvs<K, V> implements
     private boolean isOpen;
     private final String DBName;
     private static String path;
-    // Каждая SST хранится в своём файле, и это они. Обращение по индексу.
     private Deque<Part> parts;
     private Comparator<K> comparator;
     private File lockFile;
@@ -92,9 +114,9 @@ public class OptimizedKvs<K, V> implements
                                 Iterator<Part> it = parts.descendingIterator();
                                 while (it.hasNext()) {
                                     Part part = it.next();
-                                    Long val2 = part.indexMap.get(key);
-                                    if (val2 != null) {
-                                        return readValFromDisk(part, val2);
+                                    Long offset = part.indexMap.get(key);
+                                    if (offset != null) {
+                                        return part.read(offset);
                                     }
                                 }
                                 return null;
@@ -154,17 +176,6 @@ public class OptimizedKvs<K, V> implements
         isOpen = true;
     }
 
-    private V readValFromDisk(Part part, long offset) {
-        try {
-            part.raf.seek(offset);
-            DataInputStream dataInputStream = new DataInputStream(
-                    Channels.newInputStream(part.raf.getChannel()));
-            return valueSerializationStrategy.deserializeFromStream(dataInputStream);
-        } catch (Exception e) {
-            throw new KVSException("Failed to read from disk", e);
-        }
-    }
-
     /**
      * Возвращает значение, соответствующее ключу.
      * Сложность O().
@@ -177,7 +188,7 @@ public class OptimizedKvs<K, V> implements
         if (!indexTable.contains(key)) {
             return null;
         }
-        V val = cache.getUnchecked((K)key);
+        V val = cache.getUnchecked((K) key);
         if (val != null) {
             return val;
         }
@@ -199,7 +210,7 @@ public class OptimizedKvs<K, V> implements
 
     /**
      * Вставка пары ключ-значение.
-     * Сложность O(1
+     * Сложность O(TODO)
      *
      * @param key
      * @param value
@@ -210,14 +221,22 @@ public class OptimizedKvs<K, V> implements
         indexTable.add((K) key);
         if (memTable.size() > Consts.DumpThreshold) {
             dumpMemTableToFile();
-            try {
-                mergeFiles();
-            } catch (IOException e) {
-                throw new KVSException("Lol");
+            if (parts.size() > 5) {
+                try {
+                    while (parts.size() > 1) {
+                        mergeFiles();
+                    }
+                } catch (IOException e) {
+                    throw new KVSException("Lol");
+                }
             }
         }
     }
 
+    /**
+     * Удаление ключа key.
+     * Сложность: O(NlogN).
+     */
     public void delete(Object key) {
         checkOpen();
         if (indexTable.contains(key)) {
@@ -245,6 +264,11 @@ public class OptimizedKvs<K, V> implements
         return indexTable.size();
     }
 
+    /**
+     * Закрытие хранилища.
+     *
+     * @throws IOException
+     */
     public void close() throws IOException {
         checkOpen();
         dumpDatabaseToFile();
@@ -263,8 +287,7 @@ public class OptimizedKvs<K, V> implements
      */
     private void initDatabaseFromDisk() throws SerializationException {
         try {
-            DataInputStream dataInputStream = new DataInputStream(new BufferedInputStream(
-                    Channels.newInputStream(keyStorageRaf.getChannel())));
+            DataInputStream dataInputStream = DISfromRAF(keyStorageRaf);
 
             long numberOfEntries = dataInputStream.readLong();
 
@@ -281,7 +304,10 @@ public class OptimizedKvs<K, V> implements
         }
     }
 
-    // Складывает текущую MemTable в следующий по счёту файл part'а. Заодно создаёт IndexTable для этого куска.
+    /**
+     * Складывает текущую MemTable в следующий по счёту part.
+     * Буферизуется.
+     */
     private void dumpMemTableToFile() {
         try {
             File nextFile = Paths.get(path,
@@ -310,6 +336,11 @@ public class OptimizedKvs<K, V> implements
         }
     }
 
+    /**
+     * Пишет всю базу на диск, считает хэши и удаляет lock-файлы.
+     *
+     * @throws IOException
+     */
     private void dumpDatabaseToFile() throws IOException {
 
         // Записываем на диск последнюю MemTable
@@ -437,8 +468,7 @@ public class OptimizedKvs<K, V> implements
                 Channels.newOutputStream(raf.getChannel())));
     }
 
-    private DataInputStream DISfromRAF(RandomAccessFile raf)
-    {
+    private DataInputStream DISfromRAF(RandomAccessFile raf) {
         return new DataInputStream(new BufferedInputStream(
                 Channels.newInputStream(raf.getChannel())));
     }
@@ -543,6 +573,7 @@ public class OptimizedKvs<K, V> implements
         private final static String StorageHashSuff = "StorageHash.db";
         private final static String StoragePartSuff = "Part.db";
         private final static String StorageLockSuff = "Lock.db";
+        private final static int BufferSize = 8196;
         private final static int CacheSize = 100;
         private final static int DumpThreshold = 1000;
     }

@@ -27,12 +27,10 @@ public class POJOSerializer<Value> implements SerializationStrategy<Value> {
 
     public void serializeToStream(Value value,
                                   DataOutputStream dataOutputStream) throws SerializationException {
-
         try {
             serializeAtom(value, dataOutputStream);
         } catch (UnknownObjectException e) {
             // Это не тип, который сериализует serializeAtom. Может, это класс с такими полями?
-            //Field[] fields = value.getClass().getDeclaredFields();
             ArrayList<Field> fields = new ArrayList<>();
             Class classToSerialize = clazz;
             do {
