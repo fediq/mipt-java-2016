@@ -52,6 +52,7 @@ public class MergerSST<K, V> {
             }
             resultKeys.add(newerKey);
         }
+
         while (olderKeysPos < olderKeys.size()) {
             resultKeys.add(olderKeys.get(olderKeysPos));
             olderKeysPos += 1;
