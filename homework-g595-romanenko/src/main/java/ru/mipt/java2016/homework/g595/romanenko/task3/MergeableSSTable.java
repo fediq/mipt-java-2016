@@ -35,6 +35,8 @@ public class MergeableSSTable<K, V> extends SSTable<K, V> {
 
     public void merge(String path, String tableName, MergeableSSTable<K, V> another) {
 
+        epochNumber++;
+
         List<K> newerKeys = getKeys(readKeys());
         List<K> olderKeys = getKeys(another.readKeys());
         sortedKeys.clear();
@@ -60,6 +62,8 @@ public class MergeableSSTable<K, V> extends SSTable<K, V> {
             sortedKeys.add(olderKeys.get(olderKeysPos));
             olderKeysPos += 1;
         }
+        newerKeys.clear();
+        olderKeys.clear();
 
         try {
             RandomAccessFile resultDB;

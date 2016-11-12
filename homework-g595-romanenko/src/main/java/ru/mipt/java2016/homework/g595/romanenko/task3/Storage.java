@@ -1,5 +1,9 @@
 package ru.mipt.java2016.homework.g595.romanenko.task3;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import com.google.common.cache.Weigher;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.g595.romanenko.task2.MapProducer;
 import ru.mipt.java2016.homework.g595.romanenko.task2.SSTable;
@@ -11,6 +15,7 @@ import java.io.File;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 
 
 /**
@@ -34,21 +39,17 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
     /**
      * Cache variables
      */
-    private final Map<K, V> cachedValues = new HashMap<>();
-    private final Queue<K> roundRobin = new ArrayDeque<>();
+    private final LoadingCache<K, Optional<V>> cache;
 
     /**
      * Updated values
      */
     private final Map<K, V> updatedValues;
 
-
     /**
      * Constants
      */
-    private int maxUpdatedObjectsInMemory = 1000; //4095;//2048;
-    private int maxCachedObjectsInMemory = 1000; //4095;//2048;
-
+    private int maxUpdatedObjectsInMemory = 1023; //4095;//2048;
 
     /**
      * Internal state
@@ -70,6 +71,40 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
         this.keySerializationStrategy = keySerializationStrategy;
         this.valueSerializationStrategy = valueSerializationStrategy;
         this.updatedValues = new TreeMap<>(keyComparator);
+
+        cache = CacheBuilder.newBuilder()
+                .maximumWeight(40 * 1024)
+                .weigher((Weigher<K, Optional<V>>) (k, value) -> {
+                    if (value.isPresent()) {
+                        return valueSerializationStrategy.getBytesSize(value.get());
+                    }
+                    return 0;
+                })
+                .build(
+                        new CacheLoader<K, Optional<V>>() {
+                            public Optional<V> load(K key) { // no checked exception
+                                V value = null;
+
+                                if (updatedValues.containsKey(key)) {
+                                    value = updatedValues.get(key);
+                                }
+                                if (value != null) {
+                                    return Optional.of(value);
+                                }
+                                for (SSTable<K, V> table : tables) {
+                                    if (table != null) {
+                                        value = table.getValue(key);
+                                        if (value != null) {
+                                            break;
+                                        }
+                                    }
+                                }
+                                if (value != null) {
+                                    return Optional.of(value);
+                                }
+                                return Optional.empty();
+                            }
+                        });
 
         String tableListDBPath = path + File.separator + "tableList.db";
         try {
@@ -150,28 +185,16 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public V read(K key) {
         checkClosed();
-        V value = null;
-        if (cachedValues.containsKey(key)) {
-            value = cachedValues.get(key);
+        Optional<V> value = null;
+        try {
+            value = cache.get(key);
+        } catch (ExecutionException e) {
+            e.printStackTrace();
         }
-        if (updatedValues.containsKey(key)) {
-            value = updatedValues.get(key);
+        if (value.isPresent()) {
+            return value.get();
         }
-        if (value != null) {
-            return value;
-        }
-        for (SSTable<K, V> table : tables) {
-            if (table != null) {
-                value = table.getValue(key);
-                if (value != null) {
-                    break;
-                }
-            }
-        }
-        if (value != null) {
-            addCachedValue(key, value);
-        }
-        return value;
+        return null;
     }
 
     /**
@@ -182,14 +205,7 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
      * @param value value to cache
      */
     private void addCachedValue(K key, V value) {
-        if (!cachedValues.containsKey(key)) {
-            roundRobin.add(key);
-        }
-        if (roundRobin.size() > maxCachedObjectsInMemory) {
-            K rRKey = roundRobin.poll();
-            cachedValues.remove(rRKey);
-        }
-        cachedValues.put(key, value);
+        cache.put(key, Optional.of(value));
     }
 
     /**
@@ -322,8 +338,9 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
         if (exists(key)) {
             totalAmount -= 1;
         }
-        if (cachedValues.containsKey(key)) {
-            cachedValues.remove(key);
+        cache.invalidate(key);
+        if (updatedValues.containsKey(key)) {
+            updatedValues.remove(key);
         }
         tables.stream().filter(table -> table != null).forEach(table -> table.removeKeyFromIndices(key));
     }
