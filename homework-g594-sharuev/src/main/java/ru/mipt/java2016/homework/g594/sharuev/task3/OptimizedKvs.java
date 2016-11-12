@@ -1,6 +1,5 @@
 package ru.mipt.java2016.homework.g594.sharuev.task3;
 
-import com.google.common.base.Throwables;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -31,34 +30,33 @@ public class OptimizedKvs<K, V> implements
 
     private class Part {
 
-        Part(RandomAccessFile rafVal, File fileVal,
-             SortedMap<K, Long> indexMapVal) throws IOException {
+        Part(RandomAccessFile rafVal, File fileVal) throws IOException {
             raf = rafVal;
-            indexMap = indexMapVal;
             file = fileVal;
             raf.seek(0);
-            dis = BDISfromRAF(raf);
-            dis.mark(Consts.BufferSize);
+            dis = bdisFromRaf(raf, Consts.VALUE_SIZE);
+            dis.mark(Consts.BUFFER_SIZE);
             curPos = 0;
+            keys = new ArrayList<K>();
         }
 
-        RandomAccessFile raf;
-        File file;
-        DataInputStream dis;
-        long curPos;
-        SortedMap<K, Long> indexMap;
+        private RandomAccessFile raf;
+        private File file;
+        private DataInputStream dis;
+        private long curPos;
+        private ArrayList<K> keys;
 
         public V read(long offset) {
             try {
 
-                if (offset - curPos >= 0 && offset - curPos < Consts.BufferSize) {
+                if (offset - curPos >= 0 && offset - curPos < Consts.BUFFER_SIZE) {
                     dis.reset();
                     dis.skip(offset - curPos);
                 } else {
                     raf.seek(offset);
                     curPos = raf.getFilePointer();
-                    dis = BDISfromRAF(raf);
-                    dis.mark(Consts.BufferSize);
+                    dis = bdisFromRaf(raf, Consts.VALUE_SIZE);
+                    dis.mark(Consts.BUFFER_SIZE);
                 }
                 /*raf.seek(offset);
                 dis = DISfromRAF(raf);*/
@@ -66,6 +64,46 @@ public class OptimizedKvs<K, V> implements
             } catch (Exception e) {
                 throw new KVSException("Failed to read from disk", e);
             }
+        }
+
+        public RandomAccessFile getRaf() {
+            return raf;
+        }
+
+        public File getFile() {
+            return file;
+        }
+
+        public DataInputStream getDis() {
+            return dis;
+        }
+
+        public long getCurPos() {
+            return curPos;
+        }
+
+        public ArrayList<K> getKeys() {
+            return keys;
+        }
+
+        public void setRaf(RandomAccessFile raf) {
+            this.raf = raf;
+        }
+
+        public void setFile(File file) {
+            this.file = file;
+        }
+
+        public void setDis(DataInputStream dis) {
+            this.dis = dis;
+        }
+
+        public void setCurPos(long curPos) {
+            this.curPos = curPos;
+        }
+
+        public void setKeys(ArrayList<K> keys) {
+            this.keys = keys;
         }
     }
 
@@ -75,18 +113,18 @@ public class OptimizedKvs<K, V> implements
             this.offset = offset;
         }
 
-        long offset;
-        Part part;
+        private long offset;
+        private Part part;
     }
 
     private Map<K, V> memTable;
     private LoadingCache<K, V> cache;
-    private Set<K> indexTable;
+    private Map<K, Address> indexTable;
     private RandomAccessFile keyStorageRaf;
     private SerializationStrategy<K> keySerializationStrategy;
     private SerializationStrategy<V> valueSerializationStrategy;
     private boolean isOpen;
-    private final String DBName;
+    private final String dbName;
     private static String path;
     private Deque<Part> parts;
     private Comparator<K> comparator;
@@ -100,14 +138,15 @@ public class OptimizedKvs<K, V> implements
         memTable = new TreeMap<>(comparator);
         this.keySerializationStrategy = keySerializationStrategy;
         this.valueSerializationStrategy = valueSerializationStrategy;
-        indexTable = new TreeSet<>(comparator);
-        DBName = keySerializationStrategy.getSerializingClass().getSimpleName() + valueSerializationStrategy.getSerializingClass().getSimpleName();
+        indexTable = new TreeMap<K, Address>(comparator);
+        dbName = keySerializationStrategy.getSerializingClass().getSimpleName() +
+                valueSerializationStrategy.getSerializingClass().getSimpleName();
         parts = new ArrayDeque<>();
         this.path = path;
         this.comparator = comparator;
         validator = new Validator();
         cache = CacheBuilder.newBuilder()
-                .maximumSize(Consts.CacheSize)
+                .maximumSize(Consts.CACHE_SIZE)
                 .build(
                         new CacheLoader<K, V>() {
                             public V load(K key) { // no checked exception
@@ -115,21 +154,18 @@ public class OptimizedKvs<K, V> implements
                                 if (val != null) {
                                     return val;
                                 }
-                                // Если не нашли в памяти, ищем на диске, начиная с конца.
-                                Iterator<Part> it = parts.descendingIterator();
-                                while (it.hasNext()) {
-                                    Part part = it.next();
-                                    Long offset = part.indexMap.get(key);
-                                    if (offset != null) {
-                                        return part.read(offset);
-                                    }
+                                Address address = indexTable.get(key);
+                                val = address.part.read(address.offset);
+                                if (val != null) {
+                                    return val;
+                                } else {
+                                    throw new NotFoundException();
                                 }
-                                throw new NotFoundException();
                             }
                         });
 
         // Создать lock-файл
-        lockFile = Paths.get(path, DBName + Consts.StorageLockSuff).toFile();
+        lockFile = Paths.get(path, dbName + Consts.STORAGE_LOCK_SUFF).toFile();
         try {
             if (!lockFile.createNewFile()) {
                 throw new KVSException("Storage was already opened");
@@ -140,8 +176,8 @@ public class OptimizedKvs<K, V> implements
 
         // Проверить хэш/создать новый файл
         boolean isNew = false;
-        File keyStorageFile = Paths.get(path, DBName + Consts.KeyStorageNameSuff).toFile();
-        File valueStorageFile = Paths.get(path, DBName + Consts.ValueStorageNameSuff).toFile();
+        File keyStorageFile = Paths.get(path, dbName + Consts.KEY_STORAGE_NAME_SUFF).toFile();
+        File valueStorageFile = Paths.get(path, dbName + Consts.VALUE_STORAGE_NAME_SUFF).toFile();
         try {
             boolean wasCreated = keyStorageFile.createNewFile();
             if (wasCreated) {
@@ -163,8 +199,7 @@ public class OptimizedKvs<K, V> implements
         try {
             keyStorageRaf = new RandomAccessFile(keyStorageFile, "rw");
             parts.addLast(new Part(new RandomAccessFile(valueStorageFile, "rw"),
-                    valueStorageFile,
-                    new TreeMap<>(comparator)));
+                    valueStorageFile));
         } catch (FileNotFoundException e) {
             throw new KVSException("File of database was deleted", e);
         } catch (IOException e) {
@@ -192,12 +227,13 @@ public class OptimizedKvs<K, V> implements
      */
     public Object read(Object key) {
         checkOpen();
-        if (!indexTable.contains(key)) {
+        // Можно убрать, если редко будут неплодотворные обращения
+        if (!indexTable.containsKey(key)) {
             return null;
         }
         try {
             return cache.getUnchecked((K) key);
-        } catch(NotFoundException e) {
+        } catch (NotFoundException e) {
             return null;
         }
     }
@@ -211,7 +247,7 @@ public class OptimizedKvs<K, V> implements
      */
     public boolean exists(Object key) {
         checkOpen();
-        return indexTable.contains(key);
+        return indexTable.containsKey(key);
     }
 
     /**
@@ -224,10 +260,10 @@ public class OptimizedKvs<K, V> implements
     public void write(Object key, Object value) {
         checkOpen();
         memTable.put((K) key, (V) value);
-        indexTable.add((K) key);
-        if (memTable.size() > Consts.DumpThreshold) {
+        indexTable.put((K) key, null);
+        if (memTable.size() > Consts.DUMP_THRESHOLD) {
             dumpMemTableToFile();
-            if (parts.size() > Consts.MergeThreshold) {
+            if (parts.size() > Consts.MERGE_THRESHOLD) {
                 try {
                     while (parts.size() > 1) {
                         mergeFiles();
@@ -245,7 +281,7 @@ public class OptimizedKvs<K, V> implements
      */
     public void delete(Object key) {
         checkOpen();
-        if (indexTable.contains(key)) {
+        if (indexTable.containsKey(key)) {
             indexTable.remove(key);
         }
     }
@@ -257,7 +293,7 @@ public class OptimizedKvs<K, V> implements
      */
     public Iterator readKeys() {
         checkOpen();
-        return indexTable.iterator();
+        return indexTable.keySet().iterator();
     }
 
     /**
@@ -294,7 +330,7 @@ public class OptimizedKvs<K, V> implements
     private void initDatabaseFromDisk() throws SerializationException {
         try {
             keyStorageRaf.seek(0);
-            DataInputStream dataInputStream = BDISfromRAF(keyStorageRaf);
+            DataInputStream dataInputStream = bdisFromRaf(keyStorageRaf, Consts.BUFFER_SIZE);
 
             long numberOfEntries = dataInputStream.readLong();
 
@@ -302,8 +338,8 @@ public class OptimizedKvs<K, V> implements
             for (long i = 0; i < numberOfEntries; ++i) {
                 K key = keySerializationStrategy.deserializeFromStream(dataInputStream);
                 long offset = dataInputStream.readLong();
-                parts.getLast().indexMap.put(key, offset);
-                indexTable.add(key);
+                indexTable.put(key, new Address(parts.getLast(), offset));
+                parts.getLast().keys.add(key);
             }
 
         } catch (IOException e) {
@@ -318,17 +354,17 @@ public class OptimizedKvs<K, V> implements
     private void dumpMemTableToFile() {
         try {
             File nextFile = Paths.get(path,
-                    DBName + nextFileIndex + Consts.StoragePartSuff).toFile();
+                    dbName + nextFileIndex + Consts.STORAGE_PART_SUFF).toFile();
             ++nextFileIndex;
             Part nextPart = new Part(
                     new RandomAccessFile(nextFile, "rw"),
-                    nextFile,
-                    new TreeMap<>(comparator));
-            DataOutputStream dataOutputStream = BDOSfromRAF(nextPart.raf);
+                    nextFile);
+            DataOutputStream dataOutputStream = bdosFromRaf(nextPart.raf, Consts.BUFFER_SIZE);
 
             for (Map.Entry<K, V> entry : memTable.entrySet()) {
                 try {
-                    nextPart.indexMap.put(entry.getKey(), nextPart.raf.getFilePointer());
+                    indexTable.put(entry.getKey(), new Address(nextPart, dataOutputStream.size()));
+                    nextPart.keys.add(entry.getKey());
                     valueSerializationStrategy.serializeToStream(entry.getValue(),
                             dataOutputStream);
                 } catch (SerializationException e) {
@@ -362,12 +398,12 @@ public class OptimizedKvs<K, V> implements
         // Пишем ключи и сдвиги.
         keyStorageRaf.setLength(0);
         keyStorageRaf.seek(0);
-        DataOutputStream keyDos = BDOSfromRAF(keyStorageRaf);
+        DataOutputStream keyDos = bdosFromRaf(keyStorageRaf, Consts.BUFFER_SIZE);
         keyDos.writeLong(size());
-        for (Map.Entry<K, Long> entry : parts.getFirst().indexMap.entrySet()) {
+        for (Map.Entry<K, Address> entry : indexTable.entrySet()) {
             try {
                 keySerializationStrategy.serializeToStream(entry.getKey(), keyDos);
-                keyDos.writeLong(entry.getValue());
+                keyDos.writeLong(entry.getValue().offset);
             } catch (SerializationException e) {
                 throw new IOException("Serialization error", e);
             }
@@ -384,108 +420,123 @@ public class OptimizedKvs<K, V> implements
      */
     private void mergeFiles() throws IOException {
         assert parts.size() >= 2;
-        // 1 и 2 в хронологическом порядке
-        Part part1 = parts.getFirst();
-        parts.pollFirst();
-        Part part2 = parts.getFirst();
-        parts.pollFirst();
 
-        File tempFile = Paths.get(path, DBName + "Temp" + Consts.StoragePartSuff).toFile();
-        if (!tempFile.createNewFile()) {
-            throw new KVSException("Temp file already exists");
-        }
+        while (parts.size() > 1) {
+            ArrayDeque<Part> newParts = new ArrayDeque<>();
+            // 1 и 2 в хронологическом порядке
+            while (parts.size() > 1) {
+                Part part2 = parts.getLast();
+                parts.pollLast();
+                Part part1 = parts.getLast();
+                parts.pollLast();
 
-        Part newPart = new Part(new RandomAccessFile(tempFile, "rw"), tempFile,
-                new TreeMap<>(comparator));
+                File tempFile = Paths.get(path, dbName + "Temp" + Consts.STORAGE_PART_SUFF).toFile();
+                if (!tempFile.createNewFile()) {
+                    throw new KVSException("Temp file already exists");
+                }
 
-        DataOutputStream out = BDOSfromRAF(newPart.raf);
-        part1.raf.seek(0);
-        part2.raf.seek(0);
-        DataInputStream dis1 = BDISfromRAF(part1.raf);
-        DataInputStream dis2 = BDISfromRAF(part2.raf);
+                Part newPart = new Part(new RandomAccessFile(tempFile, "rw"), tempFile);
 
-        Map.Entry<K, Long> entry1, entry2;
-        Iterator<Map.Entry<K, Long>> it1 = part1.indexMap.entrySet().iterator(),
-                it2 = part2.indexMap.entrySet().iterator();
-        try {
-            entry1 = it1.hasNext() ? it1.next() : null;
-            entry2 = it2.hasNext() ? it2.next() : null;
-            while (entry1 != null && entry2 != null) {
-                if (!indexTable.contains(entry1.getKey())) {
+                DataOutputStream out = bdosFromRaf(newPart.raf, Consts.BUFFER_SIZE);
+                part1.raf.seek(0);
+                part2.raf.seek(0);
+                DataInputStream dis1 = bdisFromRaf(part1.raf, Consts.BUFFER_SIZE);
+                DataInputStream dis2 = bdisFromRaf(part2.raf, Consts.BUFFER_SIZE);
+
+                K entry1;
+                K entry2;
+                Iterator<K> it1 = part1.keys.iterator();
+                Iterator<K> it2 = part2.keys.iterator();
+                try {
                     entry1 = it1.hasNext() ? it1.next() : null;
-                    valueSerializationStrategy.deserializeFromStream(dis1);
-                    continue;
-                }
-                if (!indexTable.contains(entry2.getKey())) {
                     entry2 = it2.hasNext() ? it2.next() : null;
-                    valueSerializationStrategy.deserializeFromStream(dis2);
-                    continue;
+                    while (entry1 != null && entry2 != null) {
+                        if (!indexTable.containsKey(entry1)) {
+                            entry1 = it1.hasNext() ? it1.next() : null;
+                            valueSerializationStrategy.deserializeFromStream(dis1);
+                            continue;
+                        }
+                        if (!indexTable.containsKey(entry2)) {
+                            entry2 = it2.hasNext() ? it2.next() : null;
+                            valueSerializationStrategy.deserializeFromStream(dis2);
+                            continue;
+                        }
+                        if (comparator.compare(entry1, entry2) <= 0) {
+                            newPart.keys.add(entry1);
+                            indexTable.put(entry1, new Address(newPart, (long) out.size()));
+                            valueSerializationStrategy.serializeToStream(
+                                    valueSerializationStrategy.deserializeFromStream(dis1), out);
+                            entry1 = it1.hasNext() ? it1.next() : null;
+                        } else { // if <=, поэтому из равных будет записан последний
+                            newPart.keys.add(entry2);
+                            indexTable.put(entry2, new Address(newPart, (long) out.size()));
+                            valueSerializationStrategy.serializeToStream(
+                                    valueSerializationStrategy.deserializeFromStream(dis2), out);
+                            entry2 = it2.hasNext() ? it2.next() : null;
+                        }
+                    }
+                    while (entry1 != null) {
+                        if (indexTable.containsKey(entry1)) {
+                            newPart.keys.add(entry1);
+                            indexTable.put(entry1, new Address(newPart, (long) out.size()));
+                            valueSerializationStrategy.serializeToStream(
+                                    valueSerializationStrategy.deserializeFromStream(dis1), out);
+                        } else {
+                            valueSerializationStrategy.deserializeFromStream(dis1);
+                        }
+                        entry1 = it1.hasNext() ? it1.next() : null;
+                    }
+                    while (entry2 != null) {
+                        if (indexTable.containsKey(entry2)) {
+                            newPart.keys.add(entry2);
+                            indexTable.put(entry2, new Address(newPart, (long) out.size()));
+                            valueSerializationStrategy.serializeToStream(
+                                    valueSerializationStrategy.deserializeFromStream(dis2), out);
+                        } else {
+                            valueSerializationStrategy.deserializeFromStream(dis2);
+                        }
+                        entry2 = it2.hasNext() ? it2.next() : null;
+                    }
+                } catch (SerializationException e) {
+                    throw new KVSException("Failed to dump SSTable to file", e);
                 }
-                if (comparator.compare(entry1.getKey(), entry2.getKey()) <= 0) {
-                    newPart.indexMap.put(entry1.getKey(), (long) out.size());
-                    valueSerializationStrategy.serializeToStream(
-                            valueSerializationStrategy.deserializeFromStream(dis1), out);
-                    entry1 = it1.hasNext() ? it1.next() : null;
-                } else { // if <=, поэтому из равных будет записан последний
-                    newPart.indexMap.put(entry2.getKey(), (long) out.size());
-                    valueSerializationStrategy.serializeToStream(
-                            valueSerializationStrategy.deserializeFromStream(dis2), out);
-                    entry2 = it2.hasNext() ? it2.next() : null;
-                }
-            }
-            while (entry1 != null) {
-                if (indexTable.contains(entry1.getKey())) {
-                    newPart.indexMap.put(entry1.getKey(), (long) out.size());
-                    valueSerializationStrategy.serializeToStream(
-                            valueSerializationStrategy.deserializeFromStream(dis1), out);
-                } else {
-                    valueSerializationStrategy.deserializeFromStream(dis1);
-                }
-                entry1 = it1.hasNext() ? it1.next() : null;
-            }
-            while (entry2 != null) {
-                if (indexTable.contains(entry2.getKey())) {
-                    newPart.indexMap.put(entry2.getKey(), (long) out.size());
-                    valueSerializationStrategy.serializeToStream(
-                            valueSerializationStrategy.deserializeFromStream(dis2), out);
-                } else {
-                    valueSerializationStrategy.deserializeFromStream(dis2);
-                }
-                entry2 = it2.hasNext() ? it2.next() : null;
-            }
-        } catch (SerializationException e) {
-            throw new KVSException("Failed to dump SSTable to file", e);
-        }
-        out.flush();
-        out.close();
+                out.flush();
+                out.close();
 
-        part1.raf.close();
-        part2.raf.close();
-        newPart.raf.close();
-        if (!part1.file.delete()) {
-            throw new KVSException(String.format("Can't delete file %s", part1.file.getName()));
+                part1.raf.close();
+                part2.raf.close();
+                newPart.raf.close();
+                if (!part1.file.delete()) {
+                    throw new KVSException(
+                            String.format("Can't delete file %s", part1.file.getName()));
+                }
+                if (!part2.file.delete()) {
+                    throw new KVSException(
+                            String.format("Can't delete file %s", part2.file.getName()));
+                }
+                if (!newPart.file.renameTo(part1.file.getAbsoluteFile())) {
+                    throw new KVSException(
+                            String.format("Can't rename temp file %s", newPart.file.getName()));
+                }
+                newPart.file = part1.file;
+                newPart.raf = new RandomAccessFile(newPart.file, "rw");
+                newParts.addFirst(newPart);
+            }
+            if (parts.size() > 0) {
+                newParts.addFirst(parts.getFirst());
+            }
+            parts = newParts;
         }
-        if (!part2.file.delete()) {
-            throw new KVSException(String.format("Can't delete file %s", part2.file.getName()));
-        }
-        if (!newPart.file.renameTo(part1.file.getAbsoluteFile())) {
-            throw new KVSException(
-                    String.format("Can't rename temp file %s", newPart.file.getName()));
-        }
-        newPart.file = part1.file;
-        newPart.raf = new RandomAccessFile(newPart.file, "rw");
-        //newPart.raf.seek(0);
-        parts.addFirst(newPart);
     }
 
-    private DataOutputStream BDOSfromRAF(RandomAccessFile raf) {
+    private DataOutputStream bdosFromRaf(RandomAccessFile raf, int bufferSize) {
         return new DataOutputStream(new BufferedOutputStream(
-                Channels.newOutputStream(raf.getChannel()), Consts.BufferSize));
+                Channels.newOutputStream(raf.getChannel()), bufferSize));
     }
 
-    private DataInputStream BDISfromRAF(RandomAccessFile raf) {
+    private DataInputStream bdisFromRaf(RandomAccessFile raf, int bufferSize) {
         return new DataInputStream(new BufferedInputStream(
-                Channels.newInputStream(raf.getChannel()), Consts.BufferSize));
+                Channels.newInputStream(raf.getChannel()), bufferSize));
     }
 
     private void checkOpen() {
@@ -496,44 +547,46 @@ public class OptimizedKvs<K, V> implements
 
     private class Validator {
         private byte[] countHash() throws KVSException {
-            try {
-                // Создаём считатель хэша.
-                Adler32 md;
-                md = new Adler32();
-
-                // Хэш файла ключей
-                try (InputStream is = new BufferedInputStream(new FileInputStream(
-                        Paths.get(path, DBName + Consts.KeyStorageNameSuff).toFile()));
-                     CheckedInputStream dis = new CheckedInputStream(is, md)) {
-                    byte[] buf = new byte[8192];
-                    int response;
-                    do {
-                        response = dis.read(buf);
-                    } while (response != -1);
-                }
-                // Хэш файла значений
-                try (InputStream is = new BufferedInputStream(new FileInputStream(
-                        Paths.get(path, DBName + Consts.ValueStorageNameSuff).toFile()));
-                     CheckedInputStream dis = new CheckedInputStream(is, md)) {
-                    byte[] buf = new byte[8192];
-                    int response;
-                    do {
-                        response = dis.read(buf);
-                    } while (response != -1);
-                }
-
-                return Longs.toByteArray(md.getValue());
+            // Создаём считатель хэша.
+            Adler32 md;
+            md = new Adler32();
+            // Хэш файла ключей
+            try (InputStream is = new BufferedInputStream(new FileInputStream(
+                    Paths.get(path, dbName + Consts.KEY_STORAGE_NAME_SUFF).toFile()));
+                 CheckedInputStream dis = new CheckedInputStream(is, md)) {
+                byte[] buf = new byte[8192];
+                int response;
+                do {
+                    response = dis.read(buf);
+                } while (response != -1);
             } catch (FileNotFoundException e) {
                 throw new KVSException(
-                        String.format("Can't find hash file %s", DBName + Consts.StorageHashSuff));
+                        String.format("Can't find file %s", dbName + Consts.KEY_STORAGE_NAME_SUFF));
             } catch (IOException e) {
                 throw new KVSException("Some IO error while reading hash");
             }
+            // Хэш файла значений
+            try (InputStream is = new BufferedInputStream(new FileInputStream(
+                    Paths.get(path, dbName + Consts.VALUE_STORAGE_NAME_SUFF).toFile()));
+                 CheckedInputStream dis = new CheckedInputStream(is, md)) {
+                byte[] buf = new byte[8192];
+                int response;
+                do {
+                    response = dis.read(buf);
+                } while (response != -1);
+            } catch (FileNotFoundException e) {
+                throw new KVSException(
+                        String.format("Can't find file %s", dbName + Consts.VALUE_STORAGE_NAME_SUFF));
+            } catch (IOException e) {
+                throw new KVSException("Some IO error while reading hash");
+            }
+
+            return Longs.toByteArray(md.getValue());
         }
 
         // Проверяет хэш сразу двух файлов.
-        private void checkHash(String path) throws KVSException {
-            File hashFile = Paths.get(path, DBName + Consts.StorageHashSuff).toFile();
+        private void checkHash(String pathToFolder) throws KVSException {
+            File hashFile = Paths.get(pathToFolder, dbName + Consts.STORAGE_HASH_SUFF).toFile();
             try {
                 // Читаем файл хэша в буфер.
                 ByteArrayOutputStream hashString = new ByteArrayOutputStream();
@@ -551,7 +604,7 @@ public class OptimizedKvs<K, V> implements
                 }
             } catch (FileNotFoundException e) {
                 throw new KVSException(
-                        String.format("Can't find hash file %s", DBName + Consts.StorageHashSuff));
+                        String.format("Can't find hash file %s", dbName + Consts.STORAGE_HASH_SUFF));
             } catch (IOException e) {
                 throw new KVSException("Some IO error while reading hash");
             }
@@ -559,8 +612,7 @@ public class OptimizedKvs<K, V> implements
 
         private void writeHash() throws KVSException {
             try {
-                File hashFile = Paths.get(path, DBName + Consts.StorageHashSuff).toFile();
-                //hashFile.createNewFile();
+                File hashFile = Paths.get(path, dbName + Consts.STORAGE_HASH_SUFF).toFile();
 
                 byte[] digest = countHash();
                 try (OutputStream os = new FileOutputStream(hashFile)) {
@@ -569,7 +621,7 @@ public class OptimizedKvs<K, V> implements
 
             } catch (FileNotFoundException e) {
                 throw new KVSException(
-                        String.format("Can't find hash file %s", DBName + Consts.StorageHashSuff));
+                        String.format("Can't find hash file %s", dbName + Consts.STORAGE_HASH_SUFF));
             } catch (IOException e) {
                 throw new KVSException("Some IO error while reading hash");
             }
@@ -578,18 +630,19 @@ public class OptimizedKvs<K, V> implements
 
     private static final class Consts {
         // Формат файла: V значение, ...
-        private final static String ValueStorageNameSuff = "ValueStorage.db";
+        private static final  String VALUE_STORAGE_NAME_SUFF = "ValueStorage.db";
         // Формат файла: long количество ключей, K ключ, long сдвиг, ...
-        private final static String KeyStorageNameSuff = "KeyStorage.db";
-        private final static String StorageHashSuff = "StorageHash.db";
-        private final static String StoragePartSuff = "Part.db";
-        private final static String StorageLockSuff = "Lock.db";
-        private final static int BufferSize = 512;
-        private final static int CacheSize = 100;
-        private final static int DumpThreshold = 2000;
-        private final static int MergeThreshold = 10;
+        private static final  String KEY_STORAGE_NAME_SUFF = "KeyStorage.db";
+        private static final  String STORAGE_HASH_SUFF = "StorageHash.db";
+        private static final String STORAGE_PART_SUFF = "Part.db";
+        private static final  String STORAGE_LOCK_SUFF = "Lock.db";
+        private static final  int CACHE_SIZE = 1;
+        private static final  int DUMP_THRESHOLD = 1000;
+        private static final  int MERGE_THRESHOLD = 100;
+        //private final static int KeySize = 64;
+        private static final  int VALUE_SIZE = 8192;
+        private static final int BUFFER_SIZE = VALUE_SIZE * 2;
     }
 }
 
-class NotFoundException extends RuntimeException
-{}
+
