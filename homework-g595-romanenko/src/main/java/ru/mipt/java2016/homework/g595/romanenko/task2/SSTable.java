@@ -23,34 +23,24 @@ Values
 */
 public class SSTable<Key, Value> {
 
-    private final RandomAccessFile storage;
-    private final Map<Key, Integer> indices = new HashMap<>();
-    private final List<Key> sortedKeys = new ArrayList<>();
+    protected RandomAccessFile storage;
+    protected final Map<Key, Integer> indices = new HashMap<>();
+    protected final Map<Key, Integer> valueByteSize = new HashMap<>();
 
-    private final SerializationStrategy<Key> keySerializationStrategy;
-    private final SerializationStrategy<Value> valueSerializationStrategy;
+    protected List<Key> sortedKeys = new ArrayList<>();
 
-    private int epochNumber = 0;
+    protected final SerializationStrategy<Key> keySerializationStrategy;
+    protected final SerializationStrategy<Value> valueSerializationStrategy;
 
-    private boolean isClosed = false;
-    private boolean hasUncommittedChanges = false;
-    private boolean needToSign = false;
-    private String path;
-    private String dbName = null;
+    protected int epochNumber = 0;
 
-    private final FileDigitalSignature fileDigitalSignature;
+    protected boolean isClosed = false;
+    protected boolean hasUncommittedChanges = false;
+    protected boolean needToSign = false;
+    protected String path;
+    protected String dbName = null;
 
-    private void readIndices() throws IOException {
-        int totalAmount = storage.readInt();
-        BufferedInputStream stream = new BufferedInputStream(Channels.newInputStream(storage.getChannel()));
-        IntegerSerializer serializer = IntegerSerializer.getInstance();
-        for (int i = 0; i < totalAmount; i++) {
-            Key key = keySerializationStrategy.deserializeFromStream(stream);
-            Integer offset = serializer.deserializeFromStream(stream);
-            indices.put(key, offset);
-            sortedKeys.add(key);
-        }
-    }
+    protected final FileDigitalSignature fileDigitalSignature;
 
     public SSTable(String path,
                    SerializationStrategy<Key> keySerializationStrategy,
@@ -63,7 +53,7 @@ public class SSTable<Key, Value> {
 
         File tryFile = new File(path);
         if (tryFile.exists() && tryFile.isDirectory()) {
-            path += "/storage.db";
+            path += File.separator + "storage.db";
         }
         if ((new File(path)).exists()) {
             boolean validationOk = fileDigitalSignature.validateFileSignWithDefaultSignName(path);
@@ -79,6 +69,25 @@ public class SSTable<Key, Value> {
         }
     }
 
+
+    protected void readIndices() throws IOException {
+        int totalAmount = storage.readInt();
+        BufferedInputStream stream = new BufferedInputStream(Channels.newInputStream(storage.getChannel()));
+        IntegerSerializer serializer = IntegerSerializer.getInstance();
+
+        Integer offset;
+        Integer valueSize;
+
+        for (int i = 0; i < totalAmount; i++) {
+            Key key = keySerializationStrategy.deserializeFromStream(stream);
+            offset = serializer.deserializeFromStream(stream);
+            valueSize = serializer.deserializeFromStream(stream);
+            indices.put(key, offset);
+            valueByteSize.put(key, valueSize);
+            sortedKeys.add(key);
+        }
+    }
+
     /**
      * Write toFlip map to current storage. Remove old storage if it wasn't empty.
      * Flush data to disk and sign storage with FileDigitalSignature.
@@ -91,6 +100,7 @@ public class SSTable<Key, Value> {
         epochNumber++;
         try {
             indices.clear();
+            valueByteSize.clear();
             sortedKeys.clear();
 
             storage.setLength(0);
@@ -111,18 +121,24 @@ public class SSTable<Key, Value> {
             for (Key key : cachedKeys) {
                 totalLength += keySerializationStrategy.getBytesSize(key);
             }
-            totalLength += integerSerializer.getBytesSize(0) * cachedKeys.size();
+            totalLength += 2 * integerSerializer.getBytesSize(0) * cachedKeys.size();
 
+            Value value;
             for (Key key : cachedKeys) {
+                value = toFlip.get(key);
+
+                valueByteSize.put(key, valueSerializationStrategy.getBytesSize(value));
                 indices.put(key, totalLength);
                 offsets.add(totalLength);
-                totalLength += valueSerializationStrategy.getBytesSize(toFlip.get(key));
+                totalLength += valueSerializationStrategy.getBytesSize(value);
             }
 
             for (int i = 0; i < cachedKeys.size(); i++) {
                 keySerializationStrategy.serializeToStream(cachedKeys.get(i), outputStream);
                 integerSerializer.serializeToStream(offsets.get(i), outputStream);
+                integerSerializer.serializeToStream(valueByteSize.get(cachedKeys.get(i)), outputStream);
             }
+
 
             for (Key key : cachedKeys) {
                 valueSerializationStrategy.serializeToStream(toFlip.get(key), outputStream);
@@ -130,7 +146,6 @@ public class SSTable<Key, Value> {
 
             outputStream.flush();
 
-            //fileDigitalSignature.signFileWithDefaultSignName(path);
             needToSign = true;
 
             hasUncommittedChanges = false;
@@ -140,7 +155,7 @@ public class SSTable<Key, Value> {
         }
     }
 
-    private void checkClosed() {
+    protected void checkClosed() {
         if (isClosed) {
             throw new IllegalStateException("File is closed");
         }
@@ -164,7 +179,7 @@ public class SSTable<Key, Value> {
         return result;
     }
 
-    private void rewriteIndices() {
+    protected void rewriteIndices() {
         if (!hasUncommittedChanges) {
             return;
         }
@@ -181,7 +196,9 @@ public class SSTable<Key, Value> {
             for (Map.Entry<Key, Integer> entry : indices.entrySet()) {
                 keySerializationStrategy.serializeToStream(entry.getKey(), outputStream);
                 integerSerializer.serializeToStream(entry.getValue(), outputStream);
+                integerSerializer.serializeToStream(valueByteSize.get(entry.getKey()), outputStream);
             }
+
             outputStream.flush();
             hasUncommittedChanges = false;
             needToSign = true;
@@ -247,14 +264,6 @@ public class SSTable<Key, Value> {
 
     public String getPath() {
         return path;
-    }
-
-    public SerializationStrategy<Key> getKeySerializationStrategy() {
-        return keySerializationStrategy;
-    }
-
-    public SerializationStrategy<Value> getValueSerializationStrategy() {
-        return valueSerializationStrategy;
     }
 
     public void setDatabaseName(String newDBName) {
