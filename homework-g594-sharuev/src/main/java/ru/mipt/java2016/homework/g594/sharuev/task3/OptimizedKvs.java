@@ -1,5 +1,6 @@
 package ru.mipt.java2016.homework.g594.sharuev.task3;
 
+import com.google.common.base.Throwables;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -8,9 +9,6 @@ import com.google.common.primitives.Longs;
 import java.io.*;
 import java.nio.channels.Channels;
 import java.nio.file.Paths;
-import java.security.DigestInputStream;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.zip.Adler32;
 import java.util.zip.CheckedInputStream;
@@ -53,7 +51,7 @@ public class OptimizedKvs<K, V> implements
         public V read(long offset) {
             try {
 
-                /*if (offset - curPos >= 0 && offset - curPos < Consts.BufferSize) {
+                if (offset - curPos >= 0 && offset - curPos < Consts.BufferSize) {
                     dis.reset();
                     dis.skip(offset - curPos);
                 } else {
@@ -61,9 +59,9 @@ public class OptimizedKvs<K, V> implements
                     curPos = raf.getFilePointer();
                     dis = BDISfromRAF(raf);
                     dis.mark(Consts.BufferSize);
-                }*/
-                raf.seek(offset);
-                dis = DISfromRAF(raf);
+                }
+                /*raf.seek(offset);
+                dis = DISfromRAF(raf);*/
                 return valueSerializationStrategy.deserializeFromStream(dis);
             } catch (Exception e) {
                 throw new KVSException("Failed to read from disk", e);
@@ -124,10 +122,9 @@ public class OptimizedKvs<K, V> implements
                                     Long offset = part.indexMap.get(key);
                                     if (offset != null) {
                                         return part.read(offset);
-                                        //readValFromDisk(part, offset);
                                     }
                                 }
-                                return null;
+                                throw new NotFoundException();
                             }
                         });
 
@@ -198,26 +195,11 @@ public class OptimizedKvs<K, V> implements
         if (!indexTable.contains(key)) {
             return null;
         }
-        /*V val = cache.getUnchecked((K) key);
-        if (val != null) {
-            return val;
-        }*/
-        V val = memTable.get(key);
-        if (val != null) {
-            return val;
+        try {
+            return cache.getUnchecked((K) key);
+        } catch(NotFoundException e) {
+            return null;
         }
-        // Если не нашли в памяти, ищем на диске, начиная с конца.
-        Iterator<Part> it = parts.descendingIterator();
-        while (it.hasNext()) {
-            Part part = it.next();
-            Long val2 = part.indexMap.get(key);
-            if (val2 != null) {
-                //cache.put((K) key, val);
-                return part.read(val2);
-            }
-        }
-
-        return null;
     }
 
     /**
@@ -245,7 +227,7 @@ public class OptimizedKvs<K, V> implements
         indexTable.add((K) key);
         if (memTable.size() > Consts.DumpThreshold) {
             dumpMemTableToFile();
-            if (parts.size() > 5) {
+            if (parts.size() > Consts.MergeThreshold) {
                 try {
                     while (parts.size() > 1) {
                         mergeFiles();
@@ -416,7 +398,7 @@ public class OptimizedKvs<K, V> implements
         Part newPart = new Part(new RandomAccessFile(tempFile, "rw"), tempFile,
                 new TreeMap<>(comparator));
 
-        DataOutputStream out = DOSfromRAF(newPart.raf);
+        DataOutputStream out = BDOSfromRAF(newPart.raf);
         part1.raf.seek(0);
         part2.raf.seek(0);
         DataInputStream dis1 = BDISfromRAF(part1.raf);
@@ -440,12 +422,12 @@ public class OptimizedKvs<K, V> implements
                     continue;
                 }
                 if (comparator.compare(entry1.getKey(), entry2.getKey()) <= 0) {
-                    newPart.indexMap.put(entry1.getKey(), newPart.raf.getFilePointer());
+                    newPart.indexMap.put(entry1.getKey(), (long) out.size());
                     valueSerializationStrategy.serializeToStream(
                             valueSerializationStrategy.deserializeFromStream(dis1), out);
                     entry1 = it1.hasNext() ? it1.next() : null;
                 } else { // if <=, поэтому из равных будет записан последний
-                    newPart.indexMap.put(entry2.getKey(), newPart.raf.getFilePointer());
+                    newPart.indexMap.put(entry2.getKey(), (long) out.size());
                     valueSerializationStrategy.serializeToStream(
                             valueSerializationStrategy.deserializeFromStream(dis2), out);
                     entry2 = it2.hasNext() ? it2.next() : null;
@@ -453,7 +435,7 @@ public class OptimizedKvs<K, V> implements
             }
             while (entry1 != null) {
                 if (indexTable.contains(entry1.getKey())) {
-                    newPart.indexMap.put(entry1.getKey(), newPart.raf.getFilePointer());
+                    newPart.indexMap.put(entry1.getKey(), (long) out.size());
                     valueSerializationStrategy.serializeToStream(
                             valueSerializationStrategy.deserializeFromStream(dis1), out);
                 } else {
@@ -463,7 +445,7 @@ public class OptimizedKvs<K, V> implements
             }
             while (entry2 != null) {
                 if (indexTable.contains(entry2.getKey())) {
-                    newPart.indexMap.put(entry2.getKey(), newPart.raf.getFilePointer());
+                    newPart.indexMap.put(entry2.getKey(), (long) out.size());
                     valueSerializationStrategy.serializeToStream(
                             valueSerializationStrategy.deserializeFromStream(dis2), out);
                 } else {
@@ -475,6 +457,7 @@ public class OptimizedKvs<K, V> implements
             throw new KVSException("Failed to dump SSTable to file", e);
         }
         out.flush();
+        out.close();
 
         part1.raf.close();
         part2.raf.close();
@@ -491,26 +474,17 @@ public class OptimizedKvs<K, V> implements
         }
         newPart.file = part1.file;
         newPart.raf = new RandomAccessFile(newPart.file, "rw");
+        //newPart.raf.seek(0);
         parts.addFirst(newPart);
     }
 
     private DataOutputStream BDOSfromRAF(RandomAccessFile raf) {
-        return new DataOutputStream( new BufferedOutputStream(
+        return new DataOutputStream(new BufferedOutputStream(
                 Channels.newOutputStream(raf.getChannel()), Consts.BufferSize));
     }
 
-    private DataOutputStream DOSfromRAF(RandomAccessFile raf) {
-        return new DataOutputStream(
-                Channels.newOutputStream(raf.getChannel()));
-    }
-
-    private DataInputStream DISfromRAF(RandomAccessFile raf) {
-        return new DataInputStream(
-                Channels.newInputStream(raf.getChannel()));
-    }
-
     private DataInputStream BDISfromRAF(RandomAccessFile raf) {
-        return new DataInputStream( new BufferedInputStream(
+        return new DataInputStream(new BufferedInputStream(
                 Channels.newInputStream(raf.getChannel()), Consts.BufferSize));
     }
 
@@ -610,8 +584,12 @@ public class OptimizedKvs<K, V> implements
         private final static String StorageHashSuff = "StorageHash.db";
         private final static String StoragePartSuff = "Part.db";
         private final static String StorageLockSuff = "Lock.db";
-        private final static int BufferSize = 8196;
+        private final static int BufferSize = 512;
         private final static int CacheSize = 100;
-        private final static int DumpThreshold = 1000;
+        private final static int DumpThreshold = 2000;
+        private final static int MergeThreshold = 10;
     }
 }
+
+class NotFoundException extends RuntimeException
+{}
