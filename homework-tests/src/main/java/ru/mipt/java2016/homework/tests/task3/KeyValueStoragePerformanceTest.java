@@ -1,7 +1,6 @@
 package ru.mipt.java2016.homework.tests.task3;
 
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import ru.mipt.java2016.homework.tests.task2.AbstractSingleFileStorageTest;
 import ru.mipt.java2016.homework.tests.task2.StorageTestUtils;
@@ -107,7 +106,6 @@ public abstract class KeyValueStoragePerformanceTest extends AbstractSingleFileS
         print("%5d millis for single 1kW 1kR iteration", iterationTimeMillis);
     }
 
-    //@Ignore
     @Test
     public void measure10kWDump10kR() {
         AtomicLong summaryWriteTime = new AtomicLong(0L);
@@ -152,7 +150,6 @@ public abstract class KeyValueStoragePerformanceTest extends AbstractSingleFileS
 
     // Вы можете пометить этот тест как @Ignored во время отладки, если он занимает у вас слишком много времени
     @Test
-    @Ignore
     public void measure100kWDump100kR() {
         AtomicLong summaryWriteTime = new AtomicLong(0L);
         AtomicLong summaryReadTime = new AtomicLong(0L);
@@ -194,7 +191,7 @@ public abstract class KeyValueStoragePerformanceTest extends AbstractSingleFileS
         print("%5d millis for single 100kW 100kR iteration", iterationTimeMillis);
     }
 
-    //@Ignore
+
     @Test
     public void measure10W20Rx1k() {
         AtomicLong summaryWriteTime = new AtomicLong(0L);
@@ -242,7 +239,6 @@ public abstract class KeyValueStoragePerformanceTest extends AbstractSingleFileS
         print("%5d millis for single 10W 20R x1k iteration", iterationTimeMillis);
     }
 
-    //@Ignore
     @Test
     public void measure10kWAnd100Rx100() {
         AtomicLong summaryWriteTime = new AtomicLong(0L);
