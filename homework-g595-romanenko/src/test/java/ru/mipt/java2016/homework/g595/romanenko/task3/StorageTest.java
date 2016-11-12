@@ -1,6 +1,5 @@
 package ru.mipt.java2016.homework.g595.romanenko.task3;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.g595.romanenko.task2.StudentKeySerializer;
@@ -85,7 +84,6 @@ public class StorageTest extends KeyValueStoragePerformanceTest {
     }
 
     @Test
-    @Ignore
     @Override
     public void measure100kWDump100kR() {
         super.measure100kWDump100kR();
