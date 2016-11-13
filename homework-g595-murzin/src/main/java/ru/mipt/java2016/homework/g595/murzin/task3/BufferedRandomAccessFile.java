@@ -16,7 +16,7 @@ public class BufferedRandomAccessFile {
     public static final int BUFFER_SIZE = 8192;
 
     private RandomAccessFile randomAccessFile;
-    private HackedBufferedInputStream bufferedInputStream;
+    public HackedBufferedInputStream bufferedInputStream;
     public DataInputStream dataInputStream;
     private FileChannel fileChannel;
 
@@ -29,6 +29,10 @@ public class BufferedRandomAccessFile {
     private void createBufferedInputStream() {
         bufferedInputStream = new HackedBufferedInputStream(Channels.newInputStream(randomAccessFile.getChannel()), BUFFER_SIZE);
         dataInputStream = new DataInputStream(bufferedInputStream);
+    }
+
+    public long fileLength() throws IOException {
+        return randomAccessFile.length();
     }
 
     public void seek(long fileOffset) throws IOException {

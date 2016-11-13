@@ -12,7 +12,7 @@ public class Offset {
         @Override
         public void serializeToStream(Offset offset, DataOutputStream output) throws IOException {
             output.writeInt(offset.fileIndex);
-            output.writeLong(offset.fileOffset);
+            output.writeLong(offset.offsetInFile);
         }
 
         @Override
@@ -24,10 +24,10 @@ public class Offset {
     public static final Offset NONE = new Offset(-1, -1);
 
     public final int fileIndex;
-    public final long fileOffset;
+    public final long offsetInFile;
 
-    public Offset(int fileIndex, long fileOffset) {
+    public Offset(int fileIndex, long offsetInFile) {
         this.fileIndex = fileIndex;
-        this.fileOffset = fileOffset;
+        this.offsetInFile = offsetInFile;
     }
 }
