@@ -14,4 +14,9 @@ public class IntegerSerializer implements SerializerInterface<Integer> {
     public Integer deserialize(String inputString) {
         return Integer.parseInt(inputString);
     }
+
+    @Override
+    public String getClassString() {
+        return "Integer";
+    }
 }

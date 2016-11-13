@@ -32,4 +32,9 @@ public class StudentKeySerializer implements SerializerInterface<StudentKey> {
         return new StudentKey(objectGroupId, objectName);
     }
 
+    @Override
+    public String getClassString() {
+        return "StudentKey";
+    }
+
 }
