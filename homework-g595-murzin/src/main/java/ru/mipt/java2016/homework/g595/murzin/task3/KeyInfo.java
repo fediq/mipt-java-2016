@@ -11,4 +11,12 @@ class KeyInfo<K> {
         this.key = key;
         this.offsetInFile = offsetInFile;
     }
+
+    @Override
+    public String toString() {
+        return "KeyInfo{" +
+                "key=" + key +
+                ", offsetInFile=" + offsetInFile +
+                '}';
+    }
 }

@@ -19,6 +19,7 @@ import java.nio.channels.FileLock;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -43,7 +44,8 @@ public class LSMStorage<K, V> implements KeyValueStorage<K, V> {
     private Map<K, V> newEntries = new HashMap<>(MAX_NEW_ENTRIES_SIZE);
     private Cache<K, V> cache = CacheBuilder
             .newBuilder()
-            .maximumSize(32 * 1024 * 1024 / (50 * 1024))
+//            .maximumSize(32 * 1024 * 1024 / (50 * 1024))
+            .maximumSize(0)
             .build();
     private ArrayList<BufferedRandomAccessFile> sstableFiles = new ArrayList<>();
     volatile private boolean isClosed;
@@ -114,7 +116,7 @@ public class LSMStorage<K, V> implements KeyValueStorage<K, V> {
     private void writeAllKeys() throws IOException {
         File keysFile = new File(storageDirectory, KEYS_FILE_NAME);
         if (keys.isEmpty()) {
-            Files.delete(keysFile.toPath());
+            Files.deleteIfExists(keysFile.toPath());
             return;
         }
         try (DataOutputStream output = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(keysFile)))) {
@@ -170,7 +172,7 @@ public class LSMStorage<K, V> implements KeyValueStorage<K, V> {
         } catch (IOException e) {
             throw new RuntimeException("Can't write to one of table files " + newTableFile.getAbsolutePath(), e);
         }
-            sstablesKeys.add(keyInfos.toArray(new KeyInfo[keyInfos.size()]));
+        sstablesKeys.add(keyInfos.toArray(new KeyInfo[keyInfos.size()]));
         newEntries = new HashMap<>();
     }
 
@@ -201,6 +203,8 @@ public class LSMStorage<K, V> implements KeyValueStorage<K, V> {
             keyInfos = sstablesKeys.get(i);
             length = keyInfos.length;
             input = new FileInputStream(getTableFile(i));
+            int length = new DataInputStream(input).readInt();
+            assert length == keyInfos.length;
             fileLength = sstableFiles.get(i).fileLength();
         }
 
@@ -221,158 +225,85 @@ public class LSMStorage<K, V> implements KeyValueStorage<K, V> {
             }
             return maxSize;
         }
+
+        @Override
+        public String toString() {
+            return "MergeInfo{" +
+                    "length=" + length +
+                    ", keyInfos=" + Arrays.toString(keyInfos) +
+                    '}';
+        }
     }
 
     // Сливает таблицы i и i + 1
     // Полученной таблице присваивается номер i
     // Кроме того индексы всех таблиц с номерами j > i + 1 уменьшаются на один
-    private void mergeTwoTableFiles(int i) throws IOException {
-        MergeInfo info1 = new MergeInfo(i);
-        MergeInfo info2 = new MergeInfo(i + 1);
+    private void mergeTwoTableFiles(int iFile) throws IOException {
+        boolean checkForDeletes = iFile == sstableFiles.size() - 2;
+        MergeInfo info1 = new MergeInfo(iFile);
+        MergeInfo info2 = new MergeInfo(iFile + 1);
 
         int maxValueSize = Math.max(info1.getMaxValueSize(), info2.getMaxValueSize());
         byte[] buffer = new byte[maxValueSize];
 
-        ArrayList<K> keysMerged = new ArrayList<>(info1.length + info2.length);
+        ArrayList<KeyInfo<K>> keysMerged = new ArrayList<>(info1.length + info2.length);
         File tempFile = Files.createTempFile("temp_table", "dat").toFile();
         try (FileOutputStream output = new FileOutputStream(tempFile)) {
+            new DataOutputStream(output).writeInt(info1.length + info2.length); // Это число перезапишется позже
             int i1 = 0;
             int i2 = 0;
-            long position = 0;
+            long position = 4;
             while (i1 < info1.length || i2 < info2.length) {
-                K key1 = i1 == info1.length - 1 ? null : info1.keyAt(i1);
-                K key2 = i2 == info2.length - 1 ? null : info2.keyAt(i2);
+                K key1 = i1 == info1.length ? null : info1.keyAt(i1);
+                K key2 = i2 == info2.length ? null : info2.keyAt(i2);
                 int compare = key1 == null ? 1 : key2 == null ? -1 : comparator.compare(key1, key2);
-                K key = compare == -1 ? key1 : key2;
-                MergeInfo info = compare == -1 ? info1 : info2;
+                int i = compare < 0 ? i1++ : i2++;
+                K key = compare < 0 ? key1 : key2;
+                MergeInfo info = compare < 0 ? info1 : info2;
 
-                keys.put(key, new Offset(i, position));
-                keysMerged.add(key);
-                int readSize = info.getValueSize(i);
-                int realReadSize = info.input.read(buffer, 0, readSize);
-                if (realReadSize < readSize) {
-                    throw new RuntimeException();
+                if (!checkForDeletes || keys.containsKey(key)) {
+                    int readSize = info.getValueSize(i);
+                    int realReadSize = info.input.read(buffer, 0, readSize);
+                    if (realReadSize < readSize) {
+                        throw new RuntimeException("TODO");
+                    }
+                    output.write(buffer, 0, readSize);
+                    keys.put(key, new Offset(iFile, position));
+                    keysMerged.add(new KeyInfo<>(key, position));
+                    position += readSize;
+                } else {
+                    int readSize = info.getValueSize(i);
+                    long realReadSize = info.input.skip(readSize);
+                    if (realReadSize < readSize) {
+                        throw new RuntimeException("TODO");
+                    }
                 }
 
-                output.write(buffer, 0, readSize);
-                position += readSize;
-                if (compare <= 0) {
+                if (compare == 0) {
+                    int numberToSkip = info1.getValueSize(i1);
+                    long numberSkipped = info1.input.skip(numberToSkip);
+                    if (numberSkipped != numberToSkip) {
+                        throw new RuntimeException("");
+                    }
                     ++i1;
-                }
-                if (compare >= 0) {
-                    ++i2;
                 }
             }
         }
-        sstablesKeys.set(i, keysMerged.toArray(new KeyInfo[keysMerged.size()]));
-        sstablesKeys.remove(i + 1);
-        sstableFiles.set(i, new BufferedRandomAccessFile(getTableFile(i)));
-        sstableFiles.remove(i + 1);
+        try (RandomAccessFile randomAccessFile = new RandomAccessFile(tempFile, "rw")) {
+            randomAccessFile.writeInt(keysMerged.size());
+        }
 
-        Files.move(tempFile.toPath(), getTableFile(i).toPath(), StandardCopyOption.REPLACE_EXISTING);
-        for (int j = i + 2; j < sstableFiles.size(); j++) {
+        Files.move(tempFile.toPath(), getTableFile(iFile).toPath(), StandardCopyOption.REPLACE_EXISTING);
+        for (int j = iFile + 2; j < sstableFiles.size(); j++) {
             Files.move(getTableFile(j).toPath(), getTableFile(j - 1).toPath(), StandardCopyOption.REPLACE_EXISTING);
         }
         Files.delete(getTableFile(sstableFiles.size() - 1).toPath());
+
+        sstablesKeys.set(iFile, keysMerged.toArray(new KeyInfo[keysMerged.size()]));
+        sstablesKeys.remove(iFile + 1);
+        sstableFiles.set(iFile, new BufferedRandomAccessFile(getTableFile(iFile)));
+        sstableFiles.remove(iFile + 1);
     }
-
-    /*private void mergeTwoTableFiles(File file1, File file2, File result) throws IOException {
-        try (KeyValueInputStream<K, V> input1 = getTableInputStream(file1);
-             KeyValueInputStream<K, V> input2 = getTableInputStream(file2);
-             KeyValueOutputStream<K, V> output = getTableOutputStream(result, input1.numberEntries + input2.numberEntries)) {
-            while (input1.hasNext() || input2.hasNext()) {
-                if (!input1.hasNext()) {
-                    output.writeEntry(input2.readEntry());
-                } else if (!input2.hasNext()) {
-                    output.writeEntry(input1.readEntry());
-                } else {
-                    Map.Entry<K, V> entry1 = input1.peekEntry();
-                    Map.Entry<K, V> entry2 = input2.peekEntry();
-                    output.writeEntry(comparator.compare(entry1.getKey(), entry2.getKey()) < 0 ? input1.readEntry() : input2.readEntry());
-                }
-            }
-        }
-    }
-
-    private KeyValueInputStream<K, V> getTableInputStream(File tableFile) throws IOException {
-        return new KeyValueInputStream<>(tableFile, keySerializationStrategy, valueSerializationStrategy);
-    }
-
-    private KeyValueOutputStream<K, V> getTableOutputStream(File tableFile, int numberEntries) throws IOException {
-        return new KeyValueOutputStream<>(tableFile, keySerializationStrategy, valueSerializationStrategy, numberEntries);
-    }*/
-
-    /*private void mergeAllTableFiles() throws IOException {
-        if (keys.isEmpty()) {
-            for (int i = 0; i < numberTablesOnDisk; i++) {
-                Files.delete(getTableFile(i).toPath());
-            }
-            sstableFiles.clear();
-            return;
-        }
-
-        pushNewEntriesToDisk();
-        File lastTable = getTableFile(numberTablesOnDisk - 1);
-        for (int i = numberTablesOnDisk - 2; i >= 0; i--) {
-            mergeTwoTableFiles(getTableFile(i), lastTable, lastTable = File.createTempFile("table", ".dat"));
-        }
-
-        if (numberTablesOnDisk == 1) {
-            Files.move(lastTable.toPath(), (lastTable = File.createTempFile("table", ".dat")).toPath(), StandardCopyOption.REPLACE_EXISTING);
-        } else {
-            for (int i = 0; i < numberTablesOnDisk; i++) {
-                Files.delete(getTableFile(i).toPath());
-            }
-        }
-
-        // Удалим повторяющиеся записи +записи, ключи которых не содержатся в keys
-        for (Map.Entry<K, Offset> entry : keys.entrySet()) {
-            entry.setValue(Offset.NONE);
-        }
-        int actualNumberEntries = 0;
-        try (KeyValueInputStream<K, V> input = getTableInputStream(lastTable);
-             KeyValueOutputStream<K, V> output = getTableOutputStream(getTableFile(0), input.numberEntries)) {
-            while (input.hasNext()) {
-                Map.Entry<K, V> entry = input.readEntry();
-                K key = entry.getKey();
-                if (!keys.containsKey(key)) {
-                    continue;
-                }
-                Offset offset = keys.get(key);
-                if (offset != Offset.NONE) {
-                    // Значит такой ключ мы уже обработали
-                    continue;
-                }
-                ++actualNumberEntries;
-                keys.put(key, new Offset(0, output.writeEntry(entry)));
-            }
-        }
-        // change number entries
-        try (RandomAccessFile randomAccessFile = new RandomAccessFile(getTableFile(0), "rw")) {
-            randomAccessFile.writeInt(actualNumberEntries);
-        }
-
-        sstableFiles.clear();
-        sstableFiles.add(new BufferedRandomAccessFile(getTableFile(0)));
-    }
-
-    private void mergeTwoTableFiles(File file1, File file2, File result) throws IOException {
-        try (KeyValueInputStream<K, V> input1 = getTableInputStream(file1);
-             KeyValueInputStream<K, V> input2 = getTableInputStream(file2);
-             KeyValueOutputStream<K, V> output = getTableOutputStream(result, input1.numberEntries + input2.numberEntries)) {
-            while (input1.hasNext() || input2.hasNext()) {
-                if (!input1.hasNext()) {
-                    output.writeEntry(input2.readEntry());
-                } else if (!input2.hasNext()) {
-                    output.writeEntry(input1.readEntry());
-                } else {
-                    Map.Entry<K, V> entry1 = input1.peekEntry();
-                    Map.Entry<K, V> entry2 = input2.peekEntry();
-                    output.writeEntry(comparator.compare(entry1.getKey(), entry2.getKey()) < 0 ? input1.readEntry() : input2.readEntry());
-                }
-            }
-        }
-    }*/
 
     private void checkForClosed() {
         if (isClosed) {
@@ -389,6 +320,10 @@ public class LSMStorage<K, V> implements KeyValueStorage<K, V> {
         V cacheValue = cache.getIfPresent(key);
         if (cacheValue != null) {
             return cacheValue;
+        }
+        V newEntriesValue = newEntries.get(key);
+        if (newEntriesValue != null) {
+            return newEntriesValue;
         }
 
         Offset offset = keys.get(key);
@@ -429,6 +364,7 @@ public class LSMStorage<K, V> implements KeyValueStorage<K, V> {
         checkForClosed();
         keys.remove(key);
         cache.invalidate(key);
+        newEntries.remove(key);
     }
 
     @Override
@@ -446,6 +382,7 @@ public class LSMStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public synchronized void close() throws IOException {
         checkForClosed();
+        pushNewEntriesToDisk();
         while (sstableFiles.size() > 1) {
             mergeTwoTableFiles(sstableFiles.size() - 2);
         }

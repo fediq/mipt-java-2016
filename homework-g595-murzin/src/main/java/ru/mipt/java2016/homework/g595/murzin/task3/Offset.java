@@ -30,4 +30,12 @@ public class Offset {
         this.fileIndex = fileIndex;
         this.offsetInFile = offsetInFile;
     }
+
+    @Override
+    public String toString() {
+        return "Offset{" +
+                "fileIndex=" + fileIndex +
+                ", offsetInFile=" + offsetInFile +
+                '}';
+    }
 }
