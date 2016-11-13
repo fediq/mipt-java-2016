@@ -14,4 +14,9 @@ public class DoubleSerializer implements SerializerInterface<Double> {
     public Double deserialize(String inputString) {
         return Double.parseDouble(inputString);
     }
+
+    @Override
+    public String getClassString() {
+        return "Double";
+    }
 }

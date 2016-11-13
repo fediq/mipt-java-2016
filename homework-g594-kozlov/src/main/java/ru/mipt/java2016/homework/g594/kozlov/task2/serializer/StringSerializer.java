@@ -13,4 +13,9 @@ public class StringSerializer implements SerializerInterface<String> {
     public String deserialize(String inputString) {
         return inputString;
     }
+
+    @Override
+    public String getClassString() {
+        return "String";
+    }
 }

@@ -3,10 +3,9 @@ package ru.mipt.java2016.homework.g594.kozlov.task2;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.g594.kozlov.task2.serializer.SerializerInterface;
 
+import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by Anatoly on 25.10.2016.
@@ -19,23 +18,30 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
 
     private final SerializerInterface<V> valueSerializer;
 
-    private final String keyName;
+    private final Map<K, ValueWrapper> tempStorage = new HashMap<K, ValueWrapper>();
 
-    private final String valueName;
+    private final Set<K> tempKeySet = new TreeSet<K>();
 
-    private final HashMap<K, V> tempStorage = new HashMap<K, V>();
+    private final Set<K> changedKeySet = new TreeSet<K>();
 
     private static final String VALIDATE_STRING = "itismyawesomestoragedontfakeit";
 
-    private Boolean flag = false;
+    private Boolean isClosedFlag = false;
+
+    private class ValueWrapper {
+        ValueWrapper(int st, V obj) {
+            state = st;
+            object = obj;
+        }
+        int state = 0; //0 for not loaded, 1 loaded, 2 new kv pair, 3 value was changed, 4 value was deleted
+        V object = null;
+    }
 
     public KVStorageImpl(String dirPath, SerializerInterface<K> keySerializer,
-                         SerializerInterface<V> valueSerializer, String keyName, String valueName) {
+                         SerializerInterface<V> valueSerializer) {
         this.keySerializer = keySerializer;
         this.valueSerializer = valueSerializer;
-        this.keyName = keyName;
-        this.valueName = valueName;
-        fileWorker = new FileWorker(dirPath + "/mystorage.db");
+        fileWorker = new FileWorker(dirPath + File.pathSeparator + "mystorage.db");
 
         try {
 
@@ -56,10 +62,10 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
         if (!tokens[0].equals(VALIDATE_STRING)) {
             return false;
         }
-        if (!tokens[1].equals(keyName)) {
+        if (!tokens[1].equals(keySerializer.getClassString())) {
             return false;
         }
-        if (!tokens[2].equals(valueName)) {
+        if (!tokens[2].equals(valueSerializer.getClassString())) {
             return false;
         }
         int size = Integer.parseInt(tokens[3]);
@@ -68,7 +74,8 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
             try {
                 K str1 = keySerializer.deserialize(tokens[2 * i + 4]);
                 V str2 = valueSerializer.deserialize(tokens[2 * i + 5]);
-                tempStorage.put(str1, str2);
+                tempStorage.put(str1, new ValueWrapper(1, str2));
+                tempKeySet.add(str1);
             } catch (StorageException e) {
                 return false;
             }
@@ -76,69 +83,110 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
         return true;
     }
 
+    void isClosed() {
+        if (isClosedFlag) {
+            throw new RuntimeException("Storage is closed");
+        }
+    }
+
     @Override
     public V read(K key) {
-        if (flag) {
-            throw new RuntimeException("storage closed");
+        isClosed();
+        ValueWrapper value = tempStorage.get(key);
+        if (value == null) {
+            return null;
         }
-        return tempStorage.get(key);
+        if (value.state == 0) {
+            loadKey(key);
+            value = tempStorage.get(key);
+        }
+        return value.object;
     }
 
     @Override
     public boolean exists(K key) {
-        if (flag) {
-            throw new RuntimeException("storage closed");
+        isClosed();
+        ValueWrapper value = tempStorage.get(key);
+        if (value == null || value.state == 4) {
+            return false;
+        } else {
+            return true;
         }
-        return tempStorage.containsKey(key);
     }
 
     @Override
     public void write(K key, V value) {
-        if (flag) {
-            throw new RuntimeException("storage closed");
+        isClosed();
+        ValueWrapper val = tempStorage.get(key);
+        if (val == null) {
+            tempStorage.put(key, new ValueWrapper(2, value));
+            changedKeySet.add(key);
+        } else {
+            tempStorage.remove(key);
+            val.state = 3;
+            val.object = value;
+            tempStorage.put(key, val);
+            changedKeySet.add(key);
         }
-        tempStorage.put(key, value);
         flushTemp();
     }
 
     @Override
     public void delete(K key) {
-        if (flag) {
-            throw new RuntimeException("storage closed");
-        }
+        isClosed();
+        ValueWrapper value = tempStorage.get(key);
         tempStorage.remove(key);
+        value.state = 4;
+        value.object = null;
+        tempStorage.put(key, value);
+        changedKeySet.add(key);
         flushTemp();
     }
 
     @Override
     public Iterator<K> readKeys() {
-        if (flag) {
-            throw new RuntimeException("storage closed");
-        }
+        isClosed();
         return tempStorage.keySet().iterator();
     }
 
     @Override
     public int size() {
-        if (flag) {
-            throw new RuntimeException("storage closed");
-        }
+        isClosed();
         return tempStorage.size();
     }
 
     @Override
     public void close() {
-        flag = true;
+        isClosedFlag = true;
     }
 
-    void flushTemp() {
+    private void loadKey(K key) {}
+
+    private void writeSysInfo() {
+
+    }
+
+    private void newFlushTemp() {
+        writeSysInfo();
+        int firstOffset = 0;
+        for (K key: changedKeySet) {
+            firstOffset += 8 + keySerializer.serialize(key).length();
+        }
+
+
+
+
+    }
+
+    private void flushTemp() {
         StringBuilder text = new StringBuilder(VALIDATE_STRING + "\n");
-        text.append(keyName).append('\n').append(valueName).append('\n');
+        text.append(keySerializer.getClassString()).append('\n')
+                .append(valueSerializer.getClassString()).append('\n');
         text.append(tempStorage.size()).append('\n');
-        for (Map.Entry<K, V> entry : tempStorage.entrySet()) {
+        for (Map.Entry<K, ValueWrapper> entry : tempStorage.entrySet()) {
             text.append(keySerializer.serialize(entry.getKey()))
                     .append('\n')
-                    .append(valueSerializer.serialize(entry.getValue()))
+                    .append(valueSerializer.serialize(entry.getValue().object))
                     .append('\n');
         }
         fileWorker.write(text.toString());

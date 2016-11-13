@@ -45,4 +45,9 @@ public class StudentSerializer implements SerializerInterface<Student> {
         return new Student(objectGroupId, objectName, objectHomeTown,
                 objectDate, objectFlag, objectScore);
     }
+
+    @Override
+    public String getClassString() {
+        return "Student";
+    }
 }
