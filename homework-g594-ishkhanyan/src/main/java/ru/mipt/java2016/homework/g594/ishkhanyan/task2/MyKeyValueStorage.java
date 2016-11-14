@@ -59,6 +59,47 @@ public class MyKeyValueStorage<Key, Value> implements KeyValueStorage<Key, Value
 
     }
 
+    public MyKeyValueStorage(String path, MySerialization externalKeySerializator,
+                             MySerialization externalValueSerializator) throws Exception {
+        keyType = "StudentKey";
+        valueType = "Student";
+        pathDirectory = path;
+        File file = new File(pathDirectory);
+        if (!file.isDirectory()) {
+            throw new RuntimeException("invalid directory path");
+        }
+        if (!file.exists()) {
+            throw new RuntimeException("such directory does not exist");
+        }
+
+        fullPath = pathDirectory + File.separator + "MyStorage";
+        isOpen = true;
+
+        keySerializator = externalKeySerializator;
+        valueSerializator = externalValueSerializator;
+
+        File file2 = new File(fullPath);
+        if (!file2.exists()) {
+            file2.createNewFile();
+        } else {
+            FileInputStream in = new FileInputStream(fullPath);
+            DataInputStream fileIn = new DataInputStream(in);
+            int num = fileIn.readInt(); // read number of pairs(key/value) in storage
+            String fileKeyType = fileIn.readUTF(); // read the type of keys
+            String fileValueType = fileIn.readUTF(); // read the type of values
+            if (!fileKeyType.equals(keyType) || !fileValueType.equals(valueType)) {
+                throw new RuntimeException("This file contains other types of objects");
+            }
+            Key key;
+            Value value;
+            for (int i = 0; i < num; ++i) { // read all pairs from file
+                key = (Key) keySerializator.readFromFile(fileIn);
+                value = (Value) valueSerializator.readFromFile(fileIn);
+                actualCopy.put(key, value); // add pair to hashMap
+            }
+        }
+    }
+
     @Override
     public Value read(Key key) {
         if (!isOpen) {
