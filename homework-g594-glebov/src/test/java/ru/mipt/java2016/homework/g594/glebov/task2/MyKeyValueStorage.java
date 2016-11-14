@@ -26,9 +26,9 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         this.valueSerializer = valueSerializer;
 
         if ((new File(path).exists())) {
-            if (new File(path + "/storage.db").exists()) {
-                storage = new File(path + "/storage.db");
-                try (DataInputStream input = new DataInputStream(new FileInputStream(storage))) {
+            if (new File(path + File.separator + "storage.db").exists()) {
+                storage = new File(path + File.separator + "storage.db");
+                try (DataInputStream input = new DataInputStream(new BufferedInputStream(new FileInputStream(storage)))) {
                     String newCheckString = input.readUTF();
                     mapSize = input.readInt();
                     if (checkString.equals(newCheckString)) {
@@ -41,7 +41,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                     throw new RuntimeException("Can't open file!");
                 }
             } else {
-                storage = new File(path + "/storage.db");
+                storage = new File(path + File.separator + "storage.db");
                 isOpen = true;
             }
         } else {
@@ -59,7 +59,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     public void writeToStorage() {
         isOpen = false;
-        try (DataOutputStream output = new DataOutputStream(new FileOutputStream(storage))) {
+        try (DataOutputStream output = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(storage)))) {
             output.writeUTF(checkString);
             output.writeInt(map.size());
             for (Map.Entry<K, V> entry : map.entrySet()) {
