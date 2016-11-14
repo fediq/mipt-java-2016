@@ -15,7 +15,7 @@ import static org.junit.Assert.assertEquals;
 public class MyTests {
     @Test
     public void simpleWriteReadTest() {
-        FileWorker file = new FileWorker("mytemp.txt");
+        FileWorker file = new FileWorker("temp/mytemp.txt");
         file.createFile();
         String testString = "testString";
         file.bufferedWrite(testString);
@@ -25,10 +25,29 @@ public class MyTests {
         assertEquals(testString, result);
     }
 
+
     @Test
     public void storageWriteReadTest() {
-        KeyValueStorage<String, String> storage = KVStorageFactory.buildStringsStorage("");
+        KeyValueStorage<String, String> storage = KVStorageFactory.buildStringsStorage("temp");
         storage.write("no pain", "no gain");
+        assertEquals("no gain", storage.read("no pain"));
+        try {
+            storage.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void storageWriteCloseReadTest() {
+        KeyValueStorage<String, String> storage = KVStorageFactory.buildStringsStorage("temp");
+        storage.write("no pain", "no gain");
+        try {
+            storage.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        storage = KVStorageFactory.buildStringsStorage("temp");
         assertEquals("no gain", storage.read("no pain"));
         try {
             storage.close();
