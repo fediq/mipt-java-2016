@@ -15,17 +15,16 @@ public class MyKeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
     /* ! path to the directory */
     private String nameOfFile;
     /* ! string used to validate if the storage is appropriate */
-    private String validation;
+    private static final String validation = "validationstring";
     /* ! storage where data will be stored before closing */
     private HashMap<K, V> storage;
     private MySerializer<K> keySerializer;
     private MySerializer<V> valueSerializer;
     private boolean isOpened;
 
-    public MyKeyValueStorageImpl(String validationTmp, String nameOfFileTmp,
+    public MyKeyValueStorageImpl(String nameOfFileTmp,
                                  MySerializer keySerializerTmp, MySerializer valueSerializerTmp) {
-        nameOfFile = nameOfFileTmp + "/storage.db";
-        validation = validationTmp;
+        nameOfFile = nameOfFileTmp + File.separator + "storage.db";
         keySerializer = keySerializerTmp;
         valueSerializer = valueSerializerTmp;
         storage = new HashMap<K, V>();
