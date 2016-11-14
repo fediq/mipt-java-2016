@@ -30,17 +30,6 @@ public class OptimizedKvs<K, V> implements
 
     private class Part {
 
-        Part(RandomAccessFile rafVal, File fileVal) throws IOException {
-            raf = rafVal;
-            file = fileVal;
-            raf.seek(0);
-            dis = bdisFromRaf(raf, Consts.VALUE_SIZE);
-            dis.mark(Consts.BUFFER_SIZE);
-            curPos = 0;
-            keys = new ArrayList<>();
-            offsets = new ArrayList<>();
-        }
-
         private RandomAccessFile raf;
         private File file;
         private DataInputStream dis;
@@ -48,20 +37,31 @@ public class OptimizedKvs<K, V> implements
         private ArrayList<K> keys;
         private ArrayList<Integer> offsets;
 
+        Part(RandomAccessFile rafVal, File fileVal) throws IOException {
+            raf = rafVal;
+            file = fileVal;
+            raf.seek(0);
+            dis = bdisFromRaf(raf, Consts.SMALL_BUFFER_SIZE);
+            dis.mark(Consts.SMALL_BUFFER_SIZE);
+            curPos = 0;
+            keys = new ArrayList<>();
+            offsets = new ArrayList<>();
+        }
+
         public V read(long offset) {
             try {
 
-                if (offset - curPos >= 0 && offset - curPos < Consts.BUFFER_SIZE) {
+                if (offset - curPos >= 0 && offset - curPos < Consts.SMALL_BUFFER_SIZE) {
                     dis.reset();
                     dis.skip(offset - curPos);
                 } else {
                     raf.seek(offset);
                     curPos = raf.getFilePointer();
-                    dis = bdisFromRaf(raf, Consts.VALUE_SIZE);
-                    dis.mark(Consts.BUFFER_SIZE);
+                    dis = bdisFromRaf(raf, Consts.SMALL_BUFFER_SIZE);
+                    dis.mark(Consts.SMALL_BUFFER_SIZE);
                 }
-                /*raf.seek(offset);
-                dis = DISfromRAF(raf);*/
+                raf.seek(offset);
+                dis = bdisFromRaf(raf, Consts.SMALL_BUFFER_SIZE);
                 return valueSerializationStrategy.deserializeFromStream(dis);
             } catch (Exception e) {
                 throw new KVSException("Failed to read from disk", e);
@@ -282,6 +282,7 @@ public class OptimizedKvs<K, V> implements
         }
         keyStorageRaf.close();
         isOpen = false;
+        System.gc();
     }
 
     /**
@@ -451,14 +452,12 @@ public class OptimizedKvs<K, V> implements
                 if (comparator.compare(entry1, entry2) <= 0) {
                     newPart.keys.add(entry1);
                     newPart.offsets.add(out.size());
-                    //indexTable.put(entry1, new Address(newPart, (long) out.size()));
                     valueSerializationStrategy.serializeToStream(
                             valueSerializationStrategy.deserializeFromStream(dis1), out);
                     entry1 = it1.hasNext() ? it1.next() : null;
                 } else { // if <=, поэтому из равных будет записан последний
                     newPart.keys.add(entry2);
                     newPart.offsets.add(out.size());
-                    //indexTable.put(entry2, new Address(newPart, (long) out.size()));
                     valueSerializationStrategy.serializeToStream(
                             valueSerializationStrategy.deserializeFromStream(dis2), out);
                     entry2 = it2.hasNext() ? it2.next() : null;
@@ -468,7 +467,6 @@ public class OptimizedKvs<K, V> implements
                 if (indexTable.containsKey(entry1)) {
                     newPart.keys.add(entry1);
                     newPart.offsets.add(out.size());
-                    //indexTable.put(entry1, new Address(newPart, (long) out.size()));
                     valueSerializationStrategy.serializeToStream(
                             valueSerializationStrategy.deserializeFromStream(dis1), out);
                 } else {
@@ -480,7 +478,6 @@ public class OptimizedKvs<K, V> implements
                 if (indexTable.containsKey(entry2)) {
                     newPart.keys.add(entry2);
                     newPart.offsets.add(out.size());
-                    //indexTable.put(entry2, new Address(newPart, (long) out.size()));
                     valueSerializationStrategy.serializeToStream(
                             valueSerializationStrategy.deserializeFromStream(dis2), out);
                 } else {
@@ -627,10 +624,11 @@ public class OptimizedKvs<K, V> implements
         private static final String STORAGE_LOCK_SUFF = "Lock.db";
         private static final int CACHE_SIZE = 1;
         private static final int DUMP_THRESHOLD = 1000;
-        private static final int MERGE_THRESHOLD = 100;
+        private static final int MERGE_THRESHOLD = 20;
         //private final static int KeySize = 64;
         private static final int VALUE_SIZE = 8192;
-        private static final int BUFFER_SIZE = VALUE_SIZE * 2;
+        private static final int SMALL_BUFFER_SIZE = VALUE_SIZE;
+        private static final int BUFFER_SIZE = VALUE_SIZE*50;
     }
 }
 
