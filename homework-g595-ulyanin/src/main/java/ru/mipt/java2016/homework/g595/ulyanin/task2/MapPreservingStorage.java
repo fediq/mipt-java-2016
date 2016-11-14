@@ -31,14 +31,14 @@ public class MapPreservingStorage<K, V> implements KeyValueStorage<K, V> {
     private Serializer<K> keySerializer;
     private Serializer<V> valueSerializer;
 
-    MapPreservingStorage(String path, Serializer<K> kSerializer, Serializer<V> vSerializer)
+    public MapPreservingStorage(String path, Serializer<K> kSerializer, Serializer<V> vSerializer)
             throws IOException, NoSuchAlgorithmException {
         keySerializer = kSerializer;
         valueSerializer = vSerializer;
         File tmp = new File(path);
         if (tmp.exists()) {
             if (tmp.isDirectory()) {
-                path += "/" + DEFAULT_DB_NAME;
+                path += File.separator + DEFAULT_DB_NAME;
             }
         } else {
             throw new IllegalArgumentException("file " + path + " does not exist");
