@@ -1,4 +1,4 @@
-package ru.mipt.java2016.homework.g594.kozlov.task3;
+package ru.mipt.java2016.homework.g594.kozlov.task2;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.g594.kozlov.task2.KVStorageImpl;
