@@ -3,9 +3,11 @@ package ru.mipt.java2016.homework.g597.miller.task2;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import java.util.Iterator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.io.File;
 import java.io.RandomAccessFile;
 import java.io.IOException;
+import java.nio.file.NotDirectoryException;
 
 /**
  * Created by Vova Miller on 31.10.2016.
@@ -14,62 +16,53 @@ abstract class MillerStorageAbstract<K, V> implements KeyValueStorage<K, V> {
 
     // Хранилище.
     protected HashMap<K, V> map;
-    // Файл хранилища.
-    protected RandomAccessFile file;
-    // Имя файла.
+    // Путь хранилища.
     protected String pathName;
     // Состояние хранилища.
     protected boolean isClosed;
+    // Таблица занятых директорий.
+    protected static HashSet<String> busySet = new HashSet<>();
 
     // Конструкторы.
-    MillerStorageAbstract(String directoryName) {
-        map = null;
-        file = null;
-        pathName = null;
+    MillerStorageAbstract(String directoryName) throws IOException {
+        map = new HashMap<>();
+        pathName = directoryName.concat(File.separator + "storage.db");
         isClosed = true;
 
         // Проверка существования директории.
         File directory = new File(directoryName);
         if (!directory.exists()) {
-            throw new RuntimeException("Invalid directory.");
+            throw new NotDirectoryException(directoryName);
+        }
+
+        // Проверка занятости директории.
+        if (!busySet.add(pathName)) {
+            throw new RuntimeException("Specified directory is occupied.");
         }
 
         // Создаём хранилище или открываем его и считываем данные.
-        map = new HashMap<>();
-        pathName = directoryName;
-        pathName = pathName.concat("/storage.db");
         File f = new File(pathName);
         try {
-            if (!f.exists()) {
-                f.createNewFile();
-                file = new RandomAccessFile(pathName, "rw");
+            if (f.createNewFile()) {
+                RandomAccessFile file = new RandomAccessFile(f, "rw");
                 file.writeInt(0);
                 file.close();
-                file = null;
             } else {
-                file = new RandomAccessFile(pathName, "r");
-                K key;
-                V value;
-                int n = file.readInt();
-                for (int i = 0; i < n; ++i) {
-                    try {
-                        key = readKey();
-                        value = readValue();
-                    } catch (RuntimeException e) {
-                        file.close();
-                        file = null;
-                        throw new RuntimeException("Invalid storage file.");
+                try (RandomAccessFile file = new RandomAccessFile(f, "rw")) {
+                    int n = file.readInt();
+                    for (int i = 0; i < n; ++i) {
+                        map.put(readKey(file), readValue(file));
                     }
-                    map.put(key, value);
+                    if (file.read() >= 0) {
+                        throw new IOException();
+                    }
+                } catch (IOException e) {
+                    throw new IOException("Invalid storage file.", e);
                 }
-                if (file.read() >= 0) {
-                    throw new RuntimeException("Invalid storage file.");
-                }
-                file.close();
-                file = null;
             }
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            busySet.remove(pathName);
+            throw new IOException(e);
         }
         isClosed = false;
     }
@@ -111,36 +104,22 @@ abstract class MillerStorageAbstract<K, V> implements KeyValueStorage<K, V> {
     }
 
     @Override
-    public void close() {
-        try {
-            File f = new File(pathName);
-            if (f.exists()) {
-                f.delete();
-            }
-            f.createNewFile();
-            file = new RandomAccessFile(pathName, "rw");
+    public void close() throws IOException {
+        if (isClosed) {
+            return;
+        }
+        try (RandomAccessFile file = new RandomAccessFile(pathName, "rw")) {
+            file.setLength(0);
             file.writeInt(map.size());
-            K key;
-            V value;
-
             for (HashMap.Entry<K, V> entry : map.entrySet()) {
-                key = entry.getKey();
-                value = entry.getValue();
-                try {
-                    writeKey(key);
-                    writeValue(value);
-                } catch (RuntimeException e) {
-                    file.close();
-                    file = null;
-                    throw new RuntimeException(e);
-                }
+                writeKey(file, entry.getKey());
+                writeValue(file, entry.getValue());
             }
-            file.close();
-            file = null;
             map.clear();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new IOException(e);
         }
+        busySet.remove(pathName);
         isClosed = true;
     }
 
@@ -150,11 +129,11 @@ abstract class MillerStorageAbstract<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
-    protected abstract K readKey();
+    protected abstract K readKey(RandomAccessFile file) throws IOException;
 
-    protected abstract V readValue();
+    protected abstract V readValue(RandomAccessFile file) throws IOException;
 
-    protected abstract void writeKey(K key);
+    protected abstract void writeKey(RandomAccessFile file, K key) throws IOException;
 
-    protected abstract void writeValue(V value);
+    protected abstract void writeValue(RandomAccessFile file, V value) throws IOException;
 }

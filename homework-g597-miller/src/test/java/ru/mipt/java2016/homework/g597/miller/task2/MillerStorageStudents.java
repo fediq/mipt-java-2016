@@ -1,5 +1,7 @@
 package ru.mipt.java2016.homework.g597.miller.task2;
 
+import java.io.RandomAccessFile;
+import java.nio.charset.StandardCharsets;
 import ru.mipt.java2016.homework.tests.task2.Student;
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
 import java.io.IOException;
@@ -10,84 +12,89 @@ import java.util.Date;
  */
 public class MillerStorageStudents extends MillerStorageAbstract<StudentKey, Student> {
 
-    public MillerStorageStudents(String directoryName) {
+    public MillerStorageStudents(String directoryName) throws IOException {
         super(directoryName);
     }
 
     @Override
-    protected StudentKey readKey() {
+    protected StudentKey readKey(RandomAccessFile file) throws IOException {
         try {
             int groupId = file.readInt();
             int n = file.readInt();
-            StringBuilder name = new StringBuilder();
             if (n < 0) {
-                throw new RuntimeException("Invalid storage file.");
+                throw new IOException("Invalid storage file.");
             }
-            for (int i = 0; i < n; ++i) {
-                name.append(file.readChar());
-            }
-            return new StudentKey(groupId, name.toString());
+            byte[] name = new byte[n];
+            file.read(name, 0, n);
+            return new StudentKey(groupId, new String(name, StandardCharsets.UTF_8));
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new IOException(e);
         }
     }
 
     @Override
-    protected Student readValue() {
+    protected Student readValue(RandomAccessFile file) throws IOException {
         try {
             int n;
             int groupId = file.readInt();
             n = file.readInt();
-            StringBuilder name = new StringBuilder();
             if (n < 0) {
-                throw new RuntimeException("Invalid storage file.");
+                throw new IOException("Invalid storage file.");
             }
-            for (int i = 0; i < n; ++i) {
-                name.append(file.readChar());
-            }
-            StringBuilder hometown = new StringBuilder();
+            byte[] name = new byte[n];
+            file.read(name, 0, n);
             n = file.readInt();
             if (n < 0) {
-                throw new RuntimeException("Invalid storage file.");
+                throw new IOException("Invalid storage file.");
             }
-            for (int i = 0; i < n; ++i) {
-                hometown.append(file.readChar());
-            }
+            byte[] hometown = new byte[n];
+            file.read(hometown, 0, n);
             long time = file.readLong();
             Date birthDate = new Date();
             birthDate.setTime(time);
             boolean hasDormitory = file.readBoolean();
             double averageScore = file.readDouble();
-            return new Student(groupId, name.toString(), hometown.toString(), birthDate, hasDormitory, averageScore);
+            return new Student(groupId, new String(name, StandardCharsets.UTF_8),
+                    new String(hometown, StandardCharsets.UTF_8), birthDate,
+                    hasDormitory, averageScore);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new IOException(e);
         }
     }
 
     @Override
-    protected void writeKey(StudentKey key) {
+    protected void writeKey(RandomAccessFile file, StudentKey key) throws IOException {
         try {
             file.writeInt(key.getGroupId());
-            file.writeInt(key.getName().length());
-            file.writeChars(key.getName());
+            byte[] name = key.getName().getBytes();
+            file.writeInt(name.length);
+            file.write(name);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new IOException(e);
         }
     }
 
     @Override
-    protected void writeValue(Student value) {
+    protected void writeValue(RandomAccessFile file, Student value) throws IOException {
         try {
+            // Group ID
             file.writeInt(value.getGroupId());
-            file.writeInt(value.getName().length());
-            file.writeChars(value.getName());
-            file.writeInt(value.getHometown().length());
-            file.writeChars(value.getHometown());
+            // Name
+            byte[] name = value.getName().getBytes();
+            file.writeInt(name.length);
+            file.write(name);
+            // Hometown
+            byte[] hometown = value.getHometown().getBytes();
+            file.writeInt(hometown.length);
+            file.write(hometown);
+            // Birth Date
             file.writeLong(value.getBirthDate().getTime());
+            // Has Dormitory
             file.writeBoolean(value.isHasDormitory());
+            // Average Score
             file.writeDouble(value.getAverageScore());
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new IOException(e);
         }
     }
 }
