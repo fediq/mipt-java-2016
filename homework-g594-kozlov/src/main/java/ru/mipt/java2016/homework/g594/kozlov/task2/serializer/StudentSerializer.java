@@ -13,7 +13,6 @@ public class StudentSerializer implements SerializerInterface<Student> {
     public String serialize(Student objToSerialize) {
         StringBuilder resultString = new StringBuilder("{");
         StudentKeySerializer studKeySer;
-        System.out.println(objToSerialize.getBirthDate());
         resultString.append(SerializerUtil.writeMemberInt("groupId", objToSerialize.getGroupId()))
                 .append(',')
                 .append(SerializerUtil.writeMemberString("name", objToSerialize.getName()))
@@ -22,11 +21,10 @@ public class StudentSerializer implements SerializerInterface<Student> {
                 .append(',')
                 .append(SerializerUtil.writeMemberBoolean("dorm", objToSerialize.isHasDormitory()))
                 .append(',')
-                .append(SerializerUtil.writeMemberDate("date", objToSerialize.getBirthDate())) //TODO
+                .append(SerializerUtil.writeMemberDate("date", objToSerialize.getBirthDate()))
                 .append(',')
                 .append(SerializerUtil.writeMemberDouble("score", objToSerialize.getAverageScore()))
                 .append('}');
-
         return resultString.toString();
     }
 
@@ -38,24 +36,12 @@ public class StudentSerializer implements SerializerInterface<Student> {
         if (tokens.length < 6) {
             throw new StorageException("Reading error");
         }
-        String objectName;
-        int objectGroupId;
-        String objectHomeTown;
-        Boolean objectFlag;
-        Double objectScore;
-        Date objectDate;
-        objectGroupId = SerializerUtil.readMemberInt("groupId", tokens[0]);
-        objectName = SerializerUtil.readMemberString("name", tokens[1]);
-        objectHomeTown = SerializerUtil.readMemberString("hometown", tokens[2]);
-        objectFlag = SerializerUtil.readMemberBoolean("dorm", tokens[3]);
-        objectDate = SerializerUtil.readMemberDate("date", tokens[4]);
-        objectScore = SerializerUtil.readMemberDouble("score", tokens[5]);
-        System.out.println(objectGroupId);
-        System.out.println(objectName);
-        System.out.println(objectHomeTown);
-        System.out.println(objectFlag);
-        System.out.println(objectScore);
-        System.out.println(objectDate);
+        int objectGroupId = SerializerUtil.readMemberInt("groupId", tokens[0]);
+        String objectName = SerializerUtil.readMemberString("name", tokens[1]);
+        String objectHomeTown = SerializerUtil.readMemberString("hometown", tokens[2]);
+        Boolean objectFlag = SerializerUtil.readMemberBoolean("dorm", tokens[3]);
+        Date objectDate = SerializerUtil.readMemberDate("date", tokens[4]);
+        Double objectScore = SerializerUtil.readMemberDouble("score", tokens[5]);
         return new Student(objectGroupId, objectName, objectHomeTown,
                 objectDate, objectFlag, objectScore);
     }

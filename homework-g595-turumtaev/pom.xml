@@ -24,6 +24,16 @@
             <version>1.0.0</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+        </dependency>
+        <dependency>
+            <groupId>ru.mipt.java2016</groupId>
+            <artifactId>homework-tests</artifactId>
+            <version>1.0.0</version>
+        </dependency>
     </dependencies>
 
 

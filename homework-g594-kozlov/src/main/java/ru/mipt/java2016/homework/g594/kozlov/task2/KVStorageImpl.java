@@ -142,6 +142,5 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
                     .append('\n');
         }
         fileWorker.write(text.toString());
-        System.out.println(text.toString());
     }
 }
