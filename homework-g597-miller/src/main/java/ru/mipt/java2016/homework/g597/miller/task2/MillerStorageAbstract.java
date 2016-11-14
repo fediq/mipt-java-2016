@@ -15,19 +15,15 @@ import java.nio.file.NotDirectoryException;
 abstract class MillerStorageAbstract<K, V> implements KeyValueStorage<K, V> {
 
     // Хранилище.
-    protected HashMap<K, V> map;
+    protected HashMap<K, V> map = new HashMap<>();
     // Путь хранилища.
     protected String pathName;
     // Состояние хранилища.
-    protected boolean isClosed;
-    // Таблица занятых директорий.
-    protected static HashSet<String> busySet = new HashSet<>();
+    protected boolean isClosed = true;
 
     // Конструкторы.
     MillerStorageAbstract(String directoryName) throws IOException {
-        map = new HashMap<>();
-        pathName = directoryName.concat(File.separator + "storage.db");
-        isClosed = true;
+        pathName = directoryName + File.separator + "storage.db";
 
         // Проверка существования директории.
         File directory = new File(directoryName);
@@ -36,7 +32,8 @@ abstract class MillerStorageAbstract<K, V> implements KeyValueStorage<K, V> {
         }
 
         // Проверка занятости директории.
-        if (!busySet.add(pathName)) {
+        File controller = new File(pathName + "c");
+        if (!controller.createNewFile()) {
             throw new RuntimeException("Specified directory is occupied.");
         }
 
@@ -54,15 +51,15 @@ abstract class MillerStorageAbstract<K, V> implements KeyValueStorage<K, V> {
                         map.put(readKey(file), readValue(file));
                     }
                     if (file.read() >= 0) {
-                        throw new IOException();
+                        throw new IOException("Invalid storage file: unexpected file size.");
                     }
                 } catch (IOException e) {
                     throw new IOException("Invalid storage file.", e);
                 }
             }
-        } catch (IOException e) {
-            busySet.remove(pathName);
-            throw new IOException(e);
+        } catch (Exception e) {
+            controller.delete();
+            throw e;
         }
         isClosed = false;
     }
@@ -116,10 +113,11 @@ abstract class MillerStorageAbstract<K, V> implements KeyValueStorage<K, V> {
                 writeValue(file, entry.getValue());
             }
             map.clear();
-        } catch (IOException e) {
-            throw new IOException(e);
+        } catch (Exception e) {
+            throw e;
         }
-        busySet.remove(pathName);
+        File controller = new File(pathName + "c");
+        controller.delete();
         isClosed = true;
     }
 
