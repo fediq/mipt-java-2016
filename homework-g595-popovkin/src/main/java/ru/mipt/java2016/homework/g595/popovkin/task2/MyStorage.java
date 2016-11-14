@@ -46,7 +46,7 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
             }
             hin.close();
         } catch (IOException ex) {
-            System.out.println(ex.getMessage());
+            //System.out.println(ex.getMessage());
             return false;
         }
         return true;
