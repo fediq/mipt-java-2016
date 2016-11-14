@@ -6,10 +6,7 @@ import ru.mipt.java2016.homework.g594.shevkunov.task2.LazyMergedKeyValueStorageS
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 
 /**
  * Implementation of KeyValueStorage based on merging files
@@ -17,39 +14,50 @@ import java.util.Map;
  */
 class LazyMergedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private static final String HEADER_NAME = File.separatorChar + "storage.db";
-    private static final String DATA_NAME = File.separatorChar + "storage_0.db";
+    private static final String DATA_NAME_PREFIX = File.separatorChar + "storage_";
+    private static final String DATA_NAME_SUFFIX = ".db";
     private boolean open = true;
 
     private final String path;
-    private final LazyMergedKeyValueStorageHeader header;
-    private final LazyMergedKeyValueStorageSerializator<V> valueSerializator;
-
-    private final HashMap<K, V> chache = new HashMap<>();
+    private final LazyMergedKeyValueStorageHeader<K, V> header;
+    private final LazyMergedKeyValueStorageKeeper<K, V> keeper;
 
     LazyMergedKeyValueStorage(LazyMergedKeyValueStorageSerializator<K> keySerializator,
                               LazyMergedKeyValueStorageSerializator<V> valueSerializator,
                               String path) throws Exception {
         this.path = path;
-        this.valueSerializator = valueSerializator;
         File dir = new File(path);
         boolean dirOk = dir.exists() && dir.isDirectory();
         if (!dirOk) {
             throw new FileNotFoundException("No such directory");
         }
         try {
-            header = new LazyMergedKeyValueStorageHeader(keySerializator, valueSerializator, path + HEADER_NAME);
+            header = new LazyMergedKeyValueStorageHeader<K, V>(keySerializator, valueSerializator, path + HEADER_NAME);
         } catch (IOException e) {
             throw new RuntimeException("Problems with header-file");
         }
 
-        loadChache();
+        keeper = new LazyMergedKeyValueStorageKeeper<K, V>(keySerializator, valueSerializator,
+                path + DATA_NAME_PREFIX, DATA_NAME_SUFFIX,
+                (int)header.getDataFilesCount(), header.createdByConstructor);
+                //TODO rewrite in int
     }
 
     @Override
     public V read(K key) {
         synchronized (header) {
             checkClosed();
-            return chache.get(key);
+            try {
+                LazyMergedKeyValueStorageFileNode pointer = header.getMap().get(key);
+                if (pointer != null) {
+                    return keeper.read(pointer);
+                } else {
+                    return null;
+                }
+            } catch (IOException e) {
+                throw new RuntimeException("IO error during reading");
+                // Interface doesn't allow us to throw IOException
+            }
         }
     }
 
@@ -57,7 +65,7 @@ class LazyMergedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     public boolean exists(K key) {
         synchronized (header) {
             checkClosed();
-            return chache.containsKey(key);
+            return header.getMap().containsKey(key);
         }
     }
 
@@ -65,7 +73,14 @@ class LazyMergedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     public void write(K key, V value) {
         synchronized (header) {
             checkClosed();
-            chache.put(key, value);
+            //TODO Merges
+            try {
+                LazyMergedKeyValueStorageFileNode pointer = keeper.write(0, value);
+                header.addKey(key, pointer);
+            } catch (IOException e) {
+                throw new RuntimeException("IO error during writing");
+                // Interface doesn't allow us to throw IOException
+            }
         }
     }
 
@@ -73,7 +88,8 @@ class LazyMergedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     public void delete(K key) {
         synchronized (header) {
             checkClosed();
-            chache.remove(key);
+            header.deleteKey(key);
+            //TODO Rebuild Check
         }
     }
 
@@ -81,7 +97,7 @@ class LazyMergedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     public Iterator<K> readKeys() {
         synchronized (header) {
             checkClosed();
-            return chache.keySet().iterator();
+            return header.getMap().keySet().iterator();
         }
     }
 
@@ -89,7 +105,7 @@ class LazyMergedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     public int size() {
         synchronized (header) {
             checkClosed();
-            return chache.size();
+            return header.getMap().size();
         }
     }
 
@@ -97,8 +113,9 @@ class LazyMergedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     public void close() throws IOException {
         synchronized (header) {
             checkClosed();
-            writeChache();
             open = false;
+            header.write();
+            // TODO Close files
         }
     }
 
@@ -110,46 +127,4 @@ class LazyMergedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
-    private void loadChache() throws IOException {
-        File data = new File(path + DATA_NAME);
-        if (!data.exists()) {
-            data.createNewFile();
-        }
-        RandomAccessFile in = new RandomAccessFile(data, "r");
-        HashMap<K, Long> offsets = header.getMap();
-        for (Map.Entry<K, Long> entry : offsets.entrySet()) {
-            chache.put(entry.getKey(), loadFromFile(in, entry.getValue()));
-        }
-    }
-
-    private void writeChache() throws IOException {
-        RandomAccessFile out = new RandomAccessFile(path + DATA_NAME, "rw"); // there is no "w"
-        header.getMap().clear();
-        for (Map.Entry<K, V> entry : chache.entrySet()) {
-            long offset = writeToFile(out, entry.getValue());
-            header.getMap().put(entry.getKey(), offset);
-        }
-
-        header.write();
-    }
-
-    private long writeToFile(RandomAccessFile out, V value) throws IOException {
-        byte[] bytes = valueSerializator.serialize(value);
-        byte[] sizeBytes  = valueSerializator.toBytes(bytes.length);
-        long retOffset = out.length();
-        out.seek(retOffset);
-        out.write(sizeBytes);
-        out.write(bytes);
-        return retOffset;
-    }
-
-    private V loadFromFile(RandomAccessFile in, long seek) throws IOException {
-        byte[] sizeBytes = new byte[8];
-        in.seek(seek);
-        in.read(sizeBytes);
-        long size = valueSerializator.toLong(sizeBytes);
-        byte[] bytes = new byte[(int) size];
-        in.read(bytes);
-        return valueSerializator.deSerialize(bytes);
-    }
 }
