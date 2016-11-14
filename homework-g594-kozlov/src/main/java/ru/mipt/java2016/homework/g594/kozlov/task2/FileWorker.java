@@ -27,6 +27,7 @@ public class FileWorker {
         try {
             file.createNewFile();
         } catch (IOException e) {
+            System.out.println("failed to create file");
             throw new RuntimeException(e);
         }
     }
@@ -36,40 +37,6 @@ public class FileWorker {
             throw new FileNotFoundException(file.getName());
         }
         return true;
-    }
-
-    public void write(String text) {
-        try {
-            exists();
-            FileWriter out = new FileWriter(file.getAbsoluteFile());
-            try {
-                out.write(text);
-            } finally {
-                out.close();
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public String read() throws FileNotFoundException {
-        StringBuilder sb = new StringBuilder();
-        exists();
-        try {
-            BufferedReader in = new BufferedReader(new FileReader(file.getAbsoluteFile()));
-            try {
-                String s;
-                while ((s = in.readLine()) != null) {
-                    sb.append(s);
-                    sb.append("\n");
-                }
-            } finally {
-                in.close();
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return sb.toString();
     }
 
     public void bufferedWriteSubmit() {
@@ -89,12 +56,12 @@ public class FileWorker {
         try {
             exists();
             if (buffWr == null) {
-                buffWr = new BufferedOutputStream(new FileOutputStream(file));
+                buffWr = new BufferedOutputStream(new FileOutputStream(file.getAbsoluteFile()));
             }
             byte[] bytes = ByteBuffer.allocate(4).putInt(text.length()).array();
             buffWr.write(bytes);
             buffWr.write(text.getBytes());
-            return text.length() + 4;
+            return text.getBytes().length + 4;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -104,7 +71,7 @@ public class FileWorker {
         try {
             exists();
             if (buffWr == null) {
-                buffWr = new BufferedOutputStream(new FileOutputStream(file));
+                buffWr = new BufferedOutputStream(new FileOutputStream(file.getAbsoluteFile()));
             }
             byte[] bytes = ByteBuffer.allocate(8).putLong(offset).array();
             buffWr.write(bytes);
@@ -114,9 +81,7 @@ public class FileWorker {
     }
 
     public void append(String str) {
-        try {
-            //в конструкторе FileOutputStream используем флаг true, который обозначает обновление содержимого файла
-            OutputStream outputStr = new FileOutputStream(file, true);
+        try (OutputStream outputStr = new FileOutputStream(file.getAbsoluteFile(), true)) {
             byte[] bytes = ByteBuffer.allocate(4).putInt(str.length()).array();
             outputStr.write(bytes);
             outputStr.write(str.getBytes());
@@ -130,7 +95,7 @@ public class FileWorker {
         try {
             exists();
             if (buffRd == null) {
-                buffRd = new BufferedInputStream(new FileInputStream(file));
+                buffRd = new BufferedInputStream(new FileInputStream(file.getAbsoluteFile()));
             }
             if (buffRd.available() < 4) {
                 buffRd.close();
@@ -158,7 +123,7 @@ public class FileWorker {
         try {
             exists();
             if (buffRd == null) {
-                buffRd = new BufferedInputStream(new FileInputStream(file));
+                buffRd = new BufferedInputStream(new FileInputStream(file.getAbsoluteFile()));
             }
             byte[] bytes = new byte[8];
             int read = buffRd.read(bytes, 0, 8);
@@ -183,26 +148,27 @@ public class FileWorker {
                 buffWr.close();
                 buffWr = null;
             }
-        } catch(IOException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public String readFromOffset(Long offset) {
-        try (FileInputStream buffReader = new FileInputStream(file)){
+    public String readFromOffset(long offset) {
+        try (FileInputStream buffReader = new FileInputStream(file.getAbsoluteFile())) {
             exists();
             buffReader.skip(offset);
             byte[] bytes = new byte[4];
-            int read = buffRd.read(bytes, 0, 4);
+            int read = buffReader.read(bytes, 0, 4);
             if (read < 4) {
-                throw new RuntimeException("Reading failure");
+                throw new RuntimeException("Reading failure " + read);
             }
             int len = ByteBuffer.wrap(bytes).getInt();
             bytes = new byte[len];
-            read = buffRd.read(bytes, 0, len);
+            read = buffReader.read(bytes, 0, len);
             if (read < len) {
                 throw new RuntimeException("Reading failure");
             }
+            buffReader.close();
             return new String(bytes);
         } catch (IOException e) {
             throw new RuntimeException(e);

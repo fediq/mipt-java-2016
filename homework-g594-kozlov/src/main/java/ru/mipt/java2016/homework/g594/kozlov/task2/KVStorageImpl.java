@@ -28,10 +28,12 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
 
     private final SerializerInterface<V> valueSerializer;
 
+    private final String path;
+
     private final Map<K, ValueWrapper> storageChanges = new TreeMap<K, ValueWrapper>();
 
     private LoadingCache<K, V> cacheValues = CacheBuilder.newBuilder()
-            .maximumSize(CACHE_SIZE * 10)
+            .maximumSize(CACHE_SIZE * 5)
             .build(
                     new CacheLoader<K, V>() {
                         @Override
@@ -54,36 +56,51 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
             deleted = st;
             object = obj;
         }
-        boolean deleted = false; //0 for not loaded, 1 loaded, 2 new kv pair, 3 value was changed, 4 value was deleted
-        V object = null;
+
+        private boolean deleted = false;
+        private V object = null;
     }
 
     public KVStorageImpl(String dirPath, SerializerInterface<K> keySerializer,
                          SerializerInterface<V> valueSerializer) {
         this.keySerializer = keySerializer;
         this.valueSerializer = valueSerializer;
-        configFile = new FileWorker(dirPath + File.pathSeparator + "mydbconfig.db");
+        if (dirPath.length() > 0) {
+            path = dirPath + File.separator;
+        } else {
+            path = "";
+        }
+        configFile = new FileWorker(path + "mydbconfig.db");
 
         try {
-
             if (configFile.exists()) {
-                if (!validateFile()) {
+                if (!initKeySet()) {
                     throw new RuntimeException("Invalid File");
                 }
             }
         } catch (FileNotFoundException except) {
             configFile.createFile();
             writeSysInfo();
+            iterKeySet = new TreeSet<K>();
         }
     }
 
-    private static class FileNames implements Comparable<FileNames>{
-        public FileNames(String str, long time) {
+    private static class FileNames implements Comparable<FileNames> {
+        FileNames(String str, long time) {
             fileName = str;
             timest = time;
         }
-        public String fileName;
-        public Long timest;
+
+        private String fileName;
+        private Long timest;
+
+        private String getFileName() {
+            return fileName;
+        }
+
+        public Long getTimestamp() {
+            return timest;
+        }
 
         @Override
         public int compareTo(FileNames other) {
@@ -109,15 +126,14 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
         Vector<FileNames> vect = new Vector<>();
         token = configFile.readNextToken();
         while (token != null) {
-            String[] tokens = token.split("\n");
+            String[] tokens = token.split(" ");
             vect.add(new FileNames(tokens[0], Long.parseLong(tokens[1])));
             int fileNum = Integer.parseInt(tokens[0].substring(8, tokens[0].length()));
-            if (fileNum > nextFileNum) {
+            if (fileNum >= nextFileNum) {
                 nextFileNum = fileNum + 1;
             }
             token = configFile.readNextToken();
         }
-        System.out.println(vect.size());
         workFileNames = new FileNames[vect.size()];
         vect.toArray(workFileNames);
         Arrays.sort(workFileNames);
@@ -132,25 +148,24 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public V read(K key) {
-        isClosed();
-        ValueWrapper value = storageChanges.get(key);
-        if (value != null) {
-            return value.object;
-        }
-        try {
-            return cacheValues.get(key);
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-            throw new RuntimeException("cache error");
+        if (exists(key)) {
+            ValueWrapper value = storageChanges.get(key);
+            if (value != null) {
+                return value.object;
+            }
+            try {
+                return cacheValues.get(key);
+            } catch (ExecutionException e) {
+                throw new RuntimeException("cache error");
+            }
+        } else {
+            return null;
         }
     }
 
     @Override
     public boolean exists(K key) {
         isClosed();
-        if (iterKeySet == null) {
-            initKeySet();
-        }
         return iterKeySet.contains(key);
     }
 
@@ -169,9 +184,7 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
         if (exists(key)) {
             storageChanges.put(key, new ValueWrapper(true, null));
             cacheValues.invalidate(key);
-            if (iterKeySet != null) {
-                iterKeySet.remove(key);
-            }
+            iterKeySet.remove(key);
             changesCheck();
         }
     }
@@ -179,28 +192,21 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
     @Override
     public Iterator<K> readKeys() {
         isClosed();
-        if (iterKeySet == null) {
-            initKeySet();
-        }
         return iterKeySet.iterator();
     }
 
     @Override
     public int size() {
         isClosed();
-        if (iterKeySet == null) {
-            initKeySet();
-        }
         return iterKeySet.size();
     }
 
     @Override
     public void close() {
-        if (iterKeySet != null) {
-            iterKeySet.clear();
-        }
+        iterKeySet.clear();
         isClosedFlag = true;
         flushTemp();
+        configFile.refresh();
     }
 
     private void changesCheck() {
@@ -210,13 +216,12 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
-    private void initKeySet() {
+    private boolean initKeySet() {
         try {
             iterKeySet = new TreeSet<K>();
             if (validateFile()) {
                 for (FileNames name: workFileNames) {
-                    System.out.println("checking file");
-                    Map<K, Long> map = loadKeysFrom(name.fileName);
+                    Map<K, Long> map = loadKeysFrom(path + name.fileName);
                     for (Map.Entry<K, Long> entry: map.entrySet()) {
                         if (entry.getValue() == -1) {
                             iterKeySet.remove(entry.getKey());
@@ -225,8 +230,16 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
                         }
                     }
                 }
+                for (Map.Entry<K, ValueWrapper> entry: storageChanges.entrySet()) {
+                    if (entry.getValue().deleted) {
+                        iterKeySet.remove(entry.getKey());
+                    } else {
+                        iterKeySet.add(entry.getKey());
+                    }
+                }
+                return true;
             } else {
-                throw new RuntimeException("Invalid File");
+                return false;
             }
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
@@ -254,13 +267,14 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
             if (validateFile()) {
                 for (int i = workFileNames.length - 1; i >= 0; --i) {
                     FileNames name = workFileNames[i];
-                    Map<K, Long> map = loadKeysFrom(name.fileName);
+                    Map<K, Long> map = loadKeysFrom(path + name.fileName);
                     Long offset = map.get(key);
                     if (offset != null) {
                         if (offset == -1) {
                             return null;
                         } else {
-                            return valueSerializer.deserialize((new FileWorker(name.fileName + ".tab")).readFromOffset(offset));
+                            return valueSerializer.deserialize(
+                                    (new FileWorker(path + name.fileName + ".tab")).readFromOffset(offset));
                         }
                     }
                 }
@@ -280,14 +294,14 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
         configFile.bufferedWrite(VALIDATE_STRING);
         configFile.bufferedWrite(keySerializer.getClassString());
         configFile.bufferedWrite(valueSerializer.getClassString());
+        configFile.bufferedWriteSubmit();
+        configFile.refresh();
     }
 
-
-
     private void flushTemp() {
-        String fileName = "mydbfile" + Integer.toString(nextFileNum++);;
-        FileWorker valueFile = new FileWorker(fileName + ".tab");
-        FileWorker indFile = new FileWorker(fileName + ".ind");
+        String fileName = "mydbfile" + Integer.toString(nextFileNum++);
+        FileWorker valueFile = new FileWorker(path + fileName + ".tab");
+        FileWorker indFile = new FileWorker(path + fileName + ".ind");
         long currOffset = 0;
         valueFile.createFile();
         indFile.createFile();
@@ -299,11 +313,12 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
                     valueSerializer.serialize(entry.getValue().object));
         }
         indFile.bufferedWriteSubmit();
-        indFile.bufferedWriteSubmit();
+        valueFile.bufferedWriteSubmit();
+        storageChanges.clear();
         addToConfig(fileName);
     }
 
     private void addToConfig(String str) {
-        configFile.append(str +'\n' + Long.toString(System.currentTimeMillis()));
+        configFile.append(str + ' ' + Long.toString(System.currentTimeMillis()));
     }
 }
