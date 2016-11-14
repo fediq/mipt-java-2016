@@ -35,9 +35,7 @@ public class SSTable<K, V> {
 
     private void Serialize(File file) throws IOException {
         DataOutputStream output = new DataOutputStream(new FileOutputStream(file));
-        if (closed) {
-            file = new File(filePath);
-        }
+
         output.writeUTF("Myfile");
         int size = index.size();
         output.writeInt(size);
@@ -46,7 +44,6 @@ public class SSTable<K, V> {
             valSerializator.write(output, entry.getValue());
         }
         output.close();
-        closed = true;
     }
 
     private void Desirialize(File file) throws IOException {
