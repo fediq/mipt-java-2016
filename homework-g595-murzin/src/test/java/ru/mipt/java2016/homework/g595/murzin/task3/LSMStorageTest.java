@@ -10,6 +10,7 @@ import ru.mipt.java2016.homework.tests.task2.StudentKey;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Random;
 
@@ -61,28 +62,29 @@ public class LSMStorageTest extends SimpleSingleFileStorageTest {
     public void testWrite() throws Exception {
         doInTempDirectory(path -> {
             HashSet<Integer> keys = new HashSet<>();
+            int n = 1000;
             doWithInts(path, storage -> {
                 Random random = new Random();
-                for (int i = 0; i < 1000; i++) {
-//                    int key = random.nextInt();
-                    int key = i;
+                for (int i = 0; i < n; i++) {
+                    int key = random.nextInt();
+//                    int key = i;
                     storage.write(key, getValueFromKey(key));
                     keys.add(key);
                 }
             });
             doWithInts(path, storage -> {
-                assertEquals(storage.size(), 1000);
+                assertEquals(storage.size(), n);
                 assertFullyMatch(storage.readKeys(), keys);
-                for (int i = 0; i < 1000; i++) {
-                    storage.read(i);
+                for (int key : keys) {
+                    assertEquals(getValueFromKey(key), (int) storage.read(key));
                 }
             });
         });
     }
 
     private int getValueFromKey(int key) {
-//        return (int) (key * 2654435761L);
-        return key;
+        return (int) (key * 2654435761L);
+//        return key;
     }
 
     @Test
@@ -105,23 +107,25 @@ public class LSMStorageTest extends SimpleSingleFileStorageTest {
     public void memoryTest() throws Exception {
         doInTempDirectory(path -> {
             doWithStrings(path, storage -> {
-                int numberOperations = 100;
+                int numberOperations = 1000;
                 int maxKey = numberOperations / 10;
                 ArrayList<String> keys = new ArrayList<>(numberOperations);
+                HashMap<String, String> map = new HashMap<>();
                 Random random = new Random();
                 for (int i = 0; i < numberOperations; i++) {
                     int type = random.nextInt() % 100;
                     if (0 <= type && type < 50 || keys.isEmpty()) {
                         // write
                         String key = getRandomString(10, random);
-                        String value = getRandomString(100000, random);
+                        String value = getRandomString(10000, random);
                         storage.write(key, value);
                         keys.add(key);
+                        map.put(key, value);
                     } else if (50 <= type && type < 85) {
                         // read
                         String key = keys.get(random.nextInt(keys.size()));
                         String value = storage.read(key);
-//                        assertEquals(value, ...);
+                        assertEquals(value, map.get(key));
                     } else if (85 <= type && type < 100) {
                         // delete
                         int index = random.nextInt(keys.size());
