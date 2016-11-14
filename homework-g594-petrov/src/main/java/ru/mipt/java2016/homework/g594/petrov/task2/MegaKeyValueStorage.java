@@ -30,7 +30,7 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         if (!storage.exists()) {
             try {
                 storage.createNewFile();
-            } catch (IOException|SecurityException e) {
+            } catch (IOException | SecurityException e) {
                 throw new IllegalStateException(e.getMessage(), e.getCause());
             }
         } else {
@@ -46,7 +46,7 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                     keyValueStorage.put(key, value);
                 }
                 storageInput.close();
-            } catch (IllegalStateException|IOException e) {
+            } catch (IllegalStateException | IOException e) {
                 throw new IllegalStateException("Invalid storage format", e.getCause());
             }
 
