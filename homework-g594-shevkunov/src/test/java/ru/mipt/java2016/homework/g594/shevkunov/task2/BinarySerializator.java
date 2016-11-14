@@ -1,4 +1,4 @@
-package ru.mipt.java2016.homework.g594.shevkunov.task3;
+package ru.mipt.java2016.homework.g594.shevkunov.task2;
 
 import ru.mipt.java2016.homework.tests.task2.Student;
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
@@ -13,7 +13,7 @@ import java.util.Set;
  * (De)Serialializator class
  * Created by shevkunov on 22.10.16.
  */
-class NobodyReadNamesKeyValueStorageSerializator<K> {
+public class BinarySerializator<K> implements LazyMergedKeyValueStorageSerializator<K> {
     private final String type;
     private static final Set<String> ALLOWED_TYPES;
 
@@ -27,14 +27,19 @@ class NobodyReadNamesKeyValueStorageSerializator<K> {
         ALLOWED_TYPES = Collections.unmodifiableSet(set);
     }
 
-    NobodyReadNamesKeyValueStorageSerializator(String type) {
+    public BinarySerializator(String type) {
         if (!ALLOWED_TYPES.contains(type)) {
             throw new RuntimeException("Bad argument");
         }
         this.type = type;
     }
 
-    byte[] serialize(K obj) {
+    @Override
+    public String name() {
+        return type;
+    }
+
+    public byte[] serialize(K obj) {
         switch (type) {
             case "String":
                 return toBytes((String) obj);
@@ -51,7 +56,7 @@ class NobodyReadNamesKeyValueStorageSerializator<K> {
         }
     }
 
-    K deSerialize(byte[] bytes) {
+    public K deSerialize(byte[] bytes) {
         switch (type) {
             case "String":
                 return (K) toString(bytes);
@@ -67,7 +72,6 @@ class NobodyReadNamesKeyValueStorageSerializator<K> {
                 throw new RuntimeException("Fatal Error : unknown class");
         }
     }
-
 
     private static byte[] toBytes(String str) {
         byte[] strBytes = str.getBytes();
@@ -130,13 +134,13 @@ class NobodyReadNamesKeyValueStorageSerializator<K> {
         }
     }
 
-    static byte[] toBytes(long val) {
+    public byte[] toBytes(long val) {
         byte[] bytes = new byte[8];
         ByteBuffer.wrap(bytes).putLong(val);
         return bytes;
     }
 
-    static long toLong(byte[] bytes) {
+    public long toLong(byte[] bytes) {
         if (bytes.length != 8) {
             throw new RuntimeException("Invalid Conversion");
         } else {
@@ -144,11 +148,11 @@ class NobodyReadNamesKeyValueStorageSerializator<K> {
         }
     }
 
-    private static byte[] toBytes(Date d) {
+    private byte[] toBytes(Date d) {
         return toBytes(d.getTime());
     }
 
-    private static Date toDate(byte[] bytes) {
+    private Date toDate(byte[] bytes) {
         return new Date(toLong(bytes));
     }
 
@@ -168,7 +172,7 @@ class NobodyReadNamesKeyValueStorageSerializator<K> {
         }
     }
 
-    private static byte[] toBytes(Student obj) {
+    private byte[] toBytes(Student obj) {
         byte[] groupId = toBytes(obj.getGroupId());
         byte[] name = toBytes(obj.getName());
         byte[] hometown = toBytes(obj.getHometown());
@@ -179,7 +183,7 @@ class NobodyReadNamesKeyValueStorageSerializator<K> {
         return concatenateArrays(groupId, name, hometown, birthDate, hasDormitory, averageScore);
     }
 
-    private static Student toStudent(byte[] b) {
+    private Student toStudent(byte[] b) {
         int i = 0;
         int len1;
         int len2;

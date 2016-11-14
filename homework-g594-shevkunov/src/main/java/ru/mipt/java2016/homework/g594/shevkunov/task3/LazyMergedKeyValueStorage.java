@@ -1,6 +1,7 @@
 package ru.mipt.java2016.homework.g594.shevkunov.task3;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
+import ru.mipt.java2016.homework.g594.shevkunov.task2.LazyMergedKeyValueStorageSerializator;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -14,27 +15,29 @@ import java.util.Map;
  * Implementation of KeyValueStorage based on merging files
  * Created by shevkunov on 22.10.16.
  */
-class NobodyReadNamesKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
-    private static final String HEADER_NAME = "/storage.db";
-    private static final String DATA_NAME = "/storage_0.db";
+class LazyMergedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
+    private static final String HEADER_NAME = File.separatorChar + "storage.db";
+    private static final String DATA_NAME = File.separatorChar + "storage_0.db";
     private boolean open = true;
 
     private final String path;
-    private final NobodyReadNamesKeyValueStorageHeader header;
-    private final NobodyReadNamesKeyValueStorageSerializator<V> serializator;
+    private final LazyMergedKeyValueStorageHeader header;
+    private final LazyMergedKeyValueStorageSerializator<V> valueSerializator;
 
     private final HashMap<K, V> chache = new HashMap<>();
 
-    NobodyReadNamesKeyValueStorage(String argsK, String argsV, String path) throws Exception {
+    LazyMergedKeyValueStorage(LazyMergedKeyValueStorageSerializator<K> keySerializator,
+                              LazyMergedKeyValueStorageSerializator<V> valueSerializator,
+                              String path) throws Exception {
         this.path = path;
-        serializator = new NobodyReadNamesKeyValueStorageSerializator<V>(argsV);
+        this.valueSerializator = valueSerializator;
         File dir = new File(path);
         boolean dirOk = dir.exists() && dir.isDirectory();
         if (!dirOk) {
             throw new FileNotFoundException("No such directory");
         }
         try {
-            header = new NobodyReadNamesKeyValueStorageHeader(argsK, argsV, path + HEADER_NAME);
+            header = new LazyMergedKeyValueStorageHeader(keySerializator, valueSerializator, path + HEADER_NAME);
         } catch (IOException e) {
             throw new RuntimeException("Problems with header-file");
         }
@@ -44,50 +47,66 @@ class NobodyReadNamesKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public V read(K key) {
-        checkClosed();
-        return chache.get(key);
+        synchronized (header) {
+            checkClosed();
+            return chache.get(key);
+        }
     }
 
     @Override
     public boolean exists(K key) {
-        checkClosed();
-        return chache.containsKey(key);
+        synchronized (header) {
+            checkClosed();
+            return chache.containsKey(key);
+        }
     }
 
     @Override
     public void write(K key, V value) {
-        checkClosed();
-        chache.put(key, value);
+        synchronized (header) {
+            checkClosed();
+            chache.put(key, value);
+        }
     }
 
     @Override
     public void delete(K key) {
-        checkClosed();
-        chache.remove(key);
+        synchronized (header) {
+            checkClosed();
+            chache.remove(key);
+        }
     }
 
     @Override
     public Iterator<K> readKeys() {
-        checkClosed();
-        return chache.keySet().iterator();
+        synchronized (header) {
+            checkClosed();
+            return chache.keySet().iterator();
+        }
     }
 
     @Override
     public int size() {
-        checkClosed();
-        return chache.size();
+        synchronized (header) {
+            checkClosed();
+            return chache.size();
+        }
     }
 
     @Override
     public void close() throws IOException {
-        checkClosed();
-        writeChache();
-        open = false;
+        synchronized (header) {
+            checkClosed();
+            writeChache();
+            open = false;
+        }
     }
 
     private void checkClosed() {
-        if (!open) {
-            throw new RuntimeException("Storage already closed.");
+        synchronized (header) {
+            if (!open) {
+                throw new RuntimeException("Storage already closed.");
+            }
         }
     }
 
@@ -115,9 +134,8 @@ class NobodyReadNamesKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private long writeToFile(RandomAccessFile out, V value) throws IOException {
-        byte[] bytes = serializator.serialize(value);
-        byte[] sizeBytes  = serializator.toBytes(bytes.length);
-
+        byte[] bytes = valueSerializator.serialize(value);
+        byte[] sizeBytes  = valueSerializator.toBytes(bytes.length);
         long retOffset = out.length();
         out.seek(retOffset);
         out.write(sizeBytes);
@@ -129,9 +147,9 @@ class NobodyReadNamesKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         byte[] sizeBytes = new byte[8];
         in.seek(seek);
         in.read(sizeBytes);
-        long size = NobodyReadNamesKeyValueStorageSerializator.toLong(sizeBytes);
+        long size = valueSerializator.toLong(sizeBytes);
         byte[] bytes = new byte[(int) size];
         in.read(bytes);
-        return serializator.deSerialize(bytes);
+        return valueSerializator.deSerialize(bytes);
     }
 }
