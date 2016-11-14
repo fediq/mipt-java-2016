@@ -15,13 +15,13 @@ import java.util.Map;
  * @author Artem K. Topilskiy
  * @since 30.10.16
  */
-class LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> {
+public class LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> {
     /* The filename of the file of data storage */
     private static final String STORAGE_FILENAME = "storage.db";
     /* A Class storing information on the current storage */
     private final LazyByteKeyValueStorageInfo storageInfo;
 
-    LazyByteKeyValueStorageFileIOWrapper(LazyByteKeyValueStorageInfo storageInfoInit) throws IOException {
+    public LazyByteKeyValueStorageFileIOWrapper(LazyByteKeyValueStorageInfo storageInfoInit) throws IOException {
         storageInfo = storageInfoInit;
         checkWhetherExistsAndDirectory(storageInfo.getPathToStorageDirectory());
     }
@@ -44,7 +44,7 @@ class LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> {
      *
      * @return the path to the directory of data storage
      */
-    String getPathToStorageDirectory() {
+    public String getPathToStorageDirectory() {
         return storageInfo.getPathToStorageDirectory();
     }
 
@@ -54,7 +54,7 @@ class LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> {
      *
      * @return File, reflecting the data storage file
      */
-    File getStorageDataFile() {
+    private File getStorageDataFile() {
         return new File(storageInfo.getPathToStorageDirectory() +
                         File.separator +
                         STORAGE_FILENAME);
@@ -66,7 +66,7 @@ class LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> {
      * @param hashMapBuffer - Map to be saved to Disk
      * @throws IOException  - if writing to Disk was unsuccessful
      */
-    void write(HashMap<KeyType, ValueType> hashMapBuffer) throws IOException {
+    public void write(HashMap<KeyType, ValueType> hashMapBuffer) throws IOException {
         File storageDataFile = getStorageDataFile();
 
         FileOutputStream storageDataFileOut = new FileOutputStream(storageDataFile);
@@ -75,7 +75,7 @@ class LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> {
         fileOutputWrapper.write(hashMapBuffer, storageDataFileOut);
     }
 
-    HashMap<KeyType, ValueType> read() throws IOException {
+    public HashMap<KeyType, ValueType> read() throws IOException {
         File storageDataFile = getStorageDataFile();
         HashMap<KeyType, ValueType> hashMapBuffer = new HashMap<>();
 
@@ -90,8 +90,8 @@ class LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> {
 
     /* Class wrapping everything needed to write to disk */
     private class FileOutputWrapper {
-        final JoinArraysPrimitiveByte joinArraysPrimitiveByte = new JoinArraysPrimitiveByte();
-        final IntegerSerializer integerTypeSerializer = new IntegerSerializer();
+        private final JoinArraysPrimitiveByte joinArraysPrimitiveByte = new JoinArraysPrimitiveByte();
+        private final IntegerSerializer integerTypeSerializer = new IntegerSerializer();
 
         /**
          * Writes hashMapBuffer data in a SSTable-like format to FileOut
@@ -100,7 +100,7 @@ class LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> {
          * @param fileOut       - file-descriptor into which data is written
          * @throws IOException  - thrown by FileOutputStream.write()
          */
-        void write(HashMap<KeyType, ValueType> hashMapBuffer,
+        public void write(HashMap<KeyType, ValueType> hashMapBuffer,
                               FileOutputStream fileOut)       throws IOException {
             byte[] keyTypeStringNumBytesAndBytes =
                     getNumBytesAndBytes(storageInfo.getKeyTypeString(), "String");
@@ -214,7 +214,7 @@ class LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> {
          * @param <Type> - Type of the value
          * @return NumBytes + Value in binary form
          */
-        <Type> byte[] getNumBytesAndBytes(Type value, String valueTypeString) {
+        private <Type> byte[] getNumBytesAndBytes(Type value, String valueTypeString) {
             ISerializer valueTypeSerializer = SerializerFactory.getSerializer(valueTypeString);
 
             byte[] valueBytes     = valueTypeSerializer.serialize(value);
@@ -225,7 +225,7 @@ class LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> {
 
     /* Class wrapping everything needed to read from disk */
     private class FileInputWrapper {
-        final IntegerSerializer integerTypeSerializer = new IntegerSerializer();
+        private final IntegerSerializer integerTypeSerializer = new IntegerSerializer();
 
         /**
          * Read hashMapBuffer from storage File Descriptor
@@ -234,7 +234,7 @@ class LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> {
          * @return the Map read from the File Descriptor
          * @throws IOException - if file cannot be read properly
          */
-        HashMap<KeyType, ValueType> read(File storageDataFile) throws IOException {
+        public HashMap<KeyType, ValueType> read(File storageDataFile) throws IOException {
             HashMap<KeyType, ValueType> hashMapBuffer = new HashMap<>();
 
             RandomAccessFile storageDataFileIn = new RandomAccessFile(storageDataFile, "r");
@@ -257,7 +257,7 @@ class LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> {
          * @return the key-offset map read from fileIn
          * @throws IOException - if file cannot be read properly
          */
-        HashMap<KeyType, Integer> readkeyOffsetMap(RandomAccessFile fileIn) throws IOException {
+        private HashMap<KeyType, Integer> readkeyOffsetMap(RandomAccessFile fileIn) throws IOException {
             String keyTypeStringRead = (String) readType("String", fileIn);
             String valueTypeStringRead = (String) readType("String", fileIn);
 
@@ -284,7 +284,7 @@ class LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> {
          * @return the read Integer
          * @throws IOException - if file cannot be read properly
          */
-        Integer readInteger(RandomAccessFile fileIn) throws IOException {
+        private Integer readInteger(RandomAccessFile fileIn) throws IOException {
             byte[] integerBytes = new byte[IntegerSerializer.getIntegerByteSize()];
             fileIn.read(integerBytes);
             return integerTypeSerializer.deserialize(integerBytes);
@@ -298,7 +298,7 @@ class LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> {
          * @return an Object read, which can be casted to Type
          * @throws IOException - if file cannot be read properly
          */
-        Object readType(String typeBeingRead, RandomAccessFile fileIn) throws IOException {
+        private Object readType(String typeBeingRead, RandomAccessFile fileIn) throws IOException {
             ISerializer typeSerializer = SerializerFactory.getSerializer(typeBeingRead);
 
             Integer lenRead = readInteger(fileIn);

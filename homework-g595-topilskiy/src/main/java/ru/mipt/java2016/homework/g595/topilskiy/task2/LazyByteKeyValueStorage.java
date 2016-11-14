@@ -13,13 +13,13 @@ import java.util.Iterator;
  * @author Artem K. Topilskiy
  * @since 28.10.16
  */
-class      LazyByteKeyValueStorage<KeyType, ValueType>
-        implements KeyValueStorage<KeyType, ValueType> {
+public class LazyByteKeyValueStorage<KeyType, ValueType>
+          implements KeyValueStorage<KeyType, ValueType> {
 
     private final LazyByteKeyValueStorageHashMapBuffer<KeyType, ValueType> storageBuffer;
     private Boolean isClosed;
 
-    LazyByteKeyValueStorage(LazyByteKeyValueStorageInfo storageInfoInit) throws IOException {
+    public LazyByteKeyValueStorage(LazyByteKeyValueStorageInfo storageInfoInit) throws IOException {
         storageBuffer = new LazyByteKeyValueStorageHashMapBuffer<>(storageInfoInit);
         isClosed = false;
     }
@@ -123,7 +123,7 @@ class      LazyByteKeyValueStorage<KeyType, ValueType>
      *
      * @return the path to the directory of data storage
      */
-    String getPathToStorageDirectory() {
+    public String getPathToStorageDirectory() {
         return storageBuffer.getPathToStorageDirectory();
     }
 }

@@ -14,7 +14,7 @@ public class LazyByteKeyValueStorageInfo {
     /* A String reflecting the name of the ValueType in KeyValueStorage */
     private final String valueTypeString;
 
-    LazyByteKeyValueStorageInfo(String pathToStorageDirectoryInit,
+    public LazyByteKeyValueStorageInfo(String pathToStorageDirectoryInit,
                                 String keyTypeStringInit,
                                 String valueTypeStringInit) {
         pathToStorageDirectory = pathToStorageDirectoryInit;
@@ -22,15 +22,15 @@ public class LazyByteKeyValueStorageInfo {
         valueTypeString = valueTypeStringInit;
     }
 
-    String getPathToStorageDirectory() {
+    public String getPathToStorageDirectory() {
         return pathToStorageDirectory;
     }
 
-    String getKeyTypeString() {
+    public String getKeyTypeString() {
         return keyTypeString;
     }
 
-    String getValueTypeString() {
+    public String getValueTypeString() {
         return valueTypeString;
     }
 }

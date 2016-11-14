@@ -13,7 +13,7 @@ public interface ISerializer<ValueType> {
      * @param  value - object to be serialized
      * @return Array of Bytes, into which value has been serialized into
      */
-    byte[] serialize(ValueType value);
+    public byte[] serialize(ValueType value);
 
     /**
      * Deserialize a ValueType object from an Array of Bytes
@@ -22,5 +22,5 @@ public interface ISerializer<ValueType> {
      * @return Deserialized value from valueBytes
      * @throws IllegalArgumentException if valueBytes cannot be converted to ValueType
      */
-    ValueType deserialize(byte[] valueBytes) throws IllegalArgumentException;
+    public ValueType deserialize(byte[] valueBytes) throws IllegalArgumentException;
 }

@@ -10,13 +10,13 @@ import java.util.Iterator;
  * @author Artem K. Topilskiy
  * @since 29.10.16
  */
-class LazyByteKeyValueStorageHashMapBuffer<KeyType, ValueType> {
+public class LazyByteKeyValueStorageHashMapBuffer<KeyType, ValueType> {
     /* HashMap for Buffered Storage */
     private HashMap<KeyType, ValueType> hashMapBuffer;
     /* A File IO Wrapper for interactions with the Storage on disk */
     private final LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> fileIOWrapper;
 
-    LazyByteKeyValueStorageHashMapBuffer(LazyByteKeyValueStorageInfo storageInfoInit)
+    public LazyByteKeyValueStorageHashMapBuffer(LazyByteKeyValueStorageInfo storageInfoInit)
                                          throws IOException {
         fileIOWrapper =
                 new LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType>(storageInfoInit);
@@ -29,7 +29,7 @@ class LazyByteKeyValueStorageHashMapBuffer<KeyType, ValueType> {
      * @param  key - Key of the Value being read
      * @return Value with the corresponding Key from Buffer
      */
-    ValueType read(KeyType key) {
+    public ValueType read(KeyType key) {
         return hashMapBuffer.get(key);
     }
 
@@ -39,7 +39,7 @@ class LazyByteKeyValueStorageHashMapBuffer<KeyType, ValueType> {
      * @param key - Key of the Value being Found
      * @return Boolean == Value with Key exists in Buffer
      */
-    boolean exists(KeyType key) {
+    public boolean exists(KeyType key) {
         return hashMapBuffer.containsKey(key);
     }
 
@@ -49,7 +49,7 @@ class LazyByteKeyValueStorageHashMapBuffer<KeyType, ValueType> {
      * @param key   - Key of the element inserted
      * @param value - Value of the element inserted
      */
-    void write(KeyType key, ValueType value) {
+    public void write(KeyType key, ValueType value) {
         hashMapBuffer.put(key, value);
     }
 
@@ -58,7 +58,7 @@ class LazyByteKeyValueStorageHashMapBuffer<KeyType, ValueType> {
      *
      * @param key - Key of Value to be deleted
      */
-    void delete(KeyType key) {
+    public void delete(KeyType key) {
         hashMapBuffer.remove(key);
     }
 
@@ -67,7 +67,7 @@ class LazyByteKeyValueStorageHashMapBuffer<KeyType, ValueType> {
      *
      * @return Iterator of the Keys in Storage
      */
-    Iterator<KeyType> readKeys() {
+    public Iterator<KeyType> readKeys() {
         return hashMapBuffer.keySet().iterator();
     }
 
@@ -76,7 +76,7 @@ class LazyByteKeyValueStorageHashMapBuffer<KeyType, ValueType> {
      *
      * @return Size of Storage
      */
-    int size() {
+    public int size() {
         return hashMapBuffer.size();
     }
 
@@ -85,7 +85,7 @@ class LazyByteKeyValueStorageHashMapBuffer<KeyType, ValueType> {
      *
      * @throws IOException - if writing to Disk was unsuccessful
      */
-    void saveToDisk() throws IOException {
+    public void saveToDisk() throws IOException {
         fileIOWrapper.write(hashMapBuffer);
     }
 
@@ -94,7 +94,7 @@ class LazyByteKeyValueStorageHashMapBuffer<KeyType, ValueType> {
      *
      * @return the path to the directory of data storage
      */
-    String getPathToStorageDirectory() {
+    public String getPathToStorageDirectory() {
         return fileIOWrapper.getPathToStorageDirectory();
     }
 }
