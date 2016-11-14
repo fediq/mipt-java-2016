@@ -8,3 +8,5 @@ target/
 
 temp/
 tmp/
+
+*.DS_Store
