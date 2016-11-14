@@ -38,39 +38,43 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         File database = new File(dbpath);
         if (!database.createNewFile()) {
             filedb = new RandomAccessFile(database, "rw");
-            openDataBase();
+            try {
+                openDataBase();
+            } catch (MyException e) {
+                e.printStackTrace();
+            }
         } else {
             filedb = new RandomAccessFile(database, "rw");
         }
     }
 
-    private void openDataBase() throws IOException {
-        filedb.seek(0);
-        Integer check = filedb.readInt();
+    private void openDataBase() throws MyException {
+        Integer check = 0;
+        try {
+            filedb.seek(0);
+            check = filedb.readInt();
+        } catch (IOException e) {
+            throw new MyException("No good");
+        }
         if (check != 208) {
-            throw new IOException("Not file for Data Base");
+            throw new MyException("Not file for Data Base");
         }
         map.clear();
-        while (true) {
-            K key;
-            V value;
-            try {
+        try {
+            long length = filedb.length();
+            while (filedb.getFilePointer() < length) {
+                K key;
+                V value;
                 key = serializationKey.read(filedb);
-            } catch (IOException e) {
-                break;
-            }
-
-            try {
                 value = serializationValue.read(filedb);
-            } catch (IOException e) {
-                throw new IOException("Not value");
+                if (map.containsKey(key)) {
+                    throw new MyException("Duplicate key");
+                } else {
+                    map.put(key, value);
+                }
             }
-
-            if (map.containsKey(key)) {
-                throw new IOException("Duplicate key");
-            } else {
-                map.put(key, value);
-            }
+        } catch (IOException e) {
+            throw new MyException("No open file");
         }
     }
 

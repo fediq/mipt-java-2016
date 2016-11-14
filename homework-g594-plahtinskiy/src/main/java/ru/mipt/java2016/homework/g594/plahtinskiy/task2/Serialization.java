@@ -8,10 +8,6 @@ import java.io.RandomAccessFile;
  */
 public abstract class Serialization<T> {
 
-    public Serialization() {
-
-    }
-
     public abstract void write(RandomAccessFile file, T obj) throws IOException;
 
     public abstract T read(RandomAccessFile file) throws IOException;

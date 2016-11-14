@@ -8,10 +8,6 @@ import java.io.RandomAccessFile;
  */
 public class SerializationString extends Serialization<String> {
 
-    public SerializationString() {
-
-    }
-
     @Override
     public void write(RandomAccessFile file, String obj) throws IOException {
         byte[] buffer = obj.getBytes();

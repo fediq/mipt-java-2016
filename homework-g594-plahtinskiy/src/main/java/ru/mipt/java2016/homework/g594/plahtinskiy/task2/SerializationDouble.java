@@ -8,10 +8,6 @@ import java.io.RandomAccessFile;
  */
 public class SerializationDouble extends Serialization<Double> {
 
-    public SerializationDouble() {
-
-    }
-
     @Override
     public void write(RandomAccessFile file, Double obj) throws IOException {
         file.writeDouble(obj);

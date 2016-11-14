@@ -8,10 +8,6 @@ import java.io.RandomAccessFile;
  */
 public class SerializationInt extends Serialization<Integer> {
 
-    public SerializationInt() {
-
-    }
-
     public void write(RandomAccessFile file, Integer obj) throws IOException {
         file.writeInt(obj);
     }

@@ -11,10 +11,6 @@ import java.util.Date;
  */
 public class SerializationStudent extends Serialization<Student> {
 
-    SerializationStudent() {
-
-    }
-
     @Override
     public void write(RandomAccessFile file, Student obj) throws IOException {
         SerializationInt serializationGroupId = new SerializationInt();

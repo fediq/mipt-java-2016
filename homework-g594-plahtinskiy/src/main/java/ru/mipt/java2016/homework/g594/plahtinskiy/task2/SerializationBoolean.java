@@ -8,10 +8,6 @@ import java.io.RandomAccessFile;
  */
 public class SerializationBoolean extends Serialization<Boolean> {
 
-    SerializationBoolean() {
-
-    }
-
     @Override
     public void write(RandomAccessFile file, Boolean obj) throws IOException {
         file.writeBoolean(obj);

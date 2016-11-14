@@ -10,10 +10,6 @@ import java.io.RandomAccessFile;
  */
 public class SerializationStudentKey extends Serialization<StudentKey> {
 
-    public SerializationStudentKey() {
-
-    }
-
     @Override
     public void write(RandomAccessFile file, StudentKey obj) throws IOException {
         SerializationInt serializationGroupId = new SerializationInt();

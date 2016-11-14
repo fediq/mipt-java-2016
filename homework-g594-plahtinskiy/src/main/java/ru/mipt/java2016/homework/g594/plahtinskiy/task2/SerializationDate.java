@@ -9,10 +9,6 @@ import java.util.Date;
  */
 public class SerializationDate extends Serialization<Date> {
 
-    public SerializationDate() {
-
-    }
-
     @Override
     public void write(RandomAccessFile file, Date obj) throws IOException {
         file.writeLong(obj.getTime());
