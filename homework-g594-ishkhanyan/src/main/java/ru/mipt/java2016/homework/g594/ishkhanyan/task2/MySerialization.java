@@ -1,20 +1,16 @@
 package ru.mipt.java2016.homework.g594.ishkhanyan.task2;
 
-import ru.mipt.java2016.homework.tests.task2.Student;
-import ru.mipt.java2016.homework.tests.task2.StudentKey;
-
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.Date;
 
 
 interface MySerialization<Type> {
-    void writeToFile(Type object, DataOutputStream file) throws IOException;
+    void writeToFile(Type object, DataOutputStream file) throws RuntimeException, IOException;
 
-    Type readFromFile(DataInputStream file) throws IOException;
+    Type readFromFile(DataInputStream file) throws RuntimeException, IOException;
 
-    MySerialization<Integer> MY_INT_SERIALIZATION = new MySerialization<Integer>() {
+    /*MySerialization<Integer> MY_INT_SERIALIZATION = new MySerialization<Integer>() {
         @Override
         public void writeToFile(Integer object, DataOutputStream file) throws IOException {
             file.writeInt(object);
@@ -82,6 +78,7 @@ interface MySerialization<Type> {
             Double averageScore = file.readDouble();
             return new Student(groupId, name, homeTown, date, hasDormitory, averageScore);
         }
-    };
+    };*/
 }
+
 

@@ -7,8 +7,6 @@ import ru.mipt.java2016.homework.tests.task2.StudentKey;
 
 import java.io.IOException;
 
-
-
 public class MyKeyValueStorageTests extends AbstractSingleFileStorageTest {
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String path) {
@@ -39,6 +37,5 @@ public class MyKeyValueStorageTests extends AbstractSingleFileStorageTest {
         }
         return null;
     }
-
 }
 

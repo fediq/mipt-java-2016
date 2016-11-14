@@ -18,7 +18,7 @@ public class MyKeyValueStorage<Key, Value> implements KeyValueStorage<Key, Value
     private String fullPath;
     private boolean isOpen;
 
-    MyKeyValueStorage(String path, String keyT, String valueT) throws IOException {
+    public MyKeyValueStorage(String path, String keyT, String valueT) throws IOException {
         keyType = keyT;
         valueType = valueT;
         pathDirectory = path;
@@ -35,38 +35,38 @@ public class MyKeyValueStorage<Key, Value> implements KeyValueStorage<Key, Value
 
         switch (keyType) {
             case "Integer":
-                keySerializator = MySerialization.MY_INT_SERIALIZATION;
+                keySerializator = new MyIntSerialization();
                 break;
             case "Double":
-                keySerializator = MySerialization.MY_DOUBLE_SERIALIZATION;
+                keySerializator = new MyDoubleSerialization();
                 break;
             case "String":
-                keySerializator = MySerialization.MY_STRING_SERIALIZATION;
+                keySerializator = new MyStringSerialization();
                 break;
             case "Student":
-                keySerializator = MySerialization.MY_STUDENT_SERIALIZATION;
+                keySerializator = new MyStudentSerialization();
                 break;
             case "StudentKey":
-                keySerializator = MySerialization.MY_STUDENT_KEY_SERIALIZATION;
+                keySerializator = new MyStudentKeySerialization();
                 break;
             default:
                 break;
         }
         switch (valueType) {
             case "Integer":
-                valueSerializator = MySerialization.MY_INT_SERIALIZATION;
+                valueSerializator = new MyIntSerialization();
                 break;
             case "Double":
-                valueSerializator = MySerialization.MY_DOUBLE_SERIALIZATION;
+                valueSerializator = new MyDoubleSerialization();
                 break;
             case "String":
-                valueSerializator = MySerialization.MY_STRING_SERIALIZATION;
+                valueSerializator = new MyStringSerialization();
                 break;
             case "Student":
-                valueSerializator = MySerialization.MY_STUDENT_SERIALIZATION;
+                valueSerializator = new MyStudentSerialization();
                 break;
             case "StudentKey":
-                valueSerializator = MySerialization.MY_STUDENT_KEY_SERIALIZATION;
+                valueSerializator = new MyStudentKeySerialization();
                 break;
             default:
                 break;
