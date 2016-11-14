@@ -65,46 +65,6 @@ public class OptimizedKvs<K, V> implements
                 throw new KVSException("Failed to read from disk", e);
             }
         }
-
-        public RandomAccessFile getRaf() {
-            return raf;
-        }
-
-        public File getFile() {
-            return file;
-        }
-
-        public DataInputStream getDis() {
-            return dis;
-        }
-
-        public long getCurPos() {
-            return curPos;
-        }
-
-        public ArrayList<K> getKeys() {
-            return keys;
-        }
-
-        public void setRaf(RandomAccessFile raf) {
-            this.raf = raf;
-        }
-
-        public void setFile(File file) {
-            this.file = file;
-        }
-
-        public void setDis(DataInputStream dis) {
-            this.dis = dis;
-        }
-
-        public void setCurPos(long curPos) {
-            this.curPos = curPos;
-        }
-
-        public void setKeys(ArrayList<K> keys) {
-            this.keys = keys;
-        }
     }
 
     private class Address {
@@ -342,6 +302,7 @@ public class OptimizedKvs<K, V> implements
                 parts.getLast().keys.add(key);
             }
 
+            keyStorageRaf.setLength(0);
         } catch (IOException e) {
             throw new SerializationException("Read failed", e);
         }
@@ -421,112 +382,123 @@ public class OptimizedKvs<K, V> implements
     private void mergeFiles() throws IOException {
         assert parts.size() >= 2;
 
+        Part bigPart = parts.getFirst();
+        parts.pollFirst();
+
         while (parts.size() > 1) {
             ArrayDeque<Part> newParts = new ArrayDeque<>();
             // 1 и 2 в хронологическом порядке
             while (parts.size() > 1) {
-                Part part2 = parts.getLast();
-                parts.pollLast();
-                Part part1 = parts.getLast();
-                parts.pollLast();
-
-                File tempFile = Paths.get(path, dbName + "Temp" + Consts.STORAGE_PART_SUFF).toFile();
-                if (!tempFile.createNewFile()) {
-                    throw new KVSException("Temp file already exists");
-                }
-
-                Part newPart = new Part(new RandomAccessFile(tempFile, "rw"), tempFile);
-
-                DataOutputStream out = bdosFromRaf(newPart.raf, Consts.BUFFER_SIZE);
-                part1.raf.seek(0);
-                part2.raf.seek(0);
-                DataInputStream dis1 = bdisFromRaf(part1.raf, Consts.BUFFER_SIZE);
-                DataInputStream dis2 = bdisFromRaf(part2.raf, Consts.BUFFER_SIZE);
-
-                K entry1;
-                K entry2;
-                Iterator<K> it1 = part1.keys.iterator();
-                Iterator<K> it2 = part2.keys.iterator();
-                try {
-                    entry1 = it1.hasNext() ? it1.next() : null;
-                    entry2 = it2.hasNext() ? it2.next() : null;
-                    while (entry1 != null && entry2 != null) {
-                        if (!indexTable.containsKey(entry1)) {
-                            entry1 = it1.hasNext() ? it1.next() : null;
-                            valueSerializationStrategy.deserializeFromStream(dis1);
-                            continue;
-                        }
-                        if (!indexTable.containsKey(entry2)) {
-                            entry2 = it2.hasNext() ? it2.next() : null;
-                            valueSerializationStrategy.deserializeFromStream(dis2);
-                            continue;
-                        }
-                        if (comparator.compare(entry1, entry2) <= 0) {
-                            newPart.keys.add(entry1);
-                            indexTable.put(entry1, new Address(newPart, (long) out.size()));
-                            valueSerializationStrategy.serializeToStream(
-                                    valueSerializationStrategy.deserializeFromStream(dis1), out);
-                            entry1 = it1.hasNext() ? it1.next() : null;
-                        } else { // if <=, поэтому из равных будет записан последний
-                            newPart.keys.add(entry2);
-                            indexTable.put(entry2, new Address(newPart, (long) out.size()));
-                            valueSerializationStrategy.serializeToStream(
-                                    valueSerializationStrategy.deserializeFromStream(dis2), out);
-                            entry2 = it2.hasNext() ? it2.next() : null;
-                        }
-                    }
-                    while (entry1 != null) {
-                        if (indexTable.containsKey(entry1)) {
-                            newPart.keys.add(entry1);
-                            indexTable.put(entry1, new Address(newPart, (long) out.size()));
-                            valueSerializationStrategy.serializeToStream(
-                                    valueSerializationStrategy.deserializeFromStream(dis1), out);
-                        } else {
-                            valueSerializationStrategy.deserializeFromStream(dis1);
-                        }
-                        entry1 = it1.hasNext() ? it1.next() : null;
-                    }
-                    while (entry2 != null) {
-                        if (indexTable.containsKey(entry2)) {
-                            newPart.keys.add(entry2);
-                            indexTable.put(entry2, new Address(newPart, (long) out.size()));
-                            valueSerializationStrategy.serializeToStream(
-                                    valueSerializationStrategy.deserializeFromStream(dis2), out);
-                        } else {
-                            valueSerializationStrategy.deserializeFromStream(dis2);
-                        }
-                        entry2 = it2.hasNext() ? it2.next() : null;
-                    }
-                } catch (SerializationException e) {
-                    throw new KVSException("Failed to dump SSTable to file", e);
-                }
-                out.flush();
-                out.close();
-
-                part1.raf.close();
-                part2.raf.close();
-                newPart.raf.close();
-                if (!part1.file.delete()) {
-                    throw new KVSException(
-                            String.format("Can't delete file %s", part1.file.getName()));
-                }
-                if (!part2.file.delete()) {
-                    throw new KVSException(
-                            String.format("Can't delete file %s", part2.file.getName()));
-                }
-                if (!newPart.file.renameTo(part1.file.getAbsoluteFile())) {
-                    throw new KVSException(
-                            String.format("Can't rename temp file %s", newPart.file.getName()));
-                }
-                newPart.file = part1.file;
-                newPart.raf = new RandomAccessFile(newPart.file, "rw");
-                newParts.addFirst(newPart);
+                newParts.addFirst(mergeTwoLastParts());
             }
             if (parts.size() > 0) {
                 newParts.addFirst(parts.getFirst());
             }
             parts = newParts;
         }
+
+        parts.addFirst(bigPart);
+        parts.addFirst(mergeTwoLastParts());
+    }
+
+    private Part mergeTwoLastParts() throws IOException
+    {
+        Part part2 = parts.getLast();
+        parts.pollLast();
+        Part part1 = parts.getLast();
+        parts.pollLast();
+
+        File tempFile = Paths.get(path, dbName + "Temp" + Consts.STORAGE_PART_SUFF).toFile();
+        if (!tempFile.createNewFile()) {
+            throw new KVSException("Temp file already exists");
+        }
+
+        Part newPart = new Part(new RandomAccessFile(tempFile, "rw"), tempFile);
+
+        DataOutputStream out = bdosFromRaf(newPart.raf, Consts.BUFFER_SIZE);
+        part1.raf.seek(0);
+        part2.raf.seek(0);
+        DataInputStream dis1 = bdisFromRaf(part1.raf, Consts.BUFFER_SIZE);
+        DataInputStream dis2 = bdisFromRaf(part2.raf, Consts.BUFFER_SIZE);
+
+        K entry1;
+        K entry2;
+        Iterator<K> it1 = part1.keys.iterator();
+        Iterator<K> it2 = part2.keys.iterator();
+        try {
+            entry1 = it1.hasNext() ? it1.next() : null;
+            entry2 = it2.hasNext() ? it2.next() : null;
+            while (entry1 != null && entry2 != null) {
+                if (!indexTable.containsKey(entry1)) {
+                    entry1 = it1.hasNext() ? it1.next() : null;
+                    valueSerializationStrategy.deserializeFromStream(dis1);
+                    continue;
+                }
+                if (!indexTable.containsKey(entry2)) {
+                    entry2 = it2.hasNext() ? it2.next() : null;
+                    valueSerializationStrategy.deserializeFromStream(dis2);
+                    continue;
+                }
+                if (comparator.compare(entry1, entry2) <= 0) {
+                    newPart.keys.add(entry1);
+                    indexTable.put(entry1, new Address(newPart, (long) out.size()));
+                    valueSerializationStrategy.serializeToStream(
+                            valueSerializationStrategy.deserializeFromStream(dis1), out);
+                    entry1 = it1.hasNext() ? it1.next() : null;
+                } else { // if <=, поэтому из равных будет записан последний
+                    newPart.keys.add(entry2);
+                    indexTable.put(entry2, new Address(newPart, (long) out.size()));
+                    valueSerializationStrategy.serializeToStream(
+                            valueSerializationStrategy.deserializeFromStream(dis2), out);
+                    entry2 = it2.hasNext() ? it2.next() : null;
+                }
+            }
+            while (entry1 != null) {
+                if (indexTable.containsKey(entry1)) {
+                    newPart.keys.add(entry1);
+                    indexTable.put(entry1, new Address(newPart, (long) out.size()));
+                    valueSerializationStrategy.serializeToStream(
+                            valueSerializationStrategy.deserializeFromStream(dis1), out);
+                } else {
+                    valueSerializationStrategy.deserializeFromStream(dis1);
+                }
+                entry1 = it1.hasNext() ? it1.next() : null;
+            }
+            while (entry2 != null) {
+                if (indexTable.containsKey(entry2)) {
+                    newPart.keys.add(entry2);
+                    indexTable.put(entry2, new Address(newPart, (long) out.size()));
+                    valueSerializationStrategy.serializeToStream(
+                            valueSerializationStrategy.deserializeFromStream(dis2), out);
+                } else {
+                    valueSerializationStrategy.deserializeFromStream(dis2);
+                }
+                entry2 = it2.hasNext() ? it2.next() : null;
+            }
+        } catch (SerializationException e) {
+            throw new KVSException("Failed to dump SSTable to file", e);
+        }
+        out.flush();
+        out.close();
+
+        part1.raf.close();
+        part2.raf.close();
+        newPart.raf.close();
+        if (!part1.file.delete()) {
+            throw new KVSException(
+                    String.format("Can't delete file %s", part1.file.getName()));
+        }
+        if (!part2.file.delete()) {
+            throw new KVSException(
+                    String.format("Can't delete file %s", part2.file.getName()));
+        }
+        if (!newPart.file.renameTo(part1.file.getAbsoluteFile())) {
+            throw new KVSException(
+                    String.format("Can't rename temp file %s", newPart.file.getName()));
+        }
+        newPart.file = part1.file;
+        newPart.raf = new RandomAccessFile(newPart.file, "rw");
+        return newPart;
     }
 
     private DataOutputStream bdosFromRaf(RandomAccessFile raf, int bufferSize) {
@@ -551,8 +523,8 @@ public class OptimizedKvs<K, V> implements
             Adler32 md;
             md = new Adler32();
             // Хэш файла ключей
-            try (InputStream is = new BufferedInputStream(new FileInputStream(
-                    Paths.get(path, dbName + Consts.KEY_STORAGE_NAME_SUFF).toFile()));
+            File keyFile = Paths.get(path, dbName + Consts.KEY_STORAGE_NAME_SUFF).toFile();
+            try (InputStream is = new BufferedInputStream(new FileInputStream(keyFile));
                  CheckedInputStream dis = new CheckedInputStream(is, md)) {
                 byte[] buf = new byte[8192];
                 int response;
@@ -565,9 +537,10 @@ public class OptimizedKvs<K, V> implements
             } catch (IOException e) {
                 throw new KVSException("Some IO error while reading hash");
             }
+
             // Хэш файла значений
-            try (InputStream is = new BufferedInputStream(new FileInputStream(
-                    Paths.get(path, dbName + Consts.VALUE_STORAGE_NAME_SUFF).toFile()));
+            File valueFile = Paths.get(path, dbName + Consts.VALUE_STORAGE_NAME_SUFF).toFile();
+            try (InputStream is = new BufferedInputStream(new FileInputStream(valueFile));
                  CheckedInputStream dis = new CheckedInputStream(is, md)) {
                 byte[] buf = new byte[8192];
                 int response;
