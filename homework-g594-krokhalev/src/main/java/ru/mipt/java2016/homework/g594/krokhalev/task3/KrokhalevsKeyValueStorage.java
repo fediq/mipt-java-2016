@@ -3,7 +3,8 @@ package ru.mipt.java2016.homework.g594.krokhalev.task2;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 
 import java.io.*;
-import java.util.*;
+import java.util.ConcurrentModificationException;
+import java.util.Iterator;
 
 import static java.io.File.separatorChar;
 
@@ -16,14 +17,14 @@ public class KrokhalevsKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private File keysFile;
     private File valuesFile;
 
-    private Serializer<K, V> serializer;
+    private Class<K> keyClass;
+    private Class<V> valueClass;
 
-    public KrokhalevsKeyValueStorage(String workDirectoryName, Class<K> keyClass, Class<V> valueClass) {
-        this(workDirectoryName, new StorageSerializer<K, V>(keyClass, valueClass));
-    }
+    KrokhalevsKeyValueStorage(String workDirectoryName, Class<K> keyClass, Class<V> valueClass) {
+        super();
 
-    public KrokhalevsKeyValueStorage(String workDirectoryName, Serializer serializer) {
-        this.serializer = serializer;
+        this.keyClass = keyClass;
+        this.valueClass = valueClass;
 
         File workDirectory = new File(workDirectoryName);
         storageFile = null;
@@ -66,7 +67,7 @@ public class KrokhalevsKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private boolean readBool(RandomAccessFile file) throws IOException {
         byte[] boolBuff = new byte[1];
         file.read(boolBuff);
-        return (boolean) serializer.deserialize(boolean.class, boolBuff);
+        return (boolean) Serializer.deserialize(boolean.class, boolBuff);
     }
 
     private byte[] readBytes(RandomAccessFile file) throws IOException {
@@ -81,21 +82,21 @@ public class KrokhalevsKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private int readInt(RandomAccessFile file) throws IOException {
         byte[] intBuff = new byte[4];
         file.read(intBuff);
-        return (int) serializer.deserialize(int.class, intBuff);
+        return (int) Serializer.deserialize(int.class, intBuff);
     }
 
     private long readLong(RandomAccessFile file) throws IOException {
         byte[] longBuff = new byte[8];
         file.read(longBuff);
-        return (long) serializer.deserialize(long.class, longBuff);
+        return (long) Serializer.deserialize(long.class, longBuff);
     }
 
     private K readKey(RandomAccessFile file) throws IOException {
-        return serializer.deserializeKey(readBytes(file));
+        return (K) Serializer.deserialize(keyClass, readBytes(file));
     }
 
     private V readValue(RandomAccessFile file) throws IOException {
-        return serializer.deserializeValue(readBytes(file));
+        return (V) Serializer.deserialize(valueClass, readBytes(file));
     }
 
     private void missNext(RandomAccessFile file) throws IOException {
@@ -113,7 +114,7 @@ public class KrokhalevsKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             byte[] keyBuff = new byte[size];
             file.read(keyBuff);
 
-            K currKey = serializer.deserializeKey(keyBuff);
+            K currKey = (K) Serializer.deserialize(keyClass, keyBuff);
 
             if (key.equals(currKey)) {
                 file.seek(file.getFilePointer() - size - 5);
@@ -191,7 +192,7 @@ public class KrokhalevsKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             valuesRAFile.seek(valuesRAFile.length());
 
             findKey(keysRAFile, key);
-            keysRAFile.write(serializer.serialize(false));
+            keysRAFile.write(Serializer.serialize(false));
             if (keysRAFile.getFilePointer() < keysRAFile.length()) {
 
                 missNext(keysRAFile);
@@ -199,21 +200,21 @@ public class KrokhalevsKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             } else {
                 byte[] keyBuff = null;
 
-                keyBuff = serializer.serialize(key);
+                keyBuff = Serializer.serialize(key);
 
-                keysRAFile.write(serializer.serialize(keyBuff.length));
+                keysRAFile.write(Serializer.serialize(keyBuff.length));
                 keysRAFile.write(keyBuff);
 
                 version++;
 
             }
-            keysRAFile.write(serializer.serialize(valuesRAFile.getFilePointer()));
+            keysRAFile.write(Serializer.serialize(valuesRAFile.getFilePointer()));
 
             byte[] valueBuff = null;
 
-            valueBuff = serializer.serialize(value);
+            valueBuff = Serializer.serialize(value);
 
-            valuesRAFile.write(serializer.serialize(valueBuff.length));
+            valuesRAFile.write(Serializer.serialize(valueBuff.length));
             valuesRAFile.write(valueBuff);
 
             keysRAFile.close();
@@ -237,7 +238,7 @@ public class KrokhalevsKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             if (file.getFilePointer() < file.length()) {
                 version++;
 
-                file.write(serializer.serialize(true));
+                file.write(Serializer.serialize(true));
             }
 
             file.close();
@@ -362,13 +363,13 @@ public class KrokhalevsKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
         while (storageRAFile.getFilePointer() < storageRAFile.length()) {
             byte[] tmp = readBytes(storageRAFile);
-            keysRAFile.write(serializer.serialize(false));
-            keysRAFile.write(serializer.serialize(tmp.length));
+            keysRAFile.write(Serializer.serialize(false));
+            keysRAFile.write(Serializer.serialize(tmp.length));
             keysRAFile.write(tmp);
-            keysRAFile.write(serializer.serialize(valuesRAFile.getFilePointer()));
+            keysRAFile.write(Serializer.serialize(valuesRAFile.getFilePointer()));
 
             tmp = readBytes(storageRAFile);
-            valuesRAFile.write(serializer.serialize(tmp.length));
+            valuesRAFile.write(Serializer.serialize(tmp.length));
             valuesRAFile.write(tmp);
         }
 
@@ -390,18 +391,16 @@ public class KrokhalevsKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             while (keysRAFile.getFilePointer() < keysRAFile.length()) {
                 boolean isDel = readBool(keysRAFile);
 
-
-
                 if (!isDel) {
                     byte[] tmp = readBytes(keysRAFile);
-                    storageRAFile.write(serializer.serialize(tmp.length));
+                    storageRAFile.write(Serializer.serialize(tmp.length));
                     storageRAFile.write(tmp);
 
                     long pos = readLong(keysRAFile);
 
                     valuesRAFile.seek(pos);
                     tmp = readBytes(valuesRAFile);
-                    storageRAFile.write(serializer.serialize(tmp.length));
+                    storageRAFile.write(Serializer.serialize(tmp.length));
                     storageRAFile.write(tmp);
                 } else {
                     missNext(keysRAFile);
