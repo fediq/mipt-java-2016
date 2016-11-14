@@ -1,39 +1,60 @@
 package ru.mipt.java2016.homework.g594.kozlov.task2;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.g594.kozlov.task2.serializer.SerializerInterface;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Created by Anatoly on 25.10.2016.
  */
 public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
 
-    private final FileWorker fileWorker;
+    private static final int CACHE_SIZE = 1000;
+
+    private int nextFileNum = 1;
+
+    private final FileWorker configFile;
+
+    private FileNames[] workFileNames = null;
 
     private final SerializerInterface<K> keySerializer;
 
     private final SerializerInterface<V> valueSerializer;
 
-    private final Map<K, ValueWrapper> tempStorage = new HashMap<K, ValueWrapper>();
+    private final Map<K, ValueWrapper> storageChanges = new TreeMap<K, ValueWrapper>();
 
-    private final Set<K> tempKeySet = new TreeSet<K>();
+    private LoadingCache<K, V> cacheValues = CacheBuilder.newBuilder()
+            .maximumSize(CACHE_SIZE * 10)
+            .build(
+                    new CacheLoader<K, V>() {
+                        @Override
+                        public V load(K k) throws StorageException {
+                            V result = loadKey(k);
+                            if (result == null) {
+                                throw new StorageException("no key");
+                            }
+                            return result;
+                        }
+                    });
 
-    private final Set<K> changedKeySet = new TreeSet<K>();
-
+    private Set<K> iterKeySet = null;
     private static final String VALIDATE_STRING = "itismyawesomestoragedontfakeit";
 
     private Boolean isClosedFlag = false;
 
     private class ValueWrapper {
-        ValueWrapper(int st, V obj) {
-            state = st;
+        ValueWrapper(boolean st, V obj) {
+            deleted = st;
             object = obj;
         }
-        int state = 0; //0 for not loaded, 1 loaded, 2 new kv pair, 3 value was changed, 4 value was deleted
+        boolean deleted = false; //0 for not loaded, 1 loaded, 2 new kv pair, 3 value was changed, 4 value was deleted
         V object = null;
     }
 
@@ -41,49 +62,69 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
                          SerializerInterface<V> valueSerializer) {
         this.keySerializer = keySerializer;
         this.valueSerializer = valueSerializer;
-        fileWorker = new FileWorker(dirPath + File.pathSeparator + "mystorage.db");
+        configFile = new FileWorker(dirPath + File.pathSeparator + "mydbconfig.db");
 
         try {
 
-            if (fileWorker.exists()) {
+            if (configFile.exists()) {
                 if (!validateFile()) {
                     throw new RuntimeException("Invalid File");
                 }
             }
         } catch (FileNotFoundException except) {
-            fileWorker.createFile();
-            flushTemp();
+            configFile.createFile();
+            writeSysInfo();
+        }
+    }
+
+    private static class FileNames implements Comparable<FileNames>{
+        public FileNames(String str, long time) {
+            fileName = str;
+            timest = time;
+        }
+        public String fileName;
+        public Long timest;
+
+        @Override
+        public int compareTo(FileNames other) {
+            return Long.compare(timest, other.timest);
         }
     }
 
     private boolean validateFile() throws FileNotFoundException {
-        String inputString = fileWorker.read();
-        String[] tokens = inputString.split("\n");
-        if (!tokens[0].equals(VALIDATE_STRING)) {
+        configFile.exists();
+        configFile.refresh();
+        String token = configFile.readNextToken();
+        if (token == null || !token.equals(VALIDATE_STRING)) {
             return false;
         }
-        if (!tokens[1].equals(keySerializer.getClassString())) {
+        token = configFile.readNextToken();
+        if (token == null || !token.equals(keySerializer.getClassString())) {
             return false;
         }
-        if (!tokens[2].equals(valueSerializer.getClassString())) {
+        token = configFile.readNextToken();
+        if (token == null || !token.equals(valueSerializer.getClassString())) {
             return false;
         }
-        int size = Integer.parseInt(tokens[3]);
-        tempStorage.clear();
-        for (int i = 0; i < size; ++i) {
-            try {
-                K str1 = keySerializer.deserialize(tokens[2 * i + 4]);
-                V str2 = valueSerializer.deserialize(tokens[2 * i + 5]);
-                tempStorage.put(str1, new ValueWrapper(1, str2));
-                tempKeySet.add(str1);
-            } catch (StorageException e) {
-                return false;
+        Vector<FileNames> vect = new Vector<>();
+        token = configFile.readNextToken();
+        while (token != null) {
+            String[] tokens = token.split("\n");
+            vect.add(new FileNames(tokens[0], Long.parseLong(tokens[1])));
+            int fileNum = Integer.parseInt(tokens[0].substring(8, tokens[0].length()));
+            if (fileNum > nextFileNum) {
+                nextFileNum = fileNum + 1;
             }
+            token = configFile.readNextToken();
         }
+        System.out.println(vect.size());
+        workFileNames = new FileNames[vect.size()];
+        vect.toArray(workFileNames);
+        Arrays.sort(workFileNames);
         return true;
     }
 
-    void isClosed() {
+    private void isClosed() {
         if (isClosedFlag) {
             throw new RuntimeException("Storage is closed");
         }
@@ -92,103 +133,177 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
     @Override
     public V read(K key) {
         isClosed();
-        ValueWrapper value = tempStorage.get(key);
-        if (value == null) {
-            return null;
+        ValueWrapper value = storageChanges.get(key);
+        if (value != null) {
+            return value.object;
         }
-        if (value.state == 0) {
-            loadKey(key);
-            value = tempStorage.get(key);
+        try {
+            return cacheValues.get(key);
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+            throw new RuntimeException("cache error");
         }
-        return value.object;
     }
 
     @Override
     public boolean exists(K key) {
         isClosed();
-        ValueWrapper value = tempStorage.get(key);
-        if (value == null || value.state == 4) {
-            return false;
-        } else {
-            return true;
+        if (iterKeySet == null) {
+            initKeySet();
         }
+        return iterKeySet.contains(key);
     }
 
     @Override
     public void write(K key, V value) {
-        isClosed();
-        ValueWrapper val = tempStorage.get(key);
-        if (val == null) {
-            tempStorage.put(key, new ValueWrapper(2, value));
-            changedKeySet.add(key);
-        } else {
-            tempStorage.remove(key);
-            val.state = 3;
-            val.object = value;
-            tempStorage.put(key, val);
-            changedKeySet.add(key);
+        if (!exists(key)) {
+            iterKeySet.add(key);
         }
-        flushTemp();
+        storageChanges.put(key, new ValueWrapper(false, value));
+        cacheValues.put(key, value);
+        changesCheck();
     }
 
     @Override
     public void delete(K key) {
-        isClosed();
-        ValueWrapper value = tempStorage.get(key);
-        tempStorage.remove(key);
-        value.state = 4;
-        value.object = null;
-        tempStorage.put(key, value);
-        changedKeySet.add(key);
-        flushTemp();
+        if (exists(key)) {
+            storageChanges.put(key, new ValueWrapper(true, null));
+            cacheValues.invalidate(key);
+            if (iterKeySet != null) {
+                iterKeySet.remove(key);
+            }
+            changesCheck();
+        }
     }
 
     @Override
     public Iterator<K> readKeys() {
         isClosed();
-        return tempStorage.keySet().iterator();
+        if (iterKeySet == null) {
+            initKeySet();
+        }
+        return iterKeySet.iterator();
     }
 
     @Override
     public int size() {
         isClosed();
-        return tempStorage.size();
+        if (iterKeySet == null) {
+            initKeySet();
+        }
+        return iterKeySet.size();
     }
 
     @Override
     public void close() {
+        if (iterKeySet != null) {
+            iterKeySet.clear();
+        }
         isClosedFlag = true;
+        flushTemp();
     }
 
-    private void loadKey(K key) {}
+    private void changesCheck() {
+        if (storageChanges.size() >= CACHE_SIZE) {
+            flushTemp();
+            storageChanges.clear();
+        }
+    }
+
+    private void initKeySet() {
+        try {
+            iterKeySet = new TreeSet<K>();
+            if (validateFile()) {
+                for (FileNames name: workFileNames) {
+                    System.out.println("checking file");
+                    Map<K, Long> map = loadKeysFrom(name.fileName);
+                    for (Map.Entry<K, Long> entry: map.entrySet()) {
+                        if (entry.getValue() == -1) {
+                            iterKeySet.remove(entry.getKey());
+                        } else {
+                            iterKeySet.add(entry.getKey());
+                        }
+                    }
+                }
+            } else {
+                throw new RuntimeException("Invalid File");
+            }
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private Map<K, Long> loadKeysFrom(String fileName) {
+        FileWorker file = new FileWorker(fileName + ".ind");
+        Map<K, Long> map = new TreeMap<K, Long>();
+        String nextKey = file.readNextToken();
+        while (nextKey != null) {
+            Long offset = file.readLong();
+            try {
+                map.put(keySerializer.deserialize(nextKey), offset);
+            } catch (StorageException e) {
+                throw new RuntimeException(e);
+            }
+            nextKey = file.readNextToken();
+        }
+        return map;
+    }
+
+    private V loadKey(K key) {
+        try {
+            if (validateFile()) {
+                for (int i = workFileNames.length - 1; i >= 0; --i) {
+                    FileNames name = workFileNames[i];
+                    Map<K, Long> map = loadKeysFrom(name.fileName);
+                    Long offset = map.get(key);
+                    if (offset != null) {
+                        if (offset == -1) {
+                            return null;
+                        } else {
+                            return valueSerializer.deserialize((new FileWorker(name.fileName + ".tab")).readFromOffset(offset));
+                        }
+                    }
+                }
+            } else {
+                throw new RuntimeException("Invalid File");
+            }
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        } catch (StorageException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
+    }
 
     private void writeSysInfo() {
-
+        configFile.refresh();
+        configFile.bufferedWrite(VALIDATE_STRING);
+        configFile.bufferedWrite(keySerializer.getClassString());
+        configFile.bufferedWrite(valueSerializer.getClassString());
     }
 
-    private void newFlushTemp() {
-        writeSysInfo();
-        int firstOffset = 0;
-        for (K key: changedKeySet) {
-            firstOffset += 8 + keySerializer.serialize(key).length();
-        }
 
-
-
-
-    }
 
     private void flushTemp() {
-        StringBuilder text = new StringBuilder(VALIDATE_STRING + "\n");
-        text.append(keySerializer.getClassString()).append('\n')
-                .append(valueSerializer.getClassString()).append('\n');
-        text.append(tempStorage.size()).append('\n');
-        for (Map.Entry<K, ValueWrapper> entry : tempStorage.entrySet()) {
-            text.append(keySerializer.serialize(entry.getKey()))
-                    .append('\n')
-                    .append(valueSerializer.serialize(entry.getValue().object))
-                    .append('\n');
+        String fileName = "mydbfile" + Integer.toString(nextFileNum++);;
+        FileWorker valueFile = new FileWorker(fileName + ".tab");
+        FileWorker indFile = new FileWorker(fileName + ".ind");
+        long currOffset = 0;
+        valueFile.createFile();
+        indFile.createFile();
+        for (Map.Entry<K, ValueWrapper> entry : storageChanges.entrySet()) {
+            indFile.bufferedWrite(keySerializer.serialize(entry.getKey()));
+            currOffset += valueFile.bufferedWrite(keySerializer.serialize(entry.getKey()));
+            indFile.bufferedWriteOffset(entry.getValue().deleted ? -1 : currOffset);
+            currOffset += valueFile.bufferedWrite(entry.getValue().deleted ? "tombstone" :
+                    valueSerializer.serialize(entry.getValue().object));
         }
-        fileWorker.write(text.toString());
+        indFile.bufferedWriteSubmit();
+        indFile.bufferedWriteSubmit();
+        addToConfig(fileName);
+    }
+
+    private void addToConfig(String str) {
+        configFile.append(str +'\n' + Long.toString(System.currentTimeMillis()));
     }
 }
