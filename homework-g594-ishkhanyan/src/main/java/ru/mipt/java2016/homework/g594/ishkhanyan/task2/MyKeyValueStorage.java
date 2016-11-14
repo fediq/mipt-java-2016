@@ -18,7 +18,7 @@ public class MyKeyValueStorage<Key, Value> implements KeyValueStorage<Key, Value
     private String fullPath;
     private boolean isOpen;
 
-    public MyKeyValueStorage(String path, String keyT, String valueT) throws IOException {
+    public MyKeyValueStorage(String path, String keyT, String valueT) throws Exception {
         keyType = keyT;
         valueType = valueT;
         pathDirectory = path;
@@ -33,44 +33,8 @@ public class MyKeyValueStorage<Key, Value> implements KeyValueStorage<Key, Value
         fullPath = pathDirectory + File.separator + "MyStorage";
         isOpen = true;
 
-        switch (keyType) {
-            case "Integer":
-                keySerializator = new MyIntSerialization();
-                break;
-            case "Double":
-                keySerializator = new MyDoubleSerialization();
-                break;
-            case "String":
-                keySerializator = new MyStringSerialization();
-                break;
-            case "Student":
-                keySerializator = new MyStudentSerialization();
-                break;
-            case "StudentKey":
-                keySerializator = new MyStudentKeySerialization();
-                break;
-            default:
-                break;
-        }
-        switch (valueType) {
-            case "Integer":
-                valueSerializator = new MyIntSerialization();
-                break;
-            case "Double":
-                valueSerializator = new MyDoubleSerialization();
-                break;
-            case "String":
-                valueSerializator = new MyStringSerialization();
-                break;
-            case "Student":
-                valueSerializator = new MyStudentSerialization();
-                break;
-            case "StudentKey":
-                valueSerializator = new MyStudentKeySerialization();
-                break;
-            default:
-                break;
-        }
+        keySerializator = Serializations.takeSerializer(keyType);
+        valueSerializator = Serializations.takeSerializer(valueType);
 
         File file2 = new File(fullPath);
         if (!file2.exists()) {

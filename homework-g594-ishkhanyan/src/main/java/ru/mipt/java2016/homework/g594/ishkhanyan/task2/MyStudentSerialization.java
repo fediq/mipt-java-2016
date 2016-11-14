@@ -7,9 +7,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Date;
 
-/**
- * Created by ${Semien} on ${30.10.16}.
- */
+
 public class MyStudentSerialization implements MySerialization<Student> {
     @Override
     public void writeToFile(Student object, DataOutputStream file) throws IOException {

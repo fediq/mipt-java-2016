@@ -14,6 +14,8 @@ public class MyKeyValueStorageTests extends AbstractSingleFileStorageTest {
             return new MyKeyValueStorage<>(path, "String", "String");
         } catch (IOException e) {
             e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         return null;
     }
@@ -21,8 +23,10 @@ public class MyKeyValueStorageTests extends AbstractSingleFileStorageTest {
     @Override
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) {
         try {
-            return new MyKeyValueStorage<>(path, "Integer", "Double");
+            return new MyKeyValueStorage<>(path,"Integer", "Double");
         } catch (IOException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
@@ -33,6 +37,8 @@ public class MyKeyValueStorageTests extends AbstractSingleFileStorageTest {
         try {
             return new MyKeyValueStorage<>(path, "StudentKey", "Student");
         } catch (IOException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return null;

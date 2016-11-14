@@ -6,9 +6,6 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-/**
- * Created by ${Semien} on ${30.10.16}.
- */
 public class MyStudentKeySerialization implements MySerialization<StudentKey> {
 
     @Override
