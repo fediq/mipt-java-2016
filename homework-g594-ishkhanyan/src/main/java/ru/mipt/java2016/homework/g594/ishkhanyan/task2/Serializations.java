@@ -12,10 +12,6 @@ public class Serializations {
                 return new MyDoubleSerialization();
             case "String":
                 return new MyStringSerialization();
-            case "Student":
-                return new MyStudentSerialization();
-            case "StudentKey":
-                return new MyStudentKeySerialization();
             default:
                 throw new Exception("invalid type");
         }
