@@ -1,7 +1,13 @@
-package ru.mipt.java2016.homework.g594.petrov.task2;
+package ru.mipt.java2016.homework.g594.petrov.task3;
 
+/**
+ * Created by philipp on 14.11.16.
+ */
+
+
+import java.io.DataInputStream;
+import java.io.FileInputStream;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
-
 import java.io.*;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -11,17 +17,10 @@ import java.util.Iterator;
  */
 
 public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
-    private final HashMap<K, V> keyValueStorage;
-    private final String directory;
-    private final InterfaceSerialization<K> keySerialization;
-    private final InterfaceSerialization<V> valueSerialization;
-    private final String typeOfData;
-    private boolean isOpen;
-
     public MegaKeyValueStorage(String path, String dataType, InterfaceSerialization<K> keySerialization,
                                InterfaceSerialization<V> valueSerialization) {
         isOpen = true;
-        directory = path + File.separator + "storage.db";
+        directory = path + "/storage.db";
         keyValueStorage = new HashMap<>();
         typeOfData = dataType;
         this.keySerialization = keySerialization;
@@ -30,7 +29,7 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         if (!storage.exists()) {
             try {
                 storage.createNewFile();
-            } catch (IOException|SecurityException e) {
+            } catch (Exception e) {
                 throw new IllegalStateException(e.getMessage(), e.getCause());
             }
         } else {
@@ -46,7 +45,7 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                     keyValueStorage.put(key, value);
                 }
                 storageInput.close();
-            } catch (IllegalStateException|IOException e) {
+            } catch (Exception e) {
                 throw new IllegalStateException("Invalid storage format", e.getCause());
             }
 
@@ -102,7 +101,7 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     @Override
-    public void close() throws IllegalStateException {
+    public void close() throws IOException {
         if (!isOpen) {
             throw new IllegalStateException("You can't use KVS when it's closed");
         }
@@ -120,4 +119,12 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
+
+    private final HashMap<K, V> keyValueStorage;
+    private final String directory;
+    private final InterfaceSerialization<K> keySerialization;
+    private final InterfaceSerialization<V> valueSerialization;
+    private final String typeOfData;
+    private boolean isOpen;
 }
+
