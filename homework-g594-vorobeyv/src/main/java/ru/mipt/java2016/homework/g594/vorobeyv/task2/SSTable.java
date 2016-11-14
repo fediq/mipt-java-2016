@@ -39,6 +39,7 @@ public class SSTable<K, V> {
         int size = index.size();
 
         output.writeInt(size);
+
         for (Map.Entry<K, V> entry : index.entrySet()) {
             kSerializator.write(output, entry.getKey());
             valSerializator.write(output, entry.getValue());
