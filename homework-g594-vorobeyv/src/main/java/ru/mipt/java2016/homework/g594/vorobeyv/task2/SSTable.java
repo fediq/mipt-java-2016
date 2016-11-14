@@ -38,6 +38,7 @@ public class SSTable<K, V> {
 
         output.writeUTF("Myfile");
         int size = index.size();
+
         output.writeInt(size);
         for (Map.Entry<K, V> entry : index.entrySet()) {
             kSerializator.write(output, entry.getKey());
