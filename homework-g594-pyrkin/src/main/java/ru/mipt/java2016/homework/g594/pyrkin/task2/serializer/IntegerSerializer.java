@@ -8,9 +8,11 @@ import java.nio.ByteBuffer;
  */
 public class IntegerSerializer implements SerializerInterface<Integer> {
 
+    private static final int SIZE = Integer.SIZE / 8;
+
     @Override
     public int sizeOfSerialize(Integer object) {
-        return Integer.SIZE / 8;
+        return SIZE;
     }
 
     @Override

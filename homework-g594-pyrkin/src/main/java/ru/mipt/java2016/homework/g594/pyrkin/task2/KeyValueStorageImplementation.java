@@ -4,7 +4,6 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.g594.pyrkin.task2.serializer.SerializerInterface;
 
 
-import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -78,6 +77,7 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
         checkClosed();
         isClosed = true;
         writeStorageToFile();
+        fileWorker.close();
     }
 
     private int readFieldSize() throws IOException {
@@ -91,11 +91,11 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
     private void readAllFile() throws IOException {
         while (true) {
             int size;
-            try {
-                size = readFieldSize();
-            } catch (EOFException e) {
+            size = readFieldSize();
+            if (size <= 0) {
                 break;
             }
+
             K key = keySerializer.deserialize(readField(size));
             size = readFieldSize();
             V value = valueSerializer.deserialize(readField(size));

@@ -1,8 +1,6 @@
 package ru.mipt.java2016.homework.g594.pyrkin.task2;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.file.NotDirectoryException;
 
@@ -14,7 +12,8 @@ public class FileWorker {
 
     private final File file;
 
-    private RandomAccessFile randomAccessFile;
+    private final BufferedInputStream inputStream;
+    private BufferedOutputStream outputStream;
 
     public FileWorker(String directoryPath, String fileName) throws IOException {
         File directory = new File(directoryPath);
@@ -23,7 +22,7 @@ public class FileWorker {
         }
         file = new File(directoryPath, fileName);
         file.createNewFile();
-        randomAccessFile = new RandomAccessFile(file, "r");
+        inputStream = new BufferedInputStream(new FileInputStream(file));
     }
 
     public ByteBuffer read(int bytesToRead) throws IOException {
@@ -31,7 +30,7 @@ public class FileWorker {
 
         while (bytesToRead != 0) {
             --bytesToRead;
-            resultBuffer.put(randomAccessFile.readByte());
+            resultBuffer.put((byte) inputStream.read());
         }
 
         resultBuffer.rewind();
@@ -39,21 +38,31 @@ public class FileWorker {
     }
 
     public int read() throws IOException {
-        return randomAccessFile.readInt();
+        int result = 0;
+        for (int i = 0; i < 4; ++i) {
+            result = result * 8 + inputStream.read();
+        }
+        return result;
     }
 
     public void write(ByteBuffer buffer) throws IOException {
-        randomAccessFile.write(buffer.array());
+        outputStream.write(buffer.array());
     }
 
     public void write(int size) throws IOException {
-        randomAccessFile.writeInt(size);
+        ByteBuffer buffer = ByteBuffer.allocate(Integer.SIZE / 8);
+        buffer.putInt(size);
+        outputStream.write(buffer.array());
     }
 
     public void clear() throws IOException {
-        randomAccessFile.close();
+        inputStream.close();
         file.delete();
         file.createNewFile();
-        randomAccessFile = new RandomAccessFile(file, "rw");
+        outputStream = new BufferedOutputStream(new FileOutputStream(file));
+    }
+
+    public void close() throws IOException {
+        outputStream.close();
     }
 }

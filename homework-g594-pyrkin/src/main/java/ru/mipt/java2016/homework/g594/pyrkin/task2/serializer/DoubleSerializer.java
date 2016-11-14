@@ -8,9 +8,11 @@ import java.nio.ByteBuffer;
  */
 public class DoubleSerializer implements SerializerInterface<Double> {
 
+    private static final int SIZE = Double.SIZE / 8;
+
     @Override
     public int sizeOfSerialize(Double object) {
-        return Double.SIZE / 8;
+        return SIZE;
     }
 
     @Override
