@@ -12,9 +12,9 @@ public class LazyMergedKeyValueStorageFileNode {
         set(file, offset);
     }
 
-    public void set(long file, long offset) {
-        this.file = file;
-        this.offset = offset;
+    public void set(long fileIndex, long offsetValue) {
+        this.file = fileIndex;
+        this.offset = offsetValue;
     }
 
     public long getFile() {

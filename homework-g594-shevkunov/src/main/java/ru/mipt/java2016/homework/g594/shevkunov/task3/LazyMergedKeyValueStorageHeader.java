@@ -33,7 +33,7 @@ class LazyMergedKeyValueStorageHeader<K, V> {
         if (createdByConstructor) { // New Storage
             fileHDR = tryFileHDR;
             dataFilesCount = 1;
-            dataFileSizes.add((long)0);
+            dataFileSizes.add((long) 0);
             lazyPointers = 0;
             write();
         }
@@ -48,7 +48,7 @@ class LazyMergedKeyValueStorageHeader<K, V> {
         }
 
         dataFilesCount = readLong(in);
-        dataFileSizes.setSize((int)dataFilesCount);
+        dataFileSizes.setSize((int) dataFilesCount);
         for (int i = 0; i < dataFileSizes.size(); ++i) {
             dataFileSizes.set(i, readLong(in));
         }
@@ -71,9 +71,9 @@ class LazyMergedKeyValueStorageHeader<K, V> {
     }
 
     private LazyMergedKeyValueStorageFileNode readFileNode(FileInputStream in) throws IOException {
-        long file = readLong(in);
+        long fileIndex = readLong(in);
         long offset = readLong(in);
-        return new LazyMergedKeyValueStorageFileNode(file, offset);
+        return new LazyMergedKeyValueStorageFileNode(fileIndex, offset);
     }
 
     public Map<K, LazyMergedKeyValueStorageFileNode> getMap() {
@@ -92,7 +92,7 @@ class LazyMergedKeyValueStorageHeader<K, V> {
     public void deleteKey(K key) {
         LazyMergedKeyValueStorageFileNode pointer = pointers.get(key);
         pointers.remove(key);
-        dataFileSizes.set((int)pointer.getFile(), dataFileSizes.get((int)pointer.getFile()) - 1);
+        dataFileSizes.set((int) pointer.getFile(), dataFileSizes.get((int) pointer.getFile()) - 1);
         lazyPointers++;
     }
 
@@ -109,7 +109,7 @@ class LazyMergedKeyValueStorageHeader<K, V> {
 
         out.write(keySerializator.toBytes((int) dataFilesCount));
         for (int i = 0; i < dataFileSizes.size(); ++i) {
-            out.write(keySerializator.toBytes((int)((long) dataFileSizes.get(i))));
+            out.write(keySerializator.toBytes((int) ((long) dataFileSizes.get(i))));
         }
         out.write(keySerializator.toBytes((Integer) pointers.size()));
 

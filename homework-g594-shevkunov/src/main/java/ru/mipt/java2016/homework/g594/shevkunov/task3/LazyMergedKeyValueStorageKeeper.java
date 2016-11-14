@@ -44,7 +44,7 @@ public class LazyMergedKeyValueStorageKeeper<K, V> {
     }
 
     public V read(LazyMergedKeyValueStorageFileNode pointer) throws IOException {
-        return loadFromFile(dataFiles.get((int)pointer.getFile()), pointer.getOffset());
+        return loadFromFile(dataFiles.get((int) pointer.getFile()), pointer.getOffset());
     }
 
     private long writeToFile(RandomAccessFile out, V value) throws IOException {
