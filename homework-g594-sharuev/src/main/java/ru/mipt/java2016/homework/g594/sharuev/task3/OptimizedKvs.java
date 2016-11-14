@@ -401,8 +401,7 @@ public class OptimizedKvs<K, V> implements
         parts.addFirst(mergeTwoLastParts());
     }
 
-    private Part mergeTwoLastParts() throws IOException
-    {
+    private Part mergeTwoLastParts() throws IOException {
         Part part2 = parts.getLast();
         parts.pollLast();
         Part part1 = parts.getLast();
@@ -549,7 +548,8 @@ public class OptimizedKvs<K, V> implements
                 } while (response != -1);
             } catch (FileNotFoundException e) {
                 throw new KVSException(
-                        String.format("Can't find file %s", dbName + Consts.VALUE_STORAGE_NAME_SUFF));
+                        String.format("Can't find file %s",
+                                dbName + Consts.VALUE_STORAGE_NAME_SUFF));
             } catch (IOException e) {
                 throw new KVSException("Some IO error while reading hash");
             }
@@ -577,7 +577,8 @@ public class OptimizedKvs<K, V> implements
                 }
             } catch (FileNotFoundException e) {
                 throw new KVSException(
-                        String.format("Can't find hash file %s", dbName + Consts.STORAGE_HASH_SUFF));
+                        String.format("Can't find hash file %s",
+                                dbName + Consts.STORAGE_HASH_SUFF));
             } catch (IOException e) {
                 throw new KVSException("Some IO error while reading hash");
             }
@@ -594,7 +595,8 @@ public class OptimizedKvs<K, V> implements
 
             } catch (FileNotFoundException e) {
                 throw new KVSException(
-                        String.format("Can't find hash file %s", dbName + Consts.STORAGE_HASH_SUFF));
+                        String.format("Can't find hash file %s",
+                                dbName + Consts.STORAGE_HASH_SUFF));
             } catch (IOException e) {
                 throw new KVSException("Some IO error while reading hash");
             }
@@ -603,17 +605,17 @@ public class OptimizedKvs<K, V> implements
 
     private static final class Consts {
         // Формат файла: V значение, ...
-        private static final  String VALUE_STORAGE_NAME_SUFF = "ValueStorage.db";
+        private static final String VALUE_STORAGE_NAME_SUFF = "ValueStorage.db";
         // Формат файла: long количество ключей, K ключ, long сдвиг, ...
-        private static final  String KEY_STORAGE_NAME_SUFF = "KeyStorage.db";
-        private static final  String STORAGE_HASH_SUFF = "StorageHash.db";
+        private static final String KEY_STORAGE_NAME_SUFF = "KeyStorage.db";
+        private static final String STORAGE_HASH_SUFF = "StorageHash.db";
         private static final String STORAGE_PART_SUFF = "Part.db";
-        private static final  String STORAGE_LOCK_SUFF = "Lock.db";
-        private static final  int CACHE_SIZE = 1;
-        private static final  int DUMP_THRESHOLD = 1000;
-        private static final  int MERGE_THRESHOLD = 100;
+        private static final String STORAGE_LOCK_SUFF = "Lock.db";
+        private static final int CACHE_SIZE = 1;
+        private static final int DUMP_THRESHOLD = 1000;
+        private static final int MERGE_THRESHOLD = 100;
         //private final static int KeySize = 64;
-        private static final  int VALUE_SIZE = 8192;
+        private static final int VALUE_SIZE = 8192;
         private static final int BUFFER_SIZE = VALUE_SIZE * 2;
     }
 }
