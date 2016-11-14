@@ -1,6 +1,7 @@
 package ru.mipt.java2016.homework.tests.task3;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import ru.mipt.java2016.homework.tests.task2.AbstractSingleFileStorageTest;
 import ru.mipt.java2016.homework.tests.task2.StorageTestUtils;
@@ -19,7 +20,8 @@ import static ru.mipt.java2016.homework.tests.task3.PerformanceTestUtils.randomV
 public abstract class KeyValueStoragePerformanceTest extends AbstractSingleFileStorageTest {
 
     protected final void print(String s, Object... args) {
-        System.out.println(String.format("PERFORMANCE: " + s + " (for [" + getClass().getName() + "])", args));
+        System.out.println(
+                String.format("PERFORMANCE: " + s + " (for [" + getClass().getName() + "])", args));
     }
 
     @Test
@@ -150,6 +152,7 @@ public abstract class KeyValueStoragePerformanceTest extends AbstractSingleFileS
 
     // Вы можете пометить этот тест как @Ignored во время отладки, если он занимает у вас слишком много времени
     @Test
+    @Ignore
     public void measure100kWDump100kR() {
         AtomicLong summaryWriteTime = new AtomicLong(0L);
         AtomicLong summaryReadTime = new AtomicLong(0L);
@@ -160,6 +163,9 @@ public abstract class KeyValueStoragePerformanceTest extends AbstractSingleFileS
                     Random random = new Random(42);
                     long writeTime = StorageTestUtils.measureTime(() -> {
                         for (int i = 0; i < 100000; ++i) {
+                            if (i % 10000 == 0) {
+                                System.out.print(i + "writes\n");
+                            }
                             String key = randomKey(random);
                             String value = randomValue(random);
                             storage.write(key, value);
@@ -172,6 +178,9 @@ public abstract class KeyValueStoragePerformanceTest extends AbstractSingleFileS
                     Random random = new Random(42);
                     long readTime = StorageTestUtils.measureTime(() -> {
                         for (int i = 0; i < 100000; ++i) {
+                            if (i % 10000 == 0) {
+                                System.out.print(i + "reads\n");
+                            }
                             String key = randomKey(random);
                             String value = randomValue(random);
                             Assert.assertEquals(value, storage.read(key));
@@ -190,7 +199,6 @@ public abstract class KeyValueStoragePerformanceTest extends AbstractSingleFileS
         print("%5d Reads per second from 100k", readsPerSecond);
         print("%5d millis for single 100kW 100kR iteration", iterationTimeMillis);
     }
-
 
     @Test
     public void measure10W20Rx1k() {
@@ -216,12 +224,14 @@ public abstract class KeyValueStoragePerformanceTest extends AbstractSingleFileS
                             long readTime = StorageTestUtils.measureTime(() -> {
                                 for (int i = 0; i < 20; ++i) {
                                     String key = randomKey(readRandom);
-                                    String value = randomValue(readRandom); // Not used, just to fit load balance
+                                    String value = randomValue(
+                                            readRandom); // Not used, just to fit load balance
                                     Assert.assertNotNull(storage.read(key));
                                 }
                             });
                             summaryReadTime.addAndGet(readTime);
-                            if (Arrays.asList(1, 3, 7, 15, 31, 63, 127, 255, 511).contains(generation)) {
+                            if (Arrays.asList(1, 3, 7, 15, 31, 63, 127, 255, 511).contains(
+                                    generation)) {
                                 readRandom.setSeed(42);
                             }
                         }
@@ -263,7 +273,8 @@ public abstract class KeyValueStoragePerformanceTest extends AbstractSingleFileS
                         long readTime = StorageTestUtils.measureTime(() -> {
                             for (int i = 0; i < 100; ++i) {
                                 String key = randomKey(readRandom);
-                                String value = randomValue(readRandom); // Not used, just to fit load balance
+                                String value = randomValue(
+                                        readRandom); // Not used, just to fit load balance
                                 Assert.assertNotNull(storage.read(key));
                             }
                         });
