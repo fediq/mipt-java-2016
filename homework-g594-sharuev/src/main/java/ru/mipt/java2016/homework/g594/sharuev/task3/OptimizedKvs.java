@@ -37,7 +37,8 @@ public class OptimizedKvs<K, V> implements
             dis = bdisFromRaf(raf, Consts.VALUE_SIZE);
             dis.mark(Consts.BUFFER_SIZE);
             curPos = 0;
-            keys = new ArrayList<K>();
+            keys = new ArrayList<>();
+            offsets = new ArrayList<>();
         }
 
         private RandomAccessFile raf;
@@ -45,6 +46,7 @@ public class OptimizedKvs<K, V> implements
         private DataInputStream dis;
         private long curPos;
         private ArrayList<K> keys;
+        private ArrayList<Integer> offsets;
 
         public V read(long offset) {
             try {
@@ -212,7 +214,7 @@ public class OptimizedKvs<K, V> implements
 
     /**
      * Вставка пары ключ-значение.
-     * Сложность O(TODO)
+     * Сложность O(log(N))
      *
      * @param key
      * @param value
@@ -326,6 +328,7 @@ public class OptimizedKvs<K, V> implements
                 try {
                     indexTable.put(entry.getKey(), new Address(nextPart, dataOutputStream.size()));
                     nextPart.keys.add(entry.getKey());
+                    nextPart.offsets.add(dataOutputStream.size());
                     valueSerializationStrategy.serializeToStream(entry.getValue(),
                             dataOutputStream);
                 } catch (SerializationException e) {
@@ -376,6 +379,7 @@ public class OptimizedKvs<K, V> implements
      * Смерживание двух частей в одну.
      * Берутся две части из начала дека, мержатся и итоговая часть кладётся в начало дека.
      * Мержатся они при помощи временного файла, который в конце переименовывается в имя первого из сливавшихся файлов.
+     * Сложность O(Nlog(N))
      *
      * @throws IOException
      */
@@ -399,6 +403,12 @@ public class OptimizedKvs<K, V> implements
 
         parts.addFirst(bigPart);
         parts.addFirst(mergeTwoLastParts());
+
+        indexTable.clear();
+        for (int i = 0; i < parts.getFirst().keys.size(); ++i) {
+            indexTable.put(parts.getFirst().keys.get(i),
+                    new Address(parts.getFirst(), parts.getFirst().offsets.get(i)));
+        }
     }
 
     private Part mergeTwoLastParts() throws IOException {
@@ -440,13 +450,15 @@ public class OptimizedKvs<K, V> implements
                 }
                 if (comparator.compare(entry1, entry2) <= 0) {
                     newPart.keys.add(entry1);
-                    indexTable.put(entry1, new Address(newPart, (long) out.size()));
+                    newPart.offsets.add(out.size());
+                    //indexTable.put(entry1, new Address(newPart, (long) out.size()));
                     valueSerializationStrategy.serializeToStream(
                             valueSerializationStrategy.deserializeFromStream(dis1), out);
                     entry1 = it1.hasNext() ? it1.next() : null;
                 } else { // if <=, поэтому из равных будет записан последний
                     newPart.keys.add(entry2);
-                    indexTable.put(entry2, new Address(newPart, (long) out.size()));
+                    newPart.offsets.add(out.size());
+                    //indexTable.put(entry2, new Address(newPart, (long) out.size()));
                     valueSerializationStrategy.serializeToStream(
                             valueSerializationStrategy.deserializeFromStream(dis2), out);
                     entry2 = it2.hasNext() ? it2.next() : null;
@@ -455,7 +467,8 @@ public class OptimizedKvs<K, V> implements
             while (entry1 != null) {
                 if (indexTable.containsKey(entry1)) {
                     newPart.keys.add(entry1);
-                    indexTable.put(entry1, new Address(newPart, (long) out.size()));
+                    newPart.offsets.add(out.size());
+                    //indexTable.put(entry1, new Address(newPart, (long) out.size()));
                     valueSerializationStrategy.serializeToStream(
                             valueSerializationStrategy.deserializeFromStream(dis1), out);
                 } else {
@@ -466,7 +479,8 @@ public class OptimizedKvs<K, V> implements
             while (entry2 != null) {
                 if (indexTable.containsKey(entry2)) {
                     newPart.keys.add(entry2);
-                    indexTable.put(entry2, new Address(newPart, (long) out.size()));
+                    newPart.offsets.add(out.size());
+                    //indexTable.put(entry2, new Address(newPart, (long) out.size()));
                     valueSerializationStrategy.serializeToStream(
                             valueSerializationStrategy.deserializeFromStream(dis2), out);
                 } else {
