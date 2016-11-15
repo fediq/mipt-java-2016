@@ -102,7 +102,7 @@ public class CKeyValueStorage<KeyType, ValueType> implements KeyValueStorage<Key
         flush();
     }
 
-    private void flush() {
+    public void flush() {
         StringBuilder stringBuilder
                 = new StringBuilder(VALIDATION_STRING + ";\n");
         stringBuilder.append(keyName).append(";\n")

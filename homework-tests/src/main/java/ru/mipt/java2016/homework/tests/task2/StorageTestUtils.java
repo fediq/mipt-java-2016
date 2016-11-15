@@ -69,4 +69,16 @@ public class StorageTestUtils {
             throw new AssertionError("Collections doesn't match");
         }
     }
+
+    public static long measureTime(Measureable function) {
+        long startTime = System.currentTimeMillis();
+        function.doSomething();
+        long endTime = System.currentTimeMillis();
+        return endTime - startTime;
+    }
+
+    @FunctionalInterface
+    public interface Measureable {
+        void doSomething();
+    }
 }
