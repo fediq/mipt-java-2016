@@ -20,7 +20,7 @@ import static ru.mipt.java2016.homework.tests.task2.StorageTestUtils.doInTempDir
  */
 public class SimpleSingleFileStorageTest extends AbstractSingleFileStorageTest {
 
-    protected static final SerializationStrategy<StudentKey> FOR_STUDENT_KEY = new SerializationStrategy<StudentKey>() {
+    private static final SerializationStrategy<StudentKey> FOR_STUDENT_KEY = new SerializationStrategy<StudentKey>() {
         @Override
         public void serializeToStream(StudentKey studentKey, DataOutputStream output) throws IOException {
             output.writeInt(studentKey.getGroupId());
@@ -33,7 +33,7 @@ public class SimpleSingleFileStorageTest extends AbstractSingleFileStorageTest {
         }
     };
 
-    protected static final SerializationStrategy<Student> FOR_STUDENT = new SerializationStrategy<Student>() {
+    private static final SerializationStrategy<Student> FOR_STUDENT = new SerializationStrategy<Student>() {
         @Override
         public void serializeToStream(Student student, DataOutputStream output) throws IOException {
             output.writeInt(student.getGroupId());
