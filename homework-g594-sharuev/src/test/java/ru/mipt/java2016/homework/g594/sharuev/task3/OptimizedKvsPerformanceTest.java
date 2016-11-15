@@ -11,7 +11,7 @@ public class OptimizedKvsPerformanceTest extends KeyValueStoragePerformanceTest 
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(
             String path) throws MalformedDataException {
-        return new OptimizedKvs<String, String>(path,
+        return new BinaryTreeOptimizedKvs<String, String>(path,
                 new StringSerializer(), new StringSerializer(),
                 new StringComparator());
         /*new OptimizedKvs<String, String>(path,
@@ -22,7 +22,7 @@ public class OptimizedKvsPerformanceTest extends KeyValueStoragePerformanceTest 
     @Override
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(
             String path) throws MalformedDataException {
-        return new OptimizedKvs<Integer, Double>(path,
+        return new BinaryTreeOptimizedKvs<Integer, Double>(path,
                 new POJOSerializer<Integer>(Integer.class),
                 new POJOSerializer<Double>(Double.class),
                 new POJOComparator<>(Integer.class));
@@ -31,7 +31,7 @@ public class OptimizedKvsPerformanceTest extends KeyValueStoragePerformanceTest 
     @Override
     protected KeyValueStorage<StudentKey, Student> buildPojoStorage(
             String path) throws MalformedDataException {
-        return new OptimizedKvs<StudentKey, Student>(path,
+        return new BinaryTreeOptimizedKvs<StudentKey, Student>(path,
                 new POJOSerializer<StudentKey>(StudentKey.class),
                 new POJOSerializer<Student>(Student.class),
                 new POJOComparator<>(StudentKey.class));

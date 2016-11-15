@@ -10,7 +10,7 @@ public class OptimizedKvsTest extends AbstractSingleFileStorageTest {
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(
             String path) throws MalformedDataException {
-        return new OptimizedKvs<String, String>(path,
+        return new KWayOptimizedKvs<String, String>(path,
                 new StringSerializer(), new StringSerializer(),
                 new StringComparator());
         /*new OptimizedKvs<String, String>(path,
@@ -21,7 +21,7 @@ public class OptimizedKvsTest extends AbstractSingleFileStorageTest {
     @Override
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(
             String path) throws MalformedDataException {
-        return new OptimizedKvs<Integer, Double>(path,
+        return new KWayOptimizedKvs<Integer, Double>(path,
                 new POJOSerializer<Integer>(Integer.class),
                 new POJOSerializer<Double>(Double.class),
                 new POJOComparator<>(Integer.class));
@@ -30,7 +30,7 @@ public class OptimizedKvsTest extends AbstractSingleFileStorageTest {
     @Override
     protected KeyValueStorage<StudentKey, Student> buildPojoStorage(
             String path) throws MalformedDataException {
-        return new OptimizedKvs<StudentKey, Student>(path,
+        return new KWayOptimizedKvs<StudentKey, Student>(path,
                 new POJOSerializer<StudentKey>(StudentKey.class),
                 new POJOSerializer<Student>(Student.class),
                 new POJOComparator<>(StudentKey.class));

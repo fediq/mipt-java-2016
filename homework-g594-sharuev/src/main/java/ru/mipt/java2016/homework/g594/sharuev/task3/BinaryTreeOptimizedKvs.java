@@ -2,17 +2,19 @@ package ru.mipt.java2016.homework.g594.sharuev.task3;
 
 import java.io.*;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Comparator;
+import java.util.Deque;
+import java.util.Iterator;
 
-import ru.mipt.java2016.homework.g594.sharuev.task3.OptimizedKvs;
+public class BinaryTreeOptimizedKvs<K, V> extends OptimizedKvs<K, V> {
 
-public class BinaryTreeOptimizedKVS<K, V> extends OptimizedKvs<K, V> {
-
-    public BinaryTreeOptimizedKVS(String path, SerializationStrategy<K> keySerializationStrategy,
-                        SerializationStrategy<V> valueSerializationStrategy,
-                        Comparator<K> comparator) throws KVSException {
+    public BinaryTreeOptimizedKvs(String path, SerializationStrategy<K> keySerializationStrategy,
+                                  SerializationStrategy<V> valueSerializationStrategy,
+                                  Comparator<K> comparator) throws KVSException {
         super(path, keySerializationStrategy, valueSerializationStrategy, comparator);
     }
+
     /**
      * Смерживание двух частей в одну.
      * Берутся две части из начала дека, мержатся и итоговая часть кладётся в начало дека.
@@ -29,7 +31,7 @@ public class BinaryTreeOptimizedKVS<K, V> extends OptimizedKvs<K, V> {
         parts.pollFirst();
 
         while (parts.size() > 1) {
-            ArrayDeque<OptimizedKvs.Part> newParts = new ArrayDeque<>();
+            Deque<Part> newParts = new ArrayDeque<>();
             // 1 и 2 в хронологическом порядке
             while (parts.size() > 1) {
                 newParts.addFirst(mergeTwoLastParts());
@@ -50,7 +52,7 @@ public class BinaryTreeOptimizedKVS<K, V> extends OptimizedKvs<K, V> {
         }
     }
 
-    private Part mergeTwoLastParts(Deque<Part> parts, Map<K, Address> indexTable) throws IOException {
+    private Part mergeTwoLastParts() throws IOException {
         Part part2 = parts.getLast();
         parts.pollLast();
         Part part1 = parts.getLast();

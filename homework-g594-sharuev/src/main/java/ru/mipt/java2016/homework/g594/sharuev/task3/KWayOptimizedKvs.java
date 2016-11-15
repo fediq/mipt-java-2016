@@ -7,15 +7,15 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.PriorityQueue;
 
-public class KWayMergeStrategy<K, V> extends OptimizedKvs<K, V> {
+public class KWayOptimizedKvs<K, V> extends OptimizedKvs<K, V> {
 
-    public KWayMergeStrategy(String path, SerializationStrategy<K> keySerializationStrategy,
-                                  SerializationStrategy<V> valueSerializationStrategy,
-                                  Comparator<K> comparator) throws KVSException {
+    public KWayOptimizedKvs(String path, SerializationStrategy<K> keySerializationStrategy,
+                            SerializationStrategy<V> valueSerializationStrategy,
+                            Comparator<K> comparator) throws KVSException {
         super(path, keySerializationStrategy, valueSerializationStrategy, comparator);
     }
 
-    class MergePart implements Comparable {
+    private class MergePart implements Comparable {
         private K key;
         private int index;
 
@@ -45,11 +45,13 @@ public class KWayMergeStrategy<K, V> extends OptimizedKvs<K, V> {
         PriorityQueue<MergePart> priorityQueue = new PriorityQueue<MergePart>();
         File bigFile = parts.getFirst().file;
 
-        File tempFile = Paths.get(path, dbName + "Temp" + OptimizedKvs.Consts.STORAGE_PART_SUFF).toFile();
+        File tempFile = Paths.get(path,
+                dbName + "Temp" + OptimizedKvs.Consts.STORAGE_PART_SUFF).toFile();
         if (!tempFile.createNewFile()) {
             throw new KVSException("Temp file already exists");
         }
-        OptimizedKvs.Part newPart = new OptimizedKvs.Part(new RandomAccessFile(tempFile, "rw"), tempFile);
+        OptimizedKvs.Part newPart = new OptimizedKvs.Part(new RandomAccessFile(tempFile, "rw"),
+                tempFile);
         DataOutputStream out = bdosFromRaf(newPart.raf, OptimizedKvs.Consts.BUFFER_SIZE);
 
         ArrayList<DataInputStream> diss = new ArrayList<>();
@@ -116,8 +118,8 @@ public class KWayMergeStrategy<K, V> extends OptimizedKvs<K, V> {
 
         indexTable.clear();
         for (int j = 0; j < newPart.keys.size(); ++j) {
-            indexTable.put((K)newPart.keys.get(j),
-                    new OptimizedKvs.Address(newPart, (int)newPart.offsets.get(j)));
+            indexTable.put((K) newPart.keys.get(j),
+                    new OptimizedKvs.Address(newPart, (int) newPart.offsets.get(j)));
         }
 
         parts.clear();
