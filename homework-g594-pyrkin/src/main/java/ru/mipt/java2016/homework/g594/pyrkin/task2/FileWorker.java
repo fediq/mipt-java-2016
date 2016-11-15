@@ -12,8 +12,8 @@ public class FileWorker {
 
     private final File file;
 
-    private final BufferedInputStream inputStream;
-    private BufferedOutputStream outputStream;
+    protected final BufferedInputStream inputStream;
+    protected BufferedOutputStream outputStream;
 
     public FileWorker(String directoryPath, String fileName) throws IOException {
         File directory = new File(directoryPath);
@@ -50,7 +50,7 @@ public class FileWorker {
     }
 
     public void write(int size) throws IOException {
-        ByteBuffer buffer = ByteBuffer.allocate(Integer.SIZE / 8);
+        ByteBuffer buffer = ByteBuffer.allocate(4);
         buffer.putInt(size);
         outputStream.write(buffer.array());
     }
