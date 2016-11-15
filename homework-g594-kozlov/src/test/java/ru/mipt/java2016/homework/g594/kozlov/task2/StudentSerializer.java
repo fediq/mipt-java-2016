@@ -12,6 +12,9 @@ import java.util.Date;
 public class StudentSerializer implements SerializerInterface<Student> {
     @Override
     public String serialize(Student objToSerialize) {
+        if (objToSerialize == null) {
+            return null;
+        }
         StringBuilder resultString = new StringBuilder("{");
         StudentKeySerializer studKeySer;
         resultString.append(SerializerUtil.writeMemberInt("groupId", objToSerialize.getGroupId()))

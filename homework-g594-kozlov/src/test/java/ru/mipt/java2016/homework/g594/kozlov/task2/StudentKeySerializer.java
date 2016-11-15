@@ -11,6 +11,9 @@ import ru.mipt.java2016.homework.tests.task2.StudentKey;
 public class StudentKeySerializer implements SerializerInterface<StudentKey> {
     @Override
     public String serialize(StudentKey objToSerialize) {
+        if (objToSerialize == null) {
+            return null;
+        }
         StringBuilder resultString = new StringBuilder("{");
         resultString.append(SerializerUtil.writeMemberInt("groupId", objToSerialize.getGroupId()))
                 .append(",")
