@@ -375,10 +375,26 @@ public class OptimizedKvs<K, V> implements
         keyDos.flush();
     }
 
+    class MergePart implements Comparable {
+        private K key;
+        private int index;
+
+        MergePart(K key, int index) {
+            this.key = key;
+            this.index = index;
+        }
+
+        @Override
+        public int compareTo(Object o) {
+            int cmp = comparator.compare(key, ((MergePart) o).key);
+            if (cmp != 0) {
+                return cmp;
+            }
+            return this.index < ((MergePart) o).index ? -1 : (this.index == ((MergePart) o).index ? 0 : 1);
+        }
+    }
+
     /**
-     * Смерживание двух частей в одну.
-     * Берутся две части из начала дека, мержатся и итоговая часть кладётся в начало дека.
-     * Мержатся они при помощи временного файла, который в конце переименовывается в имя первого из сливавшихся файлов.
      * Сложность O(Nlog(N))
      *
      * @throws IOException
@@ -400,83 +416,73 @@ public class OptimizedKvs<K, V> implements
         ArrayList<Iterator<K>> iters = new ArrayList<>();
         int i = 0;
         for (Part part : parts) {
+            part.raf.seek(0);
             diss.add(bdisFromRaf(part.raf, Consts.BUFFER_SIZE));
             Iterator<K> iter = part.keys.iterator();
-            K firstKey = iter.hasNext()? iter.next():null;
+            K firstKey = iter.hasNext() ? iter.next() : null;
+            iters.add(iter);
             if (firstKey != null) {
-                iters.add(iter);
                 priorityQueue.add(new MergePart(firstKey, i));
             }
             ++i;
         }
 
         try {
-            MergePart top = priorityQueue.peek();
-            priorityQueue.poll();
+            while (!priorityQueue.isEmpty()) {
+                MergePart top = priorityQueue.peek();
+                priorityQueue.poll();
 
-            if (indexTable.containsKey(top.key)) {
-                valueSerializationStrategy.serializeToStream(
-                        valueSerializationStrategy.deserializeFromStream(diss.get(top.index)), out);
-                newPart.keys.add(top.key);
-                newPart.offsets.add(out.size());
-                if (iters.get(top.index).hasNext()) {
-                    K nextKey = iters.get(top.index).next();
-                    priorityQueue.add(new MergePart(nextKey, top.index));
-                }
-            } else {
-                valueSerializationStrategy.deserializeFromStream(diss.get(top.index));
-                if (iters.get(top.index).hasNext()) {
-                    K nextKey = iters.get(top.index).next();
-                    priorityQueue.add(new MergePart(nextKey, top.index));
+                if (indexTable.containsKey(top.key)) {
+                    newPart.keys.add(top.key);
+                    newPart.offsets.add(out.size());
+                    valueSerializationStrategy.serializeToStream(
+                            valueSerializationStrategy.deserializeFromStream(diss.get(top.index)),
+                            out);
+                    if (iters.get(top.index).hasNext()) {
+                        K nextKey = iters.get(top.index).next();
+                        priorityQueue.add(new MergePart(nextKey, top.index));
+                    }
+                } else {
+                    valueSerializationStrategy.deserializeFromStream(diss.get(top.index));
+                    if (iters.get(top.index).hasNext()) {
+                        K nextKey = iters.get(top.index).next();
+                        priorityQueue.add(new MergePart(nextKey, top.index));
+                    }
                 }
             }
-
         } catch (SerializationException e) {
             throw new KVSException("Failed to dump SSTable to file", e);
         }
+
         out.flush();
         out.close();
 
         newPart.raf.close();
+        Part bigPart = parts.getFirst();
+        parts.pollFirst();
+        if (!newPart.file.renameTo(bigPart.file.getAbsoluteFile())) {
+            throw new KVSException(
+                    String.format("Can't rename temp file %s", newPart.file.getName()));
+        }
 
-        for (Part part: parts) {
+        for (Part part : parts) {
             if (!part.file.delete()) {
                 throw new KVSException(
                         String.format("Can't delete file %s", part.file.getName()));
-            }
-            if (!newPart.file.renameTo(part.file.getAbsoluteFile())) {
-                throw new KVSException(
-                        String.format("Can't rename temp file %s", newPart.file.getName()));
             }
         }
         newPart.file = bigFile;
         newPart.raf = new RandomAccessFile(newPart.file, "rw");
 
         indexTable.clear();
-        for (int j = 0; j < parts.getFirst().keys.size(); ++j) {
-            indexTable.put(parts.getFirst().keys.get(j),
-                    new Address(parts.getFirst(), parts.getFirst().offsets.get(j)));
+        for (int j = 0; j < newPart.keys.size(); ++j) {
+            indexTable.put(newPart.keys.get(j),
+                    new Address(newPart, newPart.offsets.get(j)));
         }
+
+        parts.clear();
+        parts.addFirst(newPart);
     }
-
-    class MergePart implements Comparable
-    {
-        private K key;
-        private int index;
-
-        MergePart(K key, int index) {
-            this.key = key;
-            this.index = index;
-        }
-        @Override
-        public int compareTo(Object o) {
-            int cmp = comparator.compare(key, ((MergePart)o).key);
-            if (cmp != 0)
-                return cmp;
-            return this.index > ((MergePart)o).index? -1: (this.index == ((MergePart)o).index?0:-1);
-        }
-    }
-
 
     private DataOutputStream bdosFromRaf(RandomAccessFile raf, int bufferSize) {
         return new DataOutputStream(new BufferedOutputStream(
@@ -594,7 +600,7 @@ public class OptimizedKvs<K, V> implements
         private static final int MERGE_THRESHOLD = 100;
         //private final static int KeySize = 64;
         private static final int VALUE_SIZE = 8192;
-        private static final int BUFFER_SIZE = VALUE_SIZE * 2;
+        private static final int BUFFER_SIZE = VALUE_SIZE * 20;
     }
 }
 
