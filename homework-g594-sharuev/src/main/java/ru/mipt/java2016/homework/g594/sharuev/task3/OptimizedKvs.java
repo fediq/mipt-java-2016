@@ -93,6 +93,7 @@ public class OptimizedKvs<K, V> implements
     private File lockFile;
     private int nextFileIndex = 0;
     private Validator validator;
+    private KWayMergeStrategy strategy;
 
     public OptimizedKvs(String path, SerializationStrategy<K> keySerializationStrategy,
                         SerializationStrategy<V> valueSerializationStrategy,
@@ -107,6 +108,7 @@ public class OptimizedKvs<K, V> implements
         this.path = path;
         this.comparator = comparator;
         validator = new Validator();
+        strategy = new KWayMergeStrategy(this);
         cache = CacheBuilder.newBuilder()
                 .maximumSize(Consts.CACHE_SIZE)
                 .build(
@@ -228,7 +230,7 @@ public class OptimizedKvs<K, V> implements
             if (parts.size() > Consts.MERGE_THRESHOLD) {
                 try {
                     while (parts.size() > 1) {
-                        mergeFiles();
+                        strategy.mergeFiles();
                     }
                 } catch (IOException e) {
                     throw new KVSException("Lol");
@@ -356,7 +358,7 @@ public class OptimizedKvs<K, V> implements
         // Смержить всё один файл. После в единственном элементе indexMaps лежит
         // дерево из всех ключей с правильными оффсетами, а в partRAF - все соответствующие значения.
         while (parts.size() > 1) {
-            mergeFiles();
+            strategy.mergeFiles();
         }
 
         // Пишем ключи и сдвиги.
@@ -375,114 +377,122 @@ public class OptimizedKvs<K, V> implements
         keyDos.flush();
     }
 
-    class MergePart implements Comparable {
-        private K key;
-        private int index;
+    public class KWayMergeStrategy {
 
-        MergePart(K key, int index) {
-            this.key = key;
-            this.index = index;
+        OptimizedKvs<K, V> kvs;
+        KWayMergeStrategy(OptimizedKvs<K, V> kvs) {
+            this.kvs = kvs;
         }
+        class MergePart implements Comparable {
+            private K key;
+            private int index;
 
-        @Override
-        public int compareTo(Object o) {
-            int cmp = comparator.compare(key, ((MergePart) o).key);
-            if (cmp != 0) {
-                return cmp;
+            MergePart(K key, int index) {
+                this.key = key;
+                this.index = index;
             }
-            return this.index < ((MergePart) o).index ? -1 : (this.index == ((MergePart) o).index ? 0 : 1);
-        }
-    }
 
-    /**
-     * Сложность O(Nlog(N))
-     *
-     * @throws IOException
-     */
-    private void mergeFiles() throws IOException {
-        assert parts.size() >= 2;
-
-        PriorityQueue<MergePart> priorityQueue = new PriorityQueue<MergePart>();
-        File bigFile = parts.getFirst().file;
-
-        File tempFile = Paths.get(path, dbName + "Temp" + Consts.STORAGE_PART_SUFF).toFile();
-        if (!tempFile.createNewFile()) {
-            throw new KVSException("Temp file already exists");
-        }
-        Part newPart = new Part(new RandomAccessFile(tempFile, "rw"), tempFile);
-        DataOutputStream out = bdosFromRaf(newPart.raf, Consts.BUFFER_SIZE);
-
-        ArrayList<DataInputStream> diss = new ArrayList<>();
-        ArrayList<Iterator<K>> iters = new ArrayList<>();
-        int i = 0;
-        for (Part part : parts) {
-            part.raf.seek(0);
-            diss.add(bdisFromRaf(part.raf, Consts.BUFFER_SIZE));
-            Iterator<K> iter = part.keys.iterator();
-            K firstKey = iter.hasNext() ? iter.next() : null;
-            iters.add(iter);
-            if (firstKey != null) {
-                priorityQueue.add(new MergePart(firstKey, i));
+            @Override
+            public int compareTo(Object o) {
+                int cmp = comparator.compare(key, ((MergePart) o).key);
+                if (cmp != 0) {
+                    return cmp;
+                }
+                return this.index < ((MergePart) o).index ? -1 : (this.index == ((MergePart) o).index ? 0 : 1);
             }
-            ++i;
         }
 
-        try {
-            while (!priorityQueue.isEmpty()) {
-                MergePart top = priorityQueue.peek();
-                priorityQueue.poll();
+        /**
+         * Сложность O(Nlog(N))
+         *
+         * @throws IOException
+         */
+        private void mergeFiles() throws IOException {
+            assert parts.size() >= 2;
 
-                if (indexTable.containsKey(top.key)) {
-                    newPart.keys.add(top.key);
-                    newPart.offsets.add(out.size());
-                    valueSerializationStrategy.serializeToStream(
-                            valueSerializationStrategy.deserializeFromStream(diss.get(top.index)),
-                            out);
-                    if (iters.get(top.index).hasNext()) {
-                        K nextKey = iters.get(top.index).next();
-                        priorityQueue.add(new MergePart(nextKey, top.index));
-                    }
-                } else {
-                    valueSerializationStrategy.deserializeFromStream(diss.get(top.index));
-                    if (iters.get(top.index).hasNext()) {
-                        K nextKey = iters.get(top.index).next();
-                        priorityQueue.add(new MergePart(nextKey, top.index));
+            PriorityQueue<MergePart> priorityQueue = new PriorityQueue<MergePart>();
+            File bigFile = parts.getFirst().file;
+
+            File tempFile = Paths.get(path, dbName + "Temp" + OptimizedKvs.Consts.STORAGE_PART_SUFF).toFile();
+            if (!tempFile.createNewFile()) {
+                throw new KVSException("Temp file already exists");
+            }
+            OptimizedKvs.Part newPart = new OptimizedKvs.Part(new RandomAccessFile(tempFile, "rw"), tempFile);
+            DataOutputStream out = bdosFromRaf(newPart.raf, OptimizedKvs.Consts.BUFFER_SIZE);
+
+            ArrayList<DataInputStream> diss = new ArrayList<>();
+            ArrayList<Iterator<K>> iters = new ArrayList<>();
+            int i = 0;
+            for (OptimizedKvs.Part part : parts) {
+                part.raf.seek(0);
+                diss.add(bdisFromRaf(part.raf, OptimizedKvs.Consts.BUFFER_SIZE));
+                Iterator<K> iter = part.keys.iterator();
+                K firstKey = iter.hasNext() ? iter.next() : null;
+                iters.add(iter);
+                if (firstKey != null) {
+                    priorityQueue.add(new MergePart(firstKey, i));
+                }
+                ++i;
+            }
+
+            try {
+                while (!priorityQueue.isEmpty()) {
+                    MergePart top = priorityQueue.peek();
+                    priorityQueue.poll();
+
+                    if (indexTable.containsKey(top.key)) {
+                        newPart.keys.add(top.key);
+                        newPart.offsets.add(out.size());
+                        valueSerializationStrategy.serializeToStream(
+                                valueSerializationStrategy.deserializeFromStream(diss.get(top.index)),
+                                out);
+                        if (iters.get(top.index).hasNext()) {
+                            K nextKey = iters.get(top.index).next();
+                            priorityQueue.add(new MergePart(nextKey, top.index));
+                        }
+                    } else {
+                        valueSerializationStrategy.deserializeFromStream(diss.get(top.index));
+                        if (iters.get(top.index).hasNext()) {
+                            K nextKey = iters.get(top.index).next();
+                            priorityQueue.add(new MergePart(nextKey, top.index));
+                        }
                     }
                 }
+            } catch (SerializationException e) {
+                throw new KVSException("Failed to dump SSTable to file", e);
             }
-        } catch (SerializationException e) {
-            throw new KVSException("Failed to dump SSTable to file", e);
-        }
 
-        out.flush();
-        out.close();
+            out.flush();
+            out.close();
 
-        newPart.raf.close();
-        Part bigPart = parts.getFirst();
-        parts.pollFirst();
-        if (!newPart.file.renameTo(bigPart.file.getAbsoluteFile())) {
-            throw new KVSException(
-                    String.format("Can't rename temp file %s", newPart.file.getName()));
-        }
-
-        for (Part part : parts) {
-            if (!part.file.delete()) {
+            newPart.raf.close();
+            OptimizedKvs.Part bigPart = parts.getFirst();
+            parts.pollFirst();
+            if (!newPart.file.renameTo(bigPart.file.getAbsoluteFile())) {
                 throw new KVSException(
-                        String.format("Can't delete file %s", part.file.getName()));
+                        String.format("Can't rename temp file %s", newPart.file.getName()));
             }
-        }
-        newPart.file = bigFile;
-        newPart.raf = new RandomAccessFile(newPart.file, "rw");
 
-        indexTable.clear();
-        for (int j = 0; j < newPart.keys.size(); ++j) {
-            indexTable.put(newPart.keys.get(j),
-                    new Address(newPart, newPart.offsets.get(j)));
-        }
+            for (OptimizedKvs.Part part : parts) {
+                if (!part.file.delete()) {
+                    throw new KVSException(
+                            String.format("Can't delete file %s", part.file.getName()));
+                }
+            }
+            newPart.file = bigFile;
+            newPart.raf = new RandomAccessFile(newPart.file, "rw");
 
-        parts.clear();
-        parts.addFirst(newPart);
+            indexTable.clear();
+            for (int j = 0; j < newPart.keys.size(); ++j) {
+                indexTable.put((K)newPart.keys.get(j),
+                        new OptimizedKvs.Address(newPart, (int)newPart.offsets.get(j)));
+            }
+
+            parts.clear();
+            parts.addFirst(newPart);
+        }
     }
+
 
     private DataOutputStream bdosFromRaf(RandomAccessFile raf, int bufferSize) {
         return new DataOutputStream(new BufferedOutputStream(
@@ -600,7 +610,7 @@ public class OptimizedKvs<K, V> implements
         private static final int MERGE_THRESHOLD = 100;
         //private final static int KeySize = 64;
         private static final int VALUE_SIZE = 8192;
-        private static final int BUFFER_SIZE = VALUE_SIZE * 20;
+        private static final int BUFFER_SIZE = VALUE_SIZE * 2;
     }
 }
 
