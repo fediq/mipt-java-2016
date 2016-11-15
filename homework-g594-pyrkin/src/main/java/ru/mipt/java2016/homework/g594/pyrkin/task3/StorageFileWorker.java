@@ -45,6 +45,7 @@ public class StorageFileWorker {
             --size;
             resultBuffer.put(randomAccessFile.readByte());
         }
+        resultBuffer.rewind();
         return resultBuffer;
     }
 
@@ -70,16 +71,14 @@ public class StorageFileWorker {
         randomAccessFile.close();
         tmpFile.createNewFile();
         inputStream = new BufferedInputStream(new FileInputStream(file));
-        outputStream = new BufferedOutputStream(new FileOutputStream(file));
+        outputStream = new BufferedOutputStream(new FileOutputStream(tmpFile));
     }
 
     public void endRecopyMode () throws IOException {
         inputStream.close();
         outputStream.close();
-        File oldFile = file;
-        file = tmpFile;
-        file.renameTo(oldFile);
-        oldFile.delete();
+        tmpFile.renameTo(file);
+        randomAccessFile = new RandomAccessFile(file, "rw");
     }
 
     public int recopyRead () throws IOException {

@@ -1,7 +1,9 @@
 package ru.mipt.java2016.homework.g594.pyrkin.task3;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
+import ru.mipt.java2016.homework.g594.pyrkin.task2.serializer.IntegerSerializer;
 import ru.mipt.java2016.homework.g594.pyrkin.task2.serializer.SerializerInterface;
+import ru.mipt.java2016.homework.g594.pyrkin.task2.serializer.StringSerializer;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -104,12 +106,12 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         checkClosed();
         isClosed = true;
 
-        writeOffsetTable();
-        indexFileWorker.close();
-
         removeDeletedFromFile();
         flushMemoryStorage();
         storageFileWorker.close();
+
+        writeOffsetTable();
+        indexFileWorker.close();
     }
 
     private void checkClosed() {
@@ -132,6 +134,7 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void writeOffsetTableField (K key, long offset) throws IOException {
+        indexFileWorker.write(keySerializer.sizeOfSerialize(key));
         indexFileWorker.write(keySerializer.serialize(key));
         indexFileWorker.writeOffset(offset);
     }
@@ -141,6 +144,7 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         for(Map.Entry<K, Long> entry : offsetTable.entrySet()) {
             writeOffsetTableField(entry.getKey(), entry.getValue());
         }
+        offsetTable.clear();
     }
 
     private V readValue (K key) throws IOException {
@@ -162,11 +166,13 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             offsetTable.put(entry.getKey(), storageFileWorker.getLength() + 4 +
                     keySerializer.sizeOfSerialize(entry.getKey()));
             writeField(entry.getKey(), entry.getValue());
-        } 
+        }
+        memoryStorage.clear();
     }
 
     private void removeDeletedFromFile () throws IOException {
         storageFileWorker.startRecopyMode();
+        long currentOffset = 0;
         while(true) {
             int keySize = storageFileWorker.recopyRead();
             if(keySize < 0)
@@ -174,11 +180,15 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             ByteBuffer key = storageFileWorker.recopyRead(keySize);
             int valueSize = storageFileWorker.recopyRead();
             ByteBuffer value = storageFileWorker.recopyRead(valueSize);
-            if(offsetTable.containsKey(keySerializer.deserialize(key))) {
+            K deserealizedKey = keySerializer.deserialize(key);
+            if(offsetTable.containsKey(deserealizedKey)) {
                 storageFileWorker.recopyWrite(keySize);
                 storageFileWorker.recopyWrite(key);
+                currentOffset += 4 + keySize;
+                offsetTable.put(deserealizedKey, currentOffset);
                 storageFileWorker.recopyWrite(valueSize);
                 storageFileWorker.recopyWrite(value);
+                currentOffset += 4 + valueSize;
             }
         }
         storageFileWorker.endRecopyMode();

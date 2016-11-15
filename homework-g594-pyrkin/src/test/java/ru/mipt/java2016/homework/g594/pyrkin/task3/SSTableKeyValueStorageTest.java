@@ -16,7 +16,7 @@ public class SSTableKeyValueStorageTest extends AbstractSingleFileStorageTest {
     protected KeyValueStorage<String, String> buildStringsStorage(String path) {
         try {
             return new SSTableKeyValueStorage<>(path,
-                    new StringSerializer(), new StringSerializer(), 100);
+                    new StringSerializer(), new StringSerializer(), 1);
         }catch (IOException e){
             return null;
         }
@@ -26,7 +26,7 @@ public class SSTableKeyValueStorageTest extends AbstractSingleFileStorageTest {
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) {
         try {
             return new SSTableKeyValueStorage<>(path, new IntegerSerializer(),
-                    new DoubleSerializer(), 100);
+                    new DoubleSerializer(), 1);
         }catch (IOException e){
             return null;
         }
@@ -36,7 +36,7 @@ public class SSTableKeyValueStorageTest extends AbstractSingleFileStorageTest {
     protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) {
         try {
             return new SSTableKeyValueStorage<>(path, new StudentKeySerializer(),
-                    new StudentSerializer(), 100);
+                    new StudentSerializer(), 1);
         }catch (IOException e){
             return null;
         }
