@@ -4,6 +4,7 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.g594.pyrkin.task2.serializer.SerializerInterface;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -27,8 +28,6 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private boolean isClosed = false;
 
-    private int offsetTableSize;
-
     private final int maxMemoryStorageSize;
 
     public SSTableKeyValueStorage(String directoryPath,
@@ -41,15 +40,18 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         indexFileWorker = new IndexFileWorker(directoryPath, "index.db");
         storageFileWorker = new StorageFileWorker(directoryPath, "storage.db");
         readOffsetTable();
-        offsetTableSize = offsetTable.size();
     }
 
     @Override
     public V read(K key) {
         checkClosed();
         V value = memoryStorage.get(key);
-        if (value != null)
+        if (value != null) {
             return value;
+        }
+        if (!offsetTable.containsKey(key)){
+            return null;
+        }
         try {
             return readValue(key);
         }catch (IOException exception){
@@ -60,13 +62,14 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public boolean exists(K key) {
         checkClosed();
-        return memoryStorage.containsKey(key) || offsetTable.containsKey(key);
+        return offsetTable.containsKey(key);
     }
 
     @Override
     public void write(K key, V value) {
         checkClosed();
         memoryStorage.put(key, value);
+        offsetTable.put(key, (long)-1);
         if(memoryStorage.size() > maxMemoryStorageSize){
             try {
                 flushMemoryStorage();
@@ -80,21 +83,20 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public void delete(K key) {
         checkClosed();
-        if (memoryStorage.remove(key) == null) {
-            offsetTable.remove(key);
-        }
+        memoryStorage.remove(key);
+        offsetTable.remove(key);
     }
 
     @Override
     public Iterator<K> readKeys() {
         checkClosed();
-        return null;
+        return offsetTable.keySet().iterator();
     }
 
     @Override
     public int size() {
         checkClosed();
-        return memoryStorage.size() + offsetTableSize;
+        return offsetTable.size();
     }
 
     @Override
@@ -105,7 +107,9 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         writeOffsetTable();
         indexFileWorker.close();
 
-
+        removeDeletedFromFile();
+        flushMemoryStorage();
+        storageFileWorker.close();
     }
 
     private void checkClosed() {
@@ -153,11 +157,30 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         storageFileWorker.writeToEnd(valueSerializer.serialize(value));
     }
 
-    private void flushMemoryStorage () throws IOException{
+    private void flushMemoryStorage () throws IOException {
         for(Map.Entry<K, V> entry : memoryStorage.entrySet()){
             offsetTable.put(entry.getKey(), storageFileWorker.getLength() + 4 +
                     keySerializer.sizeOfSerialize(entry.getKey()));
             writeField(entry.getKey(), entry.getValue());
         } 
+    }
+
+    private void removeDeletedFromFile () throws IOException {
+        storageFileWorker.startRecopyMode();
+        while(true) {
+            int keySize = storageFileWorker.recopyRead();
+            if(keySize < 0)
+                break;
+            ByteBuffer key = storageFileWorker.recopyRead(keySize);
+            int valueSize = storageFileWorker.recopyRead();
+            ByteBuffer value = storageFileWorker.recopyRead(valueSize);
+            if(offsetTable.containsKey(keySerializer.deserialize(key))) {
+                storageFileWorker.recopyWrite(keySize);
+                storageFileWorker.recopyWrite(key);
+                storageFileWorker.recopyWrite(valueSize);
+                storageFileWorker.recopyWrite(value);
+            }
+        }
+        storageFileWorker.endRecopyMode();
     }
 }
