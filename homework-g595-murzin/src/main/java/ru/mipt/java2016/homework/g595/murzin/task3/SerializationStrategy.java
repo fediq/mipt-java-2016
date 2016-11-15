@@ -36,7 +36,8 @@ public interface SerializationStrategy<Value> {
             byte[] bytes = new byte[length];
             int actualLength = input.read(bytes);
             if (actualLength < length) {
-                throw new EOFException("Can't read UTF string: required " + length + " bytes, but only " + actualLength + " available");
+                throw new EOFException("Can't read UTF string: required " + length +
+                        " bytes, but only " + actualLength + " available");
             }
             return new String(bytes, StandardCharsets.UTF_8);
         }

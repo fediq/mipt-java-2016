@@ -17,6 +17,7 @@ import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,14 +25,20 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.stream.IntStream;
 
 /**
  * Created by dima on 05.11.16.
  */
 public class LSMStorage<K, V> implements KeyValueStorage<K, V> {
 
-    public static final String KEYS_FILE_NAME = "keys.dat";
-    public static final int MAX_NEW_ENTRIES_SIZE = 10;
+    private static final String KEYS_FILE_NAME = "keys.dat";
+    private static final int MAX_VALUE_SIZE = 10 * 1024;
+    private static final int MAX_RAM_SIZE = 64 * 1024 * 1024;
+    private static final double NEW_ENTRIES_PERCENTAGE = 0.3051;
+    private static final double CACHE_PERCENTAGE = NEW_ENTRIES_PERCENTAGE;
+    private static final int MAX_NEW_ENTRIES_SIZE = (int) (MAX_RAM_SIZE * NEW_ENTRIES_PERCENTAGE / MAX_VALUE_SIZE);
+    private static final int MAX_CACHE_SIZE = (int) (MAX_RAM_SIZE * CACHE_PERCENTAGE / MAX_VALUE_SIZE);
 
     private SerializationStrategy<K> keySerializationStrategy;
     private SerializationStrategy<V> valueSerializationStrategy;
@@ -44,11 +51,10 @@ public class LSMStorage<K, V> implements KeyValueStorage<K, V> {
     private Map<K, V> newEntries = new HashMap<>(MAX_NEW_ENTRIES_SIZE);
     private Cache<K, V> cache = CacheBuilder
             .newBuilder()
-//            .maximumSize(32 * 1024 * 1024 / (50 * 1024))
-            .maximumSize(0)
+            .maximumSize(MAX_CACHE_SIZE)
             .build();
     private ArrayList<BufferedRandomAccessFile> sstableFiles = new ArrayList<>();
-    volatile private boolean isClosed;
+    private volatile boolean isClosed;
 
     public LSMStorage(String path,
                       SerializationStrategy<K> keySerializationStrategy,
@@ -83,7 +89,8 @@ public class LSMStorage<K, V> implements KeyValueStorage<K, V> {
             try {
                 sstableFiles.add(new BufferedRandomAccessFile(getTableFile(0)));
             } catch (FileNotFoundException e) {
-                throw new RuntimeException("Кажется вы умудрились удалить файл базы сразу после того, как мы проверили, что он существует...", e);
+                throw new RuntimeException("Кажется вы умудрились удалить файл базы сразу после того, " +
+                        "как мы проверили, что он существует...", e);
             }
         }
     }
@@ -189,7 +196,9 @@ public class LSMStorage<K, V> implements KeyValueStorage<K, V> {
             } else if (n < 0 || tablesLength[n] > tablesLength[n + 1]) {
                 break; // инвариант установлен
             }
+            System.out.printf("%50s    ", Arrays.toString(tablesLength));
             mergeTwoTableFiles(n);
+            System.out.println(Arrays.toString(sstablesKeys.stream().mapToInt(table -> table.length).toArray()));
         }
     }
 
@@ -199,12 +208,12 @@ public class LSMStorage<K, V> implements KeyValueStorage<K, V> {
         private final FileInputStream input;
         private final long fileLength;
 
-        public MergeInfo(int i) throws IOException {
+        MergeInfo(int i) throws IOException {
             keyInfos = sstablesKeys.get(i);
             length = keyInfos.length;
             input = new FileInputStream(getTableFile(i));
-            int length = new DataInputStream(input).readInt();
-            assert length == keyInfos.length;
+            int lengthRecordedInFile = new DataInputStream(input).readInt();
+            assert lengthRecordedInFile == keyInfos.length;
             fileLength = sstableFiles.get(i).fileLength();
         }
 
@@ -303,6 +312,10 @@ public class LSMStorage<K, V> implements KeyValueStorage<K, V> {
         sstablesKeys.remove(iFile + 1);
         sstableFiles.set(iFile, new BufferedRandomAccessFile(getTableFile(iFile)));
         sstableFiles.remove(iFile + 1);
+
+        String[] filesRigth = IntStream.range(0, sstableFiles.size()).mapToObj(i -> "table" + i + ".dat").toArray(String[]::new);
+        String[] filesReal = Files.list(storageDirectory.toPath()).map(Path::getFileName).map(Path::toString).filter(s -> s.charAt(0) == 't').sorted().toArray(String[]::new);
+        assert Arrays.deepEquals(filesReal, filesRigth);
     }
 
     private void checkForClosed() {
@@ -332,7 +345,7 @@ public class LSMStorage<K, V> implements KeyValueStorage<K, V> {
         V value;
         try {
             bufferedRandomAccessFile.seek(offset.offsetInFile);
-            value = valueSerializationStrategy.deserializeFromStream(bufferedRandomAccessFile.dataInputStream);
+            value = valueSerializationStrategy.deserializeFromStream(bufferedRandomAccessFile.getDataInputStream());
             cache.put(key, value);
         } catch (IOException e) {
             throw new RuntimeException("Can't read from one of table files", e);
@@ -355,7 +368,8 @@ public class LSMStorage<K, V> implements KeyValueStorage<K, V> {
         try {
             checkForNewEntriesSize();
         } catch (IOException e) {
-            throw new RuntimeException("Произошла IOException. В идеале она должна быть проброшена дальше как checked, но ...", e);
+            throw new RuntimeException("Произошла IOException. " +
+                    "В идеале она должна быть проброшена дальше как checked, но ...", e);
         }
     }
 
@@ -381,6 +395,7 @@ public class LSMStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public synchronized void close() throws IOException {
+        // TODO если остался один файл -- удалить из него удалённые ключи
         checkForClosed();
         pushNewEntriesToDisk();
         while (sstableFiles.size() > 1) {

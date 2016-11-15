@@ -3,7 +3,7 @@ package ru.mipt.java2016.homework.g595.murzin.task3;
 /**
  * Created by dima on 13.11.16.
  */
-class KeyInfo<K> {
+public class KeyInfo<K> {
     public final K key;
     public final long offsetInFile;
 
