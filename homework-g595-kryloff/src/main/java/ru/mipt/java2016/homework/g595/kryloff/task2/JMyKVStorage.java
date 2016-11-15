@@ -3,11 +3,11 @@ package ru.mipt.java2016.homework.g595.kryloff.task2;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 
 import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.nio.channels.Channels;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -23,21 +23,17 @@ public class JMyKVStorage<K, V> implements KeyValueStorage<K, V> {
     private boolean isFileClosed;
     private JMySerializerInterface<K> keySerializer;
     private JMySerializerInterface<V> valueSerializer;
-    private RandomAccessFile storage;
-    private String path;
     private File file;
 
     public JMyKVStorage(String pathArguement, JMySerializerInterface<K> keySerializerArguement,
             JMySerializerInterface<V> valueSerializerArguement) throws IOException {
         isFileClosed = false;
-        path = pathArguement;
         keySerializer = keySerializerArguement;
         valueSerializer = valueSerializerArguement;
         file = new File(pathArguement, FILE_NAME);
         storageMap = new HashMap<>();
         if (file.exists()) {
             
-            makeRandomAccessFile();
             getData();
         } else {
             try {
@@ -45,32 +41,24 @@ public class JMyKVStorage<K, V> implements KeyValueStorage<K, V> {
             } catch (IOException e) {
                 throw new RuntimeException("Cannot create file");
             }
-            makeRandomAccessFile();
             
         }
     }
                 
-    private void makeRandomAccessFile() {
-        try {
-            storage = new RandomAccessFile(file.getName(), "rw");
-        } catch (IOException e) {
-            throw new RuntimeException("Cannot create random access file");
-        }
-    }
 
     private void getData() throws IOException {
         DataInputStream inputStream;
-        System.out.println(path);
-        inputStream = new DataInputStream(Channels.newInputStream(storage.getChannel()));
+        
         K currentKey;
         V currentValue;
         int count;
         int hash;
         try {
+            inputStream = new DataInputStream(new FileInputStream(file));
             count = inputStream.readInt();
             hash = inputStream.readInt();
         } catch (IOException ex) {
-            throw new RuntimeException("Cannot read from stream");
+            throw new RuntimeException("Cannot read from stream or crate it");
         }
 
         for (int i = 0; i < count; ++i) {
@@ -85,16 +73,13 @@ public class JMyKVStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void writeData() throws IOException {
-        storage.seek(0);
         DataOutputStream outputStream;
-        outputStream = new DataOutputStream(Channels.newOutputStream(storage.getChannel()));
-
-
         try {
+            outputStream =  new DataOutputStream(new FileOutputStream(file));
             outputStream.writeInt(storageMap.size());
             outputStream.writeInt(storageMap.hashCode());
         } catch (IOException ex) {
-            throw new RuntimeException("Cannot write to stream");
+            throw new RuntimeException("Cannot write to stream or create it");
         }
         for (Map.Entry<K, V> entry : storageMap.entrySet()) {
             keySerializer.serialize(outputStream, entry.getKey());

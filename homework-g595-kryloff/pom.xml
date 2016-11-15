@@ -27,11 +27,6 @@
             <!--<scope>test</scope> -->
         </dependency>
         
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>homework-tests</artifactId>
-            <version>${project.version}</version>
-        </dependency>
     </dependencies>
     <name>homework-g595-kryloff</name>
 </project>
