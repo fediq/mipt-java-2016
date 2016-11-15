@@ -21,6 +21,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -30,7 +31,7 @@ import java.util.stream.IntStream;
 /**
  * Created by dima on 05.11.16.
  */
-public class LSMStorage<K, V> implements KeyValueStorage<K, V> {
+public class LSMStorage<Key, Value> implements KeyValueStorage<Key, Value> {
 
     private static final String KEYS_FILE_NAME = "keys.dat";
     private static final int MAX_VALUE_SIZE = 10 * 1024;
@@ -40,16 +41,19 @@ public class LSMStorage<K, V> implements KeyValueStorage<K, V> {
     private static final int MAX_NEW_ENTRIES_SIZE = (int) (MAX_RAM_SIZE * NEW_ENTRIES_PERCENTAGE / MAX_VALUE_SIZE);
     private static final int MAX_CACHE_SIZE = (int) (MAX_RAM_SIZE * CACHE_PERCENTAGE / MAX_VALUE_SIZE);
 
-    private SerializationStrategy<K> keySerializationStrategy;
-    private SerializationStrategy<V> valueSerializationStrategy;
-    private final Comparator<K> comparator;
+    private SerializationStrategy<Key> keySerializationStrategy;
+    private SerializationStrategy<Value> valueSerializationStrategy;
+    private final Comparator<Key> comparator;
     private FileLock lock;
     private File storageDirectory;
 
-    private Map<K, Offset> keys = new HashMap<>();
-    private ArrayList<KeyInfo<K>[]> sstablesKeys = new ArrayList<>();
-    private Map<K, V> newEntries = new HashMap<>(MAX_NEW_ENTRIES_SIZE);
-    private Cache<K, V> cache = CacheBuilder
+    private Map<Key, KeyWrapper<Key, Value>> keys = new HashMap<>();
+    private ArrayList<KeyWrapper<Key, Value>[]> sstablesKeys = new ArrayList<>();
+
+    //    private Map<Key, Value> newEntries = new HashMap<>(MAX_NEW_ENTRIES_SIZE);
+    private ArrayList<Key> newEntries = new ArrayList<>(MAX_NEW_ENTRIES_SIZE);
+
+    private Cache<Key, Value> cache = CacheBuilder
             .newBuilder()
             .maximumSize(MAX_CACHE_SIZE)
             .build();
@@ -57,9 +61,9 @@ public class LSMStorage<K, V> implements KeyValueStorage<K, V> {
     private volatile boolean isClosed;
 
     public LSMStorage(String path,
-                      SerializationStrategy<K> keySerializationStrategy,
-                      SerializationStrategy<V> valueSerializationStrategy,
-                      Comparator<K> comparator) {
+                      SerializationStrategy<Key> keySerializationStrategy,
+                      SerializationStrategy<Value> valueSerializationStrategy,
+                      Comparator<Key> comparator) {
         this.keySerializationStrategy = keySerializationStrategy;
         this.valueSerializationStrategy = valueSerializationStrategy;
         this.comparator = comparator;
@@ -80,12 +84,9 @@ public class LSMStorage<K, V> implements KeyValueStorage<K, V> {
 
         readAllKeys();
         if (getTableFile(0).exists()) {
-            sstablesKeys.add(keys
-                    .entrySet()
-                    .stream()
-                    .map(entry -> new KeyInfo<>(entry.getKey(), entry.getValue().offsetInFile))
-                    .sorted((keyInfo1, keyInfo2) -> comparator.compare(keyInfo1.key, keyInfo2.key))
-                    .toArray(KeyInfo[]::new));
+            KeyWrapper<Key, Value>[] wrappers = keys.values().toArray(new KeyWrapper[keys.size()]);
+            Arrays.sort(wrappers, (wrapper1, wrapper2) -> comparator.compare(wrapper1.key, wrapper2.key));
+            sstablesKeys.add(wrappers);
             try {
                 sstableFiles.add(new BufferedRandomAccessFile(getTableFile(0)));
             } catch (FileNotFoundException e) {
@@ -111,9 +112,9 @@ public class LSMStorage<K, V> implements KeyValueStorage<K, V> {
         try (DataInputStream input = new DataInputStream(new BufferedInputStream(new FileInputStream(keysFile)))) {
             int n = input.readInt();
             for (int i = 0; i < n; i++) {
-                K key = keySerializationStrategy.deserializeFromStream(input);
-                Offset offset = Offset.STRATEGY.deserializeFromStream(input);
-                keys.put(key, offset);
+                Key key = keySerializationStrategy.deserializeFromStream(input);
+                KeyWrapper<Key, Value> wrapper = new KeyWrapper<>(key, input.readInt(), input.readLong());
+                keys.put(key, wrapper);
             }
         } catch (IOException e) {
             throw new RuntimeException("Can't read from keys file " + keysFile.getAbsolutePath(), e);
@@ -128,9 +129,11 @@ public class LSMStorage<K, V> implements KeyValueStorage<K, V> {
         }
         try (DataOutputStream output = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(keysFile)))) {
             output.writeInt(keys.size());
-            for (Map.Entry<K, Offset> entry : keys.entrySet()) {
+            for (Map.Entry<Key, KeyWrapper<Key, Value>> entry : keys.entrySet()) {
                 keySerializationStrategy.serializeToStream(entry.getKey(), output);
-                Offset.STRATEGY.serializeToStream(entry.getValue(), output);
+                KeyWrapper<Key, Value> wrapper = entry.getValue();
+                output.writeInt(wrapper.fileIndex);
+                output.writeLong(wrapper.offsetInFile);
             }
         } catch (IOException e) {
             throw new RuntimeException("Can't write to keys file " + keysFile.getAbsolutePath(), e);
@@ -138,7 +141,7 @@ public class LSMStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void checkForNewEntriesSize() throws IOException {
-        if (newEntries.size() <= MAX_NEW_ENTRIES_SIZE) {
+        if (newEntries.size() < MAX_NEW_ENTRIES_SIZE) {
             return;
         }
         pushNewEntriesToDisk();
@@ -157,30 +160,27 @@ public class LSMStorage<K, V> implements KeyValueStorage<K, V> {
             throw new RuntimeException("Can't create one of table files " + newTableFile.getAbsolutePath(), e);
         }
 
-        Map.Entry<K, V>[] newEntriesSorted = newEntries
-                .entrySet()
-                .stream()
-                .sorted((entry1, entry2) -> comparator.compare(entry1.getKey(), entry2.getKey()))
-                .toArray(Map.Entry[]::new);
-        ArrayList<KeyInfo<K>> keyInfos = new ArrayList<>(newEntriesSorted.length);
-
+        KeyWrapper<Key, Value>[] wrappers = new KeyWrapper[newEntries.size()];
+        Collections.sort(newEntries, comparator);
         try (FileOutputStream fileOutput = new FileOutputStream(newTableFile);
              FileChannel fileChannel = fileOutput.getChannel();
              DataOutputStream output = new DataOutputStream(fileOutput)) {
             output.writeInt(newEntries.size());
-            for (Map.Entry<K, V> entry : newEntriesSorted) {
-                K key = entry.getKey();
-                long position = fileChannel.position();
-                keys.put(key, new Offset(newTableIndex, position));
-                keyInfos.add(new KeyInfo<>(key, position));
-                valueSerializationStrategy.serializeToStream(entry.getValue(), output);
+            for (int i = 0; i < newEntries.size(); i++) {
+                Key key = newEntries.get(i);
+                KeyWrapper<Key, Value> wrapper = keys.get(key);
+                wrappers[i] = wrapper;
+                wrapper.fileIndex = newTableIndex;
+                wrapper.offsetInFile = fileChannel.position();
+                valueSerializationStrategy.serializeToStream(wrapper.value, output);
+                wrapper.value = null;
             }
             sstableFiles.add(new BufferedRandomAccessFile(getTableFile(newTableIndex)));
         } catch (IOException e) {
             throw new RuntimeException("Can't write to one of table files " + newTableFile.getAbsolutePath(), e);
         }
-        sstablesKeys.add(keyInfos.toArray(new KeyInfo[keyInfos.size()]));
-        newEntries = new HashMap<>();
+        sstablesKeys.add(wrappers);
+        newEntries.clear();
     }
 
     private void checkForMergeTablesOnDisk() throws IOException {
@@ -204,26 +204,28 @@ public class LSMStorage<K, V> implements KeyValueStorage<K, V> {
 
     private class MergeInfo {
         public final int length;
-        private final KeyInfo<K>[] keyInfos;
+        private final KeyWrapper<Key, Value>[] wrappers;
         private final FileInputStream input;
         private final long fileLength;
 
         MergeInfo(int i) throws IOException {
-            keyInfos = sstablesKeys.get(i);
-            length = keyInfos.length;
+            wrappers = sstablesKeys.get(i);
+            length = wrappers.length;
             input = new FileInputStream(getTableFile(i));
             int lengthRecordedInFile = new DataInputStream(input).readInt();
-            assert lengthRecordedInFile == keyInfos.length;
+            if (lengthRecordedInFile != wrappers.length) {
+                throw new IOException("TODO");
+            }
             fileLength = sstableFiles.get(i).fileLength();
         }
 
-        public K keyAt(int i) {
-            return keyInfos[i].key;
+        public Key keyAt(int i) {
+            return wrappers[i].key;
         }
 
-        private int getValueSize(int i) {
-            long end = i == length - 1 ? fileLength : keyInfos[i + 1].offsetInFile;
-            long start = keyInfos[i].offsetInFile;
+        public int getValueSize(int i) {
+            long end = i == length - 1 ? fileLength : wrappers[i + 1].offsetInFile;
+            long start = wrappers[i].offsetInFile;
             return (int) (end - start);
         }
 
@@ -239,7 +241,7 @@ public class LSMStorage<K, V> implements KeyValueStorage<K, V> {
         public String toString() {
             return "MergeInfo{" +
                     "length=" + length +
-                    ", keyInfos=" + Arrays.toString(keyInfos) +
+                    ", wrappers=" + Arrays.toString(wrappers) +
                     '}';
         }
     }
@@ -248,14 +250,13 @@ public class LSMStorage<K, V> implements KeyValueStorage<K, V> {
     // Полученной таблице присваивается номер i
     // Кроме того индексы всех таблиц с номерами j > i + 1 уменьшаются на один
     private void mergeTwoTableFiles(int iFile) throws IOException {
-        boolean checkForDeletes = iFile == sstableFiles.size() - 2;
         MergeInfo info1 = new MergeInfo(iFile);
         MergeInfo info2 = new MergeInfo(iFile + 1);
 
         int maxValueSize = Math.max(info1.getMaxValueSize(), info2.getMaxValueSize());
         byte[] buffer = new byte[maxValueSize];
 
-        ArrayList<KeyInfo<K>> keysMerged = new ArrayList<>(info1.length + info2.length);
+        ArrayList<KeyWrapper<Key, Value>> wrappersMerged = new ArrayList<>(info1.length + info2.length);
         File tempFile = Files.createTempFile("temp_table", "dat").toFile();
         try (FileOutputStream output = new FileOutputStream(tempFile)) {
             new DataOutputStream(output).writeInt(info1.length + info2.length); // Это число перезапишется позже
@@ -263,43 +264,45 @@ public class LSMStorage<K, V> implements KeyValueStorage<K, V> {
             int i2 = 0;
             long position = 4;
             while (i1 < info1.length || i2 < info2.length) {
-                K key1 = i1 == info1.length ? null : info1.keyAt(i1);
-                K key2 = i2 == info2.length ? null : info2.keyAt(i2);
+                Key key1 = i1 == info1.length ? null : info1.keyAt(i1);
+                Key key2 = i2 == info2.length ? null : info2.keyAt(i2);
                 int compare = key1 == null ? 1 : key2 == null ? -1 : comparator.compare(key1, key2);
                 int i = compare < 0 ? i1++ : i2++;
-                K key = compare < 0 ? key1 : key2;
+                Key key = compare < 0 ? key1 : key2;
                 MergeInfo info = compare < 0 ? info1 : info2;
 
-                if (!checkForDeletes || keys.containsKey(key)) {
+                KeyWrapper<Key, Value> wrapper = keys.get(key);
+                if (wrapper != null) {
                     int readSize = info.getValueSize(i);
                     int realReadSize = info.input.read(buffer, 0, readSize);
-                    if (realReadSize < readSize) {
+                    if (realReadSize != readSize) {
                         throw new RuntimeException("TODO");
                     }
                     output.write(buffer, 0, readSize);
-                    keys.put(key, new Offset(iFile, position));
-                    keysMerged.add(new KeyInfo<>(key, position));
+                    wrapper.fileIndex = iFile;
+                    wrapper.offsetInFile = position;
+                    wrappersMerged.add(wrapper);
                     position += readSize;
                 } else {
                     int readSize = info.getValueSize(i);
                     long realReadSize = info.input.skip(readSize);
-                    if (realReadSize < readSize) {
+                    if (realReadSize != readSize) {
                         throw new RuntimeException("TODO");
                     }
                 }
 
                 if (compare == 0) {
-                    int numberToSkip = info1.getValueSize(i1);
-                    long numberSkipped = info1.input.skip(numberToSkip);
-                    if (numberSkipped != numberToSkip) {
-                        throw new RuntimeException("");
+                    int numberBytesToSkip = info1.getValueSize(i1);
+                    long numberBytesSkipped = info1.input.skip(numberBytesToSkip);
+                    if (numberBytesSkipped != numberBytesToSkip) {
+                        throw new RuntimeException("TODO");
                     }
                     ++i1;
                 }
             }
         }
         try (RandomAccessFile randomAccessFile = new RandomAccessFile(tempFile, "rw")) {
-            randomAccessFile.writeInt(keysMerged.size());
+            randomAccessFile.writeInt(wrappersMerged.size());
         }
 
         Files.move(tempFile.toPath(), getTableFile(iFile).toPath(), StandardCopyOption.REPLACE_EXISTING);
@@ -308,7 +311,7 @@ public class LSMStorage<K, V> implements KeyValueStorage<K, V> {
         }
         Files.delete(getTableFile(sstableFiles.size() - 1).toPath());
 
-        sstablesKeys.set(iFile, keysMerged.toArray(new KeyInfo[keysMerged.size()]));
+        sstablesKeys.set(iFile, wrappersMerged.toArray(new KeyWrapper[wrappersMerged.size()]));
         sstablesKeys.remove(iFile + 1);
         sstableFiles.set(iFile, new BufferedRandomAccessFile(getTableFile(iFile)));
         sstableFiles.remove(iFile + 1);
@@ -325,26 +328,25 @@ public class LSMStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     @Override
-    public synchronized V read(K key) {
+    public synchronized Value read(Key key) {
         checkForClosed();
-        if (!keys.containsKey(key)) {
+        KeyWrapper<Key, Value> wrapper = keys.get(key);
+        if (wrapper == null) {
             return null;
         }
-        V cacheValue = cache.getIfPresent(key);
+        if (wrapper.value != null) {
+            return wrapper.value;
+        }
+        Value cacheValue = cache.getIfPresent(key);
         if (cacheValue != null) {
             return cacheValue;
         }
-        V newEntriesValue = newEntries.get(key);
-        if (newEntriesValue != null) {
-            return newEntriesValue;
-        }
 
-        Offset offset = keys.get(key);
-        assert offset != null && offset.fileIndex != -1;
-        BufferedRandomAccessFile bufferedRandomAccessFile = sstableFiles.get(offset.fileIndex);
-        V value;
+        assert wrapper.fileIndex != -1;
+        BufferedRandomAccessFile bufferedRandomAccessFile = sstableFiles.get(wrapper.fileIndex);
+        Value value;
         try {
-            bufferedRandomAccessFile.seek(offset.offsetInFile);
+            bufferedRandomAccessFile.seek(wrapper.offsetInFile);
             value = valueSerializationStrategy.deserializeFromStream(bufferedRandomAccessFile.getDataInputStream());
             cache.put(key, value);
         } catch (IOException e) {
@@ -354,17 +356,27 @@ public class LSMStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     @Override
-    public synchronized boolean exists(K key) {
+    public synchronized boolean exists(Key key) {
         checkForClosed();
         return keys.containsKey(key);
     }
 
     @Override
-    public synchronized void write(K key, V value) {
+    public synchronized void write(Key key, Value value) {
         checkForClosed();
-        keys.put(key, Offset.NONE);
+        KeyWrapper<Key, Value> wrapper = keys.get(key);
+        if (wrapper == null) {
+            keys.put(key, new KeyWrapper<>(key, value, newEntries.size()));
+            newEntries.add(key);
+        } else {
+            wrapper.fileIndex = -1;
+            wrapper.offsetInFile = -1;
+            wrapper.indexInNewEntries = newEntries.size();
+            if (wrapper.value == null) { // то есть если key не содержится в newEntries
+                newEntries.add(key);
+            }
+        }
         cache.put(key, value);
-        newEntries.put(key, value);
         try {
             checkForNewEntriesSize();
         } catch (IOException e) {
@@ -374,15 +386,23 @@ public class LSMStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     @Override
-    public synchronized void delete(K key) {
+    public synchronized void delete(Key key) {
         checkForClosed();
-        keys.remove(key);
+        KeyWrapper<Key, Value> wrapper = keys.remove(key);
+        if (wrapper.value != null) {
+            wrapper.value = null;
+            wrapper.indexInNewEntries = -1;
+            Key lastNewEntryKey = newEntries.remove(newEntries.size() - 1);
+            if (lastNewEntryKey != key) {
+                newEntries.set(wrapper.indexInNewEntries, lastNewEntryKey);
+                keys.get(lastNewEntryKey).indexInNewEntries = wrapper.indexInNewEntries;
+            }
+        }
         cache.invalidate(key);
-        newEntries.remove(key);
     }
 
     @Override
-    public synchronized Iterator<K> readKeys() {
+    public synchronized Iterator<Key> readKeys() {
         checkForClosed();
         return keys.keySet().iterator();
     }
