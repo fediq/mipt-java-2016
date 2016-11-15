@@ -137,8 +137,8 @@ public class LSMStorage<Key, Value> implements KeyValueStorage<Key, Value> {
             for (Map.Entry<Key, KeyWrapper<Key, Value>> entry : keys.entrySet()) {
                 keySerializationStrategy.serializeToStream(entry.getKey(), output);
                 KeyWrapper<Key, Value> wrapper = entry.getValue();
-                output.writeInt(wrapper.fileIndex);
-                output.writeLong(wrapper.offsetInFile);
+                output.writeInt(wrapper.getFileIndex());
+                output.writeLong(wrapper.getOffsetInFile());
             }
         }
     }
@@ -173,10 +173,10 @@ public class LSMStorage<Key, Value> implements KeyValueStorage<Key, Value> {
                 Key key = newEntries.get(i);
                 KeyWrapper<Key, Value> wrapper = keys.get(key);
                 wrappers[i] = wrapper;
-                wrapper.fileIndex = newTableIndex;
-                wrapper.offsetInFile = fileChannel.position();
-                valueSerializationStrategy.serializeToStream(wrapper.value, output);
-                wrapper.value = null;
+                wrapper.setFileIndex(newTableIndex);
+                wrapper.setOffsetInFile(fileChannel.position());
+                valueSerializationStrategy.serializeToStream(wrapper.getValue(), output);
+                wrapper.setValue(null);
             }
             sstablesBufferedRandomAccessFiles.add(new BufferedRandomAccessFile(getTableFile(newTableIndex)));
         } catch (IOException e) {
@@ -282,8 +282,8 @@ public class LSMStorage<Key, Value> implements KeyValueStorage<Key, Value> {
                         throw new MyException("TODO");
                     }
                     output.write(buffer, 0, readSize);
-                    wrapper.fileIndex = iFile;
-                    wrapper.offsetInFile = position;
+                    wrapper.setFileIndex(iFile);
+                    wrapper.setOffsetInFile(position);
                     wrappersMerged.add(wrapper);
                     position += readSize;
                 } else {
@@ -318,10 +318,6 @@ public class LSMStorage<Key, Value> implements KeyValueStorage<Key, Value> {
         sstablesKeys.remove(iFile + 1);
         sstablesBufferedRandomAccessFiles.set(iFile, new BufferedRandomAccessFile(getTableFile(iFile)));
         sstablesBufferedRandomAccessFiles.remove(iFile + 1);
-
-//        String[] filesRigth = IntStream.range(0, sstableFiles.size()).mapToObj(i -> "table" + i + ".dat").toArray(String[]::new);
-//        String[] filesReal = Files.list(storageDirectory.toPath()).map(Path::getFileName).map(Path::toString).filter(s -> s.charAt(0) == 't').sorted().toArray(String[]::new);
-//        assert Arrays.deepEquals(filesReal, filesRigth);
     }
 
     private void checkForClosed() {
@@ -337,19 +333,20 @@ public class LSMStorage<Key, Value> implements KeyValueStorage<Key, Value> {
         if (wrapper == null) {
             return null;
         }
-        if (wrapper.value != null) {
-            return wrapper.value;
+        if (wrapper.getValue() != null) {
+            return wrapper.getValue();
         }
         Value cacheValue = cache.getIfPresent(key);
         if (cacheValue != null) {
             return cacheValue;
         }
 
-        assert wrapper.fileIndex != -1;
-        BufferedRandomAccessFile bufferedRandomAccessFile = sstablesBufferedRandomAccessFiles.get(wrapper.fileIndex);
+        assert wrapper.getFileIndex() != -1;
+        BufferedRandomAccessFile bufferedRandomAccessFile =
+                sstablesBufferedRandomAccessFiles.get(wrapper.getFileIndex());
         Value value;
         try {
-            bufferedRandomAccessFile.seek(wrapper.offsetInFile);
+            bufferedRandomAccessFile.seek(wrapper.getOffsetInFile());
             value = valueSerializationStrategy.deserializeFromStream(bufferedRandomAccessFile.getDataInputStream());
             cache.put(key, value);
         } catch (IOException e) {
@@ -372,13 +369,13 @@ public class LSMStorage<Key, Value> implements KeyValueStorage<Key, Value> {
             keys.put(key, new KeyWrapper<>(key, value, newEntries.size()));
             newEntries.add(key);
         } else {
-            wrapper.fileIndex = -1;
-            wrapper.offsetInFile = -1;
-            wrapper.indexInNewEntries = newEntries.size();
-            if (wrapper.value == null) { // то есть если key не содержится в newEntries
+            wrapper.setFileIndex(-1);
+            wrapper.setOffsetInFile(-1);
+            wrapper.setIndexInNewEntries(newEntries.size());
+            if (wrapper.getValue() == null) { // то есть если key не содержится в newEntries
                 newEntries.add(key);
             }
-            wrapper.value = value;
+            wrapper.setValue(value);
         }
         cache.put(key, value);
         try {
@@ -393,15 +390,15 @@ public class LSMStorage<Key, Value> implements KeyValueStorage<Key, Value> {
     public synchronized void delete(Key key) {
         checkForClosed();
         KeyWrapper<Key, Value> wrapper = keys.remove(key);
-        if (wrapper.value != null) {
-            wrapper.value = null;
+        if (wrapper.getValue() != null) {
+            wrapper.setValue(null);
 //            wrapper.fileIndex = -1;
 //            wrapper.offsetInFile = -1;
 //            wrapper.indexInNewEntries = -1;
             Key lastNewEntryKey = newEntries.remove(newEntries.size() - 1);
             if (lastNewEntryKey != key) {
-                newEntries.set(wrapper.indexInNewEntries, lastNewEntryKey);
-                keys.get(lastNewEntryKey).indexInNewEntries = wrapper.indexInNewEntries;
+                newEntries.set(wrapper.getIndexInNewEntries(), lastNewEntryKey);
+                keys.get(lastNewEntryKey).setIndexInNewEntries(wrapper.getIndexInNewEntries());
             }
         }
         cache.invalidate(key);

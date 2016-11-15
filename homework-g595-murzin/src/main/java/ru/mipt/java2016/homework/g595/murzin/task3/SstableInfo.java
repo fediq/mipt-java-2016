@@ -5,8 +5,8 @@ package ru.mipt.java2016.homework.g595.murzin.task3;
  */
 public class SstableInfo<Key, Value> {
     public final int length;
-    public Key[] keys;
-    public long[] valuesOffsets;
+    public final Key[] keys;
+    public final long[] valuesOffsets;
 
     public SstableInfo(KeyWrapper<Key, Value>[] wrappers) {
         length = wrappers.length;
@@ -14,7 +14,7 @@ public class SstableInfo<Key, Value> {
         valuesOffsets = new long[length];
         for (int i = 0; i < length; i++) {
             keys[i] = wrappers[i].key;
-            valuesOffsets[i] = wrappers[i].offsetInFile;
+            valuesOffsets[i] = wrappers[i].getOffsetInFile();
         }
     }
 }
