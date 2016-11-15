@@ -17,7 +17,6 @@ import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,7 +25,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.stream.IntStream;
 
 /**
  * Created by dima on 05.11.16.
@@ -36,7 +34,7 @@ public class LSMStorage<Key, Value> implements KeyValueStorage<Key, Value> {
     private static final String KEYS_FILE_NAME = "keys.dat";
     private static final int MAX_VALUE_SIZE = 10 * 1024;
     private static final int MAX_RAM_SIZE = 64 * 1024 * 1024;
-    private static final double NEW_ENTRIES_PERCENTAGE = 0.3051;
+    private static final double NEW_ENTRIES_PERCENTAGE = 0.3052 / 2;
     private static final double CACHE_PERCENTAGE = NEW_ENTRIES_PERCENTAGE;
     private static final int MAX_NEW_ENTRIES_SIZE = (int) (MAX_RAM_SIZE * NEW_ENTRIES_PERCENTAGE / MAX_VALUE_SIZE);
     private static final int MAX_CACHE_SIZE = (int) (MAX_RAM_SIZE * CACHE_PERCENTAGE / MAX_VALUE_SIZE);
@@ -48,7 +46,7 @@ public class LSMStorage<Key, Value> implements KeyValueStorage<Key, Value> {
     private File storageDirectory;
 
     private Map<Key, KeyWrapper<Key, Value>> keys = new HashMap<>();
-    private ArrayList<KeyWrapper<Key, Value>[]> sstablesKeys = new ArrayList<>();
+    private ArrayList<SstableInfo<Key, Value>> sstablesKeys = new ArrayList<>();
 
     //    private Map<Key, Value> newEntries = new HashMap<>(MAX_NEW_ENTRIES_SIZE);
     private ArrayList<Key> newEntries = new ArrayList<>(MAX_NEW_ENTRIES_SIZE);
@@ -57,7 +55,8 @@ public class LSMStorage<Key, Value> implements KeyValueStorage<Key, Value> {
             .newBuilder()
             .maximumSize(MAX_CACHE_SIZE)
             .build();
-    private ArrayList<BufferedRandomAccessFile> sstableFiles = new ArrayList<>();
+    private ArrayList<BufferedRandomAccessFile> sstablesBufferedRandomAccessFiles = new ArrayList<>();
+    private ArrayList<File> sstableFiles = new ArrayList<>();
     private volatile boolean isClosed;
 
     public LSMStorage(String path,
@@ -70,7 +69,7 @@ public class LSMStorage<Key, Value> implements KeyValueStorage<Key, Value> {
 
         storageDirectory = new File(path);
         if (!storageDirectory.isDirectory() || !storageDirectory.exists()) {
-            throw new RuntimeException("Path " + path + " is not a valid directory name");
+            throw new MyException("Path " + path + " is not a valid directory name");
         }
 
         synchronized (LSMStorage.class) {
@@ -78,7 +77,7 @@ public class LSMStorage<Key, Value> implements KeyValueStorage<Key, Value> {
                 // It is between processes lock!!!
                 lock = new RandomAccessFile(new File(path, ".lock"), "rw").getChannel().lock();
             } catch (IOException e) {
-                throw new RuntimeException("Can't create lock file", e);
+                throw new MyException("Can't create lock file", e);
             }
         }
 
@@ -86,11 +85,11 @@ public class LSMStorage<Key, Value> implements KeyValueStorage<Key, Value> {
         if (getTableFile(0).exists()) {
             KeyWrapper<Key, Value>[] wrappers = keys.values().toArray(new KeyWrapper[keys.size()]);
             Arrays.sort(wrappers, (wrapper1, wrapper2) -> comparator.compare(wrapper1.key, wrapper2.key));
-            sstablesKeys.add(wrappers);
+            sstablesKeys.add(new SstableInfo<>(wrappers));
             try {
-                sstableFiles.add(new BufferedRandomAccessFile(getTableFile(0)));
+                sstablesBufferedRandomAccessFiles.add(new BufferedRandomAccessFile(getTableFile(0)));
             } catch (FileNotFoundException e) {
-                throw new RuntimeException("Кажется вы умудрились удалить файл базы сразу после того, " +
+                throw new MyException("Кажется вы умудрились удалить файл базы сразу после того, " +
                         "как мы проверили, что он существует...", e);
             }
         }
@@ -101,7 +100,13 @@ public class LSMStorage<Key, Value> implements KeyValueStorage<Key, Value> {
     }
 
     private File getTableFile(int index) {
-        return new File(storageDirectory, getTableFileName(index));
+        while (index >= sstableFiles.size()) {
+            sstableFiles.add(null);
+        }
+        if (sstableFiles.get(index) == null) {
+            sstableFiles.set(index, new File(storageDirectory, getTableFileName(index)));
+        }
+        return sstableFiles.get(index);
     }
 
     private void readAllKeys() {
@@ -117,7 +122,7 @@ public class LSMStorage<Key, Value> implements KeyValueStorage<Key, Value> {
                 keys.put(key, wrapper);
             }
         } catch (IOException e) {
-            throw new RuntimeException("Can't read from keys file " + keysFile.getAbsolutePath(), e);
+            throw new MyException("Can't read from keys file " + keysFile.getAbsolutePath(), e);
         }
     }
 
@@ -135,8 +140,6 @@ public class LSMStorage<Key, Value> implements KeyValueStorage<Key, Value> {
                 output.writeInt(wrapper.fileIndex);
                 output.writeLong(wrapper.offsetInFile);
             }
-        } catch (IOException e) {
-            throw new RuntimeException("Can't write to keys file " + keysFile.getAbsolutePath(), e);
         }
     }
 
@@ -152,12 +155,12 @@ public class LSMStorage<Key, Value> implements KeyValueStorage<Key, Value> {
         if (newEntries.isEmpty()) {
             return;
         }
-        int newTableIndex = sstableFiles.size();
+        int newTableIndex = sstablesBufferedRandomAccessFiles.size();
         File newTableFile = getTableFile(newTableIndex);
         try {
             Files.createFile(newTableFile.toPath());
         } catch (IOException e) {
-            throw new RuntimeException("Can't create one of table files " + newTableFile.getAbsolutePath(), e);
+            throw new MyException("Can't create one of table files " + newTableFile.getAbsolutePath(), e);
         }
 
         KeyWrapper<Key, Value>[] wrappers = new KeyWrapper[newEntries.size()];
@@ -175,18 +178,18 @@ public class LSMStorage<Key, Value> implements KeyValueStorage<Key, Value> {
                 valueSerializationStrategy.serializeToStream(wrapper.value, output);
                 wrapper.value = null;
             }
-            sstableFiles.add(new BufferedRandomAccessFile(getTableFile(newTableIndex)));
+            sstablesBufferedRandomAccessFiles.add(new BufferedRandomAccessFile(getTableFile(newTableIndex)));
         } catch (IOException e) {
-            throw new RuntimeException("Can't write to one of table files " + newTableFile.getAbsolutePath(), e);
+            throw new MyException("Can't write to one of table files " + newTableFile.getAbsolutePath(), e);
         }
-        sstablesKeys.add(wrappers);
+        sstablesKeys.add(new SstableInfo<>(wrappers));
         newEntries.clear();
     }
 
     private void checkForMergeTablesOnDisk() throws IOException {
         // https://habrahabr.ru/post/251751/
-        while (sstableFiles.size() > 1) {
-            int n = sstableFiles.size() - 2;
+        while (sstablesBufferedRandomAccessFiles.size() > 1) {
+            int n = sstablesBufferedRandomAccessFiles.size() - 2;
             int[] tablesLength = sstablesKeys.stream().mapToInt(table -> table.length).toArray();
             if (n > 0 && tablesLength[n - 1] <= tablesLength[n] + tablesLength[n + 1]
                     || n - 1 > 0 && tablesLength[n - 2] <= tablesLength[n] + tablesLength[n - 1]) {
@@ -196,36 +199,36 @@ public class LSMStorage<Key, Value> implements KeyValueStorage<Key, Value> {
             } else if (n < 0 || tablesLength[n] > tablesLength[n + 1]) {
                 break; // инвариант установлен
             }
-            System.out.printf("%50s    ", Arrays.toString(tablesLength));
+//            System.out.printf("%50s    ", Arrays.toString(tablesLength));
             mergeTwoTableFiles(n);
-            System.out.println(Arrays.toString(sstablesKeys.stream().mapToInt(table -> table.length).toArray()));
+//            System.out.println(Arrays.toString(sstablesKeys.stream().mapToInt(table -> table.length).toArray()));
         }
     }
 
     private class MergeInfo {
         public final int length;
-        private final KeyWrapper<Key, Value>[] wrappers;
+        private final SstableInfo<Key, Value> sstableInfo;
         private final FileInputStream input;
         private final long fileLength;
 
         MergeInfo(int i) throws IOException {
-            wrappers = sstablesKeys.get(i);
-            length = wrappers.length;
+            sstableInfo = sstablesKeys.get(i);
+            length = sstableInfo.length;
             input = new FileInputStream(getTableFile(i));
             int lengthRecordedInFile = new DataInputStream(input).readInt();
-            if (lengthRecordedInFile != wrappers.length) {
-                throw new IOException("TODO");
+            if (lengthRecordedInFile != sstableInfo.length) {
+                throw new MyException("TODO");
             }
-            fileLength = sstableFiles.get(i).fileLength();
+            fileLength = sstablesBufferedRandomAccessFiles.get(i).fileLength();
         }
 
         public Key keyAt(int i) {
-            return wrappers[i].key;
+            return sstableInfo.keys[i];
         }
 
         public int getValueSize(int i) {
-            long end = i == length - 1 ? fileLength : wrappers[i + 1].offsetInFile;
-            long start = wrappers[i].offsetInFile;
+            long end = i == length - 1 ? fileLength : sstableInfo.valuesOffsets[i + 1];
+            long start = sstableInfo.valuesOffsets[i];
             return (int) (end - start);
         }
 
@@ -241,7 +244,7 @@ public class LSMStorage<Key, Value> implements KeyValueStorage<Key, Value> {
         public String toString() {
             return "MergeInfo{" +
                     "length=" + length +
-                    ", wrappers=" + Arrays.toString(wrappers) +
+                    ", sstableInfo=" + sstableInfo +
                     '}';
         }
     }
@@ -276,7 +279,7 @@ public class LSMStorage<Key, Value> implements KeyValueStorage<Key, Value> {
                     int readSize = info.getValueSize(i);
                     int realReadSize = info.input.read(buffer, 0, readSize);
                     if (realReadSize != readSize) {
-                        throw new RuntimeException("TODO");
+                        throw new MyException("TODO");
                     }
                     output.write(buffer, 0, readSize);
                     wrapper.fileIndex = iFile;
@@ -287,7 +290,7 @@ public class LSMStorage<Key, Value> implements KeyValueStorage<Key, Value> {
                     int readSize = info.getValueSize(i);
                     long realReadSize = info.input.skip(readSize);
                     if (realReadSize != readSize) {
-                        throw new RuntimeException("TODO");
+                        throw new MyException("TODO");
                     }
                 }
 
@@ -295,7 +298,7 @@ public class LSMStorage<Key, Value> implements KeyValueStorage<Key, Value> {
                     int numberBytesToSkip = info1.getValueSize(i1);
                     long numberBytesSkipped = info1.input.skip(numberBytesToSkip);
                     if (numberBytesSkipped != numberBytesToSkip) {
-                        throw new RuntimeException("TODO");
+                        throw new MyException("TODO");
                     }
                     ++i1;
                 }
@@ -306,19 +309,19 @@ public class LSMStorage<Key, Value> implements KeyValueStorage<Key, Value> {
         }
 
         Files.move(tempFile.toPath(), getTableFile(iFile).toPath(), StandardCopyOption.REPLACE_EXISTING);
-        for (int j = iFile + 2; j < sstableFiles.size(); j++) {
+        for (int j = iFile + 2; j < sstablesBufferedRandomAccessFiles.size(); j++) {
             Files.move(getTableFile(j).toPath(), getTableFile(j - 1).toPath(), StandardCopyOption.REPLACE_EXISTING);
         }
-        Files.delete(getTableFile(sstableFiles.size() - 1).toPath());
+        Files.delete(getTableFile(sstablesBufferedRandomAccessFiles.size() - 1).toPath());
 
-        sstablesKeys.set(iFile, wrappersMerged.toArray(new KeyWrapper[wrappersMerged.size()]));
+        sstablesKeys.set(iFile, new SstableInfo<>(wrappersMerged.toArray(new KeyWrapper[wrappersMerged.size()])));
         sstablesKeys.remove(iFile + 1);
-        sstableFiles.set(iFile, new BufferedRandomAccessFile(getTableFile(iFile)));
-        sstableFiles.remove(iFile + 1);
+        sstablesBufferedRandomAccessFiles.set(iFile, new BufferedRandomAccessFile(getTableFile(iFile)));
+        sstablesBufferedRandomAccessFiles.remove(iFile + 1);
 
-        String[] filesRigth = IntStream.range(0, sstableFiles.size()).mapToObj(i -> "table" + i + ".dat").toArray(String[]::new);
-        String[] filesReal = Files.list(storageDirectory.toPath()).map(Path::getFileName).map(Path::toString).filter(s -> s.charAt(0) == 't').sorted().toArray(String[]::new);
-        assert Arrays.deepEquals(filesReal, filesRigth);
+//        String[] filesRigth = IntStream.range(0, sstableFiles.size()).mapToObj(i -> "table" + i + ".dat").toArray(String[]::new);
+//        String[] filesReal = Files.list(storageDirectory.toPath()).map(Path::getFileName).map(Path::toString).filter(s -> s.charAt(0) == 't').sorted().toArray(String[]::new);
+//        assert Arrays.deepEquals(filesReal, filesRigth);
     }
 
     private void checkForClosed() {
@@ -343,14 +346,14 @@ public class LSMStorage<Key, Value> implements KeyValueStorage<Key, Value> {
         }
 
         assert wrapper.fileIndex != -1;
-        BufferedRandomAccessFile bufferedRandomAccessFile = sstableFiles.get(wrapper.fileIndex);
+        BufferedRandomAccessFile bufferedRandomAccessFile = sstablesBufferedRandomAccessFiles.get(wrapper.fileIndex);
         Value value;
         try {
             bufferedRandomAccessFile.seek(wrapper.offsetInFile);
             value = valueSerializationStrategy.deserializeFromStream(bufferedRandomAccessFile.getDataInputStream());
             cache.put(key, value);
         } catch (IOException e) {
-            throw new RuntimeException("Can't read from one of table files", e);
+            throw new MyException("Can't read from one of table files", e);
         }
         return value;
     }
@@ -375,12 +378,13 @@ public class LSMStorage<Key, Value> implements KeyValueStorage<Key, Value> {
             if (wrapper.value == null) { // то есть если key не содержится в newEntries
                 newEntries.add(key);
             }
+            wrapper.value = value;
         }
         cache.put(key, value);
         try {
             checkForNewEntriesSize();
         } catch (IOException e) {
-            throw new RuntimeException("Произошла IOException. " +
+            throw new MyException("Произошла IOException. " +
                     "В идеале она должна быть проброшена дальше как checked, но ...", e);
         }
     }
@@ -391,7 +395,9 @@ public class LSMStorage<Key, Value> implements KeyValueStorage<Key, Value> {
         KeyWrapper<Key, Value> wrapper = keys.remove(key);
         if (wrapper.value != null) {
             wrapper.value = null;
-            wrapper.indexInNewEntries = -1;
+//            wrapper.fileIndex = -1;
+//            wrapper.offsetInFile = -1;
+//            wrapper.indexInNewEntries = -1;
             Key lastNewEntryKey = newEntries.remove(newEntries.size() - 1);
             if (lastNewEntryKey != key) {
                 newEntries.set(wrapper.indexInNewEntries, lastNewEntryKey);
@@ -418,8 +424,8 @@ public class LSMStorage<Key, Value> implements KeyValueStorage<Key, Value> {
         // TODO если остался один файл -- удалить из него удалённые ключи
         checkForClosed();
         pushNewEntriesToDisk();
-        while (sstableFiles.size() > 1) {
-            mergeTwoTableFiles(sstableFiles.size() - 2);
+        while (sstablesBufferedRandomAccessFiles.size() > 1) {
+            mergeTwoTableFiles(sstablesBufferedRandomAccessFiles.size() - 2);
         }
         writeAllKeys();
         lock.release();
