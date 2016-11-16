@@ -19,7 +19,7 @@ public class SSTableKeyValueStoragePerfomanceTest extends KeyValueStoragePerform
     protected KeyValueStorage<String, String> buildStringsStorage(String path) throws MalformedDataException {
         try {
             return new SSTableKeyValueStorage<>(path,
-                    new FastStringSerializer(), new FastStringSerializer(), 1000, 1000);
+                    new FastStringSerializer(), new FastStringSerializer(), 1500, 500);
         }catch (IOException e){
             return null;
         }
@@ -29,7 +29,7 @@ public class SSTableKeyValueStoragePerfomanceTest extends KeyValueStoragePerform
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) throws MalformedDataException {
         try {
             return new SSTableKeyValueStorage<>(path, new IntegerSerializer(),
-                    new DoubleSerializer(), 1000, 1000);
+                    new DoubleSerializer(), 1500, 500);
         }catch (IOException e){
             return null;
         }
@@ -39,7 +39,7 @@ public class SSTableKeyValueStoragePerfomanceTest extends KeyValueStoragePerform
     protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) throws MalformedDataException {
         try {
             return new SSTableKeyValueStorage<>(path, new StudentKeySerializer(),
-                    new StudentSerializer(), 1000, 1000);
+                    new StudentSerializer(), 1500, 500);
         }catch (IOException e){
             return null;
         }
