@@ -9,6 +9,8 @@ import java.util.PriorityQueue;
 
 public class KWayOptimizedKvs<K, V> extends OptimizedKvs<K, V> {
 
+    static final int MERGE_BUFFER_SIZE = Consts.MAX_VALUE_SIZE*Consts.DUMP_THRESHOLD/Consts.MERGE_THRESHOLD;
+
     public KWayOptimizedKvs(String path, SerializationStrategy<K> keySerializationStrategy,
                             SerializationStrategy<V> valueSerializationStrategy,
                             Comparator<K> comparator) throws KVSException {
@@ -59,7 +61,7 @@ public class KWayOptimizedKvs<K, V> extends OptimizedKvs<K, V> {
         int i = 0;
         for (OptimizedKvs.Part part : parts) {
             part.raf.seek(0);
-            diss.add(bdisFromRaf(part.raf, OptimizedKvs.Consts.BUFFER_SIZE));
+            diss.add(bdisFromRaf(part.raf, MERGE_BUFFER_SIZE));
             Iterator<K> iter = part.keys.iterator();
             K firstKey = iter.hasNext() ? iter.next() : null;
             iters.add(iter);

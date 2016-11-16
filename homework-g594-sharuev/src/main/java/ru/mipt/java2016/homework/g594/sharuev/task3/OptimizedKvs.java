@@ -50,7 +50,7 @@ abstract class OptimizedKvs<K, V> implements
 
         private V read(long offset) {
             try {
-                if (offset - curPos >= 0 && offset - curPos < Consts.SMALL_BUFFER_SIZE - Consts.VALUE_SIZE - 2) {
+                if (offset - curPos >= 0 && offset - curPos < Consts.SMALL_BUFFER_SIZE - Consts.MAX_VALUE_SIZE - 2) {
                     dis.reset();
                     dis.skip(offset - curPos);
                 } else {
@@ -60,7 +60,7 @@ abstract class OptimizedKvs<K, V> implements
                     dis.mark(Consts.SMALL_BUFFER_SIZE);
                 }
                 /*raf.seek(offset);
-                dis = DISfromRAF(raf);*/
+                dis = BDISfromRAF(raf);*/
                 return valueSerializationStrategy.deserializeFromStream(dis);
             } catch (Exception e) {
                 throw new KVSException("Failed to read from disk", e);
@@ -393,15 +393,11 @@ abstract class OptimizedKvs<K, V> implements
     }
 
     private class Validator {
-        private byte[] countHash() throws KVSException {
-            // Создаём считатель хэша.
-            Adler32 md;
-            md = new Adler32();
-            // Хэш файла ключей
-            File keyFile = Paths.get(path, dbName + Consts.KEY_STORAGE_NAME_SUFF).toFile();
-            try (InputStream is = new BufferedInputStream(new FileInputStream(keyFile));
+
+        void countHash(File keyFile, Adler32 md) {
+            try (InputStream is = new BufferedInputStream(new FileInputStream(keyFile), Consts.BUFFER_SIZE);
                  CheckedInputStream dis = new CheckedInputStream(is, md)) {
-                byte[] buf = new byte[8192];
+                byte[] buf = new byte[Consts.BUFFER_SIZE];
                 int response;
                 do {
                     response = dis.read(buf);
@@ -412,23 +408,17 @@ abstract class OptimizedKvs<K, V> implements
             } catch (IOException e) {
                 throw new KVSException("Some IO error while reading hash");
             }
+        }
+
+        private byte[] countAllNeededHash() throws KVSException {
+            // Создаём считатель хэша.
+            Adler32 md;
+            md = new Adler32();
+            // Хэш файла ключей
+            countHash( Paths.get(path, dbName + Consts.KEY_STORAGE_NAME_SUFF).toFile(), md);
 
             // Хэш файла значений
-            File valueFile = Paths.get(path, dbName + Consts.VALUE_STORAGE_NAME_SUFF).toFile();
-            try (InputStream is = new BufferedInputStream(new FileInputStream(valueFile));
-                 CheckedInputStream dis = new CheckedInputStream(is, md)) {
-                byte[] buf = new byte[8192];
-                int response;
-                do {
-                    response = dis.read(buf);
-                } while (response != -1);
-            } catch (FileNotFoundException e) {
-                throw new KVSException(
-                        String.format("Can't find file %s",
-                                dbName + Consts.VALUE_STORAGE_NAME_SUFF));
-            } catch (IOException e) {
-                throw new KVSException("Some IO error while reading hash");
-            }
+            countHash( Paths.get(path, dbName + Consts.VALUE_STORAGE_NAME_SUFF).toFile(), md);
 
             return Longs.toByteArray(md.getValue());
         }
@@ -439,7 +429,7 @@ abstract class OptimizedKvs<K, V> implements
             try {
                 // Читаем файл хэша в буфер.
                 ByteArrayOutputStream hashString = new ByteArrayOutputStream();
-                try (InputStream ifs = new FileInputStream(hashFile)) {
+                try (InputStream ifs = new BufferedInputStream(new FileInputStream(hashFile))) {
                     int c;
                     while ((c = ifs.read()) != -1) {
                         hashString.write(c);
@@ -447,7 +437,7 @@ abstract class OptimizedKvs<K, V> implements
                 }
 
                 // Проверка.
-                byte[] digest = countHash();
+                byte[] digest = countAllNeededHash();
                 if (!Arrays.equals(digest, hashString.toByteArray())) {
                     throw new KVSException("Hash mismatch");
                 }
@@ -464,8 +454,8 @@ abstract class OptimizedKvs<K, V> implements
             try {
                 File hashFile = Paths.get(path, dbName + Consts.STORAGE_HASH_SUFF).toFile();
 
-                byte[] digest = countHash();
-                try (OutputStream os = new FileOutputStream(hashFile)) {
+                byte[] digest = countAllNeededHash();
+                try (OutputStream os = new BufferedOutputStream(new FileOutputStream(hashFile))) {
                     os.write(digest);
                 }
 
@@ -490,10 +480,10 @@ abstract class OptimizedKvs<K, V> implements
         static final int CACHE_SIZE = 1;
         static final int DUMP_THRESHOLD = 1000;
         static final int MERGE_THRESHOLD = 20;
-        //final static int KeySize = 64;
-        static final int VALUE_SIZE = 8192;
-        static final int SMALL_BUFFER_SIZE = VALUE_SIZE;
-        static final int BUFFER_SIZE = VALUE_SIZE * 400;
+        //final static int KeySize = 100;
+        static final int MAX_VALUE_SIZE = 1024*10;
+        static final int SMALL_BUFFER_SIZE = MAX_VALUE_SIZE;
+        static final int BUFFER_SIZE = MAX_VALUE_SIZE * 400;
     }
 }
 
