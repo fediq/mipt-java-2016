@@ -10,7 +10,7 @@ import ru.mipt.java2016.homework.tests.task2.StudentKey;
  */
 public class StudentKeySerializer implements SerializerInterface<StudentKey> {
     @Override
-    public String serialize(StudentKey objToSerialize) {
+    public byte[] serialize(StudentKey objToSerialize) {
         if (objToSerialize == null) {
             return null;
         }
@@ -19,11 +19,12 @@ public class StudentKeySerializer implements SerializerInterface<StudentKey> {
                 .append(",")
                 .append(SerializerUtil.writeMemberString("name", objToSerialize.getName()))
                 .append("}");
-        return resultString.toString();
+        return resultString.toString().getBytes();
     }
 
     @Override
-    public StudentKey deserialize(String inputString) throws StorageException {
+    public StudentKey deserialize(byte[] inputStr) throws StorageException {
+        String inputString = new String(inputStr);
         SerializerUtil.checkBracket(inputString.charAt(0));
         SerializerUtil.checkBracket(inputString.charAt(inputString.length() - 1));
         String[] tokens = inputString.substring(1, inputString.length() - 1).split(",");

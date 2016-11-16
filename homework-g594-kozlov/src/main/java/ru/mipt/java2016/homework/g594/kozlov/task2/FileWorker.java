@@ -59,16 +59,16 @@ public class FileWorker implements Closeable {
         }
     }
 
-    public long bufferedWrite(String text) {
+    public long bufferedWrite(byte[] text) {
         try {
             innerExists();
             if (buffWr == null) {
                 buffWr = new BufferedOutputStream(new FileOutputStream(file.getAbsoluteFile()));
             }
-            byte[] bytes = ByteBuffer.allocate(4).putInt(text.length()).array();
+            byte[] bytes = ByteBuffer.allocate(4).putInt(text.length).array();
             buffWr.write(bytes);
-            buffWr.write(text.getBytes());
-            return text.getBytes().length + 4;
+            buffWr.write(text);
+            return text.length + 4;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -98,7 +98,7 @@ public class FileWorker implements Closeable {
         }
     }
 
-    public String readNextToken() {
+    public byte[] readNextToken() {
         try {
             innerExists();
             if (buffRd == null) {
@@ -123,7 +123,7 @@ public class FileWorker implements Closeable {
                 throw new RuntimeException("Reading failure");
             }
             currOffset += read;
-            return new String(bytes);
+            return bytes;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

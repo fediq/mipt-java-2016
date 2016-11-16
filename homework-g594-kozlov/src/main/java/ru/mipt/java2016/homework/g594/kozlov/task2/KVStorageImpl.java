@@ -18,7 +18,7 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
     private static final int CACHE_SIZE = 800;
     private Integer nextFileNum = 1;
     private final FileWorker configFile;
-    private FileNames[] workFileNames = null;
+    private Vector<FileNames> workFileNames = null;
     private final SerializerInterface<K> keySerializer;
     private final SerializerInterface<V> valueSerializer;
     private final String path;
@@ -82,6 +82,9 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
         } else {
             configFile.createFile();
             writeSysInfo();
+            if (!validateFile()) {
+                System.out.println("valid error");
+            }
         }
         threadMerger.start();
     }
@@ -105,22 +108,27 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
         if (!configFile.exists()) {
             return false;
         }
-        String token = configFile.readNextToken();
-        if (token == null || !token.equals(VALIDATE_STRING)) {
+        configFile.close();
+        byte[] token = configFile.readNextToken();
+        String tok = new String(token);
+        if (token == null || !tok.equals(VALIDATE_STRING)) {
+
             return false;
         }
         token = configFile.readNextToken();
-        if (token == null || !token.equals(keySerializer.getClassString())) {
+        tok = new String(token);
+        if (token == null || !tok.equals(keySerializer.getClassString())) {
             return false;
         }
         token = configFile.readNextToken();
-        if (token == null || !token.equals(valueSerializer.getClassString())) {
+        tok = new String(token);
+        if (token == null || !tok.equals(valueSerializer.getClassString())) {
             return false;
         }
         Vector<FileNames> vect = new Vector<>();
         token = configFile.readNextToken();
         while (token != null) {
-            String[] tokens = token.split(" ");
+            String[] tokens = new String(token).split(" ");
             vect.add(new FileNames(tokens[0], Long.parseLong(tokens[1])));
             int fileNum = Integer.parseInt(tokens[0].substring(8, tokens[0].length()));
             if (fileNum >= nextFileNum) {
@@ -128,9 +136,7 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
             }
             token = configFile.readNextToken();
         }
-        workFileNames = new FileNames[vect.size()];
-        vect.toArray(workFileNames);
-        Arrays.sort(workFileNames);
+        workFileNames = vect;
         configFile.close();
         return true;
     }
@@ -246,7 +252,7 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
     private Map<K, Long> loadKeysFrom(String fileName) {
         FileWorker file = new FileWorker(fileName + ".ind");
         Map<K, Long> map = new TreeMap<K, Long>();
-        String nextKey = file.readNextToken();
+        byte[] nextKey = file.readNextToken();
         while (nextKey != null) {
             Long offset = file.readLong();
             try {
@@ -311,9 +317,9 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void writeSysInfo() {
-        configFile.bufferedWrite(VALIDATE_STRING);
-        configFile.bufferedWrite(keySerializer.getClassString());
-        configFile.bufferedWrite(valueSerializer.getClassString());
+        configFile.bufferedWrite(VALIDATE_STRING.getBytes());
+        configFile.bufferedWrite(keySerializer.getClassString().getBytes());
+        configFile.bufferedWrite(valueSerializer.getClassString().getBytes());
         configFile.bufferedWriteSubmit();
         configFile.close();
     }
@@ -341,13 +347,15 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
         indFile.bufferedWriteSubmit();
         indFile.close();
         valueFile.close();
-        addToConfig(fileName, storageChanges.size());
+        addToConfig(fileName);
         storageChanges.clear();
     }
 
-    private void addToConfig(String str, int size) {
+    private void addToConfig(String str) {
         synchronized (configFile) {
-            configFile.append(str + ' ' + Long.toString(System.currentTimeMillis()));
+            long time = System.currentTimeMillis();
+            workFileNames.add(new FileNames(str, time));
+            configFile.append(str + ' ' + Long.toString(time));
         }
     }
 
@@ -358,13 +366,12 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
                     FileNames first;
                     FileNames second;
                     synchronized (configFile) {
-                        validateFile();
-                        if (workFileNames.length < 2) {
+                        if (workFileNames.size() < 2) {
                             Thread.sleep(10);
                             continue;
                         }
-                        first = workFileNames[workFileNames.length - 1];
-                        second = workFileNames[workFileNames.length - 2];
+                        first = workFileNames.elementAt(workFileNames.size() - 1);
+                        second = workFileNames.elementAt(workFileNames.size() - 2);
                     }
                     merge(first, second);
                 } catch (InterruptedException e) {
@@ -391,8 +398,8 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
         indFile.createFile();
         long currOffset = 0;
         K keyFromFirst = null;
-        String valueFromFirst = null;
-        String valueFromSecond = null;
+        byte[] valueFromFirst = null;
+        byte[] valueFromSecond = null;
         K keyFromSecond = null;
         try {
             keyFromFirst = keySerializer.deserialize(latestFile.readNextToken());
@@ -459,24 +466,27 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
 
     private void rewriteConfig(String fileName, long timest, String delete1, String delete2) {
         synchronized (configFile) {
-            if (!validateFile()) {
-                throw new RuntimeException("config corrupted");
-            }
             writeSysInfo();
+            Vector<FileNames> vect = new Vector<>();
             for (FileNames fname: workFileNames) {
                 if (!fname.fileName.equals(delete1) && !fname.fileName.equals(delete2)) {
                     configFile.append(fname.fileName + ' ' + Long.toString(fname.timest));
+                    vect.add(fname);
+                }
+                if (fname.fileName.equals(delete2)) {
+                    vect.add(new FileNames(fileName, timest));
+                    configFile.append(fileName + ' ' + Long.toString(timest));
                 }
             }
-            configFile.append(fileName + ' ' + Long.toString(timest));
+            workFileNames = vect;
         }
     }
 
     private long writeTo(Map<K, Long> offsetMap, FileWorker valueFile, K key,
-                         boolean deleted, String value, long currOffset) {
+                         boolean deleted, byte[] value, long currOffset) {
         offsetMap.put(key, deleted ? -1 : currOffset);
         currOffset += valueFile.bufferedWrite(keySerializer.serialize(key));
-        currOffset += valueFile.bufferedWrite(deleted ? "tombstone" : value);
+        currOffset += valueFile.bufferedWrite(deleted ? "tombstone".getBytes() : value);
         return currOffset;
     }
 }

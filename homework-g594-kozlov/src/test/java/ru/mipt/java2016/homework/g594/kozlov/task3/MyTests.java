@@ -14,19 +14,6 @@ import static org.junit.Assert.assertEquals;
  */
 public class MyTests {
     @Test
-    public void simpleWriteReadTest() {
-        FileWorker file = new FileWorker("temp/mytemp.txt");
-        file.createFile();
-        String testString = "testString";
-        file.bufferedWrite(testString);
-        file.bufferedWriteSubmit();
-        file.close();
-        String result = file.readNextToken();
-        assertEquals(testString, result);
-    }
-
-
-    @Test
     public void storageWriteReadTest() {
         KeyValueStorage<String, String> storage = KVStorageFactory.buildStringsStorage("temp");
         storage.write("no pain", "no gain");
