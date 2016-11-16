@@ -327,7 +327,7 @@ public class LSMStorage<Key, Value> implements KeyValueStorage<Key, Value> {
     }
 
     @Override
-    public synchronized Value read(Key key) {
+    public Value read(Key key) {
         checkForClosed();
         KeyWrapper<Key, Value> wrapper = keys.get(key);
         if (wrapper == null) {
@@ -356,13 +356,13 @@ public class LSMStorage<Key, Value> implements KeyValueStorage<Key, Value> {
     }
 
     @Override
-    public synchronized boolean exists(Key key) {
+    public boolean exists(Key key) {
         checkForClosed();
         return keys.containsKey(key);
     }
 
     @Override
-    public synchronized void write(Key key, Value value) {
+    public void write(Key key, Value value) {
         checkForClosed();
         KeyWrapper<Key, Value> wrapper = keys.get(key);
         if (wrapper == null) {
@@ -387,7 +387,7 @@ public class LSMStorage<Key, Value> implements KeyValueStorage<Key, Value> {
     }
 
     @Override
-    public synchronized void delete(Key key) {
+    public void delete(Key key) {
         checkForClosed();
         KeyWrapper<Key, Value> wrapper = keys.remove(key);
         if (wrapper.getValue() != null) {
@@ -405,19 +405,19 @@ public class LSMStorage<Key, Value> implements KeyValueStorage<Key, Value> {
     }
 
     @Override
-    public synchronized Iterator<Key> readKeys() {
+    public Iterator<Key> readKeys() {
         checkForClosed();
         return keys.keySet().iterator();
     }
 
     @Override
-    public synchronized int size() {
+    public int size() {
         checkForClosed();
         return keys.size();
     }
 
     @Override
-    public synchronized void close() throws IOException {
+    public void close() throws IOException {
         // TODO если остался один файл -- удалить из него удалённые ключи
         checkForClosed();
         pushNewEntriesToDisk();
