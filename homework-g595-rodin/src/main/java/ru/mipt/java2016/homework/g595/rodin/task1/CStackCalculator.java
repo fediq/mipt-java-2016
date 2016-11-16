@@ -8,7 +8,6 @@ import java.util.Stack;
 import java.util.StringTokenizer;
 
 
-
 public class CStackCalculator implements Calculator {
     private final String operators = "+*/_";
     /*

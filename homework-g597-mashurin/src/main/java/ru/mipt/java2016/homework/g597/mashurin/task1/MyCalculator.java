@@ -39,6 +39,7 @@ class MyCalculator implements Calculator {
     private void validateExpressionWithoutSpace() throws ParsingException {
         char left;
         char right;
+        line = line.replaceAll("--", "+");
         for (int i = 0; i < line.length() - 1; i++) {
             left = line.charAt(i);
             right = line.charAt(i + 1);
@@ -71,7 +72,7 @@ class MyCalculator implements Calculator {
             }
             left = line.charAt(i - 1);
             right = line.charAt(i + 1);
-            if ((Character.isDigit(left)) && Character.isDigit(right)) {
+            if ((Character.isDigit(left) || left == '.') && (Character.isDigit(right) || right == '.')) {
                 throw new ParsingException("Incorrect line");
             }
         }
