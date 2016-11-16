@@ -1,8 +1,7 @@
 package ru.mipt.java2016.homework.g595.popovkin.task2;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
+
 import ru.mipt.java2016.homework.tests.task2.Student;
 import java.util.Date;
 
@@ -12,7 +11,7 @@ import java.util.Date;
 public class StudentParser implements ItemParser<Student> {
 
     @Override
-    public void serialize(Student arg, FileOutputStream out) throws IOException {
+    public void serialize(Student arg, OutputStream out) throws IOException {
         new IntegerParser().serialize(arg.getGroupId(), out);
         new StringParser().serialize(arg.getName(), out);
         new StringParser().serialize(arg.getHometown(), out);
@@ -22,7 +21,7 @@ public class StudentParser implements ItemParser<Student> {
     }
 
     @Override
-    public Student deserialize(FileInputStream in) throws IOException {
+    public Student deserialize(InputStream in) throws IOException {
         int groupId = new IntegerParser().deserialize(in);
         String name = new StringParser().deserialize(in);
         String hometown = new StringParser().deserialize(in);

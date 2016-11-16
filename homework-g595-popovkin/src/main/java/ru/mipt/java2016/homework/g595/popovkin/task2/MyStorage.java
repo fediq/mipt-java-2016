@@ -4,6 +4,7 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import java.io.*;
 import java.util.Iterator;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Created by Howl on 11.10.2016.
@@ -22,6 +23,7 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
 
     private long getFileHash() throws IOException {
         FileInputStream in = new FileInputStream(storageDirName + "/main_storage_file");
+        //System.out.println("open_getFH");
         long hash = 0;
         byte[] buffer = new byte[1024];
         int newBytes = in.read(buffer);
@@ -32,19 +34,23 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
             newBytes = in.read(buffer);
         }
         in.close();
+        //System.out.println("close_getFH");
         return hash;
     }
 
     private boolean testFile() {
         try {
-            FileInputStream hin = new FileInputStream(storageDirName + "/hash");
+            InputStream hin = new FileInputStream(storageDirName + "/main_storage_file.hash");
+            //System.out.println("open_testF");
             IntegerParser parser = new IntegerParser();
             if ((int) getFileHash() != parser.deserialize(hin) || hin.read() != -1) {
                 hin.close();
+                //System.out.println("close_testF1");
                 //throw new AssertionError("My assert2 bad hash");
                 return false;
             }
             hin.close();
+            //System.out.println("close_testF2");
         } catch (IOException ex) {
             //System.out.println(ex.getMessage());
             return false;
@@ -54,13 +60,27 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
 
     private void setHash() throws IOException {
         long hash = getFileHash();
-        FileOutputStream hout = new FileOutputStream(storageDirName + "/hash");
+        FileOutputStream hout = new FileOutputStream(storageDirName + "/main_storage_file.hash");
+        //System.out.println("open_setHash");
         new IntegerParser().serialize((int) hash, hout);
         hout.close();
+        //System.out.println("close_setHash");
+    }
+
+    // atomically get(lock == 1)/return(lock == 0) rights to work with storage
+    private synchronized void lock_storage(String dirName, int lock) throws IOException {
+        File file = new File(dirName + File.separator + "work");
+        if (lock == 1) {
+            if (file.exists() || file.createNewFile()) throw new IOException("storage already under work");
+            file.createNewFile();
+        } else {
+            file.delete();
+        }
     }
 
     public MyStorage(String directoryname, ItemParser<K> keyParserTmp,
                      ItemParser<V> valueParserTmp) throws IOException {
+        //lock_storage(directoryname, 1);
         //testFileIO();
         storageDirName = directoryname;
         keyParser = keyParserTmp;
@@ -70,16 +90,17 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
             return;
         }
         try {
-            FileInputStream in = new FileInputStream(storageDirName + "/main_storage_file");
-
+            InputStream in = new BufferedInputStream(new FileInputStream(storageDirName + "/main_storage_file"));
+            //System.out.println("open_construct");
             int size = new IntegerParser().deserialize(in);
             for (int i = 0; i < size; ++i) {
                 storage.put(keyParser.deserialize(in), valueParser.deserialize(in));
             }
             in.close();
+            //System.out.println("close_construct");
         } catch (IOException ex) {
             storage.clear();
-            System.out.println(ex.getMessage());
+            //System.out.println(ex.getMessage());
         }
     }
 
@@ -127,14 +148,25 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     public void close() throws IOException {
+        OutputStream out = new BufferedOutputStream(new FileOutputStream(storageDirName + "/main_storage_file"));
+        //System.out.println("open_close");
+        //System.out.println("open_close");
         closed = true;
-        FileOutputStream out = new FileOutputStream(storageDirName + "/main_storage_file");
         new IntegerParser().serialize(storage.size(), out);
-        for (HashMap.Entry<K, V> entry : storage.entrySet()) {
-            keyParser.serialize(entry.getKey(), out);
-            valueParser.serialize(entry.getValue(), out);
+        //System.out.println("1");
+        try {
+            for (HashMap.Entry<K, V> entry : storage.entrySet()) {
+                keyParser.serialize(entry.getKey(), out);
+                valueParser.serialize(entry.getValue(), out);
+            }
+        } catch(Exception ex) {
+            //System.out.println("forced_close");
+            out.close();
         }
-        setHash();
+        //System.out.println("2");
         out.close();
+        //System.out.println("close_close");
+        setHash();
+        //lock_storage(storageDirName, 0);
     }
 }
