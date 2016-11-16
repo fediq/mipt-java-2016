@@ -15,7 +15,7 @@ import java.util.concurrent.ExecutionException;
  */
 public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
 
-    private static final int CACHE_SIZE = 500;
+    private static final int CACHE_SIZE = 800;
     private Integer nextFileNum = 1;
     private final FileWorker configFile;
     private FileNames[] workFileNames = null;
@@ -25,7 +25,7 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
     private final Map<K, ValueWrapper> storageChanges = new TreeMap<K, ValueWrapper>();
     private final Comparator<K> keyComparator;
     private LoadingCache<K, V> cacheValues = CacheBuilder.newBuilder()
-            .maximumSize(CACHE_SIZE * 5)
+            .softValues()
             .build(
                     new CacheLoader<K, V>() {
                         @Override
