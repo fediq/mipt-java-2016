@@ -38,6 +38,36 @@
 5. [Проектирование](http://www.slideshare.net/FedorLavrentyev/programmning-java-lection-05-software-design-lavrentyev-fedor)
 6. [Многопоточность](http://www.slideshare.net/FedorLavrentyev/programming-java-lection-06-multithreading-lavrentyev-fedor)
 
+#### Семинары 596-ой группы
+Стараемся придерживаться [google-кодстайла](https://google.github.io/styleguide/javaguide.html).  
+Проще всего этого можно добиться, скачав [настройки для кодстайла](https://github.com/DanAnastasyev/mipt-java-2016/blob/master/seminars/src/ru/mipt/java2016/seminars/idea-codestyle.xml). Посмотреть, как их устанавливать, можно [здесь](https://github.com/HPI-Information-Systems/Metanome/wiki/Installing-the-google-styleguide-settings-in-intellij-and-eclipse).  
+После этого не забываем использовать кнопку Code/Reformat Code, хотя бы перед коммитом.
+
+Обязательным является прохождение проверки Maven Checkstyle. Она происходит при запуске всех тестов (например, с помощью `mvn test` или по клавише test во вкладке Maven Projects).
+
+1. [Java vs C++; Работа с исключениям и I/O](https://yadi.sk/d/meyw4Nv1wUrzc)  
+[Примеры кода](https://github.com/DanAnastasyev/mipt-java-2016/tree/master/seminars/src/ru/mipt/java2016/seminars/seminar1)  
+[Доп семинар](https://github.com/DanAnastasyev/mipt-java-2016/blob/master/seminars/src/ru/mipt/java2016/seminars/Seminar%201.5%20Notes.md)
+Доп. литература: [Head First Изучаем Java](http://www.ozon.ru/context/detail/id/7821666/)
+
+2. [Паттерны проектирования](https://yadi.sk/d/Clpl7NfhwuYod)  
+Доп. литература: [Head First Паттерны проектирования](https://www.ozon.ru/context/detail/id/20216992/)
+
+3. [Строки и обёртки над примитивными типами в Java. Антипаттерны](https://yadi.sk/d/nhdo_dFsx7JnZ)  
+Доп. литература: [Чистый код](http://www.ozon.ru/context/detail/id/21916535/)
+
+4. [Повторное использование кода в Java. Многопоточность в Java](https://yadi.sk/d/nitO2OJuxcMAw)
+
+5. [Средства синхронизации в Java](https://yadi.sk/d/2YAOFlpSxx73h)  
+[Примеры кода](https://github.com/DanAnastasyev/mipt-java-2016/tree/master/seminars/src/ru/mipt/java2016/seminars/seminar5)
+
+6. [Рефлексия и сборка мусора в Java](https://yadi.sk/d/1cpd_baDyHELV)  
+[Примеры кода](https://github.com/DanAnastasyev/mipt-java-2016/tree/master/seminars/src/ru/mipt/java2016/seminars/seminar6)  
+[Хорошая статья про ссылки в Java](http://www.kdgregory.com/?page=java.refobj)
+
+7. [Lambdas & Streams](https://yadi.sk/d/uJ4A7PrRyhL2e)  
+[Примеры кода](https://github.com/DanAnastasyev/mipt-java-2016/tree/master/seminars/src/ru/mipt/java2016/seminars/seminar7)
+
 #### Рекомендуемая литература
 
 * Кей Хорстманн - [Java. Библиотека профессионала. Том 1. Основы (десятое издание)](https://www.ozon.ru/context/detail/id/137377512/).
