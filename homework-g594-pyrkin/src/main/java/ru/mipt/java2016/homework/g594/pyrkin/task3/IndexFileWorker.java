@@ -15,13 +15,13 @@ public class IndexFileWorker extends FileWorker {
 
     public long readOffset() throws IOException {
         long result = 0;
-        for(int i = 0; i < 8; ++i) {
+        for (int i = 0; i < 8; ++i) {
             result = result * 256 + inputStream.read();
         }
         return result;
     }
 
-    public void writeOffset(long offset) throws  IOException {
+    public void writeOffset(long offset) throws IOException {
         ByteBuffer buffer = ByteBuffer.allocate(8);
         buffer.putLong(offset);
         outputStream.write(buffer.array());

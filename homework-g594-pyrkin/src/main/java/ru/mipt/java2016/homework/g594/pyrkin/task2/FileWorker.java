@@ -15,6 +15,8 @@ public class FileWorker {
     protected final BufferedInputStream inputStream;
     protected BufferedOutputStream outputStream;
 
+    private boolean wasClear = false;
+
     public FileWorker(String directoryPath, String fileName) throws IOException {
         File directory = new File(directoryPath);
         if (!directory.exists()) {
@@ -56,6 +58,7 @@ public class FileWorker {
     }
 
     public void clear() throws IOException {
+        wasClear = true;
         inputStream.close();
         file.delete();
         file.createNewFile();
@@ -63,6 +66,10 @@ public class FileWorker {
     }
 
     public void close() throws IOException {
-        outputStream.close();
+        if (wasClear) {
+            outputStream.close();
+        } else {
+            inputStream.close();
+        }
     }
 }

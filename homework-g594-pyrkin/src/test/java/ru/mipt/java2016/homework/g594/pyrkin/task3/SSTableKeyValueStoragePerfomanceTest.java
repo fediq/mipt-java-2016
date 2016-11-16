@@ -19,7 +19,7 @@ public class SSTableKeyValueStoragePerfomanceTest extends KeyValueStoragePerform
     protected KeyValueStorage<String, String> buildStringsStorage(String path) throws MalformedDataException {
         try {
             return new SSTableKeyValueStorage<>(path,
-                    new StringSerializer(), new StringSerializer(), 1000);
+                    new FastStringSerializer(), new FastStringSerializer(), 1000, 1000);
         }catch (IOException e){
             return null;
         }
@@ -29,7 +29,7 @@ public class SSTableKeyValueStoragePerfomanceTest extends KeyValueStoragePerform
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) throws MalformedDataException {
         try {
             return new SSTableKeyValueStorage<>(path, new IntegerSerializer(),
-                    new DoubleSerializer(), 1000);
+                    new DoubleSerializer(), 1000, 1000);
         }catch (IOException e){
             return null;
         }
@@ -39,37 +39,9 @@ public class SSTableKeyValueStoragePerfomanceTest extends KeyValueStoragePerform
     protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) throws MalformedDataException {
         try {
             return new SSTableKeyValueStorage<>(path, new StudentKeySerializer(),
-                    new StudentSerializer(), 1000);
+                    new StudentSerializer(), 1000, 1000);
         }catch (IOException e){
             return null;
         }
-    }
-
-    @Override
-    @Test
-    @Ignore
-    public void measure100kWDump100kR() {
-        super.measure100kWDump100kR();
-    }
-
-    @Override
-    @Test
-    @Ignore
-    public void measure10W20Rx1k() {
-        super.measure10W20Rx1k();
-    }
-
-    @Override
-    @Test
-    @Ignore
-    public void measure10kWAnd100Rx100() {
-        super.measure10kWAnd100Rx100();
-    }
-
-    @Override
-    @Test
-    @Ignore
-    public void measure10kWDump10kR() {
-        super.measure10kWDump10kR();
     }
 }
