@@ -5,13 +5,19 @@ package ru.mipt.java2016.homework.g594.kozlov.task2.serializer;
  */
 public class StringSerializer implements SerializerInterface<String> {
     @Override
-    public String serialize(String objToSerialize) {
-        return objToSerialize;
+    public byte[] serialize(String objToSerialize) {
+        if (objToSerialize == null) {
+            return null;
+        }
+        return objToSerialize.getBytes();
     }
 
     @Override
-    public String deserialize(String inputString) {
-        return inputString;
+    public String deserialize(byte[] inputString) {
+        if (inputString == null) {
+            return null;
+        }
+        return new String(inputString);
     }
 
     @Override
