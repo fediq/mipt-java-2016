@@ -7,7 +7,6 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.g594.kozlov.task2.serializer.SerializerInterface;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
@@ -75,15 +74,12 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
             path = "";
         }
         configFile = new FileWorker(path + "mydbconfig.db");
-        keyMap = new TreeMap<K, KeyInfo>();
-
-        try {
-            if (configFile.exists()) {
-                if (!initKeySet()) {
-                    throw new RuntimeException("Invalid File");
-                }
+        keyMap = new HashMap<K, KeyInfo>();
+        if (configFile.exists()) {
+            if (!initKeySet()) {
+                throw new RuntimeException("Invalid File");
             }
-        } catch (FileNotFoundException except) {
+        } else {
             configFile.createFile();
             writeSysInfo();
         }
@@ -91,15 +87,13 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
     }
 
     private static class FileNames implements Comparable<FileNames> {
-        FileNames(String str, long time, int siz) {
+        FileNames(String str, long time) {
             fileName = str;
             timest = time;
-            size = siz;
         }
 
         private String fileName;
         private Long timest;
-        private int size;
 
         @Override
         public int compareTo(FileNames other) {
@@ -107,9 +101,10 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
-    private boolean validateFile() throws FileNotFoundException {
-        configFile.exists();
-        configFile.refresh();
+    private boolean validateFile() {
+        if (!configFile.exists()) {
+            return false;
+        }
         String token = configFile.readNextToken();
         if (token == null || !token.equals(VALIDATE_STRING)) {
             return false;
@@ -126,7 +121,7 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
         token = configFile.readNextToken();
         while (token != null) {
             String[] tokens = token.split(" ");
-            vect.add(new FileNames(tokens[0], Long.parseLong(tokens[1]), Integer.parseInt(tokens[2])));
+            vect.add(new FileNames(tokens[0], Long.parseLong(tokens[1])));
             int fileNum = Integer.parseInt(tokens[0].substring(8, tokens[0].length()));
             if (fileNum >= nextFileNum) {
                 nextFileNum = fileNum + 1;
@@ -136,6 +131,7 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
         workFileNames = new FileNames[vect.size()];
         vect.toArray(workFileNames);
         Arrays.sort(workFileNames);
+        configFile.close();
         return true;
     }
 
@@ -155,7 +151,7 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
             try {
                 return cacheValues.get(key);
             } catch (ExecutionException e) {
-                throw new RuntimeException("cache error");
+                throw new RuntimeException(e);
             }
         } else {
             return null;
@@ -171,7 +167,7 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
     @Override
     public void write(K key, V value) {
         if (!exists(key)) {
-            keyMap.put(key, new KeyInfo(-1, getCurrentFileName()));
+            keyMap.put(key, new KeyInfo(-1, null));
         }
         storageChanges.put(key, new ValueWrapper(false, value));
         cacheValues.put(key, value);
@@ -210,7 +206,7 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        configFile.refresh();
+        configFile.close();
     }
 
     private void changesCheck() {
@@ -221,33 +217,29 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
     }
 
     private boolean initKeySet() {
-        try {
-            synchronized (configFile) {
-                if (validateFile()) {
-                    for (FileNames name : workFileNames) {
-                        Map<K, Long> map = loadKeysFrom(path + name.fileName);
-                        for (Map.Entry<K, Long> entry : map.entrySet()) {
-                            if (entry.getValue() == -1) {
-                                keyMap.remove(entry.getKey());
-                            } else {
-                                keyMap.put(entry.getKey(), new KeyInfo(entry.getValue(), name.fileName));
-                            }
-                        }
-                    }
-                    for (Map.Entry<K, ValueWrapper> entry : storageChanges.entrySet()) {
-                        if (entry.getValue().deleted) {
+        synchronized (configFile) {
+            if (validateFile()) {
+                for (FileNames name : workFileNames) {
+                    Map<K, Long> map = loadKeysFrom(path + name.fileName);
+                    for (Map.Entry<K, Long> entry : map.entrySet()) {
+                        if (entry.getValue() == -1) {
                             keyMap.remove(entry.getKey());
                         } else {
-                            keyMap.put(entry.getKey(), new KeyInfo(-1, getCurrentFileName()));
+                            keyMap.put(entry.getKey(), new KeyInfo(entry.getValue(), name.fileName));
                         }
                     }
-                    return true;
-                } else {
-                    return false;
                 }
+                for (Map.Entry<K, ValueWrapper> entry : storageChanges.entrySet()) {
+                    if (entry.getValue().deleted) {
+                        keyMap.remove(entry.getKey());
+                    } else {
+                        keyMap.put(entry.getKey(), new KeyInfo(-1, null));
+                    }
+                }
+                return true;
+            } else {
+                return false;
             }
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
         }
     }
 
@@ -264,97 +256,98 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
             }
             nextKey = file.readNextToken();
         }
+        file.close();
         return map;
     }
 
     private V loadKey(K key) {
-        try {
-            KeyInfo inf = keyMap.get(key);
-            synchronized (configFile) {
-                if (inf.filename != null) {
-                    FileWorker file = new FileWorker(path + inf.filename + ".tab");
-                    try {
-                        if (file.exists()) {
-                            if (inf.offset != -1) {
-                                return valueSerializer.deserialize(file.readFromOffset(inf.offset));
-                            } else {
-                                Map<K, Long> map = loadKeysFrom(path + inf.filename);
-                                Long offset = map.get(key);
-                                if (offset != null) {
-                                    if (offset == -1) {
-                                        keyMap.remove(key);
-                                        return null;
-                                    } else {
-                                        inf.offset = offset;
-                                        keyMap.put(key, inf);
-                                        return valueSerializer.deserialize(file.readFromOffset(offset));
-                                    }
-                                }
-                            }
+        V result = null;
+        KeyInfo inf = keyMap.get(key);
+        synchronized (configFile) {
+            try (FileWorker file = new FileWorker(path + inf.filename + ".tab")) {
+                if (file.exists() && inf.filename != null) {
+                    if (inf.offset != -1) {
+                        file.moveToOffset(inf.offset);
+                        K thisKey = keySerializer.deserialize(file.readNextToken());
+                        if (key.equals(thisKey)) {
+                            result = valueSerializer.deserialize(file.readNextToken());
                         }
-                    } catch (FileNotFoundException e) {
-                        inf.filename = null;
-                        inf.offset = -1;
-                    }
-                }
-                if (validateFile()) {
-                    for (int i = workFileNames.length - 1; i >= 0; --i) {
-                        FileNames name = workFileNames[i];
-                        Map<K, Long> map = loadKeysFrom(path + name.fileName);
+                    } else {
+                        Map<K, Long> map = loadKeysFrom(path + inf.filename);
                         Long offset = map.get(key);
                         if (offset != null) {
-                            inf.filename = name.fileName;
                             if (offset == -1) {
                                 keyMap.remove(key);
-                                return null;
+                                result = null;
                             } else {
                                 inf.offset = offset;
                                 keyMap.put(key, inf);
-                                return valueSerializer.deserialize(
-                                        (new FileWorker(path + name.fileName + ".tab")).readFromOffset(offset));
+                                file.moveToOffset(inf.offset);
+                                K thisKey = keySerializer.deserialize(file.readNextToken());
+                                if (key.equals(thisKey)) {
+                                    result = valueSerializer.deserialize(file.readNextToken());
+                                } else {
+                                    initKeySet();
+                                    result = loadKey(key);
+                                }
                             }
+                        } else {
+                            initKeySet();
+                            result = loadKey(key);
                         }
                     }
                 } else {
-                    throw new RuntimeException("Invalid File");
+                    initKeySet();
+                    result = loadKey(key);
                 }
+            } catch (StorageException e) {
+                throw new RuntimeException(e);
             }
-        } catch (FileNotFoundException | StorageException e) {
-            throw new RuntimeException(e);
         }
-        keyMap.remove(key);
-        return null;
+        if (result == null) {
+            keyMap.remove(key);
+        }
+        return result;
     }
 
     private void writeSysInfo() {
-        configFile.refresh();
         configFile.bufferedWrite(VALIDATE_STRING);
         configFile.bufferedWrite(keySerializer.getClassString());
         configFile.bufferedWrite(valueSerializer.getClassString());
         configFile.bufferedWriteSubmit();
-        configFile.refresh();
+        configFile.close();
     }
 
     private void flushTemp() {
         String fileName = useCurrentFileName();
         FileWorker valueFile = new FileWorker(path + fileName + ".tab");
         FileWorker indFile = new FileWorker(path + fileName + ".ind");
+        Map<K, Long> offsetMap = new TreeMap<K, Long>();
         long currOffset = 0;
         valueFile.createFile();
         indFile.createFile();
         for (Map.Entry<K, ValueWrapper> entry : storageChanges.entrySet()) {
-            currOffset = writeTo(indFile, valueFile, entry.getKey(), entry.getValue().deleted,
+            currOffset = writeTo(offsetMap, valueFile, entry.getKey(), entry.getValue().deleted,
                     valueSerializer.serialize(entry.getValue().object), currOffset);
         }
-        indFile.bufferedWriteSubmit();
         valueFile.bufferedWriteSubmit();
+        for (Map.Entry<K, Long> entry : offsetMap.entrySet()) {
+            indFile.bufferedWrite(keySerializer.serialize(entry.getKey()));
+            indFile.bufferedWriteOffset(entry.getValue());
+            if (entry.getValue() != -1) {
+                keyMap.put(entry.getKey(), new KeyInfo(entry.getValue(), fileName));
+            }
+        }
+        indFile.bufferedWriteSubmit();
+        indFile.close();
+        valueFile.close();
         addToConfig(fileName, storageChanges.size());
         storageChanges.clear();
     }
 
     private void addToConfig(String str, int size) {
         synchronized (configFile) {
-            configFile.append(str + ' ' + Long.toString(System.currentTimeMillis()) + ' ' + Integer.toString(size));
+            configFile.append(str + ' ' + Long.toString(System.currentTimeMillis()));
         }
     }
 
@@ -362,26 +355,18 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
         public void run() {
             while (!isClosedFlag) {
                 try {
-                    int indSecond = 0;
+                    FileNames first;
+                    FileNames second;
                     synchronized (configFile) {
                         validateFile();
                         if (workFileNames.length < 2) {
                             Thread.sleep(10);
                             continue;
                         }
-                        int firstSize = workFileNames[workFileNames.length - 1].size;
-                        int diffInSize = Math.abs(workFileNames[0].size - firstSize);
-                        for (int i = 1; i < workFileNames.length - 1; ++i) {
-                            if (Math.abs(workFileNames[i].size - firstSize) < diffInSize) {
-                                indSecond = i;
-                                diffInSize = Math.abs(workFileNames[i].size - firstSize);
-                            }
-                        }
+                        first = workFileNames[workFileNames.length - 1];
+                        second = workFileNames[workFileNames.length - 2];
                     }
-                    merge(workFileNames[workFileNames.length - 1], workFileNames[indSecond]);
-                    System.out.println("merged");
-                } catch (FileNotFoundException e) {
-                    throw new RuntimeException(e);
+                    merge(first, second);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -395,22 +380,16 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
-    private  String getCurrentFileName() {
-        synchronized (nextFileNum) {
-            return "mydbfile" + Integer.toString(nextFileNum);
-        }
-    }
-
     private void merge(FileNames latest, FileNames second) {
         FileWorker latestFile = new FileWorker(path + latest.fileName + ".tab");
         FileWorker secondFile = new FileWorker(path + second.fileName + ".tab");
         String fileName = useCurrentFileName();
         FileWorker valueFile = new FileWorker(path + fileName + ".tab");
         FileWorker indFile = new FileWorker(path + fileName + ".ind");
+        Map<K, Long> offsetMap = new TreeMap<K, Long>();
         valueFile.createFile();
         indFile.createFile();
         long currOffset = 0;
-        int size = 0;
         K keyFromFirst = null;
         String valueFromFirst = null;
         String valueFromSecond = null;
@@ -421,72 +400,84 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
             while (keyFromFirst != null || keyFromSecond != null) {
                 if (keyFromFirst == null) {
                     valueFromSecond = secondFile.readNextToken();
-                    writeTo(indFile, valueFile, keyFromSecond, false, valueFromSecond, currOffset);
+                    currOffset = writeTo(offsetMap, valueFile, keyFromSecond, false, valueFromSecond, currOffset);
                     keyFromSecond = keySerializer.deserialize(secondFile.readNextToken());
-                    size++;
                     continue;
                 }
                 if (keyFromSecond == null) {
                     valueFromFirst = latestFile.readNextToken();
-                    writeTo(indFile, valueFile, keyFromFirst, false, valueFromFirst, currOffset);
+                    currOffset = writeTo(offsetMap, valueFile, keyFromFirst, false, valueFromFirst, currOffset);
+                    if (offsetMap.get(keyFromFirst) != -1) {
+                        keyMap.put(keyFromFirst, new KeyInfo(offsetMap.get(keyFromFirst), fileName));
+                    }
                     keyFromFirst = keySerializer.deserialize(latestFile.readNextToken());
-                    size++;
                     continue;
                 }
                 if (keyComparator.compare(keyFromFirst, keyFromSecond) == 0) {
                     valueFromFirst = latestFile.readNextToken();
-                    writeTo(indFile, valueFile, keyFromFirst, false, valueFromFirst, currOffset);
+                    currOffset = writeTo(offsetMap, valueFile, keyFromFirst, false, valueFromFirst, currOffset);
+                    if (offsetMap.get(keyFromFirst) != -1) {
+                        keyMap.put(keyFromFirst, new KeyInfo(offsetMap.get(keyFromFirst), fileName));
+                    }
                     keyFromFirst = keySerializer.deserialize(latestFile.readNextToken());
                     valueFromSecond = secondFile.readNextToken();
                     keyFromSecond = keySerializer.deserialize(secondFile.readNextToken());
-                    size++;
                 } else {
                     if (keyComparator.compare(keyFromFirst, keyFromSecond) < 0) {
                         valueFromFirst = latestFile.readNextToken();
-                        writeTo(indFile, valueFile, keyFromFirst, false, valueFromFirst, currOffset);
+                        currOffset = writeTo(offsetMap, valueFile, keyFromFirst, false, valueFromFirst, currOffset);
+                        if (offsetMap.get(keyFromFirst) != -1) {
+                            keyMap.put(keyFromFirst, new KeyInfo(offsetMap.get(keyFromFirst), fileName));
+                        }
                         keyFromFirst = keySerializer.deserialize(latestFile.readNextToken());
-                        size++;
                     } else {
                         valueFromSecond = secondFile.readNextToken();
-                        writeTo(indFile, valueFile, keyFromSecond, false, valueFromSecond, currOffset);
+                        currOffset = writeTo(offsetMap, valueFile, keyFromSecond, false, valueFromSecond, currOffset);
                         keyFromSecond = keySerializer.deserialize(secondFile.readNextToken());
-                        size++;
                     }
                 }
             }
-            indFile.bufferedWriteSubmit();
             valueFile.bufferedWriteSubmit();
+            for (Map.Entry<K, Long> entry : offsetMap.entrySet()) {
+                indFile.bufferedWrite(keySerializer.serialize(entry.getKey()));
+                indFile.bufferedWriteOffset(entry.getValue());
+            }
+            indFile.bufferedWriteSubmit();
         } catch (StorageException e) {
             throw new RuntimeException(e);
         }
-        rewriteConfig(fileName, size, latest.fileName, second.fileName);
-    }
-
-    private void rewriteConfig(String fileName, int size, String delete1, String delete2) {
         synchronized (configFile) {
-            try {
-                validateFile();
-                writeSysInfo();
-                for (FileNames fname: workFileNames) {
-                    if (!fname.fileName.equals(delete1) && !fname.fileName.equals(delete2)) {
-                        configFile.append(fname.fileName + ' ' + Long.toString(fname.timest)
-                                + ' ' + Integer.toString(fname.size));
-                    }
-                }
-                addToConfig(fileName, size);
-            } catch (FileNotFoundException e) {
-                throw new RuntimeException(e);
-            }
+            rewriteConfig(fileName, second.timest, latest.fileName, second.fileName);
+            latestFile.delete();
+            secondFile.delete();
+            latestFile = new FileWorker(path + latest.fileName + ".ind");
+            secondFile = new FileWorker(path + second.fileName + ".ind");
+            latestFile.delete();
+            secondFile.delete();
         }
     }
 
-    private long writeTo(FileWorker indFile, FileWorker valueFile, K key,
+    private void rewriteConfig(String fileName, long timest, String delete1, String delete2) {
+        synchronized (configFile) {
+            if (!validateFile()) {
+                throw new RuntimeException("config corrupted");
+            }
+            writeSysInfo();
+            for (FileNames fname: workFileNames) {
+                if (!fname.fileName.equals(delete1) && !fname.fileName.equals(delete2)) {
+                    configFile.append(fname.fileName + ' ' + Long.toString(fname.timest));
+                }
+            }
+            configFile.append(fileName + ' ' + Long.toString(timest));
+        }
+    }
+
+    private long writeTo(Map<K, Long> offsetMap, FileWorker valueFile, K key,
                          boolean deleted, String value, long currOffset) {
-        indFile.bufferedWrite(keySerializer.serialize(key));
+        offsetMap.put(key, deleted ? -1 : currOffset);
         currOffset += valueFile.bufferedWrite(keySerializer.serialize(key));
-        indFile.bufferedWriteOffset(deleted ? -1 : currOffset);
         currOffset += valueFile.bufferedWrite(deleted ? "tombstone" : value);
-        return  currOffset;
+        return currOffset;
     }
 }
 

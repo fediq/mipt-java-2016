@@ -28,7 +28,7 @@ public class PerfomanceTest extends KeyValueStoragePerformanceTest {
         return KVStorageFactory.buildPojoStorage(path);
     }
 
-    @Ignore
+    /*@Ignore
     @Test
-    public void measure100kWDump100kR() {super.measure100kWDump100kR(); }
+    public void measure100kWDump100kR() {super.measure100kWDump100kR(); }*/
 }
