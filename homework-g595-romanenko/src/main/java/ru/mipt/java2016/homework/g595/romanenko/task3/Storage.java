@@ -49,7 +49,7 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
     /**
      * Constants
      */
-    private int maxUpdatedObjectsInMemory = 1023; //4095;//2048;
+    private int maxUpdatedObjectsInMemory = 511; //4095;//2048;
 
     /**
      * Internal state
@@ -73,7 +73,7 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
         this.updatedValues = new TreeMap<>(keyComparator);
 
         cache = CacheBuilder.newBuilder()
-                .maximumWeight(40 * 1024)
+                .maximumWeight(20 * 1024)
                 .weigher((Weigher<K, Optional<V>>) (k, value) -> {
                     if (value.isPresent()) {
                         return valueSerializationStrategy.getBytesSize(value.get());
@@ -315,6 +315,8 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
             System.out.println("Can't erase old table file " + table.getPath());
             throw new RuntimeException("Can't erase old table file");
         }
+        delFile = new File(table.getPath() + ".sign");
+        delFile.delete();
     }
 
     /**
