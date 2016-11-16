@@ -3,12 +3,10 @@ package ru.mipt.java2016.homework.g594.kozlov.task2;
 import java.io.*;
 import java.nio.ByteBuffer;
 
-import static java.awt.SystemColor.text;
-
 /**
  * Created by Anatoly on 26.10.2016.
  */
-public class FileWorker {
+public class FileWorker implements Closeable {
 
     private final File file;
 
@@ -17,6 +15,8 @@ public class FileWorker {
     private BufferedOutputStream buffWr = null;
 
     private BufferedInputStream buffRd = null;
+
+    private long currOffset = 0;
 
     public FileWorker(String fileName) {
         this.file = new File(fileName);
@@ -32,7 +32,14 @@ public class FileWorker {
         }
     }
 
-    public boolean exists() throws FileNotFoundException {
+    public boolean exists() {
+        if (!file.exists()) {
+            return false;
+        }
+        return true;
+    }
+
+    private boolean innerExists() throws FileNotFoundException {
         if (!file.exists()) {
             throw new FileNotFoundException(file.getName());
         }
@@ -54,7 +61,7 @@ public class FileWorker {
 
     public long bufferedWrite(String text) {
         try {
-            exists();
+            innerExists();
             if (buffWr == null) {
                 buffWr = new BufferedOutputStream(new FileOutputStream(file.getAbsoluteFile()));
             }
@@ -69,7 +76,7 @@ public class FileWorker {
 
     public void bufferedWriteOffset(long offset) {
         try {
-            exists();
+            innerExists();
             if (buffWr == null) {
                 buffWr = new BufferedOutputStream(new FileOutputStream(file.getAbsoluteFile()));
             }
@@ -93,9 +100,10 @@ public class FileWorker {
 
     public String readNextToken() {
         try {
-            exists();
+            innerExists();
             if (buffRd == null) {
                 buffRd = new BufferedInputStream(new FileInputStream(file.getAbsoluteFile()));
+                currOffset = 0;
             }
             if (buffRd.available() < 4) {
                 buffRd.close();
@@ -107,12 +115,14 @@ public class FileWorker {
             if (read < 4) {
                 throw new RuntimeException("Reading failure");
             }
+            currOffset += read;
             int len = ByteBuffer.wrap(bytes).getInt();
             bytes = new byte[len];
             read = buffRd.read(bytes, 0, len);
             if (read < len) {
                 throw new RuntimeException("Reading failure");
             }
+            currOffset += read;
             return new String(bytes);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -121,7 +131,7 @@ public class FileWorker {
 
     public long readLong() {
         try {
-            exists();
+            innerExists();
             if (buffRd == null) {
                 buffRd = new BufferedInputStream(new FileInputStream(file.getAbsoluteFile()));
             }
@@ -137,10 +147,29 @@ public class FileWorker {
         }
     }
 
-    public void refresh() {
+    public void moveToOffset(long offset) {
+        try {
+            innerExists();
+            if (buffRd == null || currOffset > offset) {
+                buffRd = new BufferedInputStream(new FileInputStream(file.getAbsoluteFile()));
+                currOffset = 0;
+            }
+            buffRd.skip(offset - currOffset);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void delete() {
+        file.delete();
+    }
+
+    @Override
+    public void close() {
         try {
             if (buffRd != null) {
                 buffRd.close();
+                currOffset = 0;
                 buffRd = null;
             }
             if (buffWr != null) {
@@ -148,28 +177,6 @@ public class FileWorker {
                 buffWr.close();
                 buffWr = null;
             }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public String readFromOffset(long offset) {
-        try (FileInputStream buffReader = new FileInputStream(file.getAbsoluteFile())) {
-            exists();
-            buffReader.skip(offset);
-            byte[] bytes = new byte[4];
-            int read = buffReader.read(bytes, 0, 4);
-            if (read < 4) {
-                throw new RuntimeException("Reading failure " + read);
-            }
-            int len = ByteBuffer.wrap(bytes).getInt();
-            bytes = new byte[len];
-            read = buffReader.read(bytes, 0, len);
-            if (read < len) {
-                throw new RuntimeException("Reading failure");
-            }
-            buffReader.close();
-            return new String(bytes);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

@@ -20,7 +20,7 @@ public class MyTests {
         String testString = "testString";
         file.bufferedWrite(testString);
         file.bufferedWriteSubmit();
-        file.refresh();
+        file.close();
         String result = file.readNextToken();
         assertEquals(testString, result);
     }
