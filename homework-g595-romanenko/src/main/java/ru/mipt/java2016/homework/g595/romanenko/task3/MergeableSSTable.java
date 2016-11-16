@@ -94,7 +94,8 @@ public class MergeableSSTable<K, V> extends SSTable<K, V> {
             Map<K, Integer> resultValueByteSize = new HashMap<>();
 
             integerSerializer.serializeToStream(sortedKeys.size(), outputStream);
-            List<Integer> offsets = new ArrayList<>();
+
+            int[] offsets = new int[sortedKeys.size()];
 
             int totalLength = integerSerializer.getBytesSize(sortedKeys.size());
 
@@ -104,9 +105,10 @@ public class MergeableSSTable<K, V> extends SSTable<K, V> {
             totalLength += 2 * integerSerializer.getBytesSize(0) * sortedKeys.size();
             Integer byteSize;
 
-            for (K key : sortedKeys) {
+            for (int i = 0; i < sortedKeys.size(); i++) {
+                K key = sortedKeys.get(i);
                 resultIndices.put(key, totalLength);
-                offsets.add(totalLength);
+                offsets[i] = totalLength;
                 byteSize = getMergeValueSize.apply(key);
                 resultValueByteSize.put(key, byteSize);
                 totalLength += byteSize;
@@ -115,9 +117,10 @@ public class MergeableSSTable<K, V> extends SSTable<K, V> {
             for (int i = 0; i < sortedKeys.size(); i++) {
                 K key = sortedKeys.get(i);
                 keySerializationStrategy.serializeToStream(key, outputStream);
-                integerSerializer.serializeToStream(offsets.get(i), outputStream);
+                integerSerializer.serializeToStream(offsets[i], outputStream);
                 integerSerializer.serializeToStream(resultValueByteSize.get(key), outputStream);
             }
+
             int currentDBPos = 0;
             int anotherDBPos = 0;
             Integer offset;
