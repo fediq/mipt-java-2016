@@ -8,10 +8,6 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import java.io.*;
 import java.util.*;
 
-/**
- * Created by philipp on 30.10.16.
- */
-
 public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private final LinkedHashMap<K, V> cacheMap;
     private final String directory;
@@ -23,23 +19,27 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private ArrayList<Map.Entry<HashMap<K, Long>, String>> keyOffsetArray;
     private TreeMap<K, V> currentTree;
-    private static final int CACHE_SIZE = 10000;
-    private static final int MEM_TREE_SIZE = 10000;
+    private static final int CACHE_SIZE = 1000;
+    private static final int MEM_TREE_SIZE = 1000;
 
     public MegaKeyValueStorage(String path, String dataType, InterfaceSerialization<K> keySerialization,
                                InterfaceSerialization<V> valueSerialization) throws IllegalStateException {
         isOpen = true;
         directory = path + File.separator + "storage.db";
         pathToDir = path;
-        cacheMap = new LinkedHashMap<K, V>();
+        cacheMap = new LinkedHashMap<>();
         typeOfData = dataType;
+        currentTree = new TreeMap<>();
+        keyOffsetArray = new ArrayList<>();
         this.keySerialization = keySerialization;
         this.valueSerialization = valueSerialization;
         File storage = new File(directory);
-        HashMap<K, Long> keyOffsetMap = new HashMap<K, Long>();
+        HashMap<K, Long> keyOffsetMap = new HashMap<>();
         if (!storage.exists()) {
             try {
-                storage.createNewFile();
+                if (!storage.createNewFile()) {
+                    throw new IllegalStateException("Cant create file");
+                }
                 keyOffsetArray.add(new AbstractMap.SimpleEntry<>(keyOffsetMap, directory));
             } catch (IOException | SecurityException e) {
                 throw new IllegalStateException(e.getMessage(), e.getCause());
@@ -54,7 +54,7 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 for (int i = 0; i < number; ++i) {
                     K key = this.keySerialization.readValue(storageInput);
                     Long offset = storageInput.getFilePointer();
-                    V value = this.valueSerialization.readValue(storageInput);
+                    this.valueSerialization.readValue(storageInput);
                     keyOffsetMap.put(key, offset);
                 }
                 keyOffsetArray.add(new AbstractMap.SimpleEntry<>(keyOffsetMap, directory));
@@ -91,25 +91,10 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             clearCache();
             return currentValue;
         }
-        /*for (Map.Entry<HashMap<K, Long>, String> iterator : keyOffsetArray) {
-            if (iterator.getKey().containsKey(key)) {
-                V complexValue;
-                try (RandomAccessFile storageInput = new RandomAccessFile(new File(iterator.getValue()), "r")) {
-                    storageInput.seek(iterator.getKey().get(key));
-                    complexValue = valueSerialization.readValue(storageInput);
-                    storageInput.close();
-                } catch (IOException | SecurityException e) {
-                    throw new IllegalStateException(e.getMessage(), e.getCause());
-                }
-                cacheMap.put(key, complexValue);
-                clearCache();
-                return complexValue;
-            }
-        }*/
         for (int i = keyOffsetArray.size() - 1; i >= 0; ++i) {
             Map.Entry<HashMap<K, Long>, String> block = keyOffsetArray.get(i);
             if (block.getKey().containsKey(key)) {
-                if (block.getKey().get(key).equals(-1)) {
+                if (block.getKey().get(key).equals((long)-1)) {
                     cacheMap.put(key, null);
                     clearCache();
                     return null;
@@ -139,26 +124,15 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             throw new IllegalStateException("You can't use KVS when it's closed");
         }
         if (cacheMap.containsKey(key)) {
-            if (cacheMap.get(key) != null) {
-                return true;
-            }
-            return false;
+            return cacheMap.get(key) != null;
         }
         if (currentTree.containsKey(key)) {
-            if (currentTree.get(key) != null) {
-                return true;
-            }
-            return false;
+            return currentTree.get(key) != null;
         }
-        /*for (Map.Entry<HashMap<K, Long>, String> iterator : keyOffsetArray) {
-            if (iterator.getKey().containsKey(key)) {
-                return true;
-            }
-        }*/
         for (int i = keyOffsetArray.size() - 1; i >= 0; --i) {
             Map.Entry<HashMap<K, Long>, String> block = keyOffsetArray.get(i);
             if (block.getKey().containsKey(key)) {
-                return !block.getKey().get(key).equals(-1);
+                return !block.getKey().get(key).equals((long)-1);
             }
         }
         return false;
@@ -171,12 +145,14 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         String nameOfStorage = pathToDir + File.separator + "tempFile_" + String.valueOf(keyOffsetArray.size());
         File newStorage = new File(nameOfStorage);
         try {
-            newStorage.createNewFile();
+            if (!newStorage.createNewFile()) {
+                throw new IllegalStateException("Cant create file");
+            }
         } catch (IOException | SecurityException e) {
             throw new IllegalStateException(e.getMessage(), e.getCause());
         }
-        try (RandomAccessFile writer = new RandomAccessFile(newStorage, "w")) {
-            HashMap<K, Long> newKeyOffsetMap = new HashMap<K, Long>();
+        try (RandomAccessFile writer = new RandomAccessFile(newStorage, "rw")) {
+            HashMap<K, Long> newKeyOffsetMap = new HashMap<>();
             for (Map.Entry<K, V> nextEntry : currentTree.entrySet()) {
                 if (nextEntry.getValue() != null) {
                     keySerialization.writeValue(nextEntry.getKey(), writer);
@@ -219,8 +195,8 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private HashSet<K> findExistedKeys() {
-        HashSet<K> existedElements = new HashSet<K>();
-        HashSet<K> deletedElements = new HashSet<K>();
+        HashSet<K> existedElements = new HashSet<>();
+        HashSet<K> deletedElements = new HashSet<>();
         for (Map.Entry<K, V> iterator : currentTree.entrySet()) {
             if (iterator.getValue() == null) {
                 deletedElements.add(iterator.getKey());
@@ -231,7 +207,7 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         for (Map.Entry<HashMap<K, Long>, String> iterator : keyOffsetArray) {
             for (Map.Entry<K, Long> jterator : iterator.getKey().entrySet()) {
                 if (!(deletedElements.contains(jterator.getKey()) || existedElements.contains(jterator.getKey()))) {
-                    if (jterator.getValue().equals(-1)) {
+                    if (jterator.getValue().equals((long)-1)) {
                         deletedElements.add(jterator.getKey());
                     } else {
                         existedElements.add(jterator.getKey());
@@ -263,16 +239,18 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         if (!isOpen) {
             throw new IllegalStateException("You can't use KVS when it's closed");
         }
-        HashSet<K> existedKeys = new HashSet<K>();
-        HashSet<K> deletedKeys = new HashSet<K>();
+        HashSet<K> existedKeys = new HashSet<>();
+        HashSet<K> deletedKeys = new HashSet<>();
         String storageName = pathToDir + File.separator + "storage1.db";
         File newStorage = new File(storageName);
         try {
-            newStorage.createNewFile();
+            if (!newStorage.createNewFile()) {
+                throw new IllegalStateException("Cant create new file");
+            }
         } catch (IOException | SecurityException e) {
             throw new IllegalStateException(e.getMessage(), e.getCause());
         }
-        try (RandomAccessFile finishWriter = new RandomAccessFile(newStorage, "w")) {
+        try (RandomAccessFile finishWriter = new RandomAccessFile(newStorage, "rw")) {
             finishWriter.writeUTF(typeOfData);
             finishWriter.writeInt(findExistedKeys().size());
             for (Map.Entry<K, V> iterator : currentTree.entrySet()) {
@@ -288,7 +266,7 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 try (RandomAccessFile dataReader = new RandomAccessFile(new File(iterator.getValue()), "r")) {
                     for (Map.Entry<K, Long> jterator : iterator.getKey().entrySet()) {
                         if (!(deletedKeys.contains(jterator.getKey()) || existedKeys.contains(jterator.getKey()))) {
-                            if (jterator.getValue().equals(-1)) {
+                            if (jterator.getValue().equals((long)-1)) {
                                 deletedKeys.add(jterator.getKey());
                             } else {
                                 existedKeys.add(jterator.getKey());
