@@ -111,36 +111,28 @@ public class SSTable<Key, Value> {
 
             integerSerializer.serializeToStream(toFlip.size(), outputStream);
 
-            List<Integer> offsets = new ArrayList<>();
             int totalLength = integerSerializer.getBytesSize(toFlip.size());
 
+            sortedKeys.addAll(toFlip.keySet());
 
-            List<Key> cachedKeys = toFlip.keyList();
-            sortedKeys.addAll(cachedKeys);
-
-            for (Key key : cachedKeys) {
+            for (Key key : sortedKeys) {
                 totalLength += keySerializationStrategy.getBytesSize(key);
             }
-            totalLength += 2 * integerSerializer.getBytesSize(0) * cachedKeys.size();
+            totalLength += 2 * integerSerializer.getBytesSize(0) * sortedKeys.size();
 
-            Value value;
-            for (Key key : cachedKeys) {
-                value = toFlip.get(key);
+            int byteSize;
 
-                valueByteSize.put(key, valueSerializationStrategy.getBytesSize(value));
+            for (Key key : sortedKeys) {
                 indices.put(key, totalLength);
-                offsets.add(totalLength);
-                totalLength += valueSerializationStrategy.getBytesSize(value);
+                keySerializationStrategy.serializeToStream(key, outputStream);
+                integerSerializer.serializeToStream(totalLength, outputStream);
+                byteSize = valueSerializationStrategy.getBytesSize(toFlip.get(key));
+                valueByteSize.put(key, byteSize);
+                integerSerializer.serializeToStream(byteSize, outputStream);
+                totalLength += byteSize;
             }
 
-            for (int i = 0; i < cachedKeys.size(); i++) {
-                keySerializationStrategy.serializeToStream(cachedKeys.get(i), outputStream);
-                integerSerializer.serializeToStream(offsets.get(i), outputStream);
-                integerSerializer.serializeToStream(valueByteSize.get(cachedKeys.get(i)), outputStream);
-            }
-
-
-            for (Key key : cachedKeys) {
+            for (Key key : sortedKeys) {
                 valueSerializationStrategy.serializeToStream(toFlip.get(key), outputStream);
             }
 
@@ -172,7 +164,6 @@ public class SSTable<Key, Value> {
             storage.seek(offset);
             InputStream stream = Channels.newInputStream(storage.getChannel());
             result = valueSerializationStrategy.deserializeFromStream(stream);
-
         } catch (IOException e) {
             throw new IllegalStateException();
         }
@@ -259,7 +250,7 @@ public class SSTable<Key, Value> {
 
     public Iterator<Key> readKeys() {
         checkClosed();
-        return new SSTableIterator(); //indices.keySet().iterator();
+        return new SSTableIterator();
     }
 
     public String getPath() {
