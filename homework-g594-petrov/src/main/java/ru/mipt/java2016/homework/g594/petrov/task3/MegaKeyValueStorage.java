@@ -23,8 +23,8 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private ArrayList<Map.Entry<HashMap<K, Long>, String>> keyOffsetArray;
     private TreeMap<K, V> currentTree;
-    private final static int CACHE_SIZE = 10000;
-    private final static int MEM_TREE_SIZE = 10000;
+    private static final int CACHE_SIZE = 10000;
+    private static final int MEM_TREE_SIZE = 10000;
 
     public MegaKeyValueStorage(String path, String dataType, InterfaceSerialization<K> keySerialization,
                                InterfaceSerialization<V> valueSerialization) throws IllegalStateException {
@@ -158,11 +158,7 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         for (int i = keyOffsetArray.size() - 1; i >= 0; --i) {
             Map.Entry<HashMap<K, Long>, String> block = keyOffsetArray.get(i);
             if (block.getKey().containsKey(key)) {
-                if (block.getKey().get(key).equals(-1)) {
-                    return false;
-                } else {
-                    return true;
-                }
+                return !block.getKey().get(key).equals(-1);
             }
         }
         return false;
