@@ -57,7 +57,6 @@ public class MergeableSSTable<K, V> extends SSTable<K, V> {
             }
             sortedKeys.add(newerKey);
         }
-
         while (olderKeysPos < olderKeys.size()) {
             sortedKeys.add(olderKeys.get(olderKeysPos));
             olderKeysPos += 1;
@@ -91,11 +90,11 @@ public class MergeableSSTable<K, V> extends SSTable<K, V> {
                     Channels.newOutputStream(resultDB.getChannel()));
 
             Map<K, Integer> resultIndices = new HashMap<>();
-            Map<K, Integer> resultValueByteSize = new HashMap<>();
+
+            //doesn't need, because we can replace old table with new values
+            //Map<K, Integer> resultValueByteSize = new HashMap<>();
 
             integerSerializer.serializeToStream(sortedKeys.size(), outputStream);
-
-            int[] offsets = new int[sortedKeys.size()];
 
             int totalLength = integerSerializer.getBytesSize(sortedKeys.size());
 
@@ -103,28 +102,22 @@ public class MergeableSSTable<K, V> extends SSTable<K, V> {
                 totalLength += keySerializationStrategy.getBytesSize(key);
             }
             totalLength += 2 * integerSerializer.getBytesSize(0) * sortedKeys.size();
-            Integer byteSize;
+            int byteSize;
 
-            for (int i = 0; i < sortedKeys.size(); i++) {
-                K key = sortedKeys.get(i);
+
+            for (K key : sortedKeys) {
                 resultIndices.put(key, totalLength);
-                offsets[i] = totalLength;
-                byteSize = getMergeValueSize.apply(key);
-                resultValueByteSize.put(key, byteSize);
-                totalLength += byteSize;
-            }
-
-            for (int i = 0; i < sortedKeys.size(); i++) {
-                K key = sortedKeys.get(i);
                 keySerializationStrategy.serializeToStream(key, outputStream);
-                integerSerializer.serializeToStream(offsets[i], outputStream);
-                integerSerializer.serializeToStream(resultValueByteSize.get(key), outputStream);
+                integerSerializer.serializeToStream(totalLength, outputStream);
+                byteSize = getMergeValueSize.apply(key);
+                valueByteSize.put(key, byteSize);
+                integerSerializer.serializeToStream(byteSize, outputStream);
+                totalLength += byteSize;
             }
 
             int currentDBPos = 0;
             int anotherDBPos = 0;
-            Integer offset;
-
+            int offset;
 
             for (K key : sortedKeys) {
                 if (indices.containsKey(key)) {
@@ -170,8 +163,6 @@ public class MergeableSSTable<K, V> extends SSTable<K, V> {
 
             indices.clear();
             indices.putAll(resultIndices);
-            valueByteSize.clear();
-            valueByteSize.putAll(resultValueByteSize);
 
             this.dbName = tableName;
             this.path = path;
