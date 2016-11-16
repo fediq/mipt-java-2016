@@ -16,7 +16,7 @@ public class IndexFileWorker extends FileWorker {
     public long readOffset() throws IOException {
         long result = 0;
         for(int i = 0; i < 8; ++i) {
-            result = result * 8 + inputStream.read();
+            result = result * 256 + inputStream.read();
         }
         return result;
     }

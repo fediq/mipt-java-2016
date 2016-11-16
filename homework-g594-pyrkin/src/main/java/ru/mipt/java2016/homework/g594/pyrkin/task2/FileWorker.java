@@ -40,7 +40,7 @@ public class FileWorker {
     public int read() throws IOException {
         int result = 0;
         for (int i = 0; i < 4; ++i) {
-            result = result * 8 + inputStream.read();
+            result = result * 256 + inputStream.read();
         }
         return result;
     }

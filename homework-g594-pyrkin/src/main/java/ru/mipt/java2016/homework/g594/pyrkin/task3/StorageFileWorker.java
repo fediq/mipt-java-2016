@@ -20,7 +20,7 @@ public class StorageFileWorker {
 
     private BufferedOutputStream outputStream;
 
-    boolean mode = false; // false -- read, true -- write
+    private boolean isStreamMode = false;
 
     public StorageFileWorker(String directoryPath, String fileName) throws IOException {
         File directory = new File(directoryPath);
@@ -64,10 +64,15 @@ public class StorageFileWorker {
     }
 
     public void close() throws IOException {
-        randomAccessFile.close();
+        if(isStreamMode()) {
+            outputStream.close();
+        }else {
+            randomAccessFile.close();
+        }
     }
 
     public void startRecopyMode () throws IOException {
+        isStreamMode = true;
         randomAccessFile.close();
         tmpFile.createNewFile();
         inputStream = new BufferedInputStream(new FileInputStream(file));
@@ -75,6 +80,7 @@ public class StorageFileWorker {
     }
 
     public void endRecopyMode () throws IOException {
+        isStreamMode = false;
         inputStream.close();
         outputStream.close();
         tmpFile.renameTo(file);
@@ -84,7 +90,7 @@ public class StorageFileWorker {
     public int recopyRead () throws IOException {
         int result = 0;
         for (int i = 0; i < 4; ++i) {
-            result = result * 8 + inputStream.read();
+            result = result * 256 + inputStream.read();
         }
         return result;
     }
@@ -101,13 +107,29 @@ public class StorageFileWorker {
         return resultBuffer;
     }
 
-    public void recopyWrite (int size) throws IOException {
+    public void streamWrite (int size) throws IOException {
         ByteBuffer buffer = ByteBuffer.allocate(4);
         buffer.putInt(size);
         outputStream.write(buffer.array());
     }
 
-    public void recopyWrite (ByteBuffer buffer) throws IOException {
+    public void streamWrite (ByteBuffer buffer) throws IOException {
         outputStream.write(buffer.array());
+    }
+
+    public void startStreamMode () throws IOException {
+        isStreamMode = true;
+        randomAccessFile.close();
+        outputStream = new BufferedOutputStream(new FileOutputStream(file));
+    }
+
+    public void endStreamMode () throws IOException {
+        isStreamMode = false;
+        outputStream.close();
+        randomAccessFile = new RandomAccessFile(file, "rw");
+    }
+
+    public boolean isStreamMode () throws IOException {
+        return isStreamMode;
     }
 }

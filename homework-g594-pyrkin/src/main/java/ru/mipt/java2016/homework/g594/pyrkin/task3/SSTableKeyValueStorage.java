@@ -32,6 +32,10 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private final int maxMemoryStorageSize;
 
+    private int deletedNumber = 0;
+
+    private long currentStorageLength;
+
     public SSTableKeyValueStorage(String directoryPath,
                                   SerializerInterface<K> keySerializer,
                                   SerializerInterface<V> valueSerializer,
@@ -41,6 +45,7 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         this.maxMemoryStorageSize = maxMemoryStorageSize;
         indexFileWorker = new IndexFileWorker(directoryPath, "index.db");
         storageFileWorker = new StorageFileWorker(directoryPath, "storage.db");
+        currentStorageLength = storageFileWorker.getLength();
         readOffsetTable();
     }
 
@@ -55,6 +60,8 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             return null;
         }
         try {
+            if(storageFileWorker.isStreamMode())
+                storageFileWorker.endStreamMode();
             return readValue(key);
         }catch (IOException exception){
             return null;
@@ -85,7 +92,8 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public void delete(K key) {
         checkClosed();
-        memoryStorage.remove(key);
+        if(memoryStorage.remove(key) == null)
+            ++deletedNumber;
         offsetTable.remove(key);
     }
 
@@ -106,8 +114,7 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         checkClosed();
         isClosed = true;
 
-        removeDeletedFromFile();
-        flushMemoryStorage();
+        writeStorageToFile();
         storageFileWorker.close();
 
         writeOffsetTable();
@@ -159,38 +166,79 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
         storageFileWorker.writeToEnd(valueSerializer.sizeOfSerialize(value));
         storageFileWorker.writeToEnd(valueSerializer.serialize(value));
+
+        currentStorageLength += 8 + keySerializer.sizeOfSerialize(key) +
+                valueSerializer.sizeOfSerialize(value);
+    }
+
+    private void streamWriteField (K key, V value) throws IOException {
+        storageFileWorker.streamWrite(keySerializer.sizeOfSerialize(key));
+        storageFileWorker.streamWrite(keySerializer.serialize(key));
+
+        storageFileWorker.streamWrite(valueSerializer.sizeOfSerialize(value));
+        storageFileWorker.streamWrite(valueSerializer.serialize(value));
+
+        currentStorageLength += 8 + keySerializer.sizeOfSerialize(key) +
+                valueSerializer.sizeOfSerialize(value);
+    }
+
+    private void writeAllFields () throws IOException {
+        for(Map.Entry<K, V> entry : memoryStorage.entrySet()){
+            int keySerializeSize = keySerializer.sizeOfSerialize(entry.getKey());
+            offsetTable.put(entry.getKey(), currentStorageLength + 4 + keySerializeSize);
+            writeField(entry.getKey(), entry.getValue());
+        }
+    }
+
+    private void streamWriteAllFields () throws IOException {
+        for(Map.Entry<K, V> entry : memoryStorage.entrySet()){
+            int keySerializeSize = keySerializer.sizeOfSerialize(entry.getKey());
+            offsetTable.put(entry.getKey(), currentStorageLength + 4 + keySerializeSize);
+            streamWriteField(entry.getKey(), entry.getValue());
+        }
     }
 
     private void flushMemoryStorage () throws IOException {
-        for(Map.Entry<K, V> entry : memoryStorage.entrySet()){
-            offsetTable.put(entry.getKey(), storageFileWorker.getLength() + 4 +
-                    keySerializer.sizeOfSerialize(entry.getKey()));
-            writeField(entry.getKey(), entry.getValue());
+        if(storageFileWorker.isStreamMode()) {
+            streamWriteAllFields();
+        } else if(storageFileWorker.getLength() == 0) {
+            storageFileWorker.startStreamMode();
+            streamWriteAllFields();
+        } else {
+            writeAllFields();
         }
         memoryStorage.clear();
     }
 
-    private void removeDeletedFromFile () throws IOException {
-        storageFileWorker.startRecopyMode();
-        long currentOffset = 0;
-        while(true) {
-            int keySize = storageFileWorker.recopyRead();
-            if(keySize < 0)
-                break;
-            ByteBuffer key = storageFileWorker.recopyRead(keySize);
-            int valueSize = storageFileWorker.recopyRead();
-            ByteBuffer value = storageFileWorker.recopyRead(valueSize);
-            K deserealizedKey = keySerializer.deserialize(key);
-            if(offsetTable.containsKey(deserealizedKey)) {
-                storageFileWorker.recopyWrite(keySize);
-                storageFileWorker.recopyWrite(key);
-                currentOffset += 4 + keySize;
-                offsetTable.put(deserealizedKey, currentOffset);
-                storageFileWorker.recopyWrite(valueSize);
-                storageFileWorker.recopyWrite(value);
-                currentOffset += 4 + valueSize;
+    private void writeStorageToFile () throws IOException {
+        if(deletedNumber > 4 * offsetTable.size() - memoryStorage.size()) {
+            if(storageFileWorker.isStreamMode())
+                storageFileWorker.endStreamMode();
+            storageFileWorker.startRecopyMode();
+            currentStorageLength = 0;
+            while (true) {
+                int keySize = storageFileWorker.recopyRead();
+                if (keySize < 0)
+                    break;
+                ByteBuffer key = storageFileWorker.recopyRead(keySize);
+                int valueSize = storageFileWorker.recopyRead();
+                ByteBuffer value = storageFileWorker.recopyRead(valueSize);
+                K deserealizedKey = keySerializer.deserialize(key);
+                if (offsetTable.containsKey(deserealizedKey)) {
+                    storageFileWorker.streamWrite(keySize);
+                    storageFileWorker.streamWrite(key);
+                    currentStorageLength += 4 + keySize;
+                    offsetTable.put(deserealizedKey, currentStorageLength);
+                    storageFileWorker.streamWrite(valueSize);
+                    storageFileWorker.streamWrite(value);
+                    currentStorageLength += 4 + valueSize;
+                }
             }
+            flushMemoryStorage();
+            storageFileWorker.endRecopyMode();
+        } else if(!memoryStorage.isEmpty()) {
+            flushMemoryStorage();
         }
-        storageFileWorker.endRecopyMode();
+
     }
 }
