@@ -49,7 +49,7 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
     /**
      * Constants
      */
-    private int maxUpdatedObjectsInMemory = 511; //4095;//2048;
+    private int maxUpdatedObjectsInMemory = 1023; //4095;//2048;
 
     /**
      * Internal state
@@ -73,7 +73,7 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
         this.updatedValues = new TreeMap<>(keyComparator);
 
         cache = CacheBuilder.newBuilder()
-                .maximumWeight(20 * 1024)
+                .maximumWeight(100 * 1024)
                 .weigher((Weigher<K, Optional<V>>) (k, value) -> {
                     if (value.isPresent()) {
                         return valueSerializationStrategy.getBytesSize(value.get());
