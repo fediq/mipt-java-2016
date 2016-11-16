@@ -94,7 +94,7 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         for (int i = keyOffsetArray.size() - 1; i >= 0; ++i) {
             Map.Entry<HashMap<K, Long>, String> block = keyOffsetArray.get(i);
             if (block.getKey().containsKey(key)) {
-                if (block.getKey().get(key).equals((long)-1)) {
+                if (block.getKey().get(key).equals((long) -1)) {
                     cacheMap.put(key, null);
                     clearCache();
                     return null;
@@ -132,7 +132,7 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         for (int i = keyOffsetArray.size() - 1; i >= 0; --i) {
             Map.Entry<HashMap<K, Long>, String> block = keyOffsetArray.get(i);
             if (block.getKey().containsKey(key)) {
-                return !block.getKey().get(key).equals((long)-1);
+                return !block.getKey().get(key).equals((long) -1);
             }
         }
         return false;
@@ -207,7 +207,7 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         for (Map.Entry<HashMap<K, Long>, String> iterator : keyOffsetArray) {
             for (Map.Entry<K, Long> jterator : iterator.getKey().entrySet()) {
                 if (!(deletedElements.contains(jterator.getKey()) || existedElements.contains(jterator.getKey()))) {
-                    if (jterator.getValue().equals((long)-1)) {
+                    if (jterator.getValue().equals((long) -1)) {
                         deletedElements.add(jterator.getKey());
                     } else {
                         existedElements.add(jterator.getKey());
@@ -266,7 +266,7 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 try (RandomAccessFile dataReader = new RandomAccessFile(new File(iterator.getValue()), "r")) {
                     for (Map.Entry<K, Long> jterator : iterator.getKey().entrySet()) {
                         if (!(deletedKeys.contains(jterator.getKey()) || existedKeys.contains(jterator.getKey()))) {
-                            if (jterator.getValue().equals((long)-1)) {
+                            if (jterator.getValue().equals((long) -1)) {
                                 deletedKeys.add(jterator.getKey());
                             } else {
                                 existedKeys.add(jterator.getKey());
