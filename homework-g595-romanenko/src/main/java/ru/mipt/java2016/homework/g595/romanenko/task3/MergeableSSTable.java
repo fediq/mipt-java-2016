@@ -20,7 +20,7 @@ public class MergeableSSTable<K, V> extends SSTable<K, V> {
 
     private final Comparator<K> keyComparator;
 
-    final int bufferSize = 10 * 1024;
+    private final int bufferSize = 10 * 1024;
     private final byte[] buffer = new byte[bufferSize];
 
     public MergeableSSTable(String path,
@@ -161,6 +161,8 @@ public class MergeableSSTable<K, V> extends SSTable<K, V> {
             if (!delFile.delete()) {
                 System.out.println("Can't erase old table file " + this.getPath());
             }
+            delFile = new File(this.path + ".sign");
+            delFile.delete();
             //end remove
 
             indices.clear();
