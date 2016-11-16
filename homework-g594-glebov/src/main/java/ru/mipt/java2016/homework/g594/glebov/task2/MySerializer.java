@@ -3,7 +3,6 @@ package ru.mipt.java2016.homework.g594.glebov.task2;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.Date;
 
 
 /**
@@ -50,44 +49,4 @@ public interface MySerializer<Type> {
             return input.readDouble();
         }
     };
-
-    /*MySerializer<StudentKey> STUDENTKEY = new MySerializer<StudentKey>() {
-        @Override
-        public void streamSerialize(StudentKey object, DataOutputStream output) throws IOException {
-            output.writeInt(object.getGroupId());
-            output.writeUTF(object.getName());
-        }
-
-        @Override
-        public StudentKey streamDeserialize(DataInputStream input) throws IOException {
-            Integer groupId = input.readInt();
-            String name = input.readUTF();
-            StudentKey student = new StudentKey(groupId, name);
-            return student;
-        }
-    };
-
-    MySerializer<Student> STUDENT = new MySerializer<Student>() {
-        @Override
-        public void streamSerialize(Student object, DataOutputStream output) throws IOException {
-            output.writeInt(object.getGroupId());
-            output.writeUTF(object.getName());
-            output.writeUTF(object.getHometown());
-            output.writeLong(object.getBirthDate().getTime());
-            output.writeBoolean(object.isHasDormitory());
-            output.writeDouble(object.getAverageScore());
-        }
-
-        @Override
-        public Student streamDeserialize(DataInputStream input) throws IOException {
-            Integer groupId = input.readInt();
-            String name = input.readUTF();
-            String hometown = input.readUTF();
-            Long ldate = input.readLong();
-            Date date = new Date(ldate);
-            Boolean hasDormitory = input.readBoolean();
-            Double averageScore = input.readDouble();
-            return new Student(groupId, name, hometown, date, hasDormitory, averageScore);
-        }
-    };*/
 }

@@ -12,13 +12,13 @@ import java.util.Map;
  */
 
 public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
-    public String checkString = "The file hasn't been changed";
-    public HashMap<K, V> map = new HashMap<>();
-    public File storage;
-    public int mapSize = 0;
-    public boolean isOpen = false;
-    public MySerializer<K> keySerializer;
-    public MySerializer<V> valueSerializer;
+    private String checkString = "The file hasn't been changed";
+    private HashMap<K, V> map = new HashMap<>();
+    private File storage;
+    private int mapSize = 0;
+    private boolean isOpen = false;
+    private MySerializer<K> keySerializer;
+    private MySerializer<V> valueSerializer;
 
     public MyKeyValueStorage(String path, MySerializer<K> keySerializer,
                              MySerializer<V> valueSerializer) {
@@ -28,7 +28,8 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         if ((new File(path).exists())) {
             if (new File(path + File.separator + "storage.db").exists()) {
                 storage = new File(path + File.separator + "storage.db");
-                try (DataInputStream input = new DataInputStream(new BufferedInputStream(new FileInputStream(storage)))) {
+                try (DataInputStream input = new DataInputStream(new BufferedInputStream(
+                        new FileInputStream(storage)))) {
                     String newCheckString = input.readUTF();
                     mapSize = input.readInt();
                     if (checkString.equals(newCheckString)) {
