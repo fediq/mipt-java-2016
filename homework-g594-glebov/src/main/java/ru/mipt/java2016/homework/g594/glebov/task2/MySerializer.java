@@ -5,8 +5,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Date;
 
-import ru.mipt.java2016.homework.tests.task2.Student;
-import ru.mipt.java2016.homework.tests.task2.StudentKey;
 
 /**
  * Created by daniil on 31.10.16.
@@ -53,7 +51,7 @@ public interface MySerializer<Type> {
         }
     };
 
-    MySerializer<StudentKey> STUDENTKEY = new MySerializer<StudentKey>() {
+    /*MySerializer<StudentKey> STUDENTKEY = new MySerializer<StudentKey>() {
         @Override
         public void streamSerialize(StudentKey object, DataOutputStream output) throws IOException {
             output.writeInt(object.getGroupId());
@@ -91,5 +89,5 @@ public interface MySerializer<Type> {
             Double averageScore = input.readDouble();
             return new Student(groupId, name, hometown, date, hasDormitory, averageScore);
         }
-    };
+    };*/
 }
