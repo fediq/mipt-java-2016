@@ -65,6 +65,9 @@
 [Примеры кода](https://github.com/DanAnastasyev/mipt-java-2016/tree/master/seminars/src/ru/mipt/java2016/seminars/seminar6)  
 [Хорошая статья про ссылки в Java](http://www.kdgregory.com/?page=java.refobj)
 
+7. [Lambdas & Streams](https://yadi.sk/d/uJ4A7PrRyhL2e)  
+[Примеры кода](https://github.com/DanAnastasyev/mipt-java-2016/tree/master/seminars/src/ru/mipt/java2016/seminars/seminar7)
+
 #### Рекомендуемая литература
 
 * Кей Хорстманн - [Java. Библиотека профессионала. Том 1. Основы (десятое издание)](https://www.ozon.ru/context/detail/id/137377512/).
