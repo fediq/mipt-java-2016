@@ -1,6 +1,5 @@
 package ru.mipt.java2016.homework.g594.petrov.task3;
 
-import java.io.DataInputStream;
 import java.io.RandomAccessFile;
 
 /**
