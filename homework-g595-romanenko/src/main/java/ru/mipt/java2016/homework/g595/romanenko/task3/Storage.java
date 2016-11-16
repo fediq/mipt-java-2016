@@ -73,7 +73,7 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
         this.updatedValues = new TreeMap<>(keyComparator);
 
         cache = CacheBuilder.newBuilder()
-                .maximumWeight(100 * 1024)
+                .maximumWeight(256 * 1024)
                 .weigher((Weigher<K, Optional<V>>) (k, value) -> {
                     if (value.isPresent()) {
                         return valueSerializationStrategy.getBytesSize(value.get());
@@ -198,17 +198,6 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
     }
 
     /**
-     * Add value to cache
-     * Doesn't contains more than maxCountObjectsInMemory objects.
-     *
-     * @param key   key to cache
-     * @param value value to cache
-     */
-    private void addCachedValue(K key, V value) {
-        cache.put(key, Optional.of(value));
-    }
-
-    /**
      * Check existing of key in storage
      * Takes O(log n) time.
      *
@@ -247,8 +236,8 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
             epochNumber += 1;
         }
         updatedValues.put(key, value);
-        addCachedValue(key, value);
 
+        cache.invalidate(key);
         //prepare to flip
         if (updatedValues.size() > maxUpdatedObjectsInMemory) {
             flipUpdatedValues();
