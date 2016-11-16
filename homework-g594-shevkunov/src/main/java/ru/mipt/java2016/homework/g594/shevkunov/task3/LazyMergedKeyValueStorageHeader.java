@@ -81,11 +81,18 @@ class LazyMergedKeyValueStorageHeader<K, V> {
         // why not?
     }
 
+    public HashMap<K, LazyMergedKeyValueStorageFileNode> getUnsaveMap() {
+        return pointers;
+    }
+
     public long getSize(int fileIndex) {
         return dataFileSizes.get(fileIndex);
     }
 
     public void addKey(K key, LazyMergedKeyValueStorageFileNode pointer) {
+        if (!pointers.containsKey(key)) {
+            dataFileSizes.set((int) pointer.getFile(), dataFileSizes.get((int) pointer.getFile()) + 1);
+        }
         pointers.put(key, pointer);
     }
 
@@ -98,6 +105,10 @@ class LazyMergedKeyValueStorageHeader<K, V> {
 
     public long getDataFilesCount() {
         return dataFilesCount;
+    }
+
+    public long getLazyPointers() {
+        return lazyPointers;
     }
 
     public void write() throws IOException {

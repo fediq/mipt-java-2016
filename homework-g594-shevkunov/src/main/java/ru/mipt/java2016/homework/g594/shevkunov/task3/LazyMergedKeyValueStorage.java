@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.Map;
 
 /**
  * Implementation of KeyValueStorage based on merging files
@@ -16,6 +17,7 @@ class LazyMergedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private static final String HEADER_NAME = File.separatorChar + "storage.db";
     private static final String DATA_NAME_PREFIX = File.separatorChar + "storage_";
     private static final String DATA_NAME_SUFFIX = ".db";
+    private static final long MININAL_LAZY = 16;
     private boolean open = true;
 
     private final String path;
@@ -89,6 +91,14 @@ class LazyMergedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         synchronized (header) {
             checkClosed();
             header.deleteKey(key);
+            if (lazy()) {
+                try {
+                    rebuild();
+                } catch (IOException e) {
+                    throw new RuntimeException("IO error during deleting");
+                    // Interface doesn't allow us to throw IOException
+                }
+            }
             //TODO Rebuild Check
         }
     }
@@ -115,8 +125,25 @@ class LazyMergedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             checkClosed();
             open = false;
             header.write();
-            // TODO Close files
+            keeper.close();
         }
+    }
+
+    private boolean lazy() {
+        long lazy = header.getLazyPointers();
+        return (lazy >= MININAL_LAZY) && (lazy > header.getDataFilesCount());
+    }
+
+    private void rebuild() throws IOException {
+        int chacheFile = keeper.newFile();
+        for (Map.Entry<K, LazyMergedKeyValueStorageFileNode> v : header.getUnsaveMap().entrySet()) {
+            V temp = keeper.read(v.getValue());
+            LazyMergedKeyValueStorageFileNode wrote = keeper.write(chacheFile, temp);
+            wrote.set(0, wrote.getOffset());
+            v.setValue(wrote);
+        }
+        keeper.swap(chacheFile, 0);
+        keeper.popBack();
     }
 
     private void checkClosed() {
