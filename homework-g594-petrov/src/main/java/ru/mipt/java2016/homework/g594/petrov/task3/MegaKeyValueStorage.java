@@ -18,9 +18,9 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private boolean isOpen;
 
     private ArrayList<Map.Entry<HashMap<K, Long>, String>> keyOffsetArray;
-    private TreeMap<K, V> currentTree;
-    private static final int CACHE_SIZE = 1000;
-    private static final int MEM_TREE_SIZE = 1000;
+    private HashMap<K, V> currentTree;
+    private static final int CACHE_SIZE = 1200;
+    private static final int MEM_TREE_SIZE = 1500;
 
     public MegaKeyValueStorage(String path, String dataType, InterfaceSerialization<K> keySerialization,
                                InterfaceSerialization<V> valueSerialization) throws IllegalStateException {
@@ -29,7 +29,7 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         pathToDir = path;
         cacheMap = new LinkedHashMap<>();
         typeOfData = dataType;
-        currentTree = new TreeMap<>();
+        currentTree = new HashMap<>();
         keyOffsetArray = new ArrayList<>();
         this.keySerialization = keySerialization;
         this.valueSerialization = valueSerialization;
@@ -91,7 +91,7 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             clearCache();
             return currentValue;
         }
-        for (int i = keyOffsetArray.size() - 1; i >= 0; ++i) {
+        for (int i = keyOffsetArray.size() - 1; i >= 0; --i) {
             Map.Entry<HashMap<K, Long>, String> block = keyOffsetArray.get(i);
             if (block.getKey().containsKey(key)) {
                 if (block.getKey().get(key).equals((long) -1)) {
@@ -239,6 +239,7 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         if (!isOpen) {
             throw new IllegalStateException("You can't use KVS when it's closed");
         }
+        isOpen = false;
         HashSet<K> existedKeys = new HashSet<>();
         HashSet<K> deletedKeys = new HashSet<>();
         String storageName = pathToDir + File.separator + "storage1.db";
