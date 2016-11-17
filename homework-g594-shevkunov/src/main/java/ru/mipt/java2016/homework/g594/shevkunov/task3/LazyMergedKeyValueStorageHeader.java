@@ -17,11 +17,13 @@ class LazyMergedKeyValueStorageHeader<K, V> {
     private final HashMap<K, LazyMergedKeyValueStorageFileNode> pointers = new HashMap<>();
     private final Vector<Long> dataFileSizes = new Vector<>();
     private final File file;
-    private long dataFilesCount; /// TODO REWRITE IN INTS
     private long lazyPointers;
+    private int dataFilesCount;
     private String fileHDR;
 
-    public final boolean createdByConstructor; // True if base doesn't exist before constructor call
+    private byte[] bytesChacheForLong = new byte[8];
+
+    final boolean createdByConstructor; // True if base doesn't exist before constructor call
 
     LazyMergedKeyValueStorageHeader(LazyMergedKeyValueStorageSerializator<K> keySerializator,
                                     LazyMergedKeyValueStorageSerializator<V> valueSerializator,
@@ -38,7 +40,7 @@ class LazyMergedKeyValueStorageHeader<K, V> {
             write();
         }
 
-        FileInputStream in = new FileInputStream(file);
+        InputStream in = new BufferedInputStream(new FileInputStream(file));
         byte[] read = new byte[(int) readLong(in)];
         in.read(read);
         fileHDR = new String(read);
@@ -47,8 +49,8 @@ class LazyMergedKeyValueStorageHeader<K, V> {
             throw new RuntimeException("Bad file");
         }
 
-        dataFilesCount = readLong(in);
-        dataFileSizes.setSize((int) dataFilesCount);
+        dataFilesCount = (int) readLong(in);
+        dataFileSizes.setSize(dataFilesCount);
         for (int i = 0; i < dataFileSizes.size(); ++i) {
             dataFileSizes.set(i, readLong(in));
         }
@@ -64,78 +66,78 @@ class LazyMergedKeyValueStorageHeader<K, V> {
         }
     }
 
-    private long readLong(FileInputStream in) throws IOException {
-        byte[] bytes = new byte[8];
-        in.read(bytes);
-        return keySerializator.toLong(bytes);
+    private long readLong(InputStream in) throws IOException {
+        in.read(bytesChacheForLong);
+        return keySerializator.toLong(bytesChacheForLong);
     }
 
-    private LazyMergedKeyValueStorageFileNode readFileNode(FileInputStream in) throws IOException {
-        long fileIndex = readLong(in);
+    private LazyMergedKeyValueStorageFileNode readFileNode(InputStream in) throws IOException {
+        int fileIndex = (int) readLong(in);
         long offset = readLong(in);
         return new LazyMergedKeyValueStorageFileNode(fileIndex, offset);
     }
 
-    public Map<K, LazyMergedKeyValueStorageFileNode> getMap() {
+    Map<K, LazyMergedKeyValueStorageFileNode> getMap() {
         return Collections.unmodifiableMap(pointers);
         // why not?
     }
 
-    public HashMap<K, LazyMergedKeyValueStorageFileNode> getUnsaveMap() {
+    HashMap<K, LazyMergedKeyValueStorageFileNode> getUnsaveMap() {
         return pointers;
     }
 
-    public long getSize(int fileIndex) {
+    long getSize(int fileIndex) {
         return dataFileSizes.get(fileIndex);
     }
 
-    public void addKey(K key, LazyMergedKeyValueStorageFileNode pointer) {
+    void addKey(K key, LazyMergedKeyValueStorageFileNode pointer) {
         if (!pointers.containsKey(key)) {
-            dataFileSizes.set((int) pointer.getFile(), dataFileSizes.get((int) pointer.getFile()) + 1);
+            dataFileSizes.set(pointer.getFile(), dataFileSizes.get(pointer.getFile()) + 1);
         } else {
             ++lazyPointers;
         }
         pointers.put(key, pointer);
     }
 
-    public void deleteKey(K key) {
+    void deleteKey(K key) {
         LazyMergedKeyValueStorageFileNode pointer = pointers.get(key);
         pointers.remove(key);
-        dataFileSizes.set((int) pointer.getFile(), dataFileSizes.get((int) pointer.getFile()) - 1);
+        dataFileSizes.set(pointer.getFile(), dataFileSizes.get(pointer.getFile()) - 1);
         ++lazyPointers;
     }
 
-    public long getDataFilesCount() {
+    int getDataFilesCount() {
         return dataFilesCount;
     }
 
-    public long getLazyPointers() {
+    long getLazyPointers() {
         return lazyPointers;
     }
 
-    public void write() throws IOException {
+    void write() throws IOException {
         file.delete();
-        FileOutputStream out = new FileOutputStream(file);
+        OutputStream out = new BufferedOutputStream(new FileOutputStream(file));
         byte[] bytesFileHDR = fileHDR.getBytes();
-        out.write(keySerializator.toBytes((Integer) bytesFileHDR.length)); // TODO WHAT A FUCK
+        out.write(keySerializator.toBytes(bytesFileHDR.length));
         out.write(bytesFileHDR);
 
-        out.write(keySerializator.toBytes((int) dataFilesCount));
+        out.write(keySerializator.toBytes(dataFilesCount));
         for (int i = 0; i < dataFileSizes.size(); ++i) {
-            out.write(keySerializator.toBytes((int) ((long) dataFileSizes.get(i))));
+            out.write(keySerializator.toBytes(dataFileSizes.get(i)));
         }
-        out.write(keySerializator.toBytes((Integer) pointers.size()));
+        out.write(keySerializator.toBytes(pointers.size()));
 
-        out.write(keySerializator.toBytes((int) lazyPointers));
+        out.write(keySerializator.toBytes(lazyPointers));
         for (Map.Entry<K, LazyMergedKeyValueStorageFileNode> entry : pointers.entrySet()) {
             byte[] bytes = keySerializator.serialize(entry.getKey());
             byte[] fileBytes = keySerializator.toBytes(entry.getValue().getFile());
             byte[] offsetBytes = keySerializator.toBytes(entry.getValue().getOffset());
 
-            out.write(keySerializator.toBytes((Integer) bytes.length));
+            out.write(keySerializator.toBytes(bytes.length));
             out.write(bytes);
             out.write(fileBytes);
             out.write(offsetBytes);
         }
+        out.close();
     }
 }

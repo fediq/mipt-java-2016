@@ -4,24 +4,24 @@ package ru.mipt.java2016.homework.g594.shevkunov.task3;
  * Pointer to files
  * Created by shevkunov on 14.11.16.
  */
-public class LazyMergedKeyValueStorageFileNode {
-    private long file;
+class LazyMergedKeyValueStorageFileNode {
+    private int file;
     private long offset;
 
-    public LazyMergedKeyValueStorageFileNode(long file, long offset) {
+    LazyMergedKeyValueStorageFileNode(int file, long offset) {
         set(file, offset);
     }
 
-    public void set(long fileIndex, long offsetValue) {
+    void set(int fileIndex, long offsetValue) {
         this.file = fileIndex;
         this.offset = offsetValue;
     }
 
-    public long getFile() {
+    int getFile() {
         return file;
     }
 
-    public long getOffset() {
+    long getOffset() {
         return offset;
     }
 }

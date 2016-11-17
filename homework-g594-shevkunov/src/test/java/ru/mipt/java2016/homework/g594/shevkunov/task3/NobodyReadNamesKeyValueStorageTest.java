@@ -18,7 +18,7 @@ public class NobodyReadNamesKeyValueStorageTest extends KeyValueStoragePerforman
     protected KeyValueStorage<String, String> buildStringsStorage(String path) throws MalformedDataException {
         try {
             return new LazyMergedKeyValueStorage<>(new BinarySerializator<String>("String"),
-                    new BinarySerializator<String>("String"), path);
+                    new BinarySerializator<String>("String"), path, 0);
         } catch (Exception e) {
             return null;
         }
@@ -28,7 +28,7 @@ public class NobodyReadNamesKeyValueStorageTest extends KeyValueStoragePerforman
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) throws MalformedDataException {
         try {
             return new LazyMergedKeyValueStorage<>(new BinarySerializator<Integer>("Integer"),
-                    new BinarySerializator<Double>("Double"), path);
+                    new BinarySerializator<Double>("Double"), path, 0);
         } catch (Exception e) {
             return null;
         }
@@ -38,7 +38,7 @@ public class NobodyReadNamesKeyValueStorageTest extends KeyValueStoragePerforman
     protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) throws MalformedDataException {
         try {
             return new LazyMergedKeyValueStorage<>(new BinarySerializator<StudentKey>("StudentKey"),
-                    new BinarySerializator<Student>("Student"), path);
+                    new BinarySerializator<Student>("Student"), path, 0);
         } catch (Exception e) {
             return null;
         }

@@ -8,16 +8,16 @@ import java.io.RandomAccessFile;
 import java.util.Vector;
 
 /**
+ * This class works with base-files.
  * Created by shevkunov on 14.11.16.
  */
-public class LazyMergedKeyValueStorageKeeper<K, V> {
+class LazyMergedKeyValueStorageKeeper<V> {
     private final String fileNamePrefix;
     private final String fileNameSuffix;
     private final Vector<RandomAccessFile> dataFiles = new Vector<>();
     private final LazyMergedKeyValueStorageSerializator<V> valueSerializator;
 
-    public LazyMergedKeyValueStorageKeeper(LazyMergedKeyValueStorageSerializator<K> keySerializator, // TODO Is needed?
-                                           LazyMergedKeyValueStorageSerializator<V> valueSerializator,
+    LazyMergedKeyValueStorageKeeper(LazyMergedKeyValueStorageSerializator<V> valueSerializator,
                                            String fileNamePrefix, String fileNameSuffix,
                                            int dataFilesCount, boolean createNewFiles) throws IOException {
         this.fileNamePrefix = fileNamePrefix;
@@ -54,12 +54,12 @@ public class LazyMergedKeyValueStorageKeeper<K, V> {
         return fileNamePrefix + Integer.toString(index) + fileNameSuffix;
     }
 
-    public LazyMergedKeyValueStorageFileNode write(int fileIndex, V value) throws IOException {
+    LazyMergedKeyValueStorageFileNode write(int fileIndex, V value) throws IOException {
         return new LazyMergedKeyValueStorageFileNode(fileIndex, writeToFile(dataFiles.get(fileIndex), value));
     }
 
-    public V read(LazyMergedKeyValueStorageFileNode pointer) throws IOException {
-        return loadFromFile(dataFiles.get((int) pointer.getFile()), pointer.getOffset());
+    V read(LazyMergedKeyValueStorageFileNode pointer) throws IOException {
+        return loadFromFile(dataFiles.get(pointer.getFile()), pointer.getOffset());
     }
 
     private long writeToFile(RandomAccessFile out, V value) throws IOException {
@@ -82,12 +82,12 @@ public class LazyMergedKeyValueStorageKeeper<K, V> {
         return valueSerializator.deSerialize(bytes);
     }
 
-    public int newFile() throws IOException {
+    int newFile() throws IOException {
         grow(1, true);
         return dataFiles.size() - 1;
     }
 
-    public void swap(int a, int b) throws IOException {
+    void swap(int a, int b) throws IOException {
         dataFiles.get(a).close();
         dataFiles.get(b).close();
 
@@ -103,7 +103,7 @@ public class LazyMergedKeyValueStorageKeeper<K, V> {
         dataFiles.set(b, new RandomAccessFile(bFile, "rw"));
     }
 
-    public void popBack() {
+    void popBack() {
         if (dataFiles.isEmpty()) {
             throw new RuntimeException("Trying to delete unknown file");
         }
@@ -112,7 +112,7 @@ public class LazyMergedKeyValueStorageKeeper<K, V> {
         dataFiles.setSize(dataFiles.size() - 1);
     }
 
-    public void close() throws IOException {
+    void close() throws IOException {
         for (RandomAccessFile f : dataFiles) {
             f.close();
         }
