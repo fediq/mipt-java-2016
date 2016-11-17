@@ -8,7 +8,7 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import java.io.*;
 import java.util.*;
 
-public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
+class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private final LinkedHashMap<K, V> cacheMap;
     private final String directory;
     private final String pathToDir;
@@ -23,8 +23,8 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private static final int CACHE_SIZE = 1000;
     private static final int MEM_TREE_SIZE = 1000;
 
-    public MegaKeyValueStorage(String path, String dataType, InterfaceSerialization<K> keySerialization,
-                               InterfaceSerialization<V> valueSerialization) throws IllegalStateException {
+    MegaKeyValueStorage(String path, String dataType, InterfaceSerialization<K> keySerialization,
+                        InterfaceSerialization<V> valueSerialization) throws IllegalStateException {
         isOpen = true;
         directory = path + File.separator + "storage.db";
         pathToDir = path;
