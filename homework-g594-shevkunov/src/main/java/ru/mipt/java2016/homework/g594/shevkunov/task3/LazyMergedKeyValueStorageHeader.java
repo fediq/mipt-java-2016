@@ -17,11 +17,9 @@ class LazyMergedKeyValueStorageHeader<K, V> {
     private final HashMap<K, LazyMergedKeyValueStorageFileNode> pointers = new HashMap<>();
     private final Vector<Long> dataFileSizes = new Vector<>();
     private final File file;
+    private long dataFilesCount;
     private long lazyPointers;
-    private int dataFilesCount;
     private String fileHDR;
-
-    private byte[] bytesChacheForLong = new byte[8];
 
     final boolean createdByConstructor; // True if base doesn't exist before constructor call
 
@@ -49,8 +47,8 @@ class LazyMergedKeyValueStorageHeader<K, V> {
             throw new RuntimeException("Bad file");
         }
 
-        dataFilesCount = (int) readLong(in);
-        dataFileSizes.setSize(dataFilesCount);
+        dataFilesCount = readLong(in);
+        dataFileSizes.setSize((int) dataFilesCount);
         for (int i = 0; i < dataFileSizes.size(); ++i) {
             dataFileSizes.set(i, readLong(in));
         }
@@ -64,15 +62,17 @@ class LazyMergedKeyValueStorageHeader<K, V> {
             in.read(keyBytes);
             pointers.put(this.keySerializator.deSerialize(keyBytes), readFileNode(in));
         }
+        in.close();
     }
 
     private long readLong(InputStream in) throws IOException {
-        in.read(bytesChacheForLong);
-        return keySerializator.toLong(bytesChacheForLong);
+        byte[] bytes = new byte[8];
+        in.read(bytes);
+        return keySerializator.toLong(bytes);
     }
 
     private LazyMergedKeyValueStorageFileNode readFileNode(InputStream in) throws IOException {
-        int fileIndex = (int) readLong(in);
+        long fileIndex = readLong(in);
         long offset = readLong(in);
         return new LazyMergedKeyValueStorageFileNode(fileIndex, offset);
     }
@@ -86,13 +86,13 @@ class LazyMergedKeyValueStorageHeader<K, V> {
         return pointers;
     }
 
-    long getSize(int fileIndex) {
+    public long getSize(int fileIndex) {
         return dataFileSizes.get(fileIndex);
     }
 
     void addKey(K key, LazyMergedKeyValueStorageFileNode pointer) {
         if (!pointers.containsKey(key)) {
-            dataFileSizes.set(pointer.getFile(), dataFileSizes.get(pointer.getFile()) + 1);
+            dataFileSizes.set((int) pointer.getFile(), dataFileSizes.get((int) pointer.getFile()) + 1);
         } else {
             ++lazyPointers;
         }
@@ -102,11 +102,11 @@ class LazyMergedKeyValueStorageHeader<K, V> {
     void deleteKey(K key) {
         LazyMergedKeyValueStorageFileNode pointer = pointers.get(key);
         pointers.remove(key);
-        dataFileSizes.set(pointer.getFile(), dataFileSizes.get(pointer.getFile()) - 1);
+        dataFileSizes.set((int) pointer.getFile(), dataFileSizes.get((int) pointer.getFile()) - 1);
         ++lazyPointers;
     }
 
-    int getDataFilesCount() {
+    long getDataFilesCount() {
         return dataFilesCount;
     }
 
@@ -138,6 +138,7 @@ class LazyMergedKeyValueStorageHeader<K, V> {
             out.write(fileBytes);
             out.write(offsetBytes);
         }
+
         out.close();
     }
 }

@@ -69,7 +69,7 @@ class LazyMergedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
 
         keeper = new LazyMergedKeyValueStorageKeeper<>(valueSerializator,
-                path + DATA_NAME_PREFIX, DATA_NAME_SUFFIX, header.getDataFilesCount(),
+                path + DATA_NAME_PREFIX, DATA_NAME_SUFFIX, (int) header.getDataFilesCount(),
                 header.createdByConstructor);
     }
 
