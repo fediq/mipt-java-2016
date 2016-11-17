@@ -17,7 +17,7 @@ import static java.lang.Long.max;
 public class LackOfMemoryStorage<K, V> implements KeyValueStorage<K, V> {
     private static final long P = (long) (1E3 + 3);
     private static final long MOD = (long) (1E9 + 7);
-    private static final long CACHE_SIZE = (long) (100);
+    private static final long CACHE_SIZE = (long) (3);
 
     private final HashMap<K, Pair<Long, Long>> offsets = new HashMap<>();
     private final HashMap<K, V> cache = new HashMap<>();
@@ -32,6 +32,8 @@ public class LackOfMemoryStorage<K, V> implements KeyValueStorage<K, V> {
     private ParserInterface<V> valueParser = null;
 
     private long getFileHash(String filename) throws IOException {
+        return 0;
+        /*
         FileInputStream in = new FileInputStream(storageDirName + File.separator + filename);
         long hash = 0;
         byte[] buffer = new byte[8 * 1024];
@@ -44,6 +46,7 @@ public class LackOfMemoryStorage<K, V> implements KeyValueStorage<K, V> {
         }
         in.close();
         return hash;
+        */
     }
 
     private boolean testFile(String filename) {
