@@ -7,9 +7,9 @@ import ru.mipt.java2016.homework.g594.kozlov.task2.StorageException;
  */
 public interface SerializerInterface<T> {
 
-    byte[] serialize(T objToSerialize);
+    String serialize(T objToSerialize);
 
-    T deserialize(byte[] inputString) throws StorageException;
+    T deserialize(String inputString) throws StorageException;
 
     String getClassString();
 }
