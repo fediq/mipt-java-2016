@@ -1,7 +1,7 @@
 package ru.mipt.java2016.homework.g595.ulyanin.task2;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Date;
 
@@ -18,12 +18,12 @@ public class DateSerializer implements Serializer<Date> {
     private DateSerializer() { }
 
     @Override
-    public void serialize(Date data, DataOutputStream dataOutputStream) throws IOException {
+    public void serialize(Date data, DataOutput dataOutputStream) throws IOException {
         dataOutputStream.writeLong(data.getTime());
     }
 
     @Override
-    public Date deserialize(DataInputStream dataInputStream) throws IOException {
+    public Date deserialize(DataInput dataInputStream) throws IOException {
         return new Date(dataInputStream.readLong());
     }
 }

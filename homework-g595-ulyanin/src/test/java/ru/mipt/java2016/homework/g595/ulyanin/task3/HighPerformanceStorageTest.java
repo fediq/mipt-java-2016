@@ -7,24 +7,27 @@ import ru.mipt.java2016.homework.tests.task2.Student;
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
 import ru.mipt.java2016.homework.tests.task3.KeyValueStoragePerformanceTest;
 
+import javax.xml.bind.ValidationException;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
 /**
- * Created by ulyanin on 14.11.16.
+ * @author ulyanin
+ * @since 14.11.16.
  */
+
 public class HighPerformanceStorageTest extends KeyValueStoragePerformanceTest {
 
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String path) throws MalformedDataException {
-        MapPreservingStorage<String, String> result = null;
+        HighPerformancePreservingKeyValueStorage<String, String> result = null;
         try {
-            result = new MapPreservingStorage<>(
+            result = new HighPerformancePreservingKeyValueStorage<>(
                     path,
                     StringSerializer.getInstance(),
                     StringSerializer.getInstance()
             );
-        } catch (IOException | NoSuchAlgorithmException e) {
+        } catch (IOException | NoSuchAlgorithmException | ValidationException e) {
             e.printStackTrace();
         }
         return result;
@@ -32,14 +35,14 @@ public class HighPerformanceStorageTest extends KeyValueStoragePerformanceTest {
 
     @Override
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) throws MalformedDataException {
-        MapPreservingStorage<Integer, Double> result = null;
+        HighPerformancePreservingKeyValueStorage<Integer, Double> result = null;
         try {
-            result = new MapPreservingStorage<>(
+            result = new HighPerformancePreservingKeyValueStorage<>(
                     path,
                     IntegerSerializer.getInstance(),
                     DoubleSerializer.getInstance()
             );
-        } catch (IOException | NoSuchAlgorithmException e) {
+        } catch (IOException | NoSuchAlgorithmException | ValidationException e) {
             e.printStackTrace();
         }
         return result;
@@ -47,14 +50,14 @@ public class HighPerformanceStorageTest extends KeyValueStoragePerformanceTest {
 
     @Override
     protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) throws MalformedDataException {
-        MapPreservingStorage<StudentKey, Student> result = null;
+        HighPerformancePreservingKeyValueStorage<StudentKey, Student> result = null;
         try {
-            result = new MapPreservingStorage<>(
+            result = new HighPerformancePreservingKeyValueStorage<>(
                     path,
                     StudentKeySerializer.getInstance(),
                     StudentSerializer.getInstance()
             );
-        } catch (IOException | NoSuchAlgorithmException e) {
+        } catch (IOException | NoSuchAlgorithmException | ValidationException e) {
             e.printStackTrace();
         }
         return result;
