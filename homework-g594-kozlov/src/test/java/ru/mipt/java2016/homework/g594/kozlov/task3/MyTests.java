@@ -32,14 +32,14 @@ public class MyTests {
         try {
             storage.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
         storage = KVStorageFactory.buildStringsStorage("temp");
         assertEquals("no gain", storage.read("no pain"));
         try {
             storage.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 }
