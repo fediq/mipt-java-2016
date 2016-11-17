@@ -44,12 +44,12 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
     /**
      * Updated values
      */
-    private final Map<K, V> updatedValues;
+    private final List<Map.Entry<K, V>> updatedValues = new ArrayList<>();
 
     /**
      * Constants
      */
-    private final int maxUpdatedObjectsInMemory = 500;
+    private final int maxUpdatedObjectsInMemory = 10; //10 * 10Kb = 100 Kb
     private final String defaultStorageName = "storage.db";
 
     /**
@@ -58,6 +58,9 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
     private boolean isClosed = false;
     private int epochNumber = 0;
     private int totalAmount = 0;
+    private int storagePosition = 0;
+    private int keyOverwriteAmount = 0;
+
 
     public Storage(String path,
                    SerializationStrategy<K> keySerializationStrategy,
@@ -69,7 +72,6 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
         this.fileDigitalSignature = fileDigitalSignature;
         this.keySerializationStrategy = keySerializationStrategy;
         this.valueSerializationStrategy = valueSerializationStrategy;
-        this.updatedValues = new TreeMap<>(keyComparator);
 
         String tableListDBPath = path + File.separator + "tableList.db";
         try {
@@ -93,9 +95,32 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
         }
         V result;
         try {
-            storage.seek(indices.get(key));
+            Integer offset = indices.get(key);
+            if (offset != storagePosition) {
+                storage.seek(offset);
+            }
             InputStream stream = Channels.newInputStream(storage.getChannel());
             result = valueSerializationStrategy.deserializeFromStream(stream);
+            storagePosition = offset + valueSerializationStrategy.getBytesSize(result);
+        } catch (IOException e) {
+            throw new MalformedDataException("Index exist, but value not");
+        }
+        return result;
+    }
+
+    private byte[] loadValueWithoutDeserialization(K key) {
+        if (!indices.containsKey(key)) {
+            return null;
+        }
+        byte[] result;
+        try {
+            Integer offset = indices.get(key);
+            if (offset != storagePosition) {
+                storage.seek(offset);
+            }
+            InputStream stream = Channels.newInputStream(storage.getChannel());
+            result = valueSerializationStrategy.readValueAsBytes(stream);
+            storagePosition = offset + result.length;
         } catch (IOException e) {
             throw new MalformedDataException("Index exist, but value not");
         }
@@ -125,6 +150,7 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
         }
 
         totalAmount = Integer.parseInt(tablesList.getValue("DBSize"));
+        keyOverwriteAmount = Integer.parseInt(tablesList.getValue("DBOverwriteAmount"));
 
         File file = new File(currentDirectoryPath + File.separator + defaultStorageName);
         if (!(file.exists() && !file.isDirectory())) {
@@ -162,8 +188,10 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public V read(K key) {
         checkClosed();
-        if (updatedValues.containsKey(key)) {
-            return updatedValues.get(key);
+        for (int i = updatedValues.size() - 1; i >= 0; i--) {
+            if (updatedValues.get(i).getKey().equals(key)) {
+                return updatedValues.get(i).getValue();
+            }
         }
         return loadValue(key);
     }
@@ -178,7 +206,12 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public boolean exists(K key) {
         checkClosed();
-        return updatedValues.containsKey(key) || indices.containsKey(key);
+        for (int i = updatedValues.size() - 1; i >= 0; i--) {
+            if (updatedValues.get(i).getKey().equals(key)) {
+                return true;
+            }
+        }
+        return indices.containsKey(key);
     }
 
     /**
@@ -195,23 +228,29 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
         if (!exists(key)) {
             totalAmount++;
             epochNumber += 1;
+        } else {
+            ++keyOverwriteAmount;
         }
-        updatedValues.put(key, value);
-        if (updatedValues.size() > maxUpdatedObjectsInMemory) {
+
+        updatedValues.add(new AbstractMap.SimpleEntry<>(key, value));
+        if (updatedValues.size() >= maxUpdatedObjectsInMemory) {
             flipUpdatedValues();
         }
     }
 
     private void flipUpdatedValues() {
         try {
-            storage.seek(storage.length());
+            if (storagePosition != storage.length()) {
+                storage.seek(storage.length());
+            }
+            storagePosition = (int) storage.length();
+
             OutputStream fileOutputStream = Channels.newOutputStream(storage.getChannel());
             BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
-            Integer totalLength = (int) storage.length();
-            for (Map.Entry<K, V> entry : updatedValues.entrySet()) {
-                indices.put(entry.getKey(), totalLength);
+            for (Map.Entry<K, V> entry : updatedValues) {
+                indices.put(entry.getKey(), storagePosition);
                 valueSerializationStrategy.serializeToStream(entry.getValue(), bufferedOutputStream);
-                totalLength += valueSerializationStrategy.getBytesSize(entry.getValue());
+                storagePosition += valueSerializationStrategy.getBytesSize(entry.getValue());
             }
             bufferedOutputStream.flush();
             fileOutputStream.flush();
@@ -278,25 +317,10 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
 
             String pathPrefix = currentDirectoryPath + File.separator;
 
-            FileOutputStream fileOutputStream = new FileOutputStream(pathPrefix + "tempStorage.db");
-            BufferedOutputStream newStorageStream = new BufferedOutputStream(fileOutputStream);
-            Integer totalLength = 0;
-            for (Map.Entry<K, Integer> entry : indices.entrySet()) {
-                V value = loadValue(entry.getKey());
-                entry.setValue(totalLength);
-                valueSerializationStrategy.serializeToStream(value, newStorageStream);
-                totalLength += valueSerializationStrategy.getBytesSize(value);
+            if (keyOverwriteAmount >= totalAmount / 2) {
+                rebuildStorage();
             }
-
-            newStorageStream.flush();
-            newStorageStream.close();
             storage.close();
-
-            File storageFile = new File(pathPrefix + defaultStorageName);
-            File newStorageFile = new File(pathPrefix + "tempStorage.db");
-            Files.move(newStorageFile.toPath(), storageFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            newStorageFile.delete();
-
             SSTable<String, String> tablesDB = new SSTable<>(
                     pathPrefix + "tableList.db",
                     StringSerializer.getInstance(),
@@ -305,6 +329,7 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
 
             Map<String, String> tablesListMap = new HashMap<>();
             tablesListMap.put("DBSize", Integer.toString(totalAmount));
+            tablesListMap.put("DBOverwriteAmount", Integer.toString(keyOverwriteAmount));
             tablesListMap.put("Indices", "indices.db");
             tablesDB.rewrite(new MapProducer<>(tablesListMap));
             tablesDB.close();
@@ -322,6 +347,28 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
+    private void rebuildStorage() throws IOException {
+        String pathPrefix = currentDirectoryPath + File.separator;
+        FileOutputStream fileOutputStream = new FileOutputStream(pathPrefix + "tempStorage.db");
+        BufferedOutputStream newStorageStream = new BufferedOutputStream(fileOutputStream);
+        Integer totalLength = 0;
+        for (Map.Entry<K, Integer> entry : indices.entrySet()) {
+            byte[] bytes = loadValueWithoutDeserialization(entry.getKey());
+            newStorageStream.write(bytes);
+            entry.setValue(totalLength);
+            totalLength += bytes.length;
+        }
+
+        newStorageStream.flush();
+        newStorageStream.close();
+        storage.close();
+
+        File storageFile = new File(pathPrefix + defaultStorageName);
+        File newStorageFile = new File(pathPrefix + "tempStorage.db");
+        Files.move(newStorageFile.toPath(), storageFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        newStorageFile.delete();
+    }
+
     public class StorageIterator implements Iterator<K> {
 
         private final Set<K> cachedKeys = new HashSet<>();
@@ -332,7 +379,7 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
 
         private StorageIterator() {
             currentEpochNumber = epochNumber;
-            updatedValuesIterator = updatedValues.keySet().iterator();
+            updatedValuesIterator = updatedValues.stream().map(Map.Entry::getKey).iterator();
             indicesIterator = indices.keySet().iterator();
             getNext();
         }
@@ -346,8 +393,11 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
         private void getNext() {
             checkEpochNumber();
             nextValue = null;
-            if (updatedValuesIterator.hasNext()) {
+            while (updatedValuesIterator.hasNext()) {
                 nextValue = updatedValuesIterator.next();
+                if (cachedKeys.contains(nextValue)) {
+                    continue;
+                }
                 cachedKeys.add(nextValue);
                 return;
             }

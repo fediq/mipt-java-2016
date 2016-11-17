@@ -2,7 +2,6 @@ package ru.mipt.java2016.homework.g595.romanenko.task2;
 
 import ru.mipt.java2016.homework.g595.romanenko.task2.serialization.*;
 import ru.mipt.java2016.homework.tests.task2.Student;
-import ru.mipt.java2016.homework.tests.task2.StudentKey;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,8 +24,11 @@ public class StudentSerializer implements SerializationStrategy<Student> {
 
     @Override
     public void serializeToStream(Student student, OutputStream outputStream) throws IOException {
-        StudentKey studentKey = new StudentKey(student.getGroupId(), student.getName());
-        StudentKeySerializer.getInstance().serializeToStream(studentKey, outputStream);
+        Integer totalSize = getBytesSize(student);
+        IntegerSerializer.getInstance().serializeToStream(totalSize, outputStream);
+
+        IntegerSerializer.getInstance().serializeToStream(student.getGroupId(), outputStream);
+        StringSerializer.getInstance().serializeToStream(student.getName(), outputStream);
 
         StringSerializer.getInstance().serializeToStream(student.getHometown(), outputStream);
 
@@ -40,7 +42,8 @@ public class StudentSerializer implements SerializationStrategy<Student> {
 
     @Override
     public int getBytesSize(Student student) {
-        return IntegerSerializer.getInstance().getBytesSize(student.getGroupId()) +
+        return IntegerSerializer.getInstance().getBytesSize(0) +
+                IntegerSerializer.getInstance().getBytesSize(student.getGroupId()) +
                 StringSerializer.getInstance().getBytesSize(student.getName()) +
                 StringSerializer.getInstance().getBytesSize(student.getHometown()) +
                 DateSerializer.getInstance().getBytesSize(student.getBirthDate()) +
@@ -50,7 +53,10 @@ public class StudentSerializer implements SerializationStrategy<Student> {
 
     @Override
     public Student deserializeFromStream(InputStream inputStream) throws IOException {
-        StudentKey studentKey = StudentKeySerializer.getInstance().deserializeFromStream(inputStream);
+        Integer totalSize = IntegerSerializer.getInstance().deserializeFromStream(inputStream);
+
+        Integer groupId = IntegerSerializer.getInstance().deserializeFromStream(inputStream);
+        String name = StringSerializer.getInstance().deserializeFromStream(inputStream);
 
         String hometown = StringSerializer.getInstance().deserializeFromStream(inputStream);
 
@@ -60,7 +66,7 @@ public class StudentSerializer implements SerializationStrategy<Student> {
 
         Double averageScore = DoubleSerializer.getInstance().deserializeFromStream(inputStream);
 
-        return new Student(studentKey.getGroupId(), studentKey.getName(),
+        return new Student(groupId, name,
                 hometown, birthDate, isHasDormitory, averageScore);
     }
 }

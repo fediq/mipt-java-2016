@@ -33,7 +33,7 @@ public class StringSerializer implements SerializationStrategy<String> {
     @Override
     public int getBytesSize(String s) {
         return s.length() +
-                INTEGER_SERIALIZER.getBytesSize(s.length()); //for serialize length of string
+                INTEGER_SERIALIZER.getBytesSize(0); //for serialize length of string
     }
 
     @Override
@@ -41,5 +41,17 @@ public class StringSerializer implements SerializationStrategy<String> {
         int length = INTEGER_SERIALIZER.deserializeFromStream(inputStream);
         inputStream.read(BUFFER, 0, length);
         return new String(BUFFER, 0, length);
+    }
+
+    @Override
+    public byte[] readValueAsBytes(InputStream inputStream) throws IOException {
+        int length = INTEGER_SERIALIZER.deserializeFromStream(inputStream);
+        byte[] bytes = new byte[length + INTEGER_SERIALIZER.getBytesSize(0)];
+        byte[] lenBytes = INTEGER_SERIALIZER.serializeToBytes(length);
+        inputStream.read(bytes, 4, length);
+        for (int i = 0; i < INTEGER_SERIALIZER.cntBYTES; i++) {
+            bytes[i] = lenBytes[i];
+        }
+        return bytes;
     }
 }
