@@ -20,8 +20,8 @@ public class MergeableSSTable<K, V> extends SSTable<K, V> {
 
     private final Comparator<K> keyComparator;
 
-    private final int bufferSize = 10 * 1024;
-    private final byte[] buffer = new byte[bufferSize];
+    private static final int BUFFER_SIZE = 10 * 1024;
+    private static final byte[] BUFFER = new byte[BUFFER_SIZE];
 
     public MergeableSSTable(String path,
                             SerializationStrategy<K> kSerializationStrategy,
@@ -118,33 +118,34 @@ public class MergeableSSTable<K, V> extends SSTable<K, V> {
             int currentDBPos = 0;
             int anotherDBPos = 0;
             int offset;
+            synchronized (BUFFER) {
 
-            for (K key : sortedKeys) {
-                if (indices.containsKey(key)) {
-                    offset = indices.get(key);
-                    byteSize = valueByteSize.get(key);
-                    currentDBInputStream.skip(offset - currentDBPos);
-                    currentDBPos = offset;
-                    while (byteSize > 0) {
-                        currentDBInputStream.read(buffer, 0, Math.min(bufferSize, byteSize));
-                        outputStream.write(buffer, 0, Math.min(bufferSize, byteSize));
-                        currentDBPos += Math.min(bufferSize, byteSize);
-                        byteSize -= bufferSize;
-                    }
-                } else {
-                    offset = another.indices.get(key);
-                    byteSize = another.valueByteSize.get(key);
-                    anotherDBInputStream.skip(offset - anotherDBPos);
-                    anotherDBPos = offset;
-                    while (byteSize > 0) {
-                        anotherDBInputStream.read(buffer, 0, Math.min(bufferSize, byteSize));
-                        outputStream.write(buffer, 0, Math.min(bufferSize, byteSize));
-                        anotherDBPos += Math.min(bufferSize, byteSize);
-                        byteSize -= bufferSize;
+                for (K key : sortedKeys) {
+                    if (indices.containsKey(key)) {
+                        offset = indices.get(key);
+                        byteSize = valueByteSize.get(key);
+                        currentDBInputStream.skip(offset - currentDBPos);
+                        currentDBPos = offset;
+                        while (byteSize > 0) {
+                            currentDBInputStream.read(BUFFER, 0, Math.min(BUFFER_SIZE, byteSize));
+                            outputStream.write(BUFFER, 0, Math.min(BUFFER_SIZE, byteSize));
+                            currentDBPos += Math.min(BUFFER_SIZE, byteSize);
+                            byteSize -= BUFFER_SIZE;
+                        }
+                    } else {
+                        offset = another.indices.get(key);
+                        byteSize = another.valueByteSize.get(key);
+                        anotherDBInputStream.skip(offset - anotherDBPos);
+                        anotherDBPos = offset;
+                        while (byteSize > 0) {
+                            anotherDBInputStream.read(BUFFER, 0, Math.min(BUFFER_SIZE, byteSize));
+                            outputStream.write(BUFFER, 0, Math.min(BUFFER_SIZE, byteSize));
+                            anotherDBPos += Math.min(BUFFER_SIZE, byteSize);
+                            byteSize -= BUFFER_SIZE;
+                        }
                     }
                 }
             }
-
             outputStream.flush();
             currentDBInputStream.close();
             anotherDBInputStream.close();
