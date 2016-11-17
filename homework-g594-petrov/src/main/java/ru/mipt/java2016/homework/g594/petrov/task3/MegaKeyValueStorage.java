@@ -19,6 +19,7 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private ArrayList<Map.Entry<HashMap<K, Long>, String>> keyOffsetArray;
     private HashMap<K, V> currentTree;
+    private HashSet<K> existedKeys;
     private static final int CACHE_SIZE = 1200;
     private static final int MEM_TREE_SIZE = 1500;
 
@@ -31,6 +32,7 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         typeOfData = dataType;
         currentTree = new HashMap<>();
         keyOffsetArray = new ArrayList<>();
+        existedKeys = new HashSet<>();
         this.keySerialization = keySerialization;
         this.valueSerialization = valueSerialization;
         File storage = new File(directory);
@@ -55,6 +57,7 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                     K key = this.keySerialization.readValue(storageInput);
                     Long offset = storageInput.getFilePointer();
                     this.valueSerialization.readValue(storageInput);
+                    existedKeys.add(key);
                     keyOffsetMap.put(key, offset);
                 }
                 keyOffsetArray.add(new AbstractMap.SimpleEntry<>(keyOffsetMap, directory));
@@ -123,19 +126,7 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         if (!isOpen) {
             throw new IllegalStateException("You can't use KVS when it's closed");
         }
-        if (cacheMap.containsKey(key)) {
-            return cacheMap.get(key) != null;
-        }
-        if (currentTree.containsKey(key)) {
-            return currentTree.get(key) != null;
-        }
-        for (int i = keyOffsetArray.size() - 1; i >= 0; --i) {
-            Map.Entry<HashMap<K, Long>, String> block = keyOffsetArray.get(i);
-            if (block.getKey().containsKey(key)) {
-                return !block.getKey().get(key).equals((long) -1);
-            }
-        }
-        return false;
+        return existedKeys.contains(key);
     }
 
     private void checkCurrentTree() {
@@ -180,6 +171,7 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
         currentTree.put(key, value);
         checkCurrentTree();
+        existedKeys.add(key);
     }
 
     @Override
@@ -192,30 +184,7 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
         currentTree.put(key, null);
         checkCurrentTree();
-    }
-
-    private HashSet<K> findExistedKeys() {
-        HashSet<K> existedElements = new HashSet<>();
-        HashSet<K> deletedElements = new HashSet<>();
-        for (Map.Entry<K, V> iterator : currentTree.entrySet()) {
-            if (iterator.getValue() == null) {
-                deletedElements.add(iterator.getKey());
-            } else {
-                existedElements.add(iterator.getKey());
-            }
-        }
-        for (Map.Entry<HashMap<K, Long>, String> iterator : keyOffsetArray) {
-            for (Map.Entry<K, Long> jterator : iterator.getKey().entrySet()) {
-                if (!(deletedElements.contains(jterator.getKey()) || existedElements.contains(jterator.getKey()))) {
-                    if (jterator.getValue().equals((long) -1)) {
-                        deletedElements.add(jterator.getKey());
-                    } else {
-                        existedElements.add(jterator.getKey());
-                    }
-                }
-            }
-        }
-        return existedElements;
+        existedKeys.remove(key);
     }
 
     @Override
@@ -223,7 +192,7 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         if (!isOpen) {
             throw new IllegalStateException("You can't use KVS when it's closed");
         }
-        return findExistedKeys().size();
+        return existedKeys.size();
     }
 
     @Override
@@ -231,7 +200,7 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         if (!isOpen) {
             throw new IllegalStateException("You can't use KVS when it's closed");
         }
-        return findExistedKeys().iterator();
+        return existedKeys.iterator();
     }
 
     @Override
@@ -240,8 +209,8 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             throw new IllegalStateException("You can't use KVS when it's closed");
         }
         isOpen = false;
-        HashSet<K> existedKeys = new HashSet<>();
-        HashSet<K> deletedKeys = new HashSet<>();
+        HashSet<K> existedElements = new HashSet<>();
+        HashSet<K> deletedElements = new HashSet<>();
         String storageName = pathToDir + File.separator + "storage1.db";
         File newStorage = new File(storageName);
         try {
@@ -253,12 +222,12 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
         try (RandomAccessFile finishWriter = new RandomAccessFile(newStorage, "rw")) {
             finishWriter.writeUTF(typeOfData);
-            finishWriter.writeInt(findExistedKeys().size());
+            finishWriter.writeInt(existedKeys.size());
             for (Map.Entry<K, V> iterator : currentTree.entrySet()) {
                 if (iterator.getValue() == null) {
-                    deletedKeys.add(iterator.getKey());
+                    deletedElements.add(iterator.getKey());
                 } else {
-                    existedKeys.add(iterator.getKey());
+                    existedElements.add(iterator.getKey());
                     keySerialization.writeValue(iterator.getKey(), finishWriter);
                     valueSerialization.writeValue(iterator.getValue(), finishWriter);
                 }
@@ -266,11 +235,12 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             for (Map.Entry<HashMap<K, Long>, String> iterator : keyOffsetArray) {
                 try (RandomAccessFile dataReader = new RandomAccessFile(new File(iterator.getValue()), "r")) {
                     for (Map.Entry<K, Long> jterator : iterator.getKey().entrySet()) {
-                        if (!(deletedKeys.contains(jterator.getKey()) || existedKeys.contains(jterator.getKey()))) {
+                        if (!(deletedElements.contains(jterator.getKey()) ||
+                                existedElements.contains(jterator.getKey()))) {
                             if (jterator.getValue().equals((long) -1)) {
-                                deletedKeys.add(jterator.getKey());
+                                deletedElements.add(jterator.getKey());
                             } else {
-                                existedKeys.add(jterator.getKey());
+                                existedElements.add(jterator.getKey());
                                 keySerialization.writeValue(jterator.getKey(), finishWriter);
                                 dataReader.seek(jterator.getValue());
                                 valueSerialization.writeValue(valueSerialization.readValue(dataReader), finishWriter);
