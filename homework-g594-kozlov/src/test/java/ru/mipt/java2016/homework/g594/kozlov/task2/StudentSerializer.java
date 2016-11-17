@@ -11,7 +11,7 @@ import java.util.Date;
  */
 public class StudentSerializer implements SerializerInterface<Student> {
     @Override
-    public byte[] serialize(Student objToSerialize) {
+    public String serialize(Student objToSerialize) {
         if (objToSerialize == null) {
             return null;
         }
@@ -29,12 +29,11 @@ public class StudentSerializer implements SerializerInterface<Student> {
                 .append(',')
                 .append(SerializerUtil.writeMemberDouble("score", objToSerialize.getAverageScore()))
                 .append('}');
-        return resultString.toString().getBytes();
+        return resultString.toString();
     }
 
     @Override
-    public Student deserialize(byte[] inputStr) throws StorageException {
-        String inputString = new String(inputStr);
+    public Student deserialize(String inputString) throws StorageException {
         SerializerUtil.checkBracket(inputString.charAt(0));
         SerializerUtil.checkBracket(inputString.charAt(inputString.length() - 1));
         String[] tokens = inputString.substring(1, inputString.length() - 1).split(",");
