@@ -18,8 +18,8 @@ import java.util.Map;
  * and delete and update (= delete + write) operation for amortizated O(1) cost
  *
  * We have two files contains base: head-file and base-file
- * Head file contains metadata of base and pair Key-LazyMergedValueFileNode
- * it helps to find Value by file and offset.
+ * Head file contains metadata of base and pair Key-Offset
+ * it helps to find Value by offset.
  *
  * Base-file contains values and unused values.
  *
@@ -69,8 +69,7 @@ class LazyMergedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
 
         keeper = new LazyMergedKeyValueStorageKeeper<>(valueSerializator,
-                path + DATA_NAME_PREFIX, DATA_NAME_SUFFIX, (int) header.getDataFilesCount(),
-                header.createdByConstructor);
+                path + DATA_NAME_PREFIX, DATA_NAME_SUFFIX, header.createdByConstructor);
     }
 
     @Override
@@ -78,11 +77,11 @@ class LazyMergedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         synchronized (header) {
             checkClosed();
             try {
-                LazyMergedKeyValueStorageFileNode pointer = header.getMap().get(key);
+                Long pointer = header.getMap().get(key);
                 if (pointer != null) {
                     V tryCache = cache.getIfPresent(key);
                     if (tryCache == null) {
-                        V got = keeper.read(pointer);
+                        V got = keeper.read(0, pointer);
                         cache.put(key, got);
                         return got;
                     } else {
@@ -111,8 +110,7 @@ class LazyMergedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         synchronized (header) {
             checkClosed();
             try {
-                LazyMergedKeyValueStorageFileNode pointer = keeper.write(0, value);
-                header.addKey(key, pointer);
+                header.addKey(key, keeper.write(0, value));
                 cache.put(key, value);
             } catch (IOException e) {
                 throw new RuntimeException("IO error during writing");
@@ -166,15 +164,14 @@ class LazyMergedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private boolean lazy() {
         long lazy = header.getLazyPointers();
-        return (lazy >= MININAL_LAZY) && (lazy > header.getDataFilesCount());
+        return (lazy >= MININAL_LAZY) && (lazy > header.getFileSize());
     }
 
     private void rebuild() throws IOException {
         int chacheFile = keeper.newFile();
-        for (Map.Entry<K, LazyMergedKeyValueStorageFileNode> v : header.getUnsaveMap().entrySet()) {
-            V temp = keeper.read(v.getValue());
-            LazyMergedKeyValueStorageFileNode wrote = keeper.write(chacheFile, temp);
-            wrote.set(0, wrote.getOffset());
+        for (Map.Entry<K, Long> v : header.getUnsaveMap().entrySet()) {
+            V temp = keeper.read(0, v.getValue());
+            long wrote = keeper.write(chacheFile, temp);
             v.setValue(wrote);
         }
         keeper.swap(chacheFile, 0);

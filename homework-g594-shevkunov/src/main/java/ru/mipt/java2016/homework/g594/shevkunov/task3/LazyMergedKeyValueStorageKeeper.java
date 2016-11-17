@@ -19,11 +19,11 @@ class LazyMergedKeyValueStorageKeeper<V> {
 
     LazyMergedKeyValueStorageKeeper(LazyMergedKeyValueStorageSerializator<V> valueSerializator,
                                            String fileNamePrefix, String fileNameSuffix,
-                                           int dataFilesCount, boolean createNewFiles) throws IOException {
+                                           boolean createNewFiles) throws IOException {
         this.fileNamePrefix = fileNamePrefix;
         this.fileNameSuffix = fileNameSuffix;
         this.valueSerializator = valueSerializator;
-        grow(dataFilesCount, createNewFiles);
+        grow(1, createNewFiles);
     }
 
     private void grow(int newDataFilesCount, boolean createNewFiles) throws IOException {
@@ -54,12 +54,12 @@ class LazyMergedKeyValueStorageKeeper<V> {
         return fileNamePrefix + Integer.toString(index) + fileNameSuffix;
     }
 
-    LazyMergedKeyValueStorageFileNode write(int fileIndex, V value) throws IOException {
-        return new LazyMergedKeyValueStorageFileNode(fileIndex, writeToFile(dataFiles.get(fileIndex), value));
+    long write(int fileIndex, V value) throws IOException {
+        return writeToFile(dataFiles.get(fileIndex), value);
     }
 
-    V read(LazyMergedKeyValueStorageFileNode pointer) throws IOException {
-        return loadFromFile(dataFiles.get((int) pointer.getFile()), pointer.getOffset());
+    V read(int fileIndex, long offset) throws IOException {
+        return loadFromFile(dataFiles.get(fileIndex), offset);
     }
 
     private long writeToFile(RandomAccessFile out, V value) throws IOException {
