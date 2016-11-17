@@ -32,23 +32,17 @@ class StorageWithNothingLeft<K, V> implements
 
         protected RandomAccessFile raf;
         protected File file;
-        protected DataInputStream dis;
-        protected long curPos;
         protected ArrayList<K> keys;
 
         Part(RandomAccessFile rafVal, File fileVal) throws IOException {
             raf = rafVal;
             file = fileVal;
-            raf.seek(0);
-            curPos = 0;
-            dis = bdisFromRaf(raf, Consts.SMALL_BUFFER_SIZE);
-            dis.mark(Consts.SMALL_BUFFER_SIZE);
             keys = new ArrayList<>();
         }
 
         private V read(long offset) {
             try {
-                if (offset - curPos >= 0 && offset - curPos < Consts.SMALL_BUFFER_SIZE - Consts.MAX_VALUE_SIZE - 2) {
+                /*if (offset - curPos >= 0 && offset - curPos < Consts.SMALL_BUFFER_SIZE - Consts.MAX_VALUE_SIZE - 2) {
                     dis.reset();
                     dis.skip(offset - curPos);
                 } else {
@@ -56,9 +50,9 @@ class StorageWithNothingLeft<K, V> implements
                     curPos = raf.getFilePointer();
                     dis = bdisFromRaf(raf, Consts.SMALL_BUFFER_SIZE);
                     dis.mark(Consts.SMALL_BUFFER_SIZE);
-                }
-                /*raf.seek(offset);
-                dis = BDISfromRAF(raf);*/
+                }*/
+                raf.seek(offset);
+                DataInputStream dis = bdisFromRaf(raf, Consts.MAX_VALUE_SIZE);
                 return valueSerializationStrategy.deserializeFromStream(dis);
             } catch (Exception e) {
                 throw new KVSException("Failed to read from disk", e);
@@ -79,7 +73,6 @@ class StorageWithNothingLeft<K, V> implements
     private Map<K, V> memTable;
     private LoadingCache<K, V> cache;
     protected Map<K, Address> indexTable;
-    //private RandomAccessFile keyStorageRaf;
     protected SerializationStrategy<K> keySerializationStrategy;
     protected SerializationStrategy<V> valueSerializationStrategy;
     private boolean isOpen;
@@ -240,9 +233,8 @@ class StorageWithNothingLeft<K, V> implements
      */
     public void delete(Object key) {
         checkOpen();
-        if (indexTable.containsKey(key)) {
-            indexTable.remove(key);
-        }
+        indexTable.remove(key);
+
     }
 
     /**
@@ -435,11 +427,6 @@ class StorageWithNothingLeft<K, V> implements
         newPart.raf = new RandomAccessFile(newPart.file, "rw");
         parts.addLast(newPart);
         indexTable = newIndexTable;
-    }
-
-    protected DataOutputStream bdosFromRaf(RandomAccessFile raf, int bufferSize) {
-        return new DataOutputStream(new BufferedOutputStream(
-                Channels.newOutputStream(raf.getChannel()), bufferSize));
     }
 
     protected DataInputStream bdisFromRaf(RandomAccessFile raf, int bufferSize) {
