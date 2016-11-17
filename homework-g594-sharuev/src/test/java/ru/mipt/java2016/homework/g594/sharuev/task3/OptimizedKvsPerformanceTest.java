@@ -1,10 +1,23 @@
 package ru.mipt.java2016.homework.g594.sharuev.task3;
 
+import org.junit.Assert;
+import org.junit.Ignore;
+import org.junit.Test;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.base.task2.MalformedDataException;
+import ru.mipt.java2016.homework.tests.task2.StorageTestUtils;
 import ru.mipt.java2016.homework.tests.task2.Student;
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
 import ru.mipt.java2016.homework.tests.task3.KeyValueStoragePerformanceTest;
+
+import java.io.*;
+import java.nio.channels.Channels;
+import java.nio.file.Paths;
+import java.util.Random;
+import java.util.concurrent.atomic.AtomicLong;
+
+import static ru.mipt.java2016.homework.tests.task3.PerformanceTestUtils.randomKey;
+import static ru.mipt.java2016.homework.tests.task3.PerformanceTestUtils.randomValue;
 
 public class OptimizedKvsPerformanceTest extends KeyValueStoragePerformanceTest {
 
@@ -38,9 +51,9 @@ public class OptimizedKvsPerformanceTest extends KeyValueStoragePerformanceTest 
                 new POJOComparator<>(StudentKey.class));
     }
 
-    /*@Test
+    @Test
     @Override
-    @Ignore
+    //@Ignore
     public void measure100kWDump100kR() {
         AtomicLong summaryWriteTime = new AtomicLong(0L);
         AtomicLong summaryReadTime = new AtomicLong(0L);
@@ -83,7 +96,7 @@ public class OptimizedKvsPerformanceTest extends KeyValueStoragePerformanceTest 
         print("%5d Writes per second up to 100k", writesPerSecond);
         print("%5d Reads per second from 100k", readsPerSecond);
         print("%5d millis for single 100kW 100kR iteration", iterationTimeMillis);
-    }*/
+    }
 
     /*int N = 100000;
 

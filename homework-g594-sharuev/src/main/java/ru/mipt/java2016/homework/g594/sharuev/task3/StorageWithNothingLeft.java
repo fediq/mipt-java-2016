@@ -2,7 +2,6 @@ package ru.mipt.java2016.homework.g594.sharuev.task3;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.google.common.primitives.Longs;
 
 import java.io.*;
@@ -28,11 +27,11 @@ import java.util.zip.CheckedInputStream;
 class StorageWithNothingLeft<K, V> implements
         ru.mipt.java2016.homework.base.task2.KeyValueStorage {
 
-    class Part {
+    private class Part {
 
-        protected RandomAccessFile raf;
-        protected File file;
-        protected ArrayList<K> keys;
+        private RandomAccessFile raf;
+        private File file;
+        private ArrayList<K> keys;
 
         Part(RandomAccessFile rafVal, File fileVal) throws IOException {
             raf = rafVal;
@@ -42,15 +41,6 @@ class StorageWithNothingLeft<K, V> implements
 
         private V read(long offset) {
             try {
-                /*if (offset - curPos >= 0 && offset - curPos < Consts.SMALL_BUFFER_SIZE - Consts.MAX_VALUE_SIZE - 2) {
-                    dis.reset();
-                    dis.skip(offset - curPos);
-                } else {
-                    raf.seek(offset);
-                    curPos = raf.getFilePointer();
-                    dis = bdisFromRaf(raf, Consts.SMALL_BUFFER_SIZE);
-                    dis.mark(Consts.SMALL_BUFFER_SIZE);
-                }*/
                 raf.seek(offset);
                 DataInputStream dis = bdisFromRaf(raf, Consts.MAX_VALUE_SIZE);
                 return valueSerializationStrategy.deserializeFromStream(dis);
@@ -60,25 +50,25 @@ class StorageWithNothingLeft<K, V> implements
         }
     }
 
-    class Address {
+    private class Address {
         Address(Part part, long offset) {
             this.part = part;
             this.offset = offset;
         }
 
-        protected long offset;
-        protected Part part;
+        private long offset;
+        private Part part;
     }
 
+    private final Address noAddress = new Address(null, 0);
     private Map<K, V> memTable;
-    private LoadingCache<K, V> cache;
-    protected Map<K, Address> indexTable;
-    protected SerializationStrategy<K> keySerializationStrategy;
-    protected SerializationStrategy<V> valueSerializationStrategy;
+    private Map<K, Address> indexTable;
+    private SerializationStrategy<K> keySerializationStrategy;
+    private SerializationStrategy<V> valueSerializationStrategy;
     private boolean isOpen;
-    protected final String dbName;
-    protected static String path;
-    protected Deque<Part> parts;
+    private final String dbName;
+    private static String path;
+    private Deque<Part> parts;
     private File lockFile;
     private int nextFileIndex = 0;
     private Validator validator;
@@ -97,24 +87,6 @@ class StorageWithNothingLeft<K, V> implements
         parts = new ArrayDeque<>();
         this.path = path;
         validator = new Validator();
-        cache = CacheBuilder.newBuilder()
-                .maximumSize(Consts.CACHE_SIZE)
-                .build(
-                        new CacheLoader<K, V>() {
-                            public V load(K key) { // no checked exception
-                                V val = memTable.get(key);
-                                if (val != null) {
-                                    return val;
-                                }
-                                Address address = indexTable.get(key);
-                                val = address.part.read(address.offset);
-                                if (val != null) {
-                                    return val;
-                                } else {
-                                    throw new NotFoundException();
-                                }
-                            }
-                        });
 
         // Создать lock-файл
         lockFile = Paths.get(path, dbName + Consts.STORAGE_LOCK_SUFF).toFile();
@@ -180,14 +152,16 @@ class StorageWithNothingLeft<K, V> implements
     public Object read(Object key) {
         checkOpen();
         // Можно убрать, если редко будут неплодотворные обращения
-        if (!indexTable.containsKey(key)) {
+        Address address = indexTable.get(key);
+        if (address == null) {
             return null;
         }
-        try {
-            return cache.getUnchecked((K) key);
-        } catch (NotFoundException e) {
-            return null;
+        V val = memTable.get(key);
+        if (val != null) {
+            return val;
         }
+        val = address.part.read(address.offset);
+        return val;
     }
 
     /**
@@ -212,7 +186,7 @@ class StorageWithNothingLeft<K, V> implements
     public void write(Object key, Object value) {
         checkOpen();
         memTable.put((K) key, (V) value);
-        indexTable.put((K) key, null);
+        indexTable.put((K) key, noAddress);
         if (memTable.size() > Consts.DUMP_THRESHOLD) {
             dumpMemTableToFile();
             if (parts.size() > Consts.MERGE_THRESHOLD) {
@@ -370,7 +344,7 @@ class StorageWithNothingLeft<K, V> implements
      *
      * @throws IOException
      */
-    protected void mergeFiles() throws IOException {
+    private void mergeFiles() throws IOException {
         File tempFile = Paths.get(path,
                 dbName + "Temp" + Consts.STORAGE_PART_SUFF).toFile();
         if (!tempFile.createNewFile()) {
@@ -429,7 +403,7 @@ class StorageWithNothingLeft<K, V> implements
         indexTable = newIndexTable;
     }
 
-    protected DataInputStream bdisFromRaf(RandomAccessFile raf, int bufferSize) {
+    private DataInputStream bdisFromRaf(RandomAccessFile raf, int bufferSize) {
         return new DataInputStream(new BufferedInputStream(
                 Channels.newInputStream(raf.getChannel()), bufferSize));
     }
