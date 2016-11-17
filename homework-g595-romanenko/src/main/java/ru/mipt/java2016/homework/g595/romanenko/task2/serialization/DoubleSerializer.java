@@ -16,6 +16,7 @@ public class DoubleSerializer extends SimpleIntegralTypeSerializer<Double> {
 
     DoubleSerializer() {
         super.cntBYTES = Double.BYTES;
+        super.binaryRepresentation = new byte[Double.BYTES];
     }
 
     protected Long getLongRepresentation(Double value) {

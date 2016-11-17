@@ -16,6 +16,10 @@ public class StringSerializer implements SerializationStrategy<String> {
 
     private static final IntegerSerializer INTEGER_SERIALIZER = IntegerSerializer.getInstance();
 
+    private static final int BUFFER_SIZE = 10 * 1024 + 100;
+    private static final byte[] BUFFER = new byte[BUFFER_SIZE];
+
+
     public static StringSerializer getInstance() {
         return STRING_SERIALIZER;
     }
@@ -35,8 +39,7 @@ public class StringSerializer implements SerializationStrategy<String> {
     @Override
     public String deserializeFromStream(InputStream inputStream) throws IOException {
         int length = INTEGER_SERIALIZER.deserializeFromStream(inputStream);
-        byte[] bytes = new byte[length];
-        inputStream.read(bytes);
-        return new String(bytes);
+        inputStream.read(BUFFER, 0, length);
+        return new String(BUFFER, 0, length);
     }
 }
