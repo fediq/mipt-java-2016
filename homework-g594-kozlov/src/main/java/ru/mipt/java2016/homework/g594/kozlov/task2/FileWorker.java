@@ -107,6 +107,7 @@ public class FileWorker implements Closeable {
             }
             if (buffRd.available() < 4) {
                 buffRd.close();
+                currOffset = 0;
                 buffRd = null;
                 return null;
             }
@@ -134,12 +135,14 @@ public class FileWorker implements Closeable {
             innerExists();
             if (buffRd == null) {
                 buffRd = new BufferedInputStream(new FileInputStream(file.getAbsoluteFile()));
+                currOffset = 0;
             }
             byte[] bytes = new byte[8];
             int read = buffRd.read(bytes, 0, 8);
             if (read < 8) {
                 throw new RuntimeException("Reading failure");
             }
+            currOffset += 8;
             long result = ByteBuffer.wrap(bytes).getLong();
             return result;
         } catch (IOException e) {
@@ -151,10 +154,15 @@ public class FileWorker implements Closeable {
         try {
             innerExists();
             if (buffRd == null || currOffset > offset) {
+                if (buffRd != null) {
+                    buffRd.close();
+                }
                 buffRd = new BufferedInputStream(new FileInputStream(file.getAbsoluteFile()));
                 currOffset = 0;
             }
-            buffRd.skip(offset - currOffset);
+            while (currOffset < offset) {
+                currOffset += buffRd.skip(offset - currOffset);
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
