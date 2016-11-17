@@ -9,7 +9,7 @@ import java.util.PriorityQueue;
 
 public class KWayOptimizedKvs<K, V> extends OptimizedKvs<K, V> {
 
-    static final int MERGE_BUFFER_SIZE = Consts.MAX_VALUE_SIZE*Consts.DUMP_THRESHOLD/Consts.MERGE_THRESHOLD;
+    static final int MERGE_BUFFER_SIZE = Consts.MAX_VALUE_SIZE * Consts.DUMP_THRESHOLD / Consts.MERGE_THRESHOLD;
 
     public KWayOptimizedKvs(String path, SerializationStrategy<K> keySerializationStrategy,
                             SerializationStrategy<V> valueSerializationStrategy,
