@@ -52,4 +52,11 @@ public abstract class SimpleIntegralTypeSerializer<IntegralType>
         }
         return convertFromLong(value);
     }
+
+    @Override
+    public byte[] readValueAsBytes(InputStream inputStream) throws IOException {
+        byte[] bytes = new byte[cntBYTES];
+        inputStream.read(bytes);
+        return bytes;
+    }
 }
