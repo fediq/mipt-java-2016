@@ -5,7 +5,7 @@ import java.io.*;
 /**
  * Created by Howl on 30.10.2016.
  */
-interface ItemParser<T> {
+public interface ItemParser<T> {
 
     void serialize(T arg, OutputStream out) throws IOException;
 

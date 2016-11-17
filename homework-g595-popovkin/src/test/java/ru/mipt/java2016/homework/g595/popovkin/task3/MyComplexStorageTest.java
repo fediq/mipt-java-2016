@@ -18,9 +18,9 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MyComplexStorageTest extends KeyValueStoragePerformanceTest {
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String path) {
-        MyStorage<String, String> res = null;
+        LackOfMemoryStorage<String, String> res = null;
         try {
-            res = new MyStorage<>(path, new StringParser(), new StringParser());
+            res = new LackOfMemoryStorage<>(path, new StringParserRandomAccess(), new StringParserRandomAccess());
         } catch (IOException ex) {
             System.out.println(ex.getMessage());
         }
@@ -29,9 +29,9 @@ public class MyComplexStorageTest extends KeyValueStoragePerformanceTest {
 
     @Override
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) {
-        MyStorage<Integer, Double> res = null;
+        LackOfMemoryStorage<Integer, Double> res = null;
         try {
-            res = new MyStorage<>(path, new IntegerParser(), new DoubleParser());
+            res = new LackOfMemoryStorage<>(path, new IntegerParserRandomAccess(), new DoubleParserRandomAccess());
         } catch (IOException ex) {
             System.out.println(ex.getMessage());
         }
@@ -40,9 +40,9 @@ public class MyComplexStorageTest extends KeyValueStoragePerformanceTest {
 
     @Override
     protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) {
-        MyStorage<StudentKey, Student> res = null;
+        LackOfMemoryStorage<StudentKey, Student> res = null;
         try {
-            res = new MyStorage<>(path, new StudentKeyParser(), new StudentParser());
+            res = new LackOfMemoryStorage<>(path, new StudentKeyParserRandomAccess(), new StudentParserRandomAccess());
         } catch (IOException ex) {
             System.out.println(ex.getMessage());
         }

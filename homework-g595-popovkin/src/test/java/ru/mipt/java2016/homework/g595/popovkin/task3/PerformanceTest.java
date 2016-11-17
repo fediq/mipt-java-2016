@@ -14,8 +14,8 @@ public class PerformanceTest {
             out.write(213);
         out.close();
         System.out.println("Written");
-        Clock timer = Clock();
-        long tmp = timer.millis();
-        for (int i = 0)
+        //Clock timer = Clock();
+        //long tmp = timer.millis();
+        //for (int i = 0)
     }
 }

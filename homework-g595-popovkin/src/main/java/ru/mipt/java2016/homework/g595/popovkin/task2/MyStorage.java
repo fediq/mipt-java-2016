@@ -4,24 +4,25 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import java.io.*;
 import java.util.Iterator;
 import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Created by Howl on 11.10.2016.
  */
 
 public class MyStorage<K, V> implements KeyValueStorage<K, V> {
-    private static final long P = (long) (1E3 + 3);
-    private static final long MOD = (long) (1E9 + 7);
+    protected static final long P = (long) (1E3 + 3);
+    protected static final long MOD = (long) (1E9 + 7);
 
     private final HashMap<K, V> storage = new HashMap<>();
-    private boolean closed = true;
-    private String storageDirName;
+    protected boolean closed = true;
+    protected String storageDirName;
 
     private ItemParser<K> keyParser = null;
     private ItemParser<V> valueParser = null;
 
-    private long getFileHash() throws IOException {
+    protected long getFileHash() throws IOException {
+        return 0;
+        /*
         FileInputStream in = new FileInputStream(storageDirName + "/main_storage_file");
         //System.out.println("open_getFH");
         long hash = 0;
@@ -36,9 +37,10 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
         in.close();
         //System.out.println("close_getFH");
         return hash;
+        */
     }
 
-    private boolean testFile() {
+    protected boolean testFile() {
         try {
             InputStream hin = new FileInputStream(storageDirName + "/main_storage_file.hash");
             //System.out.println("open_testF");
@@ -58,24 +60,13 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
         return true;
     }
 
-    private void setHash() throws IOException {
+    protected void setHash() throws IOException {
         long hash = getFileHash();
         FileOutputStream hout = new FileOutputStream(storageDirName + "/main_storage_file.hash");
         //System.out.println("open_setHash");
         new IntegerParser().serialize((int) hash, hout);
         hout.close();
         //System.out.println("close_setHash");
-    }
-
-    // atomically get(lock == 1)/return(lock == 0) rights to work with storage
-    private synchronized void lock_storage(String dirName, int lock) throws IOException {
-        File file = new File(dirName + File.separator + "work");
-        if (lock == 1) {
-            if (file.exists() || file.createNewFile()) throw new IOException("storage already under work");
-            file.createNewFile();
-        } else {
-            file.delete();
-        }
     }
 
     public MyStorage(String directoryname, ItemParser<K> keyParserTmp,
@@ -104,7 +95,7 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
-    private void checkForCloseness() {
+    protected void checkForCloseness() {
         if (closed) {
             throw new IllegalStateException("storage has closed");
         }
@@ -159,7 +150,7 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
                 keyParser.serialize(entry.getKey(), out);
                 valueParser.serialize(entry.getValue(), out);
             }
-        } catch(Exception ex) {
+        } catch (Exception ex) {
             //System.out.println("forced_close");
             out.close();
         }
