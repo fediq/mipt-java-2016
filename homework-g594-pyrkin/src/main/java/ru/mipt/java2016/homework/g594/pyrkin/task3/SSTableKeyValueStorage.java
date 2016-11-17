@@ -9,16 +9,12 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 
 /**
  * Created by randan on 11/15/16.
  */
-public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
-    private final HashMap<K, V> memoryStorage = new HashMap<>();
+public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private final HashMap<K, Long> offsetTable = new HashMap<>();
 
@@ -32,43 +28,23 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private boolean isClosed = false;
 
-    private final int maxMemoryStorageSize;
-
     private int deletedNumber = 0;
 
     private long currentStorageLength;
 
     private boolean offsetTableWasUpdated = false;
 
-    private final LoadingCache<K, V> readCache;
 
     public SSTableKeyValueStorage(String directoryPath,
                                   SerializerInterface<K> keySerializer,
-                                  SerializerInterface<V> valueSerializer,
-                                  int maxMemoryStorageSize,
-                                  int maxReadCacheSize) throws IOException {
+                                  SerializerInterface<V> valueSerializer) throws IOException {
         synchronized (offsetTable) {
             this.keySerializer = keySerializer;
             this.valueSerializer = valueSerializer;
-            this.maxMemoryStorageSize = maxMemoryStorageSize;
             indexFileWorker = new IndexFileWorker(directoryPath, "index.db");
             storageFileWorker = new StorageFileWorker(directoryPath, "storage.db");
             currentStorageLength = storageFileWorker.getLength();
             readOffsetTable();
-
-            readCache = CacheBuilder.newBuilder()
-                    .maximumSize(maxReadCacheSize)
-                    .build(
-                            new CacheLoader<K, V>() {
-                                @Override
-                                public V load(K key) throws Exception {
-                                    if (storageFileWorker.isStreamMode()) {
-                                        storageFileWorker.endStreamMode();
-                                    }
-                                    return readValue(key);
-                                }
-                            }
-                    );
         }
     }
 
@@ -80,13 +56,8 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 return null;
             }
 
-            V value = memoryStorage.get(key);
-            if (value != null) {
-                return value;
-            }
-
             try {
-                return readCache.get(key);
+                return readValue(key);
             } catch (Exception exception) {
                 return null;
             }
@@ -106,16 +77,10 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         synchronized (offsetTable) {
             checkClosed();
             offsetTableWasUpdated = true;
-            memoryStorage.put(key, value);
-            offsetTable.put(key, (long) -1);
-
-            if (memoryStorage.size() > maxMemoryStorageSize) {
-                try {
-                    flushMemoryStorage();
-                } catch (IOException exception) {
-                    throw new RuntimeException("not enough memory");
-                }
-
+            try {
+                writeField(key, value);
+            } catch (IOException exception) {
+                throw new RuntimeException();
             }
         }
     }
@@ -125,9 +90,7 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         synchronized (offsetTable) {
             offsetTableWasUpdated = true;
             checkClosed();
-            if (memoryStorage.remove(key) == null) {
-                ++deletedNumber;
-            }
+            ++deletedNumber;
             offsetTable.remove(key);
         }
     }
@@ -201,12 +164,20 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private V readValue(K key) throws IOException {
+        if (storageFileWorker.isStreamMode()) {
+            storageFileWorker.endStreamMode();
+        }
         int size = storageFileWorker.read(offsetTable.get(key));
         return valueSerializer.deserialize(storageFileWorker.read(size));
     }
 
     private void writeField(K key, V value) throws IOException {
-        storageFileWorker.streamWrite(keySerializer.sizeOfSerialize(key));
+        if (!storageFileWorker.isStreamMode()) {
+            storageFileWorker.startStreamMode();
+        }
+        int keySerializeSize = keySerializer.sizeOfSerialize(key);
+        offsetTable.put(key, currentStorageLength + 4 + keySerializeSize);
+        storageFileWorker.streamWrite(keySerializeSize);
         storageFileWorker.streamWrite(keySerializer.serialize(key));
 
         storageFileWorker.streamWrite(valueSerializer.sizeOfSerialize(value));
@@ -216,27 +187,8 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 valueSerializer.sizeOfSerialize(value);
     }
 
-    private void writeAllFields() throws IOException {
-        for (Map.Entry<K, V> entry : memoryStorage.entrySet()) {
-            int keySerializeSize = keySerializer.sizeOfSerialize(entry.getKey());
-            offsetTable.put(entry.getKey(), currentStorageLength + 4 + keySerializeSize);
-            writeField(entry.getKey(), entry.getValue());
-        }
-    }
-
-    private void flushMemoryStorage() throws IOException {
-        if (!storageFileWorker.isStreamMode()) {
-            storageFileWorker.startStreamMode();
-        }
-        writeAllFields();
-        memoryStorage.clear();
-    }
-
     private void writeStorageToFile() throws IOException {
-        if (deletedNumber > 4 * offsetTable.size() - memoryStorage.size()) {
-            if (storageFileWorker.isStreamMode()) {
-                storageFileWorker.endStreamMode();
-            }
+        if (deletedNumber > 4 * offsetTable.size()) {
             storageFileWorker.startRecopyMode();
             currentStorageLength = 0;
             while (true) {
@@ -258,11 +210,7 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                     currentStorageLength += 4 + valueSize;
                 }
             }
-            flushMemoryStorage();
             storageFileWorker.endRecopyMode();
-        } else if (!memoryStorage.isEmpty()) {
-            flushMemoryStorage();
         }
-
     }
 }

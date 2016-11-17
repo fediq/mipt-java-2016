@@ -30,12 +30,8 @@ public class FileWorker {
     public ByteBuffer read(int bytesToRead) throws IOException {
         ByteBuffer resultBuffer = ByteBuffer.allocate(bytesToRead);
 
-        while (bytesToRead != 0) {
-            --bytesToRead;
-            resultBuffer.put((byte) inputStream.read());
-        }
+        inputStream.read(resultBuffer.array(), 0, bytesToRead);
 
-        resultBuffer.rewind();
         return resultBuffer;
     }
 

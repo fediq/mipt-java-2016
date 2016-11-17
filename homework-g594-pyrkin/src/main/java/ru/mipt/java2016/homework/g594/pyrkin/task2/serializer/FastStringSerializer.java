@@ -13,9 +13,7 @@ public class FastStringSerializer implements SerializerInterface<String> {
 
     @Override
     public ByteBuffer serialize(String object) {
-        ByteBuffer resultBuffer = ByteBuffer.allocate(sizeOfSerialize(object));
-        resultBuffer.put(object.getBytes());
-        return resultBuffer;
+        return ByteBuffer.wrap(object.getBytes());
     }
 
     @Override
