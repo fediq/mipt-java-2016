@@ -34,6 +34,8 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private boolean offsetTableWasUpdated = false;
 
+    private long writtenLength;
+
 
     public SSTableKeyValueStorage(String directoryPath,
                                   SerializerInterface<K> keySerializer,
@@ -44,6 +46,7 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             indexFileWorker = new IndexFileWorker(directoryPath, "index.db");
             storageFileWorker = new StorageFileWorker(directoryPath, "storage.db");
             currentStorageLength = storageFileWorker.getLength();
+            writtenLength = currentStorageLength - 1;
             readOffsetTable();
         }
     }
@@ -164,17 +167,16 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private V readValue(K key) throws IOException {
-        if (storageFileWorker.isStreamMode()) {
-            storageFileWorker.endStreamMode();
+        long offset = offsetTable.get(key);
+        if (offset > writtenLength) {
+            storageFileWorker.flush();
+            writtenLength = currentStorageLength - 1;
         }
-        int size = storageFileWorker.read(offsetTable.get(key));
+        int size = storageFileWorker.read(offset);
         return valueSerializer.deserialize(storageFileWorker.read(size));
     }
 
     private void writeField(K key, V value) throws IOException {
-        if (!storageFileWorker.isStreamMode()) {
-            storageFileWorker.startStreamMode();
-        }
         int keySerializeSize = keySerializer.sizeOfSerialize(key);
         offsetTable.put(key, currentStorageLength + 4 + keySerializeSize);
         storageFileWorker.streamWrite(keySerializeSize);

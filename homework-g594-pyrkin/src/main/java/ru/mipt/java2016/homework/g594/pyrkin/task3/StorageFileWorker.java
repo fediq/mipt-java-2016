@@ -8,6 +8,7 @@ import java.nio.file.NotDirectoryException;
 /**
  * Created by randan on 11/15/16.
  */
+
 public class StorageFileWorker {
     private File file;
 
@@ -19,8 +20,6 @@ public class StorageFileWorker {
 
     private BufferedOutputStream outputStream;
 
-    private boolean isStreamMode = false;
-
     public StorageFileWorker(String directoryPath, String fileName) throws IOException {
         File directory = new File(directoryPath);
         if (!directory.exists()) {
@@ -30,6 +29,7 @@ public class StorageFileWorker {
         tmpFile = new File(directory, "tmp.db");
         file.createNewFile();
         randomAccessFile = new RandomAccessFile(file, "rw");
+        outputStream = new BufferedOutputStream(new FileOutputStream(file, true));
     }
 
     public int read(long offset) throws IOException {
@@ -48,27 +48,24 @@ public class StorageFileWorker {
     }
 
     public void close() throws IOException {
-        if (isStreamMode()) {
-            outputStream.close();
-        } else {
-            randomAccessFile.close();
-        }
+        outputStream.close();
+        randomAccessFile.close();
     }
 
     public void startRecopyMode() throws IOException {
-        isStreamMode = true;
         randomAccessFile.close();
+        outputStream.close();
         tmpFile.createNewFile();
         inputStream = new BufferedInputStream(new FileInputStream(file));
         outputStream = new BufferedOutputStream(new FileOutputStream(tmpFile));
     }
 
     public void endRecopyMode() throws IOException {
-        isStreamMode = false;
         inputStream.close();
         outputStream.close();
         tmpFile.renameTo(file);
         randomAccessFile = new RandomAccessFile(file, "rw");
+        outputStream = new BufferedOutputStream(new FileOutputStream(file, true));
     }
 
     public int recopyRead() throws IOException {
@@ -82,12 +79,8 @@ public class StorageFileWorker {
     public ByteBuffer recopyRead(int size) throws IOException {
         ByteBuffer resultBuffer = ByteBuffer.allocate(size);
 
-        while (size != 0) {
-            --size;
-            resultBuffer.put((byte) inputStream.read());
-        }
+        inputStream.read(resultBuffer.array(), 0, size);
 
-        resultBuffer.rewind();
         return resultBuffer;
     }
 
@@ -101,19 +94,7 @@ public class StorageFileWorker {
         outputStream.write(buffer.array());
     }
 
-    public void startStreamMode() throws IOException {
-        isStreamMode = true;
-        randomAccessFile.close();
-        outputStream = new BufferedOutputStream(new FileOutputStream(file, true));
-    }
-
-    public void endStreamMode() throws IOException {
-        isStreamMode = false;
-        outputStream.close();
-        randomAccessFile = new RandomAccessFile(file, "rw");
-    }
-
-    public boolean isStreamMode() throws IOException {
-        return isStreamMode;
+    public void flush() throws IOException {
+        outputStream.flush();
     }
 }
