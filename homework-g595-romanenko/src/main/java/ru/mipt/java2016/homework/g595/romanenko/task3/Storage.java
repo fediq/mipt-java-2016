@@ -1,21 +1,19 @@
 package ru.mipt.java2016.homework.g595.romanenko.task3;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-import com.google.common.cache.Weigher;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
+import ru.mipt.java2016.homework.base.task2.MalformedDataException;
 import ru.mipt.java2016.homework.g595.romanenko.task2.MapProducer;
 import ru.mipt.java2016.homework.g595.romanenko.task2.SSTable;
+import ru.mipt.java2016.homework.g595.romanenko.task2.serialization.IntegerSerializer;
 import ru.mipt.java2016.homework.g595.romanenko.task2.serialization.SerializationStrategy;
 import ru.mipt.java2016.homework.g595.romanenko.task2.serialization.StringSerializer;
 import ru.mipt.java2016.homework.g595.romanenko.utils.FileDigitalSignature;
 
-import java.io.File;
-import java.io.IOException;
-import java.time.Instant;
+import java.io.*;
+import java.nio.channels.Channels;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 
 
 /**
@@ -29,8 +27,10 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
     /**
      * Internal structure
      */
-    private final List<MergeableSSTable<K, V>> tables;
-    private final Comparator<K> keyComparator;
+    private final RandomAccessFile storage;
+
+    private final Map<K, Integer> indices = new HashMap<>();
+
     private final String currentDirectoryPath;
     private final SerializationStrategy<K> keySerializationStrategy;
     private final SerializationStrategy<V> valueSerializationStrategy;
@@ -39,7 +39,7 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
     /**
      * Cache variables
      */
-    private final LoadingCache<K, Optional<V>> cache;
+    //maybe will be later
 
     /**
      * Updated values
@@ -49,7 +49,8 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
     /**
      * Constants
      */
-    private int maxUpdatedObjectsInMemory = 1023;
+    private final int maxUpdatedObjectsInMemory = 500;
+    private final String defaultStorageName = "storage.db";
 
     /**
      * Internal state
@@ -66,45 +67,9 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
 
         this.currentDirectoryPath = path;
         this.fileDigitalSignature = fileDigitalSignature;
-        this.keyComparator = keyComparator;
-        this.tables = new ArrayList<>();
         this.keySerializationStrategy = keySerializationStrategy;
         this.valueSerializationStrategy = valueSerializationStrategy;
         this.updatedValues = new TreeMap<>(keyComparator);
-
-        cache = CacheBuilder.newBuilder()
-                .maximumWeight(40 * 1024)
-                .weigher((Weigher<K, Optional<V>>) (k, value) -> {
-                    if (value.isPresent()) {
-                        return valueSerializationStrategy.getBytesSize(value.get());
-                    }
-                    return 0;
-                })
-                .build(
-                        new CacheLoader<K, Optional<V>>() {
-                            public Optional<V> load(K key) { // no checked exception
-                                V value = null;
-
-                                if (updatedValues.containsKey(key)) {
-                                    value = updatedValues.get(key);
-                                }
-                                if (value != null) {
-                                    return Optional.of(value);
-                                }
-                                for (SSTable<K, V> table : tables) {
-                                    if (table != null) {
-                                        value = table.getValue(key);
-                                        if (value != null) {
-                                            break;
-                                        }
-                                    }
-                                }
-                                if (value != null) {
-                                    return Optional.of(value);
-                                }
-                                return Optional.empty();
-                            }
-                        });
 
         String tableListDBPath = path + File.separator + "tableList.db";
         try {
@@ -114,6 +79,27 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
         } catch (IOException ignore) {
             throw new IllegalStateException("File tableList exist, but subtables are uncorrected");
         }
+
+        try {
+            storage = new RandomAccessFile(path + File.separator + defaultStorageName, "rw");
+        } catch (FileNotFoundException e) {
+            throw new MalformedDataException();
+        }
+    }
+
+    private V loadValue(K key) {
+        if (!indices.containsKey(key)) {
+            return null;
+        }
+        V result;
+        try {
+            storage.seek(indices.get(key));
+            InputStream stream = Channels.newInputStream(storage.getChannel());
+            result = valueSerializationStrategy.deserializeFromStream(stream);
+        } catch (IOException e) {
+            throw new MalformedDataException("Index exist, but value not");
+        }
+        return result;
     }
 
     /**
@@ -138,41 +124,32 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
             return true;
         }
 
-        Integer amount = Integer.parseInt(tablesList.getValue("TablesListSize"));
         totalAmount = Integer.parseInt(tablesList.getValue("DBSize"));
-        String[] indices = tablesList.getValue("TablesList").split(";");
 
-        for (int i = 0; i < amount; i++) {
-            tables.add(null);
+        File file = new File(currentDirectoryPath + File.separator + defaultStorageName);
+        if (!(file.exists() && !file.isDirectory())) {
+            return false;
+        }
+        String tableNamePath = currentDirectoryPath + File.separator + defaultStorageName;
+        boolean validationOk = fileDigitalSignature.validateFileSignWithDefaultSignName(tableNamePath);
+        if (!validationOk) {
+            throw new IllegalStateException("Invalid database");
         }
 
+        String indicesTableName = currentDirectoryPath + File.separator + tablesList.getValue("Indices");
+        SSTable<K, Integer> indicesTable = new SSTable<>(indicesTableName,
+                keySerializationStrategy, IntegerSerializer.getInstance(), fileDigitalSignature);
 
-        for (String index : indices) {
-            if (index.equals("")) {
-                continue;
-            }
-            String tableName = tablesList.getValue(index);
-            File file = new File(currentDirectoryPath + File.separator + tableName);
-            if (!(file.exists() && !file.isDirectory())) {
-                return false;
-            }
+        Iterator<K> keysIt = indicesTable.readKeys();
 
-            int pos = Integer.parseInt(index);
-
-            MergeableSSTable<K, V> tempTable = new MergeableSSTable<>(
-                    currentDirectoryPath + File.separator + tableName,
-                    keySerializationStrategy,
-                    valueSerializationStrategy,
-                    fileDigitalSignature,
-                    keyComparator);
-            tempTable.setDatabaseName(tableName);
-
-            tables.set(pos, tempTable);
+        while (keysIt.hasNext()) {
+            K key = keysIt.next();
+            indices.put(key, indicesTable.getValue(key));
         }
 
-        tablesList.close();
         return true;
     }
+
 
     /**
      * Read value from storage and cache it.
@@ -185,16 +162,10 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public V read(K key) {
         checkClosed();
-        Optional<V> value = null;
-        try {
-            value = cache.get(key);
-        } catch (ExecutionException e) {
-            e.printStackTrace();
+        if (updatedValues.containsKey(key)) {
+            return updatedValues.get(key);
         }
-        if (value.isPresent()) {
-            return value.get();
-        }
-        return null;
+        return loadValue(key);
     }
 
     /**
@@ -207,17 +178,7 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public boolean exists(K key) {
         checkClosed();
-        if (updatedValues.containsKey(key)) {
-            return true;
-        }
-        boolean isExists = false;
-        for (SSTable<K, V> table : tables) {
-            if (table != null && table.exists(key)) {
-                isExists = true;
-                break;
-            }
-        }
-        return isExists;
+        return updatedValues.containsKey(key) || indices.containsKey(key);
     }
 
     /**
@@ -236,76 +197,29 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
             epochNumber += 1;
         }
         updatedValues.put(key, value);
-
-        cache.invalidate(key);
-        //prepare to flip
         if (updatedValues.size() > maxUpdatedObjectsInMemory) {
             flipUpdatedValues();
         }
     }
 
     private void flipUpdatedValues() {
-        MergeableSSTable<K, V> flipTable;
-        String mergedTableName = "flipDP_" + Instant.now().getEpochSecond() + "_" +
-                Instant.now().getNano() + "_" + epochNumber + "_" + hashCode() + "_.db";
-
         try {
-            flipTable = new MergeableSSTable<>(
-                    currentDirectoryPath + File.separator + mergedTableName,
-                    keySerializationStrategy,
-                    valueSerializationStrategy,
-                    fileDigitalSignature,
-                    keyComparator);
-            flipTable.setDatabaseName(mergedTableName);
-            flipTable.rewrite(new MapProducer<>(updatedValues));
-
-        } catch (IOException exp) {
-            System.out.println(exp.getMessage());
-            exp.printStackTrace();
-            throw new RuntimeException("Can't flip data to disk");
-        }
-        for (int i = 0; i < tables.size(); i++) {
-            MergeableSSTable<K, V> toMergeTable = tables.get(i);
-
-            tables.set(i, null);
-            if (toMergeTable == null) {
-                tables.set(i, flipTable);
-                flipTable = null;
-                break;
+            storage.seek(storage.length());
+            OutputStream fileOutputStream = Channels.newOutputStream(storage.getChannel());
+            BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
+            Integer totalLength = (int) storage.length();
+            for (Map.Entry<K, V> entry : updatedValues.entrySet()) {
+                indices.put(entry.getKey(), totalLength);
+                valueSerializationStrategy.serializeToStream(entry.getValue(), bufferedOutputStream);
+                totalLength += valueSerializationStrategy.getBytesSize(entry.getValue());
             }
-            mergedTableName = "mergeDB_stage_" + Integer.toString(i)
-                    + "_time_" + Instant.now().getEpochSecond() + "_" +
-                    Instant.now().getNano() + "_" + epochNumber + "_" + hashCode() + "_.db";
-
-            flipTable.merge(
-                    currentDirectoryPath + File.separator + mergedTableName,
-                    mergedTableName,
-                    toMergeTable
-            );
-            toMergeTable.forceClose();
-            removeOldTable(toMergeTable);
-
+            bufferedOutputStream.flush();
+            fileOutputStream.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        if (flipTable != null) {
-            tables.add(flipTable);
-        }
+
         updatedValues.clear();
-    }
-
-    /**
-     * Remove table file from disk
-     *
-     * @param table table to be removed
-     */
-    private void removeOldTable(SSTable<K, V> table) {
-        table.close();
-        File delFile = new File(table.getPath());
-        if (!delFile.delete()) {
-            System.out.println("Can't erase old table file " + table.getPath());
-            throw new RuntimeException("Can't erase old table file");
-        }
-        delFile = new File(table.getPath() + ".sign");
-        delFile.delete();
     }
 
     /**
@@ -329,11 +243,8 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
         if (exists(key)) {
             totalAmount -= 1;
         }
-        cache.invalidate(key);
-        if (updatedValues.containsKey(key)) {
-            updatedValues.remove(key);
-        }
-        tables.stream().filter(table -> table != null).forEach(table -> table.removeKeyFromIndices(key));
+        updatedValues.remove(key);
+        indices.remove(key);
     }
 
     @Override
@@ -364,31 +275,47 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
             flipUpdatedValues();
         }
         try {
+
+            String pathPrefix = currentDirectoryPath + File.separator;
+
+            FileOutputStream fileOutputStream = new FileOutputStream(pathPrefix + "tempStorage.db");
+            BufferedOutputStream newStorageStream = new BufferedOutputStream(fileOutputStream);
+            Integer totalLength = 0;
+            for (Map.Entry<K, Integer> entry : indices.entrySet()) {
+                V value = loadValue(entry.getKey());
+                entry.setValue(totalLength);
+                valueSerializationStrategy.serializeToStream(value, newStorageStream);
+                totalLength += valueSerializationStrategy.getBytesSize(value);
+            }
+
+            newStorageStream.flush();
+            newStorageStream.close();
+            storage.close();
+
+            File storageFile = new File(pathPrefix + defaultStorageName);
+            File newStorageFile = new File(pathPrefix + "tempStorage.db");
+            Files.move(newStorageFile.toPath(), storageFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            newStorageFile.delete();
+
             SSTable<String, String> tablesDB = new SSTable<>(
-                    currentDirectoryPath + File.separator + "tableList.db",
+                    pathPrefix + "tableList.db",
                     StringSerializer.getInstance(),
                     StringSerializer.getInstance(),
                     fileDigitalSignature);
 
             Map<String, String> tablesListMap = new HashMap<>();
-            tablesListMap.put("TablesListSize", Integer.toString(tables.size()));
             tablesListMap.put("DBSize", Integer.toString(totalAmount));
-            StringBuilder tablesListString = new StringBuilder();
-
-            for (int i = 0; i < tables.size(); i++) {
-                SSTable<K, V> table = tables.get(i);
-                if (table != null) {
-                    tablesListString.append(";").append(Integer.toString(i));
-                    tablesListMap.put(Integer.toString(i), table.getDatabaseName());
-                    table.close();
-                }
-            }
-
-            tablesListMap.put("TablesList", tablesListString.toString());
-
-
+            tablesListMap.put("Indices", "indices.db");
             tablesDB.rewrite(new MapProducer<>(tablesListMap));
             tablesDB.close();
+
+            SSTable<K, Integer> indicesTable = new SSTable<>(
+                    pathPrefix + "indices.db",
+                    keySerializationStrategy, IntegerSerializer.getInstance(), fileDigitalSignature);
+            indicesTable.rewrite(new MapProducer<>(indices));
+            indicesTable.close();
+
+            fileDigitalSignature.signFileWithDefaultSignName(pathPrefix + defaultStorageName);
         } catch (IOException exp) {
             System.out.println(exp.getMessage());
             exp.printStackTrace();
@@ -399,23 +326,14 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
 
         private final Set<K> cachedKeys = new HashSet<>();
         private Iterator<K> updatedValuesIterator;
-        private Iterator<K> tableIterator;
-        private int tableNumber;
+        private Iterator<K> indicesIterator;
         private final int currentEpochNumber;
         private K nextValue = null;
 
         private StorageIterator() {
             currentEpochNumber = epochNumber;
             updatedValuesIterator = updatedValues.keySet().iterator();
-            tableIterator = null;
-            for (tableNumber = 0; tableNumber != tables.size(); tableNumber++) {
-                SSTable<K, V> table = tables.get(tableNumber);
-                if (table != null) {
-                    tableIterator = table.readKeys();
-                    break;
-                }
-            }
-
+            indicesIterator = indices.keySet().iterator();
             getNext();
         }
 
@@ -434,27 +352,16 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
                 return;
             }
             boolean findValue = false;
-            while (tableNumber < tables.size()) {
-                while (tableIterator.hasNext()) {
-                    nextValue = tableIterator.next();
-                    if (cachedKeys.contains(nextValue)) {
-                        nextValue = null;
-                    } else {
-                        findValue = true;
-                        break;
-                    }
-                }
-                if (findValue) {
+            while (indicesIterator.hasNext()) {
+                nextValue = indicesIterator.next();
+                if (!cachedKeys.contains(nextValue)) {
                     cachedKeys.add(nextValue);
+                    findValue = true;
                     break;
                 }
-                for (tableNumber++; tableNumber < tables.size(); tableNumber++) {
-                    SSTable<K, V> table = tables.get(tableNumber);
-                    if (table != null) {
-                        tableIterator = table.readKeys();
-                        break;
-                    }
-                }
+            }
+            if (!findValue) {
+                nextValue = null;
             }
         }
 
