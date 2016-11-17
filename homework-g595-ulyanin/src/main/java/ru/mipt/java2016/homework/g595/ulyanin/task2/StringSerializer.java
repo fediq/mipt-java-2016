@@ -1,8 +1,8 @@
 package ru.mipt.java2016.homework.g595.ulyanin.task2;
 
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 
 /**
@@ -19,12 +19,12 @@ public class StringSerializer implements Serializer<String> {
     private StringSerializer() { }
 
     @Override
-    public void serialize(String data, DataOutputStream dataOutputStream) throws IOException {
+    public void serialize(String data, DataOutput dataOutputStream) throws IOException {
         dataOutputStream.writeUTF(data);
     }
 
     @Override
-    public String deserialize(DataInputStream dataInputStream) throws IOException {
+    public String deserialize(DataInput dataInputStream) throws IOException {
         return dataInputStream.readUTF();
     }
 }
