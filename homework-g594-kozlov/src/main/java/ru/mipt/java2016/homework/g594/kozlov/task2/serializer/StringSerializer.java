@@ -15,14 +15,15 @@ public class StringSerializer implements SerializerInterface<String> {
         if (objToSerialize == null) {
             return null;
         }
-        try (ByteArrayOutputStream bout = new ByteArrayOutputStream()) {
+        /* try (ByteArrayOutputStream bout = new ByteArrayOutputStream()) {
             GZIPOutputStream gzip = new GZIPOutputStream(bout);
             gzip.write(objToSerialize.getBytes());
             gzip.close();
             return bout.toByteArray();
         } catch (IOException e) {
             throw new RuntimeException(e);
-        }
+        }*/
+        return objToSerialize.getBytes();
     }
 
     @Override
@@ -30,7 +31,7 @@ public class StringSerializer implements SerializerInterface<String> {
         if (inputString == null) {
             return null;
         }
-        try (ByteArrayInputStream bin = new ByteArrayInputStream(inputString)) {
+        /*try (ByteArrayInputStream bin = new ByteArrayInputStream(inputString)) {
             GZIPInputStream gzip = new GZIPInputStream(bin);
             ByteArrayOutputStream bout = new ByteArrayOutputStream();
             byte[] buff = new byte[1024];
@@ -43,7 +44,8 @@ public class StringSerializer implements SerializerInterface<String> {
             return new String(bout.toByteArray());
         } catch (IOException e) {
             throw new RuntimeException(e);
-        }
+        }*/
+        return new String(inputString);
     }
 
     @Override
