@@ -17,7 +17,7 @@ import static java.lang.Long.max;
 public class LackOfMemoryStorage<K, V> implements KeyValueStorage<K, V> {
     private static final long P = (long) (1E3 + 3);
     private static final long MOD = (long) (1E9 + 7);
-    private static final long CACHE_SIZE = (long) (4);
+    private static final long CACHE_SIZE = (long) (10);
 
     private final HashMap<K, Pair<Long, Long>> offsets = new HashMap<>();
     private final HashMap<K, V> cache = new HashMap<>();
