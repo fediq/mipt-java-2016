@@ -1,14 +1,10 @@
 package ru.mipt.java2016.homework.g594.kozlov.task2;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.g594.kozlov.task2.serializer.SerializerInterface;
 
 import java.io.File;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Created by Anatoly on 25.10.2016.
@@ -390,9 +386,9 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
                 if (keyFromFirst == null) {
                     isFromFirst = false;
                 } else {
-                        if (keyFromSecond == null) {
-                            isFromFirst = true;
-                        } else {
+                    if (keyFromSecond == null) {
+                        isFromFirst = true;
+                    } else {
                         if (keyComparator.compare(keyFromFirst, keyFromSecond) == 0) {
                             isFromFirst = true;
                             synchronized (configFile) {

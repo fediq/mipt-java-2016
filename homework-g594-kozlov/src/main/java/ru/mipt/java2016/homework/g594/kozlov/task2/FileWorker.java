@@ -32,6 +32,17 @@ public class FileWorker implements Closeable {
         }
     }
 
+    public void appMode() {
+        try {
+            if (buffWr != null) {
+                buffWr.close();
+            }
+            buffWr = new BufferedOutputStream(new FileOutputStream(file.getAbsoluteFile(), true));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public boolean exists() {
         if (!file.exists()) {
             return false;
@@ -87,12 +98,13 @@ public class FileWorker implements Closeable {
         }
     }
 
-    public void append(String str) {
+    public long append(String str) {
         try (OutputStream outputStr = new FileOutputStream(file.getAbsoluteFile(), true)) {
-            byte[] bytes = ByteBuffer.allocate(4).putInt(str.length()).array();
+            byte[] bytes = ByteBuffer.allocate(4).putInt(str.getBytes().length).array();
             outputStr.write(bytes);
             outputStr.write(str.getBytes());
             outputStr.close();
+            return str.getBytes().length + 4;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -113,6 +125,7 @@ public class FileWorker implements Closeable {
             byte[] bytes = new byte[4];
             int read = buffRd.read(bytes, 0, 4);
             if (read < 4) {
+                buffRd.close();
                 throw new RuntimeException("Reading failure");
             }
             currOffset += read;
@@ -120,10 +133,19 @@ public class FileWorker implements Closeable {
             bytes = new byte[len];
             read = buffRd.read(bytes, 0, len);
             if (read < len) {
+                buffRd.close();
                 throw new RuntimeException("Reading failure");
             }
             currOffset += read;
             return new String(bytes);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public long fileLen() {
+        try (FileInputStream sin = new FileInputStream(file.getAbsoluteFile())) {
+            return sin.available();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -151,10 +173,15 @@ public class FileWorker implements Closeable {
         try {
             innerExists();
             if (buffRd == null || currOffset > offset) {
+                if (buffRd != null) {
+                    buffRd.close();
+                }
                 buffRd = new BufferedInputStream(new FileInputStream(file.getAbsoluteFile()));
                 currOffset = 0;
             }
-            buffRd.skip(offset - currOffset);
+            while (currOffset < offset) {
+                currOffset += buffRd.skip(offset - currOffset);
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

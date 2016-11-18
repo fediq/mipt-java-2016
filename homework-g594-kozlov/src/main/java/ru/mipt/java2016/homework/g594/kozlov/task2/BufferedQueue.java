@@ -2,7 +2,6 @@ package ru.mipt.java2016.homework.g594.kozlov.task2;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.Stack;
 
 /**
  * Created by Anatoly on 18.11.2016.
@@ -12,11 +11,11 @@ public class BufferedQueue {
         this.file = file;
     }
 
-    FileWorker file;
-    Deque<String> queue = new ArrayDeque<>();
-    long currOffset = 0;
+    private FileWorker file;
+    private Deque<String> queue = new ArrayDeque<>();
+    private long currOffset = 0;
 
-    String getNext(){
+    public String getNext() {
         if (queue.isEmpty()) {
             buffQueue();
         }
