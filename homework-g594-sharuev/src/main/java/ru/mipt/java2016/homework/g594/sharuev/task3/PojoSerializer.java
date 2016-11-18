@@ -17,11 +17,11 @@ import java.util.Date;
  * String, Date и классы, содержащие поля только из этих типов. Поля предков тоже сериализуются.
  * Подклассов - нет.
  */
-public class POJOSerializer<Value> implements SerializationStrategy<Value> {
+public class PojoSerializer<Value> implements SerializationStrategy<Value> {
 
     private Class clazz;
 
-    public POJOSerializer(Class clazzVal) {
+    public PojoSerializer(Class clazzVal) {
         clazz = clazzVal;
     }
 

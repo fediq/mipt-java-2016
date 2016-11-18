@@ -32,7 +32,7 @@ public class UnsortedOptimizedKvs<K, V> extends OptimizedKvs<K, V> {
         }
         OptimizedKvs.Part newPart = new OptimizedKvs.Part(new RandomAccessFile(tempFile, "rw"),
                 tempFile);
-        //DataOutputStream out = bdosFromRaf(newPart.raf, 1000*Consts.MAX_VALUE_SIZE);
+        //DataOutputStream out = bdosFromRaf(newPart.valueStorageRaf, 1000*Consts.MAX_VALUE_SIZE);
         DataOutputStream out = new DataOutputStream(
                 new BufferedOutputStream(new FileOutputStream(newPart.file),
                         Consts.MAX_VALUE_SIZE * 100));
@@ -45,7 +45,7 @@ public class UnsortedOptimizedKvs<K, V> extends OptimizedKvs<K, V> {
                 Part curPart = parts.getLast();
                 parts.pollLast();
                 curPart.raf.seek(0);
-                //DataInputStream dis = bdisFromRaf(curPart.raf, 100 * Consts.MAX_VALUE_SIZE);
+                //DataInputStream dis = bdisFromRaf(curPart.valueStorageRaf, 100 * Consts.MAX_VALUE_SIZE);
                 DataInputStream dis = new DataInputStream(
                         new BufferedInputStream(new FileInputStream(curPart.file),
                                 Consts.MAX_VALUE_SIZE * 100));
