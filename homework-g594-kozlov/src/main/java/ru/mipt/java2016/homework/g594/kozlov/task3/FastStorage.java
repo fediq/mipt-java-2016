@@ -16,8 +16,8 @@ public class FastStorage<K, V> implements KeyValueStorage<K, V> {
 
     private final SerializerInterface<K> keySerializer;
     private final SerializerInterface<V> valueSerializer;
-    private final Map<K, Long> keyMap = new HashMap<K, Long>();
-    private final Set<K> deleteSet = new HashSet<K>();
+    private final Map<K, Long> keyMap = new HashMap<>();
+    private final Set<K> deleteSet = new HashSet<>();
     private final String dirPath;
     private final FileWorker indexFile;
     private final FileWorker tabFile;
@@ -44,6 +44,7 @@ public class FastStorage<K, V> implements KeyValueStorage<K, V> {
         }
         currOffset = tabFile.fileLen();
         initStorage();
+        tabFile.appMode();
     }
 
     private void initStorage() {
@@ -112,7 +113,7 @@ public class FastStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     @Override
-    public Iterator readKeys() {
+    public Iterator<K> readKeys() {
         isClosed();
         return keyMap.keySet().iterator();
     }

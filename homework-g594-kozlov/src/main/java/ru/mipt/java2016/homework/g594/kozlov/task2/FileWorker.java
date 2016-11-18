@@ -12,9 +12,9 @@ public class FileWorker implements Closeable {
 
     private final String fileName;
 
-    private BufferedOutputStream buffWr = null;
+    private OutputStream buffWr = null;
 
-    private BufferedInputStream buffRd = null;
+    private InputStream buffRd = null;
 
     private long currOffset = 0;
 
@@ -27,27 +27,21 @@ public class FileWorker implements Closeable {
         try {
             file.createNewFile();
         } catch (IOException e) {
-            System.out.println("failed to create file");
             throw new RuntimeException(e);
         }
     }
 
     public void appMode() {
         try {
-            if (buffWr != null) {
-                buffWr.close();
-            }
-            buffWr = new BufferedOutputStream(new FileOutputStream(file.getAbsoluteFile(), true));
+            close();
+            buffWr = new FileOutputStream(file.getAbsoluteFile(), true);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
     public boolean exists() {
-        if (!file.exists()) {
-            return false;
-        }
-        return true;
+        return file.exists();
     }
 
     private boolean innerExists() throws FileNotFoundException {
@@ -66,7 +60,6 @@ public class FileWorker implements Closeable {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-
         }
     }
 
@@ -156,14 +149,15 @@ public class FileWorker implements Closeable {
             innerExists();
             if (buffRd == null) {
                 buffRd = new BufferedInputStream(new FileInputStream(file.getAbsoluteFile()));
+                currOffset = 0;
             }
             byte[] bytes = new byte[8];
             int read = buffRd.read(bytes, 0, 8);
             if (read < 8) {
                 throw new RuntimeException("Reading failure");
             }
-            long result = ByteBuffer.wrap(bytes).getLong();
-            return result;
+            currOffset += 8;
+            return ByteBuffer.wrap(bytes).getLong();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
