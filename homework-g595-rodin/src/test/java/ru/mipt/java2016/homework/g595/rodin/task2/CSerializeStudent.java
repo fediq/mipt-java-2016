@@ -9,17 +9,25 @@ import java.util.StringTokenizer;
  * Created by Dmitry on 26.10.16.
  */
 public class CSerializeStudent implements ISerialize<Student> {
+
+    private static CSerializeString serializeString = new CSerializeString();
+    private static CSerializeInteger serializeInteger = new CSerializeInteger();
+    private static CSerializeDate serializeDate = new CSerializeDate();
+    private static CSerializeBoolean serializeBoolean = new CSerializeBoolean();
+    private static CSerializeDouble serializeDouble = new CSerializeDouble();
+    private static StringBuilder stringBuilder = new StringBuilder();
+
     @Override
     public String serialize(Student argument) throws IllegalArgumentException {
         if (argument == null) {
             throw new IllegalArgumentException("Null Argument");
         }
-        CSerializeString serializeString = new CSerializeString();
-        CSerializeInteger serializeInteger = new CSerializeInteger();
-        CSerializeDate serializeDate = new CSerializeDate();
-        CSerializeBoolean serializeBoolean = new CSerializeBoolean();
-        CSerializeDouble serializeDouble = new CSerializeDouble();
-        StringBuilder stringBuilder = new StringBuilder();
+        serializeString = new CSerializeString();
+        serializeInteger = new CSerializeInteger();
+        serializeDate = new CSerializeDate();
+        serializeBoolean = new CSerializeBoolean();
+        serializeDouble = new CSerializeDouble();
+        stringBuilder = new StringBuilder();
         return stringBuilder.append("\"groupId\":")
                 .append(serializeInteger.serialize(argument.getGroupId())).append(",")
                 .append("\"name\":").append(serializeString.serialize(argument.getName()))
@@ -39,11 +47,11 @@ public class CSerializeStudent implements ISerialize<Student> {
         if (argument == null) {
             throw new IllegalArgumentException("Null Argument");
         }
-        CSerializeString serializeString = new CSerializeString();
-        CSerializeInteger serializeInteger = new CSerializeInteger();
-        CSerializeDate serializeDate = new CSerializeDate();
-        CSerializeBoolean serializeBoolean = new CSerializeBoolean();
-        CSerializeDouble serializeDouble = new CSerializeDouble();
+        serializeString = new CSerializeString();
+        serializeInteger = new CSerializeInteger();
+        serializeDate = new CSerializeDate();
+        serializeBoolean = new CSerializeBoolean();
+        serializeDouble = new CSerializeDouble();
         StringTokenizer tokenizer = new StringTokenizer(argument, "\",:", false);
 
         String token = tokenizer.nextToken();
