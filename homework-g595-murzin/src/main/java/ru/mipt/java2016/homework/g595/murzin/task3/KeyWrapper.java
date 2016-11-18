@@ -5,7 +5,7 @@ package ru.mipt.java2016.homework.g595.murzin.task3;
  */
 public class KeyWrapper<Key, Value> {
     public final Key key;
-    private int fileIndex = -1;
+    private int tableIndex = -1;
     private long offsetInFile = -1;
 
     private Value value; // Кеш для последних N операций write
@@ -17,16 +17,16 @@ public class KeyWrapper<Key, Value> {
         this.indexInNewEntries = indexInNewEntries;
     }
 
-    public KeyWrapper(Key key, int fileIndex, long offsetInFile) {
+    public KeyWrapper(Key key, int tableIndex, long offsetInFile) {
         this.key = key;
-        this.fileIndex = fileIndex;
+        this.tableIndex = tableIndex;
         this.offsetInFile = offsetInFile;
     }
 
     @Override
     public String toString() {
         return "KeyWrapper{" +
-                "fileIndex=" + fileIndex +
+                "fileIndex=" + tableIndex +
                 ", offsetInFile=" + offsetInFile +
                 '}';
     }
@@ -39,12 +39,12 @@ public class KeyWrapper<Key, Value> {
         this.offsetInFile = offsetInFile;
     }
 
-    public int getFileIndex() {
-        return fileIndex;
+    public int getTableIndex() {
+        return tableIndex;
     }
 
-    public void setFileIndex(int fileIndex) {
-        this.fileIndex = fileIndex;
+    public void setTableIndex(int fileIndex) {
+        this.tableIndex = fileIndex;
     }
 
     public Value getValue() {

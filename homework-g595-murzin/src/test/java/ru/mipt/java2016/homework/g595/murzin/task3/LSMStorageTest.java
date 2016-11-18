@@ -20,6 +20,8 @@ import java.util.Random;
 import static org.junit.Assert.assertEquals;
 import static ru.mipt.java2016.homework.tests.task2.StorageTestUtils.assertFullyMatch;
 import static ru.mipt.java2016.homework.tests.task2.StorageTestUtils.doInTempDirectory;
+import static ru.mipt.java2016.homework.tests.task3.PerformanceTestUtils.randomKey;
+import static ru.mipt.java2016.homework.tests.task3.PerformanceTestUtils.randomValue;
 
 /**
  * Created by Дмитрий Мурзин on 05.11.16.
@@ -175,5 +177,21 @@ public class LSMStorageTest extends KeyValueStoragePerformanceTest {
         // 2^x = 10^length
         int x = (int) (length * Math.log(10) / Math.log(2));
         return new BigInteger(x, random).toString();
+    }
+
+    @Test
+    public void superTest() throws Exception {
+        doInTempDirectory(path -> {
+            doWithStrings(path, storage -> {
+                Random random = new Random(42);
+                long writeTime = StorageTestUtils.measureTime(() -> {
+                    for (int i = 0; i < 1000000; ++i) {
+                        String key = randomKey(random);
+                        String value = randomValue(random);
+                        storage.write(key, value);
+                    }
+                });
+            });
+        });
     }
 }
