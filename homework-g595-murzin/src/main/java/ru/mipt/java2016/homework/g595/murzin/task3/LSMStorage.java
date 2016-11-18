@@ -465,6 +465,9 @@ public class LSMStorage<Key, Value> implements KeyValueStorage<Key, Value> {
         pushNewEntriesToDisk();
         writeAllKeys();
         writeSstablesInfo();
+        for (SstableInfo<Key, Value> info : sstableInfos) {
+            info.getBufferedRandomAccessFile().close();
+        }
         lock.release();
         isClosed = true;
     }

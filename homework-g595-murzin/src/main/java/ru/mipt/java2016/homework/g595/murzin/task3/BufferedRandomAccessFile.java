@@ -1,5 +1,6 @@
 package ru.mipt.java2016.homework.g595.murzin.task3;
 
+import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -11,7 +12,7 @@ import java.nio.channels.FileChannel;
 /**
  * Created by dima on 05.11.16.
  */
-public class BufferedRandomAccessFile {
+public class BufferedRandomAccessFile implements Closeable {
 
     public static final int BUFFER_SIZE = 8192;
 
@@ -58,5 +59,11 @@ public class BufferedRandomAccessFile {
         } else {
             bufferedInputStream.setPositionInBuffer((int) (fileOffset - startPosition));
         }
+    }
+
+    @Override
+    public void close() throws IOException {
+        dataInputStream.close();
+        randomAccessFile.close();
     }
 }

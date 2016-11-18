@@ -185,7 +185,7 @@ public class LSMStorageTest extends KeyValueStoragePerformanceTest {
             doWithStrings(path, storage -> {
                 Random random = new Random(42);
                 long writeTime = StorageTestUtils.measureTime(() -> {
-                    for (int i = 0; i < 1000000; ++i) {
+                    for (int i = 0; i < 100000; ++i) {
                         String key = randomKey(random);
                         String value = randomValue(random);
                         storage.write(key, value);
