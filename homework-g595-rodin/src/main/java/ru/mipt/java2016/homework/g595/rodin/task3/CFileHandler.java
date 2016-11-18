@@ -46,7 +46,7 @@ public class CFileHandler implements Closeable {
     private void checkOutputBuffer(){
         try {
             if (outputStream == null) {
-                outputStream = new BufferedOutputStream(new FileOutputStream(file.getAbsoluteFile()));
+                outputStream = new BufferedOutputStream(new FileOutputStream(file.getAbsoluteFile(),true));
             }
         } catch (IOException exception){
             throw new RuntimeException(exception.getMessage());
@@ -67,8 +67,6 @@ public class CFileHandler implements Closeable {
     private void flushOutput(){
         try{
             outputStream.flush();
-            outputStream.close();
-            outputStream = null;
         } catch (IOException exception){
             throw new RuntimeException(exception.getMessage());
         }
@@ -95,13 +93,16 @@ public class CFileHandler implements Closeable {
         }
     }
 
-    public void append(String text){
+    public long append(String text){
         try {
-            OutputStream stream = new FileOutputStream(file.getAbsoluteFile(),true);
-            byte[] textLength = ByteBuffer.allocate(4).putInt(text.length()).array();
-            stream.write(textLength);
-            stream.write(text.getBytes());
-            stream.close();
+            checkExistence();
+            checkOutputBuffer();
+            byte[] textLength = ByteBuffer.allocate(4).putInt(text.getBytes().length).array();
+            outputStream.write(textLength);
+            outputStream.write(text.getBytes());
+            long temp = offset;
+            offset += text.getBytes().length + 4;
+            return temp;
         } catch (IOException exception){
             throw new RuntimeException(exception.getMessage());
         }
@@ -143,10 +144,20 @@ public class CFileHandler implements Closeable {
                 closeInput();
                 checkInputBuffer();
             }
-            inputStream.skip(targetOffset - offset);
+            long shift = inputStream.skip(targetOffset - offset);
+            while(shift != 0) {
+                offset += shift;
+                inputStream.skip(targetOffset - offset);
+            }
         } catch (IOException exception){
             throw new RuntimeException(exception.getMessage());
         }
+    }
+
+
+    public String loadKey(long offset) {
+        reposition(offset);
+        return readToken();
     }
 
 
