@@ -9,6 +9,7 @@ import ru.mipt.java2016.homework.tests.task3.KeyValueStoragePerformanceTest;
 /**
  * Created by philipp on 16.11.16.
  */
+
 public class MegaKeyValueStorageTest extends KeyValueStoragePerformanceTest {
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String path) throws MalformedDataException {

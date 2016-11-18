@@ -20,8 +20,8 @@ class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private ArrayList<Map.Entry<HashMap<K, Long>, String>> keyOffsetArray;
     private HashMap<K, V> currentTree;
     private HashSet<K> existedKeys;
-    private static final int CACHE_SIZE = 1000;
-    private static final int MEM_TREE_SIZE = 1000;
+    private static final int CACHE_SIZE = 0;
+    private static final int MEM_TREE_SIZE = 1300;
 
     MegaKeyValueStorage(String path, String dataType, InterfaceSerialization<K> keySerialization,
                         InterfaceSerialization<V> valueSerialization) throws IllegalStateException {
