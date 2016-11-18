@@ -171,7 +171,7 @@ public class SimpleKeyValueStorage<Key, Value> implements KeyValueStorage<Key, V
     public void delete(Key key) {
         checkForClosed();
         KeyWrapper wrapper = keys.get(key);
-        int x = lowerboundPowerOfTwo(wrapper.valueLength);
+        int x = lowerboundPowerOfTwo(wrapper.getValueLength());
         RandomAccessFile file = files.get(x);
         assert file != null;
         try {

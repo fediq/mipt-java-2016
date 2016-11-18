@@ -4,8 +4,8 @@ package ru.mipt.java2016.homework.g595.murzin.task3fast;
  * Created by dima on 18.11.16.
  */
 public class KeyWrapper {
-    public int valueLength;
-    public long offsetInFile;
+    private int valueLength;
+    private long offsetInFile;
 
     public KeyWrapper(int valueLength, long offsetInFile) {
         this.valueLength = valueLength;
