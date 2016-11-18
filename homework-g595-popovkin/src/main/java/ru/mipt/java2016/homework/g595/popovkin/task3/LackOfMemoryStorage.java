@@ -18,7 +18,7 @@ public class LackOfMemoryStorage<K, V> implements KeyValueStorage<K, V> {
     private static final long P = (long) (1E3 + 3);
     private static final long MOD = (long) (1E9 + 7);
     private static final long CACHE_SIZE = (long) (8);
-    private static final long MAX_BITES_TO_SKIP = (long) (5E3);
+    private static final long MAX_BITES_TO_SKIP = (long) (3E2);
 
     private final HashMap<K, Pair<Long, Long>> offsets = new HashMap<>();
     private final HashMap<K, V> cache = new HashMap<>();
