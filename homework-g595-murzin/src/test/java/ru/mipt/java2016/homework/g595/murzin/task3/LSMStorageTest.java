@@ -1,5 +1,6 @@
 package ru.mipt.java2016.homework.g595.murzin.task3;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.tests.task2.StorageTestUtils;
@@ -26,6 +27,7 @@ import static ru.mipt.java2016.homework.tests.task3.PerformanceTestUtils.randomV
 /**
  * Created by Дмитрий Мурзин on 05.11.16.
  */
+@Ignore
 public class LSMStorageTest extends KeyValueStoragePerformanceTest {
 
     private static final SerializationStrategy<StudentKey> FOR_STUDENT_KEY = new SerializationStrategy<StudentKey>() {
