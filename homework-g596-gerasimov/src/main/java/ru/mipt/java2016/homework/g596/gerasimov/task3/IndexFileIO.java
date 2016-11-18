@@ -20,6 +20,10 @@ public class IndexFileIO {
 
     private boolean isCleared = false;
 
+    private ByteBuffer intBuffer = ByteBuffer.allocate(4);
+
+    private ByteBuffer longBuffer = ByteBuffer.allocate(8);
+
     public IndexFileIO(String directoryPath, String fileName) throws IOException {
         File directory = new File(directoryPath);
         if (!directory.exists()) {
@@ -31,12 +35,10 @@ public class IndexFileIO {
     }
 
     public int readSize() throws IOException {
-        int result = 0;
-
-        for (int i = 0; i < 4; ++i) {
-            result = result * 256 + inputStream.read();
+        if (inputStream.read(intBuffer.array()) != 4) {
+            throw new IOException("Read error");
         }
-        return result;
+        return intBuffer.getInt(0);
     }
 
     public ByteBuffer readField(int size) throws IOException {
@@ -54,9 +56,8 @@ public class IndexFileIO {
     }
 
     public void writeSize(int size) throws IOException {
-        ByteBuffer toWrite = ByteBuffer.allocate(4);
-        toWrite.putInt(size);
-        outputStream.write(toWrite.array());
+        intBuffer.putInt(0, size);
+        outputStream.write(intBuffer.array());
     }
 
     public void writeField(ByteBuffer toWrite) throws IOException {
@@ -64,21 +65,25 @@ public class IndexFileIO {
     }
 
     public long readOffset() throws IOException {
-        long result = 0;
-        for (int i = 0; i < 8; ++i) {
-            result = result * 256 + inputStream.read();
+        if (inputStream.read(longBuffer.array()) != 8) {
+            throw new IOException("Read error");
         }
-        return result;
+        return longBuffer.getLong(0);
     }
 
     public void writeOffset(long offset) throws IOException {
-        ByteBuffer toWrite = ByteBuffer.allocate(8);
-        toWrite.putLong(offset);
-        outputStream.write(toWrite.array());
+        longBuffer.putLong(0, offset);
+        outputStream.write(longBuffer.array());
+    }
+
+    public boolean isEmpty() throws IOException {
+        return inputStream.available() == 0;
     }
 
     public void close() throws IOException {
         if (isCleared) {
+            intBuffer.putInt(0, -1);
+            outputStream.write(intBuffer.array());
             outputStream.close();
         } else {
             inputStream.close();

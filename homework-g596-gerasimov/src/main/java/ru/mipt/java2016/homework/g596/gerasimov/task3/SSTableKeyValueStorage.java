@@ -129,7 +129,10 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void readOffsetTable() throws IOException {
-        for (int size = indexFileIO.readSize(); size >= 0; size = indexFileIO.readSize()) {
+        if (indexFileIO.isEmpty()) {
+            return;
+        }
+        for (int size = indexFileIO.readSize(); size > 0; size = indexFileIO.readSize()) {
             offsetTable.put(keySerializer.deserialize(indexFileIO.readField(size)),
                     indexFileIO.readOffset());
         }
@@ -157,14 +160,14 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private void writeField(K key, V value) throws IOException {
         currentStorageLength += 4 + keySerializer.sizeOfSerialization(key);
-        storageFileIO.streamWriteSize(keySerializer.sizeOfSerialization(key));
-        storageFileIO.streamWriteField(keySerializer.serialize(key));
+        storageFileIO.writeSize(keySerializer.sizeOfSerialization(key));
+        storageFileIO.writeField(keySerializer.serialize(key));
 
         offsetTable.put(key, currentStorageLength);
 
         currentStorageLength += 4 + valueSerializer.sizeOfSerialization(value);
-        storageFileIO.streamWriteSize(valueSerializer.sizeOfSerialization(value));
-        storageFileIO.streamWriteField(valueSerializer.serialize(value));
+        storageFileIO.writeSize(valueSerializer.sizeOfSerialization(value));
+        storageFileIO.writeField(valueSerializer.serialize(value));
     }
 
     private void refreshStorageFile() throws IOException {
@@ -172,8 +175,8 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             storageFileIO.enterCopyMode();
             currentStorageLength = 0;
             long oldFileOffset = 0;
-            for (int keySize = storageFileIO.copyReadSize();
-                 keySize >= 0; keySize = storageFileIO.copyReadSize()) {
+            for (int keySize = storageFileIO.copyReadSize(); keySize > 0;
+                     keySize = storageFileIO.copyReadSize()) {
 
                 ByteBuffer keyCode = storageFileIO.copyReadField(keySize);
                 int valueSize = storageFileIO.copyReadSize();
@@ -182,12 +185,15 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
                 if (offsetTable.containsKey(key) && offsetTable.get(key)
                         .equals(oldFileOffset)) {
-                    storageFileIO.streamWriteSize(keySize);
-                    storageFileIO.streamWriteField(keyCode);
+
+                    storageFileIO.writeSize(keySize);
+                    storageFileIO.writeField(keyCode);
                     currentStorageLength += 4 + keySize;
+
                     offsetTable.put(key, currentStorageLength);
-                    storageFileIO.streamWriteSize(valueSize);
-                    storageFileIO.streamWriteField(valueCode);
+
+                    storageFileIO.writeSize(valueSize);
+                    storageFileIO.writeField(valueCode);
                     currentStorageLength += 4 + valueSize;
                 }
 

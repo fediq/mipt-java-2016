@@ -24,6 +24,8 @@ public class StorageFileIO {
 
     private BufferedOutputStream outputStream;
 
+    private ByteBuffer intBuffer = ByteBuffer.allocate(4);
+
     public StorageFileIO(String directoryPath, String fileName) throws IOException {
         File directory = new File(directoryPath);
         if (!directory.exists()) {
@@ -47,13 +49,12 @@ public class StorageFileIO {
         return result;
     }
 
-    public void streamWriteSize(int size) throws IOException {
-        ByteBuffer toWrite = ByteBuffer.allocate(4);
-        toWrite.putInt(size);
-        outputStream.write(toWrite.array());
+    public void writeSize(int size) throws IOException {
+        intBuffer.putInt(0, size);
+        outputStream.write(intBuffer.array());
     }
 
-    public void streamWriteField(ByteBuffer toWrite) throws IOException {
+    public void writeField(ByteBuffer toWrite) throws IOException {
         outputStream.write(toWrite.array());
     }
 
@@ -74,19 +75,17 @@ public class StorageFileIO {
     }
 
     public int copyReadSize() throws IOException {
-        byte[] array = new byte[4];
-        inputStream.read(array, 0, 4);
-
-        int result = 0;
-        for (int i = 0; i < 4; ++i) {
-            result = result * 256 + array[i];
+        if (inputStream.read(intBuffer.array()) != 4) {
+            throw new IOException("Read error");
         }
-        return result;
+        return intBuffer.getInt(0);
     }
 
     public ByteBuffer copyReadField(int size) throws IOException {
         byte[] array = new byte[size];
-        inputStream.read(array, 0, size);
+        if (inputStream.read(array) != size) {
+            throw new IOException("Read error");
+        }
         return ByteBuffer.wrap(array);
     }
 
@@ -99,6 +98,8 @@ public class StorageFileIO {
     }
 
     public void close() throws IOException {
+        intBuffer.putInt(0, -1);
+        outputStream.write(intBuffer.array());
         outputStream.close();
         randomAccessFile.close();
     }
