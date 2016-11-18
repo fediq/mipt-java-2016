@@ -144,7 +144,7 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private void readOffsetTable() throws IOException {
         while (true) {
             int size = indexFileWorker.read();
-            if (size < 0) {
+            if (size <= 0) {
                 break;
             }
 
@@ -195,14 +195,15 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             currentStorageLength = 0;
             while (true) {
                 int keySize = storageFileWorker.recopyRead();
-                if (keySize < 0) {
+                if (keySize <= 0) {
                     break;
                 }
                 ByteBuffer key = storageFileWorker.recopyRead(keySize);
                 int valueSize = storageFileWorker.recopyRead();
                 ByteBuffer value = storageFileWorker.recopyRead(valueSize);
                 K deserealizedKey = keySerializer.deserialize(key);
-                if (offsetTable.containsKey(deserealizedKey)) {
+                if (offsetTable.containsKey(deserealizedKey) &&
+                        offsetTable.get(deserealizedKey) == currentStorageLength + 4 + keySize) {
                     storageFileWorker.streamWrite(keySize);
                     storageFileWorker.streamWrite(key);
                     currentStorageLength += 4 + keySize;

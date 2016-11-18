@@ -20,6 +20,8 @@ public class StorageFileWorker {
 
     private BufferedOutputStream outputStream;
 
+    private ByteBuffer tmp = ByteBuffer.allocate(4);
+
     public StorageFileWorker(String directoryPath, String fileName) throws IOException {
         File directory = new File(directoryPath);
         if (!directory.exists()) {
@@ -48,6 +50,8 @@ public class StorageFileWorker {
     }
 
     public void close() throws IOException {
+        tmp.putInt(0, -1);
+        outputStream.write(tmp.array());
         outputStream.close();
         randomAccessFile.close();
     }
@@ -69,11 +73,8 @@ public class StorageFileWorker {
     }
 
     public int recopyRead() throws IOException {
-        int result = 0;
-        for (int i = 0; i < 4; ++i) {
-            result = result * 256 + inputStream.read();
-        }
-        return result;
+        inputStream.read(tmp.array(), 0, 4);
+        return tmp.getInt(0);
     }
 
     public ByteBuffer recopyRead(int size) throws IOException {
@@ -85,9 +86,8 @@ public class StorageFileWorker {
     }
 
     public void streamWrite(int size) throws IOException {
-        ByteBuffer buffer = ByteBuffer.allocate(4);
-        buffer.putInt(size);
-        outputStream.write(buffer.array());
+        tmp.putInt(0, size);
+        outputStream.write(tmp.array());
     }
 
     public void streamWrite(ByteBuffer buffer) throws IOException {

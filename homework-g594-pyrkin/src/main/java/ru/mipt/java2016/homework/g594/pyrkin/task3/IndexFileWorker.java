@@ -3,7 +3,7 @@ package ru.mipt.java2016.homework.g594.pyrkin.task3;
 import ru.mipt.java2016.homework.g594.pyrkin.task2.FileWorker;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
+
 
 /**
  * Created by randan on 11/15/16.
@@ -14,16 +14,12 @@ public class IndexFileWorker extends FileWorker {
     }
 
     public long readOffset() throws IOException {
-        long result = 0;
-        for (int i = 0; i < 8; ++i) {
-            result = result * 256 + inputStream.read();
-        }
-        return result;
+        inputStream.read(tmp.array(), 0, 8);
+        return tmp.getLong(0);
     }
 
     public void writeOffset(long offset) throws IOException {
-        ByteBuffer buffer = ByteBuffer.allocate(8);
-        buffer.putLong(offset);
-        outputStream.write(buffer.array());
+        tmp.putLong(0, offset);
+        outputStream.write(tmp.array());
     }
 }

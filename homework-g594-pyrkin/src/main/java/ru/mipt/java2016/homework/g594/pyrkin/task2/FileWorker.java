@@ -17,6 +17,8 @@ public class FileWorker {
 
     private boolean wasClear = false;
 
+    protected ByteBuffer tmp = ByteBuffer.allocate(8);
+
     public FileWorker(String directoryPath, String fileName) throws IOException {
         File directory = new File(directoryPath);
         if (!directory.exists()) {
@@ -36,11 +38,8 @@ public class FileWorker {
     }
 
     public int read() throws IOException {
-        int result = 0;
-        for (int i = 0; i < 4; ++i) {
-            result = result * 256 + inputStream.read();
-        }
-        return result;
+        inputStream.read(tmp.array(), 0, 4);
+        return tmp.getInt(0);
     }
 
     public void write(ByteBuffer buffer) throws IOException {
@@ -48,9 +47,8 @@ public class FileWorker {
     }
 
     public void write(int size) throws IOException {
-        ByteBuffer buffer = ByteBuffer.allocate(4);
-        buffer.putInt(size);
-        outputStream.write(buffer.array());
+        tmp.putInt(0, size);
+        outputStream.write(tmp.array(), 0, 4);
     }
 
     public void clear() throws IOException {
@@ -63,6 +61,8 @@ public class FileWorker {
 
     public void close() throws IOException {
         if (wasClear) {
+            tmp.putInt(0, -1);
+            outputStream.write(tmp.array(), 0, 4);
             outputStream.close();
         } else {
             inputStream.close();
