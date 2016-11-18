@@ -25,7 +25,7 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
     private final Map<K, V> storageChanges = new TreeMap<K, V>();
     private final Set<K> deleteChanges = new TreeSet<K>();
     private final Comparator<K> keyComparator;
-    private LoadingCache<K, V> cacheValues = CacheBuilder.newBuilder()
+    /*private LoadingCache<K, V> cacheValues = CacheBuilder.newBuilder()
             .softValues()
             .build(
                     new CacheLoader<K, V>() {
@@ -37,7 +37,7 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
                             }
                             return result;
                         }
-                    });
+                    });*/
 
     private final Map<K, KeyInfo> keyMap;
     private static final String VALIDATE_STRING = "itismyawesomestoragedontfakeit";
@@ -139,11 +139,7 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
             if (value != null) {
                 return value;
             }
-            try {
-                return cacheValues.get(key);
-            } catch (ExecutionException e) {
-                throw new RuntimeException(e);
-            }
+            return loadKey(key);
         } else {
             return null;
         }
@@ -170,7 +166,6 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
         if (exists(key)) {
             storageChanges.remove(key);
             deleteChanges.add(key);
-            cacheValues.invalidate(key);
             keyMap.remove(key);
             changesCheck();
         }
@@ -371,8 +366,10 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void merge(FileNames latest, FileNames second) {
-        FileWorker latestFile = new FileWorker(path + latest.fileName + ".tab");
-        FileWorker secondFile = new FileWorker(path + second.fileName + ".tab");
+        FileWorker latestFl = new FileWorker(path + latest.fileName + ".tab");
+        FileWorker secondFl = new FileWorker(path + second.fileName + ".tab");
+        BufferedQueue latestFile = new BufferedQueue(latestFl);
+        BufferedQueue secondFile = new BufferedQueue(secondFl);
         String fileName = useCurrentFileName();
         //System.out.println("merging to " + fileName);
         FileWorker valueFile = new FileWorker(path + fileName + ".tab");
@@ -382,40 +379,42 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
         indFile.createFile();
         long currOffset = 0;
         K keyFromFirst = null;
-        String valueFromFirst = null;
-        String valueFromSecond = null;
+        boolean isFromFirst;
         K keyFromSecond = null;
         try {
-            keyFromFirst = keySerializer.deserialize(latestFile.readNextToken());
-            keyFromSecond = keySerializer.deserialize(secondFile.readNextToken());
+            synchronized (configFile) {
+                keyFromFirst = keySerializer.deserialize(latestFile.getNext());
+                keyFromSecond = keySerializer.deserialize(secondFile.getNext());
+            }
             while (keyFromFirst != null || keyFromSecond != null) {
                 if (keyFromFirst == null) {
-                    valueFromSecond = secondFile.readNextToken();
-                    currOffset = writeTo(offsetMap, valueFile, keyFromSecond, valueFromSecond, currOffset);
-                    keyFromSecond = keySerializer.deserialize(secondFile.readNextToken());
-                    continue;
-                }
-                if (keyFromSecond == null) {
-                    valueFromFirst = latestFile.readNextToken();
-                    currOffset = writeTo(offsetMap, valueFile, keyFromFirst, valueFromFirst, currOffset);
-                    keyFromFirst = keySerializer.deserialize(latestFile.readNextToken());
-                    continue;
-                }
-                if (keyComparator.compare(keyFromFirst, keyFromSecond) == 0) {
-                    valueFromFirst = latestFile.readNextToken();
-                    currOffset = writeTo(offsetMap, valueFile, keyFromFirst, valueFromFirst, currOffset);
-                    keyFromFirst = keySerializer.deserialize(latestFile.readNextToken());
-                    secondFile.readNextToken();
-                    keyFromSecond = keySerializer.deserialize(secondFile.readNextToken());
+                    isFromFirst = false;
                 } else {
-                    if (keyComparator.compare(keyFromFirst, keyFromSecond) < 0) {
-                        valueFromFirst = latestFile.readNextToken();
-                        currOffset = writeTo(offsetMap, valueFile, keyFromFirst, valueFromFirst, currOffset);
-                        keyFromFirst = keySerializer.deserialize(latestFile.readNextToken());
+                        if (keyFromSecond == null) {
+                            isFromFirst = true;
+                        } else {
+                        if (keyComparator.compare(keyFromFirst, keyFromSecond) == 0) {
+                            isFromFirst = true;
+                            synchronized (configFile) {
+                                secondFile.getNext();
+                                keyFromSecond = keySerializer.deserialize(secondFile.getNext());
+                            }
+                        } else {
+                            if (keyComparator.compare(keyFromFirst, keyFromSecond) < 0) {
+                                isFromFirst = true;
+                            } else {
+                                isFromFirst = false;
+                            }
+                        }
+                    }
+                }
+                synchronized (configFile) {
+                    if (isFromFirst) {
+                        currOffset = writeTo(offsetMap, valueFile, keyFromFirst, latestFile.getNext(), currOffset);
+                        keyFromFirst = keySerializer.deserialize(latestFile.getNext());
                     } else {
-                        valueFromSecond = secondFile.readNextToken();
-                        currOffset = writeTo(offsetMap, valueFile, keyFromSecond, valueFromSecond, currOffset);
-                        keyFromSecond = keySerializer.deserialize(secondFile.readNextToken());
+                        currOffset = writeTo(offsetMap, valueFile, keyFromSecond, secondFile.getNext(), currOffset);
+                        keyFromSecond = keySerializer.deserialize(secondFile.getNext());
                     }
                 }
             }
@@ -432,12 +431,12 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
         synchronized (configFile) {
             rewriteConfig(fileName, second.timest, latest.fileName, second.fileName);
             //System.out.println(latest.fileName + ' ' + second.fileName + " deleted");
-            latestFile.delete();
-            secondFile.delete();
-            latestFile = new FileWorker(path + latest.fileName + ".ind");
-            secondFile = new FileWorker(path + second.fileName + ".ind");
-            latestFile.delete();
-            secondFile.delete();
+            latestFl.delete();
+            secondFl.delete();
+            latestFl = new FileWorker(path + latest.fileName + ".ind");
+            secondFl = new FileWorker(path + second.fileName + ".ind");
+            latestFl.delete();
+            secondFl.delete();
         }
     }
 
