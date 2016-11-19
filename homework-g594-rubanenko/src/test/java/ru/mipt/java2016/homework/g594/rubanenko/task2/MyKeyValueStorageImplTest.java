@@ -11,19 +11,19 @@ import ru.mipt.java2016.homework.tests.task2.StudentKey;
 public class MyKeyValueStorageImplTest extends AbstractSingleFileStorageTest {
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String path) {
-        return new MyKeyValueStorageImpl("String:String\n", path,
+        return new MyKeyValueStorageImpl(path,
                 new MyStringSerializer(), new MyStringSerializer());
     }
 
     @Override
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) {
-        return new MyKeyValueStorageImpl("Integer:Double\n", path,
+        return new MyKeyValueStorageImpl(path,
                 new MyIntegerSerializer(), new MyDoubleSerializer());
     }
 
     @Override
     protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) {
-        return new MyKeyValueStorageImpl("StudentKey:Student\n", path,
+        return new MyKeyValueStorageImpl(path,
                 new MyStudentKeySerializer(), new MyStudentSerializer());
     }
 }
