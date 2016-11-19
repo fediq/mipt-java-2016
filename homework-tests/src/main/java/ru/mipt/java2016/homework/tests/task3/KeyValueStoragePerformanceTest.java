@@ -19,7 +19,7 @@ import static ru.mipt.java2016.homework.tests.task3.PerformanceTestUtils.randomV
 public abstract class KeyValueStoragePerformanceTest extends AbstractSingleFileStorageTest {
 
     protected final void print(String s, Object... args) {
-        System.out.println(String.format("PERFORMANCE: " + s + " (for [" + getClass().getName() + "])", args));
+        System.err.println(String.format("PERFORMANCE: " + s + " (for [" + getClass().getName() + "])", args));
     }
 
     @Test

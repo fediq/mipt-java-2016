@@ -12,11 +12,19 @@ import java.io.IOException;
 public class StudentKeySerialization extends MySerialization<StudentKey> {
     @Override
     public void serialize(DataOutput file, StudentKey object) throws IOException {
-        serializeStudentKey(file, object);
+        serializeInteger(file, object.getGroupId());
+        serializeString(file, object.getName());
     }
 
     @Override
     public StudentKey deserialize(DataInput file) throws IOException {
-        return deserializeStudentKey(file);
+        return new StudentKey(deserializeInteger(file),
+                deserializeString(file));
+    }
+
+    @Override
+    public long getSizeSerialized(StudentKey object) {
+        return getSizeSerializedInteger(object.getGroupId()) +
+                getSizeSerializedString(object.getName());
     }
 }

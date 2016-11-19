@@ -17,4 +17,9 @@ public class IntSerialization extends MySerialization<Integer> {
     public Integer deserialize(DataInput file) throws IOException {
         return deserializeInteger(file);
     }
+
+    @Override
+    public long getSizeSerialized(Integer object) {
+        return getSizeSerializedInteger(object);
+    }
 }

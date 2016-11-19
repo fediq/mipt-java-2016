@@ -17,4 +17,9 @@ public class DoubleSerialization extends MySerialization<Double> {
     public Double deserialize(DataInput file) throws IOException {
         return deserializeDouble(file);
     }
+
+    @Override
+    public long getSizeSerialized(Double object) {
+        return getSizeSerializedDouble(object);
+    }
 }

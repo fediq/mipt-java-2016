@@ -17,4 +17,9 @@ public class StringSerialization extends MySerialization<String> {
     public String deserialize(DataInput file) throws IOException {
         return deserializeString(file);
     }
+
+    @Override
+    public long getSizeSerialized(String object) {
+        return getSizeSerializedString(object);
+    }
 }

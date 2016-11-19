@@ -12,6 +12,31 @@
     <artifactId>homework-g595-novikov</artifactId>
     <version>1.0.0</version>
 
+    <!--
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>ru.mipt.java2016.homework.g595.novikov.task2.Main</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.5.0</version>
+                <configuration>
+                    <mainClass>ru.mipt.java2016.homework.g595.novikov.task2.Main</mainClass>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build> -->
+
     <dependencies>
         <dependency>
             <groupId>ru.mipt.java2016</groupId>
@@ -22,6 +47,12 @@
             <groupId>ru.mipt.java2016</groupId>
             <artifactId>homework-tests</artifactId>
             <version>1.0.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>commons-collections</groupId>
+            <artifactId>commons-collections</artifactId>
+            <version>3.2.1</version>
         </dependency>
     </dependencies>
 
