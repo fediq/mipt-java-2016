@@ -1,6 +1,5 @@
 package ru.mipt.java2016.homework.g594.krokhalev.task3;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Array;

@@ -14,6 +14,7 @@ public class KrokhalevsKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private static final String RUN_NAME = "RUN";
     private static final String STORAGE_NAME = "storage.bd";
+    private static final String STORAGE_TABLE = "storageTable.bd";
 
     private PartsController<K, V> partsController;
 
@@ -34,7 +35,7 @@ public class KrokhalevsKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 throw new RuntimeException("Can not run again in directory \"" + workDirectoryName + "\"");
             }
 
-            partsController = new PartsController<>(findStorage(), keyClass, valueClass);
+            partsController = new PartsController<>(findStorage(), findStorageTable(), keyClass, valueClass);
 
         } catch (IOException e) {
             throw new RuntimeException("Bad directory \"" + workDirectory.getAbsolutePath() + "\"");
@@ -117,13 +118,25 @@ public class KrokhalevsKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private File findStorage() throws IOException {
         for (File item : workDirectory.listFiles()) {
             if (item.isFile() && item.getName().equals(STORAGE_NAME)) {
-                if (checkStorage(item)) {
-                    return item;
-                }
-                break;
+                return item;
             }
         }
         File ssTable = new File(workDirectory.getAbsolutePath() + separatorChar + STORAGE_NAME);
+
+        if (!ssTable.createNewFile()) {
+            throw new IOException();
+        }
+
+        return ssTable;
+    }
+
+    private File findStorageTable() throws IOException {
+        for (File item : workDirectory.listFiles()) {
+            if (item.isFile() && item.getName().equals(STORAGE_TABLE)) {
+                return item;
+            }
+        }
+        File ssTable = new File(workDirectory.getAbsolutePath() + separatorChar + STORAGE_TABLE);
 
         if (!ssTable.createNewFile()) {
             throw new IOException();
