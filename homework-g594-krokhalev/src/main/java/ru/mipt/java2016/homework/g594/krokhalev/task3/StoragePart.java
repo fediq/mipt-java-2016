@@ -92,13 +92,16 @@ public class StoragePart<K, V> implements Closeable {
         Long offset = mKeys.get(key);
         V value = null;
         if (offset != null) {
-            BufferedInputStream thisStream = new BufferedInputStream(new FileInputStream(mFile));
+            RandomAccessFile raf = new RandomAccessFile(mFile, "r");
+            raf.seek(offset);
+            //BufferedInputStream thisStream = new BufferedInputStream(new FileInputStream(mFile));
             StorageReader<K, V> storageReader = new StorageReader<K, V>(mKeyClass, mValueClass);
 
-            storageReader.miss(thisStream, offset);
-            value = storageReader.readValue(thisStream);
+            //storageReader.miss(thisStream, offset);
+            value = storageReader.readValue(raf);
 
-            thisStream.close();
+            // thisStream.close()
+            raf.close();
         }
 
         return value;
