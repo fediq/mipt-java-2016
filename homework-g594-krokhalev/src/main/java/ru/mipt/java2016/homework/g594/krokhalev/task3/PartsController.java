@@ -1,11 +1,6 @@
 package ru.mipt.java2016.homework.g594.krokhalev.task3;
 
-import com.sun.corba.se.impl.oa.poa.ActiveObjectMap;
-import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
-
 import java.io.*;
-import java.math.BigInteger;
-import java.nio.file.Files;
 import java.util.*;
 
 public class PartsController<K, V> implements Closeable {
@@ -110,7 +105,7 @@ public class PartsController<K, V> implements Closeable {
 
     public Iterator<K> getKeyIterator() {
         return new Iterator<K>() {
-            Iterator<K> iterator = mKeys.keySet().iterator();
+            private Iterator<K> iterator = mKeys.keySet().iterator();
             private int itVersion = mVersion;
             @Override
             public boolean hasNext() {

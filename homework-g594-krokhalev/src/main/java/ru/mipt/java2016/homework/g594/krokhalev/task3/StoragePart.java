@@ -1,9 +1,7 @@
 package ru.mipt.java2016.homework.g594.krokhalev.task3;
 
-
 import java.io.*;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class StoragePart<K, V> implements Closeable {
     private File mFile;

@@ -7,26 +7,20 @@ import java.io.InputStream;
 /**
  * Created by wheeltune on 16.11.16.
  */
-public class PositionBufferedInputStream
-    extends BufferedInputStream
-{
+public class PositionBufferedInputStream extends BufferedInputStream {
     private long pos = 0;
     private long mark = 0;
 
-    public PositionBufferedInputStream(InputStream in)
-    {
+    public PositionBufferedInputStream(InputStream in) {
         super(in);
     }
 
-    public synchronized long getPosition()
-    {
+    public synchronized long getPosition() {
         return pos;
     }
 
     @Override
-    public synchronized int read()
-            throws IOException
-    {
+    public synchronized int read() throws IOException {
         int b = super.read();
         if (b >= 0) {
             pos += 1;
@@ -35,9 +29,7 @@ public class PositionBufferedInputStream
     }
 
     @Override
-    public synchronized int read(byte[] b, int off, int len)
-            throws IOException
-    {
+    public synchronized int read(byte[] b, int off, int len) throws IOException {
         int n = super.read(b, off, len);
         if (n > 0) {
             pos += n;
@@ -46,9 +38,7 @@ public class PositionBufferedInputStream
     }
 
     @Override
-    public synchronized long skip(long skip)
-            throws IOException
-    {
+    public synchronized long skip(long skip) throws IOException {
         long n = super.skip(skip);
         if (n > 0) {
             pos += n;
@@ -57,16 +47,13 @@ public class PositionBufferedInputStream
     }
 
     @Override
-    public synchronized void mark(int readlimit)
-    {
+    public synchronized void mark(int readlimit) {
         super.mark(readlimit);
         mark = pos;
     }
 
     @Override
-    public synchronized void reset()
-            throws IOException
-    {
+    public synchronized void reset() throws IOException {
         if (!markSupported()) {
             throw new IOException("Mark not supported.");
         }

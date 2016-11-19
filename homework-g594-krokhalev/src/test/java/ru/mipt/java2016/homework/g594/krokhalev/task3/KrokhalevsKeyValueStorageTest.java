@@ -5,7 +5,6 @@ import ru.mipt.java2016.homework.tests.task3.KeyValueStoragePerformanceTest;
 import ru.mipt.java2016.homework.tests.task2.Student;
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
 
-
 public class KrokhalevsKeyValueStorageTest extends KeyValueStoragePerformanceTest {
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String path) {
