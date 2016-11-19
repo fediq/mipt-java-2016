@@ -17,39 +17,39 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
  * @param <K> - type of key.
  * @param <V> - type of value.
  */
-public final class BestKeyValueStorageEver<K, V> implements KeyValueStorage<K, V> {
+public class BestKeyValueStorageEver<K, V> implements KeyValueStorage<K, V> {
     /**
      * Serialisation instance for serialising keys.
      */
-    private Serialisation<K> keySerialisation;
+    protected Serialisation<K> keySerialisation;
 
     /**
      * Serialisation instance for serialising values.
      */
-    private Serialisation<V> valueSerialisation;
-
-    /**
-     * File where all the data stored.
-     */
-    private RandomAccessFile file;
+    protected Serialisation<V> valueSerialisation;
 
     /**
      * Name of our file.
      */
-    private String fileName;
+    protected String fileName;
 
     /**
      * We'll use map from standard library to work with elements.
      * This map will be initialised at the beginning of work, when file is opened.
      * After the process of working with storage, elements from map will be written to the file.
      */
-    private Map<K, V> map;
+    protected Map<K, V> map;
+
+    /**
+     * File where all the data stored.
+     */
+    protected RandomAccessFile file;
 
     /**
      * @throws IOException - if I/O troubles occure.
      * @throws RuntimeException - if file containes two equal keys or key without value.
      */
-    private void getDataFromFile() throws IOException {
+    protected void initStorage() throws IOException {
         file.seek(0); // go to the start
         map.clear();
 
@@ -94,11 +94,9 @@ public final class BestKeyValueStorageEver<K, V> implements KeyValueStorage<K, V
 
         file = new RandomAccessFile(storagePath, "rw");
         if (file.length() != 0) {
-            getDataFromFile();
+            initStorage();
         }
     }
-
-
 
     @Override
     public V read(final K key) {
@@ -106,7 +104,7 @@ public final class BestKeyValueStorageEver<K, V> implements KeyValueStorage<K, V
     }
 
     @Override
-    public boolean exists(final K key) {
+    final public boolean exists(final K key) {
         return map.containsKey(key);
     }
 
@@ -116,17 +114,17 @@ public final class BestKeyValueStorageEver<K, V> implements KeyValueStorage<K, V
     }
 
     @Override
-    public void delete(final K key) {
+    final public void delete(final K key) {
         map.remove(key);
     }
 
     @Override
-    public Iterator<K> readKeys() {
+    final public Iterator<K> readKeys() {
         return map.keySet().iterator();
     }
 
     @Override
-    public int size() {
+    final public int size() {
         return map.size();
     }
 
