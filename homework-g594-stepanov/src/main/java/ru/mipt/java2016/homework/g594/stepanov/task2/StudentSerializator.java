@@ -16,20 +16,22 @@ public class StudentSerializator extends ObjectSerializator<StudentKey, Student>
     void write(StudentKey key, Student value) throws IOException {
         Pair p = new Pair(key, value);
         currentHash += p.hashCode();
-        outputStream.print(start);
-        outputStream.print(key.getGroupId());
-        outputStream.print(numerator);
-        outputStream.print(key.getName());
-        outputStream.print(separator);
-        outputStream.print(value.getHometown());
-        outputStream.print(numerator);
-        outputStream.print(value.getBirthDate().getTime());
-        outputStream.print(numerator);
-        outputStream.print(value.isHasDormitory());
-        outputStream.print(numerator);
-        outputStream.print(value.getAverageScore());
-        outputStream.print(finish);
-        outputStream.print("\n");
+        StringBuilder sb = new StringBuilder("");
+        sb.append(start);
+        sb.append(key.getGroupId());
+        sb.append(numerator);
+        sb.append(key.getName());
+        sb.append(separator);
+        sb.append(value.getHometown());
+        sb.append(numerator);
+        sb.append(value.getBirthDate().getTime());
+        sb.append(numerator);
+        sb.append(value.isHasDormitory());
+        sb.append(numerator);
+        sb.append(value.getAverageScore());
+        sb.append(finish);
+        sb.append("\n");
+        outputStream.print(sb.toString());
     }
 
     @Override
