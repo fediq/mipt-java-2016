@@ -3,17 +3,19 @@ package ru.mipt.java2016.homework.g595.murzin.task3fast;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.g595.murzin.task3.MyException;
 
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.Flushable;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -21,9 +23,12 @@ import java.util.Map;
 /**
  * Created by dima on 18.11.16.
  */
-public class SimpleKeyValueStorage<Key, Value> implements KeyValueStorage<Key, Value> {
+public class FunnyStorage<Key, Value> implements KeyValueStorage<Key, Value> {
 
     private static final String KEYS_FILE_NAME = "keys.dat";
+    private static final int MAX_RAM_SIZE = 64 * 1024 * 1024;
+    private static final double CACHE_PERCENTAGE = 0.3052 / 2;
+    private static final int MAX_CACHE_SIZE = (int) (MAX_RAM_SIZE * CACHE_PERCENTAGE);
 
     private static boolean isPowerOfTwo(String s) {
         try {
@@ -45,30 +50,63 @@ public class SimpleKeyValueStorage<Key, Value> implements KeyValueStorage<Key, V
         return x;
     }
 
+    private class FileInfo implements Closeable, Flushable {
+        public final RandomAccessFile file;
+        private ByteArrayOutputStream cache;
+
+        public FileInfo(RandomAccessFile file) {
+            this.file = file;
+        }
+
+        public void write(byte[] bytes) throws IOException {
+            if (cache == null) {
+                cache = new ByteArrayOutputStream();
+            }
+            cache.write(bytes);
+            summaryCacheSize += bytes.length;
+            if (summaryCacheSize > MAX_CACHE_SIZE) {
+                flush();
+            }
+        }
+
+        @Override
+        public void flush() throws IOException {
+            if (cache == null) {
+                return;
+            }
+            file.write(cache.toByteArray());
+            summaryCacheSize -= cache.size();
+            cache.reset();
+        }
+
+        @Override
+        public void close() throws IOException {
+            flush();
+            file.close();
+        }
+    }
+
     private File storageDirectory;
     private SerializationStrategy<Key> keySerializationStrategy;
     private SerializationStrategy<Value> valueSerializationStrategy;
-    private Comparator<Key> comparator;
-    private HashMap<Integer, RandomAccessFile> files = new HashMap<>();
+    private HashMap<Integer, FileInfo> files = new HashMap<>();
     private HashMap<Key, KeyWrapper> keys = new HashMap<>();
-
+    private int summaryCacheSize;
     private volatile boolean isClosed;
 
-    public SimpleKeyValueStorage(String path,
-                                 SerializationStrategy<Key> keySerializationStrategy,
-                                 SerializationStrategy<Value> valueSerializationStrategy,
-                                 Comparator<Key> comparator) {
+    public FunnyStorage(String path,
+                        SerializationStrategy<Key> keySerializationStrategy,
+                        SerializationStrategy<Value> valueSerializationStrategy) {
         storageDirectory = new File(path);
         this.keySerializationStrategy = keySerializationStrategy;
         this.valueSerializationStrategy = valueSerializationStrategy;
-        this.comparator = comparator;
 
         try {
             File[] allFiles = Files.list(storageDirectory.toPath()).map(Path::toFile).toArray(File[]::new);
             for (File file : allFiles) {
                 String fileName = file.getName();
                 if (isPowerOfTwo(fileName)) {
-                    files.put(Integer.valueOf(fileName), new RandomAccessFile(file, "rw"));
+                    files.put(Integer.valueOf(fileName), new FileInfo(new RandomAccessFile(file, "rw")));
                 }
             }
             readAllKeys();
@@ -100,7 +138,7 @@ public class SimpleKeyValueStorage<Key, Value> implements KeyValueStorage<Key, V
             Files.deleteIfExists(keysFile.toPath());
             return;
         }
-        try (DataOutputStream output = new DataOutputStream(new FileOutputStream(keysFile))) {
+        try (DataOutputStream output = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(keysFile)))) {
             output.writeInt(keys.size());
             for (Map.Entry<Key, KeyWrapper> entry : keys.entrySet()) {
                 keySerializationStrategy.serializeToStream(entry.getKey(), output);
@@ -125,11 +163,12 @@ public class SimpleKeyValueStorage<Key, Value> implements KeyValueStorage<Key, V
             return null;
         }
         int x = lowerboundPowerOfTwo(wrapper.getValueLength());
-        RandomAccessFile file = files.get(x);
-        assert (file != null);
+        FileInfo info = files.get(x);
+        assert (info != null);
         try {
-            file.seek(wrapper.getOffsetInFile());
-            return valueSerializationStrategy.deserializeFromStream(file);
+            info.flush();
+            info.file.seek(wrapper.getOffsetInFile());
+            return valueSerializationStrategy.deserializeFromStream(info.file);
         } catch (IOException e) {
             throw new MyException("");
         }
@@ -152,16 +191,17 @@ public class SimpleKeyValueStorage<Key, Value> implements KeyValueStorage<Key, V
         }
         byte[] bytes = byteArrayOutputStream.toByteArray();
         int x = lowerboundPowerOfTwo(bytes.length);
-        RandomAccessFile file = files.get(x);
+        FileInfo info = files.get(x);
         try {
-            if (file == null) {
-                file = new RandomAccessFile(new File(storageDirectory, String.valueOf(x)), "rw");
-                files.put(x, file);
+            if (info == null) {
+                info = new FileInfo(new RandomAccessFile(new File(storageDirectory, String.valueOf(x)), "rw"));
+                files.put(x, info);
             }
-            long fileLength = file.length();
-            file.seek(fileLength);
-            file.write(bytes);
-            keys.put(key, new KeyWrapper(bytes.length, fileLength));
+//            long fileLength = info.file.length();
+//            info.file.seek(fileLength);
+//            info.file.write(bytes);
+            info.write(bytes);
+            keys.put(key, new KeyWrapper(bytes.length, info.file.length()));
         } catch (IOException e) {
             throw new MyException("");
         }
@@ -172,18 +212,19 @@ public class SimpleKeyValueStorage<Key, Value> implements KeyValueStorage<Key, V
         checkForClosed();
         KeyWrapper wrapper = keys.get(key);
         int x = lowerboundPowerOfTwo(wrapper.getValueLength());
-        RandomAccessFile file = files.get(x);
-        assert file != null;
+        FileInfo info = files.get(x);
+        assert info != null;
         try {
-            long fileLength = file.length();
+            info.flush();
+            long fileLength = info.file.length();
             if (wrapper.getOffsetInFile() < fileLength - x) {
-                file.seek(fileLength - x);
+                info.file.seek(fileLength - x);
                 byte[] bytes = new byte[x];
-                file.read(bytes);
-                file.seek(wrapper.getOffsetInFile());
-                file.write(bytes);
+                info.file.read(bytes);
+                info.file.seek(wrapper.getOffsetInFile());
+                info.file.write(bytes);
             }
-            file.setLength(fileLength - x);
+            info.file.setLength(fileLength - x);
         } catch (IOException e) {
             throw new MyException("");
         }
@@ -205,8 +246,8 @@ public class SimpleKeyValueStorage<Key, Value> implements KeyValueStorage<Key, V
     @Override
     public void close() throws IOException {
         checkForClosed();
-        for (RandomAccessFile file : files.values()) {
-            file.close();
+        for (FileInfo info : files.values()) {
+            info.close();
         }
         writeAllKeys();
         isClosed = true;

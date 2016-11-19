@@ -14,7 +14,7 @@ import java.util.Date;
 /**
  * Created by dima on 18.11.16.
  */
-public class SimpleKeyValueStorageTest extends KeyValueStoragePerformanceTest {
+public class FunnyStorageTest extends KeyValueStoragePerformanceTest {
     private static final SerializationStrategy<StudentKey> FOR_STUDENT_KEY = new SerializationStrategy<StudentKey>() {
         @Override
         public void serializeToStream(StudentKey studentKey, DataOutput output) throws IOException {
@@ -47,25 +47,22 @@ public class SimpleKeyValueStorageTest extends KeyValueStoragePerformanceTest {
 
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String path) throws MalformedDataException {
-        return new SimpleKeyValueStorage<>(path,
+        return new FunnyStorage<>(path,
                 SerializationStrategy.FOR_STRING,
-                SerializationStrategy.FOR_STRING,
-                String::compareTo);
+                SerializationStrategy.FOR_STRING);
     }
 
     @Override
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) throws MalformedDataException {
-        return new SimpleKeyValueStorage<>(path,
+        return new FunnyStorage<>(path,
                 SerializationStrategy.FOR_INTEGER,
-                SerializationStrategy.FOR_DOUBLE,
-                Integer::compareTo);
+                SerializationStrategy.FOR_DOUBLE);
     }
 
     @Override
     protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) throws MalformedDataException {
-        return new SimpleKeyValueStorage<>(path,
+        return new FunnyStorage<>(path,
                 FOR_STUDENT_KEY,
-                FOR_STUDENT,
-                StudentKey::compareTo);
+                FOR_STUDENT);
     }
 }
