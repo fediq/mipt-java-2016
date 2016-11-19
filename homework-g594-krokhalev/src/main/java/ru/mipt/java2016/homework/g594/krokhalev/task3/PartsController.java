@@ -130,6 +130,7 @@ public class PartsController<K, V> implements Closeable {
         flush();
 
         OutputStream storageStream = new BufferedOutputStream(new FileOutputStream(mStorageFile));
+        mStorageFile.createNewFile();
 
         for (StoragePart<K, V> iPart : mParts) {
             iPart.copyTo(storageStream);
