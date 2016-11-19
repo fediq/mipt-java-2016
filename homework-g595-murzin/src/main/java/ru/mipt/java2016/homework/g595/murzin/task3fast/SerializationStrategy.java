@@ -20,8 +20,6 @@ public interface SerializationStrategy<Value> {
     Value deserializeFromStream(DataInput input) throws IOException;
 
     SerializationStrategy<String> FOR_STRING = new SerializationStrategy<String>() {
-        private byte[] bytearr;
-
         @Override
         public void serializeToStream(String s, DataOutput output) throws IOException {
             output.writeUTF(s);

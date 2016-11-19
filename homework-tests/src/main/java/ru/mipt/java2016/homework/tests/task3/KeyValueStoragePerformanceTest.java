@@ -1,7 +1,6 @@
 package ru.mipt.java2016.homework.tests.task3;
 
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import ru.mipt.java2016.homework.tests.task2.AbstractSingleFileStorageTest;
 import ru.mipt.java2016.homework.tests.task2.StorageTestUtils;
@@ -150,14 +149,12 @@ public abstract class KeyValueStoragePerformanceTest extends AbstractSingleFileS
     }
 
     // Вы можете пометить этот тест как @Ignored во время отладки, если он занимает у вас слишком много времени
-    @Ignore
     @Test
     public void measure100kWDump100kR() {
         AtomicLong summaryWriteTime = new AtomicLong(0L);
         AtomicLong summaryReadTime = new AtomicLong(0L);
         long beginTime = System.currentTimeMillis();
-        /*for (int t = 0; t < 10; ++t)*/
-        {
+        for (int t = 0; t < 10; ++t) {
             StorageTestUtils.doInTempDirectory(path -> {
                 doWithStrings(path, storage -> {
                     Random random = new Random(42);

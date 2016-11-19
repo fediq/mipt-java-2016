@@ -29,7 +29,6 @@ import static ru.mipt.java2016.homework.tests.task3.PerformanceTestUtils.randomV
  */
 @Ignore
 public class LSMStorageTest extends KeyValueStoragePerformanceTest {
-
     private static final SerializationStrategy<StudentKey> FOR_STUDENT_KEY = new SerializationStrategy<StudentKey>() {
         @Override
         public void serializeToStream(StudentKey studentKey, DataOutputStream output) throws IOException {

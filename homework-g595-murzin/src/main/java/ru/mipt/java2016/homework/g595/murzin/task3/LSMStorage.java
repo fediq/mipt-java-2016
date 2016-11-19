@@ -34,7 +34,6 @@ import java.util.stream.IntStream;
  * Created by dima on 05.11.16.
  */
 public class LSMStorage<Key, Value> implements KeyValueStorage<Key, Value> {
-
     private static final String KEYS_FILE_NAME = "keys.dat";
     private static final String INFO_FILE_NAME = "info.dat";
     private static final int MAX_VALUE_SIZE = 10 * 1024;
@@ -53,9 +52,7 @@ public class LSMStorage<Key, Value> implements KeyValueStorage<Key, Value> {
     private Map<Key, KeyWrapper<Key, Value>> keys = new HashMap<>();
     private ArrayList<SstableInfo<Key, Value>> sstableInfos = new ArrayList<>();
     private HashSet<Integer> sstablesFilesIndexes = new HashSet<>();
-
     private ArrayList<Key> newEntries = new ArrayList<>(MAX_NEW_ENTRIES_SIZE);
-
     private Cache<Key, Value> cache = CacheBuilder
             .newBuilder()
             .maximumSize(MAX_CACHE_SIZE)
