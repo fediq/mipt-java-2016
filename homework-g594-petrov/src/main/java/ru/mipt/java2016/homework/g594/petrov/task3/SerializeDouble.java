@@ -1,6 +1,7 @@
 package ru.mipt.java2016.homework.g594.petrov.task3;
 
-import java.io.RandomAccessFile;
+import java.io.DataInput;
+import java.io.DataOutput;
 
 /**
  * Created by philipp on 14.11.16.
@@ -8,7 +9,7 @@ import java.io.RandomAccessFile;
 
 public class SerializeDouble implements InterfaceSerialization<Double> {
     @Override
-    public Double readValue(RandomAccessFile inputStream) throws IllegalStateException {
+    public Double readValue(DataInput inputStream) throws IllegalStateException {
         try {
             return inputStream.readDouble();
         } catch (Exception e) {
@@ -17,7 +18,7 @@ public class SerializeDouble implements InterfaceSerialization<Double> {
     }
 
     @Override
-    public void writeValue(Double obj, RandomAccessFile outputStream) throws IllegalStateException {
+    public void writeValue(Double obj, DataOutput outputStream) throws IllegalStateException {
         try {
             outputStream.writeDouble(obj);
         } catch (Exception e) {

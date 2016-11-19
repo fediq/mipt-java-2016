@@ -1,6 +1,7 @@
 package ru.mipt.java2016.homework.g594.petrov.task3;
 
-import java.io.RandomAccessFile;
+import java.io.DataInput;
+import java.io.DataOutput;
 
 /**
  * Created by philipp on 14.11.16.
@@ -8,7 +9,7 @@ import java.io.RandomAccessFile;
 
 public class SerializeString implements InterfaceSerialization<String> {
     @Override
-    public String readValue(RandomAccessFile inputStream) throws IllegalStateException {
+    public String readValue(DataInput inputStream) throws IllegalStateException {
         try {
             return inputStream.readUTF();
             /*int length = inputStream.readInt();
@@ -21,7 +22,7 @@ public class SerializeString implements InterfaceSerialization<String> {
     }
 
     @Override
-    public void writeValue(String obj, RandomAccessFile outputStream) throws IllegalStateException {
+    public void writeValue(String obj, DataOutput outputStream) throws IllegalStateException {
         try {
             outputStream.writeUTF(obj);
             /*outputStream.writeInt(obj.getBytes().length);
