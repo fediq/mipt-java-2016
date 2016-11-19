@@ -53,7 +53,7 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public V read(K key) {
-        readLock.lock();
+        writeLock.lock();
         V result;
         try {
             checkClosed();
@@ -65,7 +65,7 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         } catch (Exception exception) {
             result = null;
         } finally {
-            readLock.unlock();
+            writeLock.unlock();
         }
         return result;
     }
