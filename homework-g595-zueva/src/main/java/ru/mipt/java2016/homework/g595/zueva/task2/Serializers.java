@@ -5,7 +5,6 @@ package ru.mipt.java2016.homework.g595.zueva.task2;
  */
 
 import java.io.*;
-import java.util.Date;
 
 
 public class Serializers {
