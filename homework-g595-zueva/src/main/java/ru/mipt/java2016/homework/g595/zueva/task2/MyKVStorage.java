@@ -12,11 +12,8 @@ import java.util.HashMap;
 
 public class MyKVStorage<K, V>
         implements KeyValueStorage<K, V> {
-    private static final String VALIDATION_STRING;
+    private static final String VALIDATION_STRING = "My strange storage";
 
-    static {
-        VALIDATION_STRING = "My strange storage";
-    }
 
     private String filename;
     private HashMap<K, V> currentstorage;
@@ -24,7 +21,7 @@ public class MyKVStorage<K, V>
     private Serializer<V> valueSerializer;
     private boolean ifOpen = false;
 
-    /*Конструктор класс хранилища*/
+    /*Конструктор класса хранилища*/
 
     public MyKVStorage(String newFileName,
                        Serializer newKeySerialisation,
@@ -67,8 +64,7 @@ public class MyKVStorage<K, V>
     @Override
     public void close() throws IOException {
         isFileClosed();
-        try
-                (DataOutputStream out = new DataOutputStream(new FileOutputStream(filename))) {
+        try (DataOutputStream out = new DataOutputStream(new FileOutputStream(filename))) {
             out.writeUTF(VALIDATION_STRING);
             out.writeInt(currentstorage.size());
             for (Map.Entry<K, V> i : currentstorage.entrySet()) {
@@ -83,7 +79,7 @@ public class MyKVStorage<K, V>
             e.printStackTrace();
         }
     }
-    
+
     @Override
     public V read(K key) {
         isFileClosed();

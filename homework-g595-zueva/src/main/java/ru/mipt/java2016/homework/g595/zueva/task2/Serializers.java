@@ -4,11 +4,8 @@ package ru.mipt.java2016.homework.g595.zueva.task2;
  * Created by nestyme on 30.10.2016.
  */
 
-
 import java.io.*;
 import java.util.Date;
-import ru.mipt.java2016.homework.tests.task2.Student;
-import ru.mipt.java2016.homework.tests.task2.StudentKey;
 
 
 public class Serializers {
@@ -49,37 +46,6 @@ public class Serializers {
         @Override
         public Double readFromStream(DataInputStream in) throws IOException {
             return in.readDouble();
-        }
-    }
-
-    public static class SerializerStudentKey implements Serializer<StudentKey> {
-
-        public void writeToStream(DataOutputStream out, StudentKey value) throws IOException {
-            out.writeInt(value.getGroupId());
-            out.writeUTF(value.getName());
-        }
-
-        public StudentKey readFromStream(DataInputStream in) throws IOException {
-            return new StudentKey(in.readInt(), in.readUTF());
-        }
-    }
-
-    public static class SerializerStudent implements Serializer<Student> {
-
-        public void writeToStream(DataOutputStream out, Student value) throws IOException {
-            out.writeInt(value.getGroupId());
-            out.writeUTF(value.getName());
-            out.writeUTF(value.getHometown());
-            out.writeLong(value.getBirthDate().getTime());
-            out.writeBoolean(value.isHasDormitory());
-            out.writeDouble(value.getAverageScore());
-
-        }
-
-        public Student readFromStream(DataInputStream in) throws IOException {
-            return new Student(in.readInt(), in.readUTF(), in.readUTF(),
-                               new Date(in.readLong()), in.readBoolean(),
-                               in.readDouble());
         }
     }
 }
