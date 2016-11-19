@@ -253,7 +253,8 @@ class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 }
             }
             for (Map.Entry<K, Long> iterator : mainKeyOffsetMap.entrySet()) {
-                if (!(currentTree.containsKey(iterator.getKey()) || assistKeyOffsetMap.containsKey(iterator.getKey()))) {
+                if (!(currentTree.containsKey(iterator.getKey()) ||
+                        assistKeyOffsetMap.containsKey(iterator.getKey()))) {
                     if (!iterator.getValue().equals((long) -1)) {
                         keySerialization.writeValue(iterator.getKey(), finishWriter);
                         mainStorage.seek(iterator.getValue());
