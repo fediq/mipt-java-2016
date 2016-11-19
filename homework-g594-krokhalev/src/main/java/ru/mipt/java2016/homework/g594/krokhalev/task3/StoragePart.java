@@ -11,28 +11,20 @@ public class StoragePart<K, V> implements Closeable {
 
     private Map<K, Long> mKeys = new HashMap<>();
 
-    StoragePart(File file, Class<K> keyClass, Class<V> valueClass) throws IOException {
+    StoragePart(File file, File tableFile, Class<K> keyClass, Class<V> valueClass) throws IOException {
         mFile = file;
         mKeyClass = keyClass;
         mValueClass = valueClass;
 
         StorageReader<K, V> storageReader = new StorageReader<>(mKeyClass, mValueClass);
-        PositionBufferedInputStream fileStream = new PositionBufferedInputStream(new FileInputStream(mFile));
+        BufferedInputStream tableStream = new BufferedInputStream(new FileInputStream(tableFile));
 
-        byte[] buff;
-        while (fileStream.available() > 0) {
-            buff = storageReader.readBlockItem(fileStream);
-
-            InputStream keyBlockStream = new ByteArrayInputStream(buff);
-            K key = storageReader.readKey(keyBlockStream);
-            keyBlockStream.close();
-
-            mKeys.put(key, fileStream.getPosition());
-
-            storageReader.missNext(fileStream);
+        while (tableStream.available() > 0) {
+            K key = storageReader.readKey(tableStream);
+            mKeys.put(key, storageReader.readLong(tableStream));
         }
 
-        fileStream.close();
+        tableStream.close();
     }
 
     StoragePart(Map<K, V> memTable, File file, Class<K> keyClass, Class<V> valueClass) throws IOException {
@@ -59,7 +51,7 @@ public class StoragePart<K, V> implements Closeable {
         thisStream.close();
     }
 
-    public void copyTo(OutputStream dist) throws IOException {
+    public void copyTo(PositionBufferedOutputStream storage, OutputStream storageTable) throws IOException {
         StorageReader<K, V> storageReader = new StorageReader<>(mKeyClass, mValueClass);
 
         InputStream partStream = new BufferedInputStream(new FileInputStream(mFile));
@@ -73,8 +65,12 @@ public class StoragePart<K, V> implements Closeable {
 
             if (containsKey(key)) {
 
-                dist.write(buff);
-                dist.write(storageReader.readBlockItem(partStream));
+                storage.write(buff);
+
+                storageTable.write(buff);
+                storageTable.write(Serializer.serialize(storage.getPosition()));
+
+                storage.write(storageReader.readBlockItem(partStream));
 
             } else {
                 storageReader.missNext(partStream);

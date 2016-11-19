@@ -6,6 +6,7 @@ import java.util.*;
 public class PartsController<K, V> implements Closeable {
 
     private File mStorageFile;
+    private File mStorageTableFile;
     private File mPartsDirectory;
 
     private Class<K> mKeyClass;
@@ -24,10 +25,13 @@ public class PartsController<K, V> implements Closeable {
         return new File(mPartsDirectory.getAbsolutePath() + File.separator + name);
     }
 
-    public PartsController(File storageFile, Class<K> keyClass, Class<V> valueClass) throws IOException {
+    public PartsController(File storageFile, File storageTableFile, Class<K> keyClass, Class<V> valueClass)
+            throws IOException {
+
         this.mStorageFile = storageFile;
         this.mKeyClass = keyClass;
         this.mValueClass = valueClass;
+        this.mStorageTableFile = storageTableFile;
 
         mPartsDirectory = new File(mStorageFile.getParentFile().getAbsolutePath() + File.separator + "Parts");
 
@@ -40,19 +44,14 @@ public class PartsController<K, V> implements Closeable {
             throw new RuntimeException("Bad directory");
         }
 
-        mParts.add(new StoragePart<>(part, keyClass, valueClass));
+        mParts.add(new StoragePart<>(part, storageTableFile, keyClass, valueClass));
         for (K iKey : mParts.get(0).getKeys()) {
             mKeys.put(iKey, 0);
         }
     }
 
     public void flush() throws IOException {
-        if (mParts.size() == 66) {
-            int a = 1;
-        }
-        File file = getPartFileName(mParts.size());
-        file.createNewFile();
-        mParts.add(new StoragePart<>(mCache, file, mKeyClass, mValueClass));
+        mParts.add(new StoragePart<>(mCache, getPartFileName(mParts.size()), mKeyClass, mValueClass));
         mCache.clear();
     }
 
@@ -134,10 +133,12 @@ public class PartsController<K, V> implements Closeable {
     public void close() throws IOException {
         flush();
 
-        OutputStream storageStream = new BufferedOutputStream(new FileOutputStream(mStorageFile));
+        PositionBufferedOutputStream storageStream =
+                new PositionBufferedOutputStream(new FileOutputStream(mStorageFile));
+        OutputStream storageTable = new BufferedOutputStream(new FileOutputStream(mStorageTableFile));
 
         for (StoragePart<K, V> iPart : mParts) {
-            iPart.copyTo(storageStream);
+            iPart.copyTo(storageStream, storageTable);
             iPart.close();
         }
         if (!mPartsDirectory.delete()) {
@@ -145,5 +146,6 @@ public class PartsController<K, V> implements Closeable {
         }
 
         storageStream.close();
+        storageTable.close();
     }
 }
