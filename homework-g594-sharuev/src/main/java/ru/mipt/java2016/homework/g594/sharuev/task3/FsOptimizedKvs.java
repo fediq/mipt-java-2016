@@ -13,18 +13,8 @@ import java.util.*;
 import java.util.zip.Adler32;
 import java.util.zip.CheckedInputStream;
 
-class FSOptimizedKVS<K, V> implements
+class FsOptimizedKvs<K, V> implements
         ru.mipt.java2016.homework.base.task2.KeyValueStorage {
-
-    private V readFromDisk(long offset) {
-        try {
-            valueStorageRaf.seek(offset);
-            DataInputStream dis = bdisFromRaf(valueStorageRaf, Consts.MAX_VALUE_SIZE);
-            return valueSerializationStrategy.deserializeFromStream(dis);
-        } catch (IOException | SerializationException e) {
-            throw new KVSException("Failed to readFromDisk from disk", e);
-        }
-    }
 
     private Map<K, V> memTable = new HashMap<>();
     private LoadingCache<K, V> cache;
@@ -43,7 +33,7 @@ class FSOptimizedKVS<K, V> implements
     private RandomAccessFile valueStorageRaf;
     private long storedSize = 0;
 
-    FSOptimizedKVS(String path, SerializationStrategy<K> keySerializationStrategy,
+    FsOptimizedKvs(String path, SerializationStrategy<K> keySerializationStrategy,
                    SerializationStrategy<V> valueSerializationStrategy,
                    int cacheSize) throws MalformedDataException {
         this.path = path;
@@ -126,7 +116,7 @@ class FSOptimizedKVS<K, V> implements
 
     /**
      * Возвращает значение, соответствующее ключу.
-     * Сложность O(log(N)).
+     * Сложность O(1).
      *
      * @param key - ключ, который нужно найти
      * @return Значение или null, если ключ не найден.
@@ -148,7 +138,7 @@ class FSOptimizedKVS<K, V> implements
 
     /**
      * Поиск ключа.
-     * Сложность O(log(N)).
+     * Сложность O(1).
      *
      * @param key - ключ, который нужно найти.
      * @return true, если найден, false, если нет.
@@ -162,7 +152,7 @@ class FSOptimizedKVS<K, V> implements
 
     /**
      * Вставка пары ключ-значение.
-     * Сложность O(log(N))
+     * Сложность O(1)
      *
      * @param key
      * @param value
@@ -189,7 +179,7 @@ class FSOptimizedKVS<K, V> implements
 
     /**
      * Удаление ключа key.
-     * Сложность: O(Nlog(N)).
+     * Сложность: O(1).
      */
     public void delete(Object key) {
         synchronized (this) {
@@ -398,6 +388,16 @@ class FSOptimizedKVS<K, V> implements
         }
     }
 
+    private V readFromDisk(long offset) {
+        try {
+            valueStorageRaf.seek(offset);
+            DataInputStream dis = bdisFromRaf(valueStorageRaf, Consts.MAX_VALUE_SIZE);
+            return valueSerializationStrategy.deserializeFromStream(dis);
+        } catch (IOException | SerializationException e) {
+            throw new KVSException("Failed to readFromDisk from disk", e);
+        }
+    }
+
     private class Validator {
 
         void countHash(File keyFile, Adler32 md) {
@@ -479,7 +479,8 @@ class FSOptimizedKVS<K, V> implements
     private static final class Consts {
         // Формат файла: V значение, ...
         static final String VALUE_STORAGE_NAME_SUFF = "ValueStorage.db";
-        // Формат файла: long количество ключей, K ключ, long сдвиг, ...
+        // Формат файла: long количество ключей,
+        // long количество ключей, которые действительно хранятся, K ключ, long сдвиг, ...
         static final String KEY_STORAGE_NAME_SUFF = "KeyStorage.db";
         static final String STORAGE_HASH_SUFF = "StorageHash.db";
         static final String STORAGE_PART_SUFF = "Part.db";
@@ -487,7 +488,7 @@ class FSOptimizedKVS<K, V> implements
         static final int DUMP_THRESHOLD = 1000;
         //final static int KeySize = 100;
         static final int MAX_VALUE_SIZE = 1024 * 10;
-        static final int BUFFER_SIZE = MAX_VALUE_SIZE * 20;
+        static final int BUFFER_SIZE = MAX_VALUE_SIZE * 10;
         static final double POSSIBLE_OVERHEAD = 2.0;
     }
 }

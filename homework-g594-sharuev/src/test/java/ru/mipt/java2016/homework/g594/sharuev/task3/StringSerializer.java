@@ -10,6 +10,8 @@ public class StringSerializer implements SerializationStrategy<String> {
                                   DataOutputStream outputStream) throws SerializationException {
         try {
             outputStream.writeUTF(s);
+            /*outputStream.writeInt(s.length());
+            outputStream.writeChars(s);*/
         } catch (IOException e) {
             throw new SerializationException("String serialization error", e);
         }
@@ -18,6 +20,10 @@ public class StringSerializer implements SerializationStrategy<String> {
     @Override
     public String deserializeFromStream(DataInputStream inputStream) throws SerializationException {
         try {
+            /*int len = inputStream.readInt();
+            byte[] bytes = new byte[len*2];
+            inputStream.read(bytes);
+            return new String(bytes, 0, len*2, "UTF-16");*/
             return inputStream.readUTF();
         } catch (IOException e) {
             throw new SerializationException("String deserialization error", e);
