@@ -22,7 +22,7 @@ public class UpgKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private class Cash<K, V> extends LinkedHashMap<K, V> {
-        private static final int MAX_SIZE_OF_CASH = 750;
+        private static final int MAX_SIZE_OF_CASH = 0;
 
         Cash() {
             super(16, 0.75f, true);
@@ -45,7 +45,7 @@ public class UpgKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private boolean opened;
     private ArrayList<RandomAccessFile> files;
 
-    private static final int MAX_SIZE_OF_FRESH = 750;
+    private static final int MAX_SIZE_OF_FRESH = 1300;
 
     private String getFileName(Integer i) {
         if (i.equals(-1)) {
