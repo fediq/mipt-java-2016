@@ -14,7 +14,6 @@ import java.util.Iterator;
  * @since 04.10.16
  */
 public interface KeyValueStorage<K, V> extends Closeable {
-    void isFileClosed();
 
     /**
      * Возвращает значение для данного ключа, если оно есть в хранилище.
