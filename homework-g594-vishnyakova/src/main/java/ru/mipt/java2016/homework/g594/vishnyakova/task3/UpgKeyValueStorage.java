@@ -5,6 +5,8 @@ import ru.mipt.java2016.homework.base.task2.MalformedDataException;
 
 import java.io.*;
 import java.util.*;
+import java.util.zip.Adler32;
+import java.util.zip.CheckedInputStream;
 
 /**
  * Created by Nina on 14.11.16.
@@ -35,6 +37,7 @@ public class UpgKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private String fileName;
+    private String intFileName;
     private String type;
     private HashMap<K, Location> mapPlace;
     private Cash<K, V> tableCash;
@@ -44,8 +47,60 @@ public class UpgKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private NewSerializationStrategy<V> valSerializator;
     private boolean opened;
     private ArrayList<RandomAccessFile> files;
+    private Adler32 validate;
 
     private static final int MAX_SIZE_OF_FRESH = 1300;
+
+    private void getFileHash(Adler32 md, String name) {
+        try (InputStream is = new BufferedInputStream(new FileInputStream(new File(name)));
+             CheckedInputStream cis = new CheckedInputStream(is, md)) {
+            byte[] buffer = new byte[MAX_SIZE_OF_FRESH * 100];
+            while (cis.read(buffer) != -1) {
+                continue;
+            }
+        } catch (FileNotFoundException e) {
+            throw new MalformedDataException("Couldn't find file", e);
+        } catch (IOException e) {
+            throw new MalformedDataException("Couldn't read file", e);
+        }
+    }
+
+    /* works long
+    private String getFileHash(String name) {
+        MessageDigest md = null;
+        try {
+            md = MessageDigest.getInstance("SHA1");
+        } catch (NoSuchAlgorithmException e) {
+            throw new MalformedDataException("Couldn't find algorithm to count hash of file", e);
+        }
+        try (FileInputStream fis = new FileInputStream(name);
+             BufferedInputStream bis = new BufferedInputStream(fis);
+             DigestInputStream dis = new DigestInputStream(bis, md)) {
+            while (dis.read() != -1) {}
+            return DatatypeConverter.printHexBinary(md.digest());
+        } catch (IOException e) {
+            throw new MalformedDataException("Couldn't find or read file", e);
+        }
+    }
+    */
+
+    private void checkIntegrity(int numOfFiles) {
+        try (DataInputStream rd = new DataInputStream(new FileInputStream(intFileName))) {
+
+            if (numOfFiles != rd.readInt()) {
+                throw new MalformedDataException("Invalid data base");
+            }
+            validate = new Adler32();
+            for (int i = 0; i < numOfFiles; ++i) {
+                getFileHash(validate, getFileName(i));
+            }
+            if (numOfFiles != 0 && validate.getValue() != rd.readLong()) {
+                throw new MalformedDataException("Invalid data base");
+            }
+        } catch (IOException e) {
+            throw new MalformedDataException("Couldn't find or read file", e);
+        }
+    }
 
     private String getFileName(Integer i) {
         if (i.equals(-1)) {
@@ -88,6 +143,7 @@ public class UpgKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                     curFile.writeUTF(valSerializator.serialize(entry.getValue()));
                 }
                 tableFresh.clear();
+                getFileHash(validate, newFile);
             } catch (IOException e) {
                 throw new MalformedDataException("Couldn't get RandomAccessFile", e);
             }
@@ -97,6 +153,7 @@ public class UpgKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     public UpgKeyValueStorage(String typ, String path, NewSerializationStrategy sKey, NewSerializationStrategy sVal) {
         type = typ;
         fileName = path + "/store";
+        intFileName = path + "/hash.txt";
         keySerializator = sKey;
         valSerializator = sVal;
         mapPlace = new HashMap<K, Location>();
@@ -109,20 +166,30 @@ public class UpgKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
         String mainFile = getFileName(-1);
         File file = new File(mainFile);
+        File integrityFile = new File(intFileName);
 
         if (!file.exists()) {
             try {
                 file.createNewFile();
+                if (!integrityFile.exists()) {
+                    integrityFile.createNewFile();
+                }
             } catch (IOException e) {
                 throw new MalformedDataException("Couldn't create new file", e);
             }
-            try (DataOutputStream wr = new DataOutputStream(new FileOutputStream(mainFile))) {
+            try (DataOutputStream wr = new DataOutputStream(new FileOutputStream(mainFile));
+                 DataOutputStream wrInt = new DataOutputStream(new FileOutputStream(intFileName))) {
                 wr.writeUTF(type);
                 wr.writeInt(0);
                 wr.writeInt(0);
+                wrInt.writeInt(0);
             } catch (IOException e) {
                 throw new MalformedDataException("Couldn't write to file", e);
             }
+        }
+
+        if (!integrityFile.exists()) {
+            throw new MalformedDataException("Couldn't find file");
         }
 
         try (DataInputStream rd = new DataInputStream(new FileInputStream(mainFile))) {
@@ -130,6 +197,7 @@ public class UpgKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 throw new MalformedDataException("Invalid file");
             }
             int numberOfFiles = rd.readInt();
+            checkIntegrity(numberOfFiles);
             for (int i = 0; i < numberOfFiles; ++i) {
                 File curFile = new File(getFileName(i));
                 if (!curFile.exists()) {
@@ -216,9 +284,7 @@ public class UpgKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         checkIfNotOpened();
         reduceFresh(true);
         opened = false;
-        for (int i = 0; i < files.size(); ++i) {
-            files.get(i).close();
-        }
+
         String mainFile = getFileName(-1);
         try (DataOutputStream wr = new DataOutputStream(new FileOutputStream(mainFile))) {
             wr.writeUTF(type);
@@ -229,6 +295,14 @@ public class UpgKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 wr.writeInt(entry.getValue().fileNum);
                 wr.writeLong(entry.getValue().offset);
             }
+        }
+
+        try (DataOutputStream wr = new DataOutputStream(new FileOutputStream(intFileName))) {
+            wr.writeInt(files.size());
+            for (int i = 0; i < files.size(); ++i) {
+                files.get(i).close();
+            }
+            wr.writeLong(validate.getValue());
         }
     }
 }
