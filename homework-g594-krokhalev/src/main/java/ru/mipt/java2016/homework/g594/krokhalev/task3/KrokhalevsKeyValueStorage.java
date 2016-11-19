@@ -11,24 +11,17 @@ import static java.io.File.separatorChar;
 public class KrokhalevsKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     static final int CACHE_SIZE = 2000;
-    static final int PARTS_INCREASE = 2;
 
     private static final String RUN_NAME = "RUN";
     private static final String STORAGE_NAME = "storage.bd";
 
     private PartsController<K, V> partsController;
 
-    private Class<K> keyClass;
-    private Class<V> valueClass;
-
     private File workDirectory;
     private File runFile;
 
     KrokhalevsKeyValueStorage(String workDirectoryName, Class<K> keyClass, Class<V> valueClass) {
         super();
-
-        this.keyClass = keyClass;
-        this.valueClass = valueClass;
 
         workDirectory = new File(workDirectoryName);
 
