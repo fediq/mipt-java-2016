@@ -90,10 +90,6 @@ public class StoragePart<K, V> implements Closeable {
     }
 
     public V getValue(K key) throws IOException {
-        if (!containsKey(key)) {
-            return null;
-        }
-
         Long offset = mKeys.get(key);
         V value = null;
         if (offset != null) {

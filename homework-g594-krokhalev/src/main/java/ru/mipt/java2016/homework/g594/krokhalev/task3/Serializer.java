@@ -7,6 +7,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Date;
 
 class Serializer {
@@ -91,9 +93,7 @@ class Serializer {
             } else if (object.getClass().equals(String.class)) {
                 String sObject = (String) object;
                 baos.write(serialize(sObject.length()));
-                for (int i = 0; i < sObject.length(); ++i) {
-                    baos.write(serialize(sObject.charAt(i)));
-                }
+                baos.write(sObject.getBytes(StandardCharsets.UTF_8));
             } else if (object.getClass().equals(Date.class)) {
                 Date dObject = (Date) object;
                 baos.write(serialize(dObject.getTime()));
@@ -148,12 +148,10 @@ class Serializer {
             } else if (oClass.equals(String.class)) {
                 int length = bb.getInt();
 
-                StringBuilder sbObject = new StringBuilder();
-                for (int i = 0; i < length; ++i) {
-                    sbObject.append(bb.getChar());
-                }
+                byte[] buff = new byte[length];
+                bb.get(buff);
 
-                object = sbObject.toString();
+                object = new String(buff, StandardCharsets.UTF_8);
             } else if (oClass.equals(Date.class)) {
                 long time = bb.getLong();
 
