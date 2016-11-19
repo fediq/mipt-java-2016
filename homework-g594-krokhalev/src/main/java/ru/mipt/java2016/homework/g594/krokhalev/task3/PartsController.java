@@ -18,7 +18,7 @@ public class PartsController<K, V> implements Closeable {
 
     private int mVersion = 0;
 
-    private File getPartFileName(int ind) {
+    private File getPartFileName(int ind) throws IOException {
         String name = "Part_" + String.valueOf(ind);
 
         return new File(mPartsDirectory.getAbsolutePath() + File.separator + name);
@@ -47,7 +47,12 @@ public class PartsController<K, V> implements Closeable {
     }
 
     public void flush() throws IOException {
-        mParts.add(new StoragePart<>(mCache, getPartFileName(mParts.size()), mKeyClass, mValueClass));
+        if (mParts.size() == 66) {
+            int a = 1;
+        }
+        File file = getPartFileName(mParts.size());
+        file.createNewFile();
+        mParts.add(new StoragePart<>(mCache, file, mKeyClass, mValueClass));
         mCache.clear();
     }
 
@@ -130,12 +135,9 @@ public class PartsController<K, V> implements Closeable {
         flush();
 
         OutputStream storageStream = new BufferedOutputStream(new FileOutputStream(mStorageFile));
-        mStorageFile.createNewFile();
 
         for (StoragePart<K, V> iPart : mParts) {
             iPart.copyTo(storageStream);
-        }
-        for (StoragePart<K, V> iPart : mParts) {
             iPart.close();
         }
         if (!mPartsDirectory.delete()) {

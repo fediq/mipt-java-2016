@@ -19,8 +19,9 @@ public class StoragePart<K, V> implements Closeable {
         StorageReader<K, V> storageReader = new StorageReader<>(mKeyClass, mValueClass);
         PositionBufferedInputStream fileStream = new PositionBufferedInputStream(new FileInputStream(mFile));
 
+        byte[] buff;
         while (fileStream.available() > 0) {
-            byte[] buff = storageReader.readBlockItem(fileStream);
+            buff = storageReader.readBlockItem(fileStream);
 
             InputStream keyBlockStream = new ByteArrayInputStream(buff);
             K key = storageReader.readKey(keyBlockStream);
@@ -41,9 +42,10 @@ public class StoragePart<K, V> implements Closeable {
 
         PositionBufferedOutputStream thisStream = new PositionBufferedOutputStream(new FileOutputStream(file));
 
+        byte[] buff;
         for (Map.Entry<K, V> iMem : memTable.entrySet()) {
 
-            byte[] buff = Serializer.serialize(iMem.getKey());
+            buff = Serializer.serialize(iMem.getKey());
             thisStream.write(Serializer.serialize(buff.length));
             thisStream.write(buff);
 
@@ -62,8 +64,9 @@ public class StoragePart<K, V> implements Closeable {
 
         InputStream partStream = new BufferedInputStream(new FileInputStream(mFile));
 
+        byte[] buff;
         while (partStream.available() > 0) {
-            byte[] buff = storageReader.readBlockItem(partStream);
+            buff = storageReader.readBlockItem(partStream);
             InputStream keyBlockStream = new ByteArrayInputStream(buff);
             K key = storageReader.readKey(keyBlockStream);
             keyBlockStream.close();

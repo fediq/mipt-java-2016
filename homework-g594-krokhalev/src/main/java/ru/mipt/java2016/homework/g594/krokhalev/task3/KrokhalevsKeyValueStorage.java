@@ -34,7 +34,7 @@ public class KrokhalevsKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 throw new RuntimeException("Can not run again in directory \"" + workDirectoryName + "\"");
             }
 
-            partsController = new PartsController<K, V>(findStorage(), keyClass, valueClass);
+            partsController = new PartsController<>(findStorage(), keyClass, valueClass);
 
         } catch (IOException e) {
             throw new RuntimeException("Bad directory \"" + workDirectory.getAbsolutePath() + "\"");

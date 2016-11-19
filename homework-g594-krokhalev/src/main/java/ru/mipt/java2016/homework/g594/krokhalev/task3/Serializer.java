@@ -1,5 +1,6 @@
 package ru.mipt.java2016.homework.g594.krokhalev.task3;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Array;
@@ -7,28 +8,9 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 class Serializer {
-    private static char[] doubleToChars(double value) {
-        byte[] bytes = new byte[8];
-        ByteBuffer.wrap(bytes).putDouble(value);
-        char[] chars = new char[8];
-        for (int i = 0; i < 8; ++i) {
-            chars[i] = (char) (bytes[i] & 0xFF);
-        }
-        return chars;
-    }
-
-    private static double charsToDouble(char[] chars) {
-        byte[] bytes = new byte[chars.length];
-        for (int i = 0; i < chars.length; ++i) {
-            bytes[i] = (byte) (chars[i] & 0xFF);
-        }
-        return ByteBuffer.wrap(bytes).getDouble();
-    }
-
 
     private static boolean isPrimitive(Class c) {
         return c.isPrimitive() ||
@@ -92,7 +74,7 @@ class Serializer {
             } else if (object.getClass().equals(String.class)) {
                 String sObject = (String) object;
                 baos.write(serialize(sObject.length()));
-                baos.write(sObject.getBytes(StandardCharsets.UTF_8));
+                baos.write(sObject.getBytes());
             } else if (object.getClass().equals(Date.class)) {
                 Date dObject = (Date) object;
                 baos.write(serialize(dObject.getTime()));
@@ -150,7 +132,7 @@ class Serializer {
                 byte[] buff = new byte[length];
                 bb.get(buff);
 
-                object = new String(buff, StandardCharsets.UTF_8);
+                object = new String(buff);
             } else if (oClass.equals(Date.class)) {
                 long time = bb.getLong();
 
