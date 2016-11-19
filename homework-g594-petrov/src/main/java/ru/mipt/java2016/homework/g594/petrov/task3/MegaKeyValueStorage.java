@@ -21,11 +21,9 @@ class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private boolean isOpen;
     private LinkedHashMap<K, V> cacheMap;
-    private HashMap<K, Long> mainKeyOffsetMap;
     private HashMap<K, Long> assistKeyOffsetMap;
     private HashMap<K, V> currentTree;
     private HashSet<K> existedKeys;
-    private RandomAccessFile mainStorage;
     private RandomAccessFile assistStorage;
 
     MegaKeyValueStorage(String path, String dataType, InterfaceSerialization<K> keySerialization,
@@ -38,43 +36,38 @@ class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         typeOfData = dataType;
         currentTree = new HashMap<>();
         existedKeys = new HashSet<>();
-        mainKeyOffsetMap = new HashMap<>();
         assistKeyOffsetMap = new HashMap<>();
         this.keySerialization = keySerialization;
         this.valueSerialization = valueSerialization;
         File storage = new File(directory);
         File tmpStorage = new File(assistDirectory);
-        try {
-            if (!tmpStorage.createNewFile()) {
-                throw new IllegalStateException("Cant create new file");
-            }
-            assistStorage = new RandomAccessFile(tmpStorage, "rw");
-        } catch (IOException | SecurityException e) {
-            throw new IllegalStateException(e.getMessage(), e.getCause());
-        }
         if (!storage.exists()) {
             try {
                 if (!storage.createNewFile()) {
                     throw new IllegalStateException("Cant create file");
                 }
-                mainStorage = new RandomAccessFile(storage, "rw");
+                if (!tmpStorage.createNewFile()) {
+                    throw new IllegalStateException("Cant create file");
+                }
+                assistStorage = new RandomAccessFile(tmpStorage, "rw");
             } catch (IOException | SecurityException e) {
                 throw new IllegalStateException(e.getMessage(), e.getCause());
             }
         } else {
-            try {
-                mainStorage = new RandomAccessFile(storage, "rw");
-                String check = mainStorage.readUTF();
+            try (DataInputStream keyOffsetReader = new DataInputStream(new
+                    BufferedInputStream(new FileInputStream(storage)))) {
+                assistStorage = new RandomAccessFile(tmpStorage, "rw");
+                String check = keyOffsetReader.readUTF();
                 if (!check.equals(typeOfData)) {
                     throw new IllegalStateException("Invalid storage format");
                 }
-                int number = mainStorage.readInt();
+                int number = keyOffsetReader.readInt();
+                InterfaceSerialization<Long> offsetReader = new SerializeLong();
                 for (int i = 0; i < number; ++i) {
-                    K key = this.keySerialization.readValue(mainStorage);
-                    Long offset = mainStorage.getFilePointer();
-                    this.valueSerialization.readValue(mainStorage);
+                    K key = this.keySerialization.readValue(keyOffsetReader);
+                    Long offset = offsetReader.readValue(keyOffsetReader);
                     existedKeys.add(key);
-                    mainKeyOffsetMap.put(key, offset);
+                    assistKeyOffsetMap.put(key, offset);
                 }
             } catch (IllegalStateException | IOException e) {
                 throw new IllegalStateException("Invalid storage format", e.getCause());
@@ -126,24 +119,6 @@ class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 throw new IllegalStateException(e.getMessage(), e.getCause());
             }
         }
-
-        if (mainKeyOffsetMap.containsKey(key)) {
-            if (mainKeyOffsetMap.get(key).equals((long) -1)) {
-                cacheMap.put(key, null);
-                clearCache();
-                return null;
-            }
-            V complexValue;
-            try {
-                mainStorage.seek(mainKeyOffsetMap.get(key));
-                complexValue = valueSerialization.readValue(mainStorage);
-                cacheMap.put(key, complexValue);
-                clearCache();
-                return complexValue;
-            } catch (IOException | IllegalStateException e) {
-                throw new IllegalStateException(e.getMessage(), e.getCause());
-            }
-        }
         cacheMap.put(key, null);
         clearCache();
         return null;
@@ -157,8 +132,8 @@ class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         return existedKeys.contains(key);
     }
 
-    private void checkCurrentTree() {
-        if (currentTree.size() <= MEM_TREE_SIZE) {
+    private void checkCurrentTree(boolean f) {
+        if (currentTree.size() <= MEM_TREE_SIZE && !f) {
             return;
         }
         try {
@@ -186,7 +161,7 @@ class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             cacheMap.put(key, value);
         }
         currentTree.put(key, value);
-        checkCurrentTree();
+        checkCurrentTree(false);
         existedKeys.add(key);
     }
 
@@ -199,7 +174,7 @@ class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             cacheMap.put(key, null);
         }
         currentTree.put(key, null);
-        checkCurrentTree();
+        checkCurrentTree(false);
         existedKeys.remove(key);
     }
 
@@ -219,12 +194,50 @@ class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         return existedKeys.iterator();
     }
 
+    private void clearStorage() {
+        String transferName = pathToDir + File.separator + "storageTransfer_tmp";
+        File transfer = new File(transferName);
+        try {
+            if (assistStorage.length() <= 2000000000) {
+                return;
+            }
+            if (!transfer.createNewFile()) {
+                throw new IllegalStateException("Cant create file");
+            }
+        } catch (IOException | SecurityException e) {
+            throw new IllegalStateException(e.getMessage(), e.getCause());
+        }
+        try (RandomAccessFile transferWriter = new RandomAccessFile(transfer, "rw")) {
+            for (Map.Entry<K, Long> iterator : assistKeyOffsetMap.entrySet()) {
+                if (!iterator.getValue().equals((long) -1)) {
+                    assistStorage.seek(iterator.getValue());
+                    iterator.setValue(transferWriter.getFilePointer());
+                    valueSerialization.writeValue(valueSerialization.readValue(assistStorage), transferWriter);
+                }
+            }
+            transferWriter.close();
+            assistStorage.close();
+            File oldStorage = new File(assistDirectory);
+            if (!oldStorage.delete()) {
+                throw new IllegalStateException("Cant delete file");
+            }
+            if (!transfer.renameTo(oldStorage)) {
+                throw new IllegalStateException("Cant delete file");
+            }
+            assistStorage = new RandomAccessFile(transfer, "rw");
+        } catch (IOException e) {
+            throw new IllegalStateException(e.getMessage(), e.getCause());
+        }
+    }
+
     @Override
     public void close() throws IllegalStateException {
         if (!isOpen) {
             throw new IllegalStateException("You can't use KVS when it's closed");
         }
         isOpen = false;
+        checkCurrentTree(true);
+        clearStorage();
         String storageName = pathToDir + File.separator + "storage1.db";
         File newStorage = new File(storageName);
         try {
@@ -234,44 +247,22 @@ class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         } catch (IOException | SecurityException e) {
             throw new IllegalStateException(e.getMessage(), e.getCause());
         }
-        try (RandomAccessFile finishWriter = new RandomAccessFile(newStorage, "rw")) {
+        try (DataOutputStream finishWriter = new DataOutputStream(new
+                BufferedOutputStream(new FileOutputStream(newStorage)))) {
             finishWriter.writeUTF(typeOfData);
             finishWriter.writeInt(existedKeys.size());
-            for (Map.Entry<K, V> iterator : currentTree.entrySet()) {
-                if (iterator.getValue() != null) {
-                    keySerialization.writeValue(iterator.getKey(), finishWriter);
-                    valueSerialization.writeValue(iterator.getValue(), finishWriter);
-                }
-            }
+            InterfaceSerialization<Long> offsetWriter = new SerializeLong();
             for (Map.Entry<K, Long> iterator : assistKeyOffsetMap.entrySet()) {
-                if (!(currentTree.containsKey(iterator.getKey()))) {
-                    if (!iterator.getValue().equals((long) -1)) {
-                        keySerialization.writeValue(iterator.getKey(), finishWriter);
-                        assistStorage.seek(iterator.getValue());
-                        valueSerialization.writeValue(valueSerialization.readValue(assistStorage), finishWriter);
-                    }
-                }
-            }
-            for (Map.Entry<K, Long> iterator : mainKeyOffsetMap.entrySet()) {
-                if (!(currentTree.containsKey(iterator.getKey()) ||
-                        assistKeyOffsetMap.containsKey(iterator.getKey()))) {
-                    if (!iterator.getValue().equals((long) -1)) {
-                        keySerialization.writeValue(iterator.getKey(), finishWriter);
-                        mainStorage.seek(iterator.getValue());
-                        valueSerialization.writeValue(valueSerialization.readValue(mainStorage), finishWriter);
-                    }
+                if (!iterator.getValue().equals((long) -1)) {
+                    keySerialization.writeValue(iterator.getKey(), finishWriter);
+                    offsetWriter.writeValue(iterator.getValue(), finishWriter);
                 }
             }
             finishWriter.close();
             assistStorage.close();
-            mainStorage.close();
             File oldStorage = new File(directory);
-            File tmpStorage = new File(assistDirectory);
             if (!oldStorage.delete()) {
                 throw new IllegalStateException("Cant delete old file");
-            }
-            if (!tmpStorage.delete()) {
-                throw new IllegalStateException("CAnt delete old file");
             }
             if (!newStorage.renameTo(oldStorage)) {
                 throw new IllegalStateException("Cant rename file");
