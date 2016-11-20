@@ -1,6 +1,7 @@
 package ru.mipt.java2016.homework.g594.krokhalev.task3;
 
 import java.io.*;
+import java.time.temporal.ValueRange;
 import java.util.*;
 
 public class PartsController<K, V> implements Closeable {
@@ -56,57 +57,62 @@ public class PartsController<K, V> implements Closeable {
     }
 
     public V getValue(K key) throws IOException {
-        V value = mCache.get(key);
+//        V value = mCache.get(key);
 
-        if (value == null) {
-            for (StoragePart<K, V> iPart : mParts) {
-                value = iPart.getValue(key);
-                if (value != null) {
-                    break;
-                }
-            }
-//            Integer index = mKeys.get(key);
-//
-//            if (index != null) {
-//                value = mParts.get(index).getValue(key);
+//        if (value == null) {
+//            for (StoragePart<K, V> iPart : mParts) {
+//                value = iPart.getValue(key);
+//                if (value != null) {
+//                    break;
+//                }
 //            }
+//        }
+        Integer index = mKeys.get(key);
+
+        V value = null;
+        if (index != null) {
+            if (index == mParts.size()) {
+                value =  mCache.get(key);
+            } else if (index != null) {
+                value = mParts.get(index).getValue(key);
+            }
         }
         return value;
     }
 
     public boolean isExistKey(K key) {
-        boolean exists = mCache.containsKey(key);
-        if (!exists) {
-            for (StoragePart<K, V> iPart : mParts) {
-                exists = iPart.containsKey(key);
-                if (exists) {
-                    break;
-                }
-            }
-        }
-        //return mKeys.containsKey(key);
-        return exists;
+//        boolean exists = mCache.containsKey(key);
+//        if (!exists) {
+//            for (StoragePart<K, V> iPart : mParts) {
+//                exists = iPart.containsKey(key);
+//                if (exists) {
+//                    break;
+//                }
+//            }
+//        }
+        return mKeys.containsKey(key);
+//        return exists;
     }
 
     public void setValue(K key, V value) throws IOException {
         if (!mCache.containsKey(key)) {
-            boolean exists = false;
-            for (StoragePart<K, V> iPart : mParts) {
-                exists = iPart.removeKey(key);
-                if (exists) {
-                    break;
-                }
-            }
-            if (!exists) {
-                mVersion++;
-            }
-//            Integer index = mKeys.get(key);
-//
-//            if (index == null) {
-//                mVersion++;
-//            } else {
-//                mParts.get(index).removeKey(key);
+//            boolean exists = false;
+//            for (StoragePart<K, V> iPart : mParts) {
+//                exists = iPart.removeKey(key);
+//                if (exists) {
+//                    break;
+//                }
 //            }
+//            if (!exists) {
+//                mVersion++;
+//            }
+            Integer index = mKeys.get(key);
+
+            if (index == null) {
+                mVersion++;
+            } else {
+                mParts.get(index).removeKey(key);
+            }
 
             if (mCache.size() == KrokhalevsKeyValueStorage.CACHE_SIZE) {
                 flush();
@@ -118,24 +124,24 @@ public class PartsController<K, V> implements Closeable {
 
     public void deleteKey(K key) throws IOException {
         mVersion++;
-        mKeys.remove(key);
-        V value = mCache.remove(key);
-        if (value == null) {
-            for (StoragePart<K, V> iPart : mParts) {
-                boolean exists = iPart.removeKey(key);
-                if (exists) {
-                    break;
-                }
-            }
-        }
-//        Integer index = mKeys.remove(key);
-//        if (index != null) {
-//            if (index == mParts.size()) {
-//                mCache.remove(key);
-//            } else {
-//                mParts.get(index).removeKey(key);
+//        mKeys.remove(key);
+//        V value = mCache.remove(key);
+//        if (value == null) {
+//            for (StoragePart<K, V> iPart : mParts) {
+//                boolean exists = iPart.removeKey(key);
+//                if (exists) {
+//                    break;
+//                }
 //            }
 //        }
+        Integer index = mKeys.remove(key);
+        if (index != null) {
+            if (index == mParts.size()) {
+                mCache.remove(key);
+            } else {
+                mParts.get(index).removeKey(key);
+            }
+        }
     }
 
     public int getCountKeys() {

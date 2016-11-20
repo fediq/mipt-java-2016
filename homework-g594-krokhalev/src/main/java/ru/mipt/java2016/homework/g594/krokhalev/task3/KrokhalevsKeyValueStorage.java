@@ -10,7 +10,7 @@ import static java.io.File.separatorChar;
 
 public class KrokhalevsKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
-    static final int CACHE_SIZE = 1000;
+    static final int CACHE_SIZE = 2000;
 
     private static final String RUN_NAME = "RUN";
     private static final String STORAGE_NAME = "storage.bd";
