@@ -5,10 +5,11 @@ import ru.mipt.java2016.homework.tests.task2.AbstractSingleFileStorageTest;
 import ru.mipt.java2016.homework.tests.task2.Student;
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
 import ru.mipt.java2016.homework.tests.task3.KeyValueStoragePerformanceTest;
+
 /**
  * Created by masya on 30.10.16.
  */
-public class NewMyStorageTest   extends KeyValueStoragePerformanceTest {
+public class NewMyStorageTest extends KeyValueStoragePerformanceTest {
 
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String path) throws MalformedDataException {
