@@ -5,6 +5,9 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.*;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Created by masya on 27.10.16.
@@ -46,6 +49,13 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
         System.out.println(a.read("abad"));
         System.out.println(a.read("abae"));
         a.close();
+        //a.readKeys();
+        a.write("K", "L");
+        //a.read("trololo"));
+        //storage.write("trololo", "yarr");
+        //assertEquals("yarr", storage.read("trololo"));
+        //storage.close();
+        //storage.readKeys();
     }
 
     private MySerializer<Long> offsetSerializer;
@@ -54,55 +64,41 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
     private MySerializer<V> valSerializer;
     private HashMap<K, Long> map;
     private HashMap<K, V> updates;
-    private HashMap<K, V> readCache;
-    ArrayList<K> cacheQueue;
-    int beg;
-    Long updatesSize;
+    //private HashMap<K, V> readCache;
+    //ArrayList<K> cacheQueue;
+    //int beg;
+    private Long updatesSize;
     private File datafile;
     private File keyfile;
     private RandomAccessFile values;
     private FileOutputStream valuesout;
     private boolean open = false;
-    int inFile = 0;
-    String filepath;
+    private int inFile = 0;
+    private String filepath;
+    private ReadWriteLock lock = new ReentrantReadWriteLock();
+    private Lock writelock = lock.writeLock();
+    private Lock readlock = lock.readLock();
 
     private void load() {
         RandomAccessFile in;
         try {
-            //System.out.println("KEK3");
             in = new RandomAccessFile(keyfile, "r");
-        } catch (Exception exc) {
-            throw new IllegalStateException("Failed creating file");
-        }
-        long len = lengthSerializer.get(in);
-        for (int i = 0; i < len; ++i) {
-            K key = keySerializer.get(in);
-            Long val = offsetSerializer.get(in);
-            map.put(key, val);
-        }
-        byte[] check = new byte[1]; ///check for EOF cause file might be longer
-        try {
-            if (in.read(check) != -1) {
-                throw new IllegalStateException("Invalid file");
+            long len = lengthSerializer.get(in);
+            for (int i = 0; i < len; ++i) {
+                K key = keySerializer.get(in);
+                Long val = offsetSerializer.get(in);
+                map.put(key, val);
             }
-        } catch (Exception exc) {
-            throw new IllegalStateException("Invalid work with file");
-        }
-        try {
+            byte[] check = new byte[1]; ///check for EOF cause file might be longer
+            if (in.read(check) != -1) {
+            throw new IllegalStateException("Invalid file");
+            }
             in.close();
-        } catch (Exception exc) {
-            throw new IllegalStateException("Invalid work with file");
-        }
-        //RandomAccessFile datain;
-        try {
-            //System.out.println("KEK3");
-            //datain = new RandomAccessFile(keyfile, "r");
             values.seek(0);
             inFile = lengthSerializer.get(values);
         } catch (Exception exc) {
             throw new IllegalStateException("Failed creating file");
         }
-        //System.out.println("LOAD");
     }
 
     public MyStorage(String path, MySerializer keyS, MySerializer valS) {
@@ -113,61 +109,37 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
         valSerializer = valS;
         map = new HashMap();
         updates = new HashMap();
-        readCache = new HashMap();
-        cacheQueue = new ArrayList();
-        beg = 0;
+        //readCache = new HashMap();
+        //cacheQueue = new ArrayList();
+        //beg = 0;
         updatesSize = 0L;
         File directory = new File(path);
+
         if (!directory.exists() || !directory.isDirectory()) {
             throw new IllegalStateException("Wrong path to directory");
         }
         keyfile = new File(path + "/keys.db");
         //System.out.println("KEK");
         datafile = new File(path + "/data.db");
-
-        if (!keyfile.exists()) {
-            //System.out.println("KEK2");
-            try {
+        try {
+            if (!keyfile.exists()) {
                 keyfile.createNewFile();
-                //System.out.println("KEK");
-            } catch (Exception exp) {
-
-                throw new IllegalStateException("Invalid work with file");
-            }
-            if (!datafile.exists()) {
-                try {
+                if (!datafile.exists()) {
                     datafile.createNewFile();
-                } catch (Exception exp) {
-                    throw new IllegalStateException("Invalid work with file");
                 }
-            }
-            FileOutputStream out;
-            FileOutputStream dataout;
-            try {
+                FileOutputStream out;
+                FileOutputStream dataout;
                 out = new FileOutputStream(keyfile);
                 dataout = new FileOutputStream(datafile);
-            } catch (Exception exp) {
-                throw new IllegalStateException("Invalid work with file");
-            }
-            lengthSerializer.put(out, 0);
-            lengthSerializer.put(dataout, 0);
-            try {
+                lengthSerializer.put(out, 0);
+                lengthSerializer.put(dataout, 0);
                 out.close();
                 dataout.close();
-            } catch (Exception exp) {
-                throw new IllegalStateException("Invalid work with file");
-            }
-        } else {
-            if (!datafile.exists()) {
-                try {
+            } else {
+                if (!datafile.exists()) {
                     datafile.createNewFile();
-                } catch (Exception exp) {
-                    throw new IllegalStateException("Invalid work with file");
                 }
             }
-        }
-
-        try {
             values = new RandomAccessFile(datafile, "rw");
             valuesout = new FileOutputStream(datafile, true);
         } catch (Exception exp) {
@@ -177,18 +149,14 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
         open = true;
         load();
     }
+
     void checkFileSize()
     {
         try {
-            if (25 < inFile && map.size() * 2  < inFile)
-                {
+            if (25 < inFile && map.size() * 2  < inFile) {
                 File newDataFile = new File(filepath + "/data2.db");
                 if (!newDataFile.exists()) {
-                    try {
-                        newDataFile.createNewFile();
-                    } catch (Exception exp) {
-                        throw new IllegalStateException("Invalid work with file");
-                    }
+                    newDataFile.createNewFile();
                 }
                 valuesout.close();
                 valuesout = new FileOutputStream(newDataFile);
@@ -201,8 +169,7 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
                 int newSize = 0;
                 while(pointer < values.length()) {
                     V val = valSerializer.get(values);
-                    if (Offsets.contains(pointer))
-                    {
+                    if (Offsets.contains(pointer)) {
                         valSerializer.put(valuesout, val);
                         newSize++;
                     }
@@ -221,11 +188,9 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
         } catch (Exception exp) {
             throw new IllegalStateException("Invalid work with file");
         }
-
     }
 
     private void writeValues() {
-        checkFileSize();
         inFile += updates.size();
         try {
             for (HashMap.Entry<K, V> elem : updates.entrySet()) {
@@ -234,8 +199,7 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
             }
             updates.clear();
             updatesSize = 0L;
-        }
-        catch (Exception exp) {
+        } catch (Exception exp) {
             throw new IllegalStateException("Invalid write");
         }
     }
@@ -243,54 +207,71 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
 
     private void checkExistence() {
         if (!open) {
-            throw new IllegalStateException("Storage closed");
+            try{
+                readlock.unlock();
+                writelock.unlock();
+            } catch (Exception exp) {
+                throw new IllegalStateException("Storage closed");
+            }
         }
     }
 
     @Override
     public V read(K key) {
+        readlock.lock();
         checkExistence();
+        V val;
         if (!map.containsKey(key)) {
-            return null;
+            val =  null;
         }
-        if (updates.containsKey(key)) {
-            return updates.get(key);
+        else if (updates.containsKey(key)) {
+            val =  updates.get(key);
         }
-        if (readCache.containsKey(key))
+        /*else if (readCache.containsKey(key))
         {
-            return readCache.get(key);
-        }
-        Long offset = map.get(key);
-        try {
-            Long length = values.length();
-            if (offset >= length) {
-                throw new IllegalStateException("Invalid value file");
-            }
-            values.seek(offset);
-            if (readCache.size() > 150)
-            {
-                if (beg != cacheQueue.size())
-                {
-                    //readCache.remove(cacheQueue.get(beg)); ///May remove but needn't. ispr
-                    //beg++;
+            val = readCache.get(key);
+        }*/
+        else {
+
+            Long offset = map.get(key);
+            try {
+                Long length = values.length();
+                if (offset >= length) {
+                    throw new IllegalStateException("Invalid value file");
                 }
+                values.seek(offset);
+                /*if (readCache.size() > 150)
+                {
+                    if (beg != cacheQueue.size())
+                    {
+                        //readCache.remove(cacheQueue.get(beg)); ///May remove but needn't. ispr
+                        //beg++;
+                    }
+                }*/
+                //readCache.put(key, valSerializer.get(values));
+                //cacheQueue.add(key);
+                val = valSerializer.get(values);
+            } catch (Exception exp) {
+                throw new IllegalStateException("Invalid work with value file");
             }
-            //readCache.put(key, valSerializer.get(values));
-            //cacheQueue.add(key);
-            return valSerializer.get(values);// readCache.get(key);
-        } catch (Exception exp) {
-            throw new IllegalStateException("Invalid work with value file");
         }
+        readlock.unlock();
+        return val;
     }
 
     @Override
     public boolean exists(K key) {
+        boolean contains;
+        readlock.lock();
         checkExistence();
-        return map.containsKey(key);
+        contains = map.containsKey(key);
+        readlock.unlock();
+        return contains;
     }
 
     @Override
     public void write(K key, V value) {
+        writelock.lock();
         checkExistence();
         if (updatesSize > 250)
         {
@@ -299,33 +280,46 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
         updates.put(key, value);
         updatesSize += 1;
         map.put(key, -1L);
+        writelock.unlock();
     }
 
     @Override
     public void delete(K key) {
+        writelock.lock();
         checkExistence();
         updates.remove(key);
         map.remove(key);
-        checkFileSize();
+        writelock.unlock();
     }
 
     @Override
     public Iterator<K> readKeys() {
+        Iterator<K> val;
+        readlock.lock();
         checkExistence();
-        return map.keySet().iterator();
+        val = map.keySet().iterator();
+        readlock.unlock();
+        return val;
     }
 
     @Override
     public int size() {
-        return map.size();
+        int val;
+        readlock.lock();
+        val =  map.size();
+        readlock.unlock();
+        return val;
     }
 
 
     @Override
     public void close() {
-        open = false;
-        FileOutputStream out;
+
         try {
+            writelock.lock();
+            //checkExistence();
+            open = false;
+            FileOutputStream out;
             out = new FileOutputStream(keyfile);
             lengthSerializer.put(out, map.size());
             writeValues();
@@ -340,6 +334,7 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
             values.write(data.array());
             values.close();
             valuesout.close();
+            writelock.unlock();
         } catch (Exception exc) {
             throw new IllegalStateException("Invalid work with file");
         }
