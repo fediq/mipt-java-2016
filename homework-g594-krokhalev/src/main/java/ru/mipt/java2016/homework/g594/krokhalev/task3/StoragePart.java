@@ -104,8 +104,9 @@ public class StoragePart<K, V> implements Closeable {
         return value;
     }
 
-    public void removeKey(K key) {
-        mKeys.remove(key);
+    public boolean removeKey(K key) {
+        Long old = mKeys.remove(key);
+        return old != null;
     }
 
     @Override

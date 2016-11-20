@@ -59,28 +59,52 @@ public class PartsController<K, V> implements Closeable {
         V value = mCache.get(key);
 
         if (value == null) {
-            Integer index = mKeys.get(key);
-
-            if (index != null) {
-                value = mParts.get(index).getValue(key);
+            for (StoragePart<K, V> iPart : mParts) {
+                value = iPart.getValue(key);
+                if (value != null) {
+                    break;
+                }
             }
+//            Integer index = mKeys.get(key);
+//
+//            if (index != null) {
+//                value = mParts.get(index).getValue(key);
+//            }
         }
         return value;
     }
 
     public boolean isExistKey(K key) {
-        return mKeys.containsKey(key);
+        boolean exists = false;
+        for (StoragePart<K, V> iPart : mParts) {
+            exists = iPart.containsKey(key);
+            if (exists) {
+                break;
+            }
+        }
+        //return mKeys.containsKey(key);
+        return exists;
     }
 
     public void setValue(K key, V value) throws IOException {
         if (!mCache.containsKey(key)) {
-            Integer index = mKeys.get(key);
-
-            if (index == null) {
-                mVersion++;
-            } else {
-                mParts.get(index).removeKey(key);
+            boolean exists = false;
+            for (StoragePart<K, V> iPart : mParts) {
+                exists = iPart.removeKey(key);
+                if (exists) {
+                    break;
+                }
             }
+            if (!exists) {
+                mVersion++;
+            }
+//            Integer index = mKeys.get(key);
+//
+//            if (index == null) {
+//                mVersion++;
+//            } else {
+//                mParts.get(index).removeKey(key);
+//            }
 
             if (mCache.size() == KrokhalevsKeyValueStorage.CACHE_SIZE) {
                 flush();
@@ -92,15 +116,20 @@ public class PartsController<K, V> implements Closeable {
 
     public void deleteKey(K key) throws IOException {
         mVersion++;
-
-        Integer index = mKeys.remove(key);
-        if (index != null) {
-            if (index == mParts.size()) {
-                mCache.remove(key);
-            } else {
-                mParts.get(index).removeKey(key);
+        for (StoragePart<K, V> iPart : mParts) {
+            boolean exists = iPart.removeKey(key);
+            if (exists) {
+                break;
             }
         }
+//        Integer index = mKeys.remove(key);
+//        if (index != null) {
+//            if (index == mParts.size()) {
+//                mCache.remove(key);
+//            } else {
+//                mParts.get(index).removeKey(key);
+//            }
+//        }
     }
 
     public int getCountKeys() {
