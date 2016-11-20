@@ -78,13 +78,22 @@ public class LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> {
      */
     public void write(HashMap<KeyType, ValueType> hashMapBuffer) throws IOException {
         File storageDataFile = getStorageDataFile();
-
         FileOutputStream storageDataFileOut = new FileOutputStream(storageDataFile);
+        BufferedOutputStream storageDataBufferOut = new BufferedOutputStream(storageDataFileOut);
 
         FileOutputWrapper fileOutputWrapper = new FileOutputWrapper();
-        fileOutputWrapper.write(hashMapBuffer, storageDataFileOut);
+        fileOutputWrapper.write(hashMapBuffer, storageDataBufferOut);
+
+        storageDataBufferOut.flush();
+        storageDataBufferOut.close();
     }
 
+    /**
+     * Read HashMapBuffer from STORAGE_FILENAME in the storage directory
+     *
+     * @throws IOException  - if writing to Disk was unsuccessful
+     * @return the HashMapBuffer of the read data
+     */
     public HashMap<KeyType, ValueType> read() throws IOException {
         File storageDataFile = getStorageDataFile();
         HashMap<KeyType, ValueType> hashMapBuffer = new HashMap<>();
@@ -111,7 +120,7 @@ public class LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> {
          * @throws IOException  - thrown by FileOutputStream.write()
          */
         public void write(HashMap<KeyType, ValueType> hashMapBuffer,
-                          FileOutputStream fileOut)       throws IOException {
+                          BufferedOutputStream fileOut)       throws IOException {
             byte[] zeroValidationStringNumBytesAndBytes =
                     getNumBytesAndBytes(ZERO_VALIDATION, SerializerFactory.getSerializer("String"));
             byte[] keyOffsetMapSizeBytes =
