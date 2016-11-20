@@ -1,7 +1,13 @@
 package ru.mipt.java2016.homework.g596.kozlova.task3;
 
-/**
- * Created by Nadezhda on 20.11.2016.
- */
-public class MyStringSerialization {
+public class MyStringSerialization implements MySerialization<String>{
+    @Override
+    public String read(String obj) {
+        return obj;
+    }
+
+    @Override
+    public String write(String s) {
+        return s;
+    }
 }

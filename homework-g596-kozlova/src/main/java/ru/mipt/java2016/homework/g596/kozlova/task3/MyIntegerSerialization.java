@@ -1,7 +1,11 @@
 package ru.mipt.java2016.homework.g596.kozlova.task3;
 
-/**
- * Created by Nadezhda on 20.11.2016.
- */
-public class MyIntegerSerialization {
+public class MyIntegerSerialization implements MySerialization<Integer>{
+    @Override
+    public String write(Integer obj) { return obj.toString(); }
+
+    @Override
+    public Integer read(String s) {
+        return Integer.parseInt(s);
+    }
 }
