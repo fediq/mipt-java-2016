@@ -8,7 +8,7 @@ import java.io.*;
 
 public class KVStorageIntegerSerializer implements KVSSerializationInterface<Integer> {
     @Override
-    public void serialize(DataOutputStream out, Integer object) throws IOException{
+    public void serialize(DataOutputStream out, Integer object) throws IOException {
         out.writeInt(object);
     }
 

@@ -28,6 +28,7 @@ class UpgradedKVStorage<K, V> implements KeyValueStorage<K, V> {
 
     private static final int MC_SIZEOFRECENTKV = 1024;
     private static final int MC_INITIALCAPACITY = 16;
+    private static final int MC_NUMBER = 100;
     private static final int MC_SIZEOFCASH = 0;
     private static final int MC_MAINFILE = -1;
     private static final int MC_FIRSTFILE = 0;
@@ -36,6 +37,7 @@ class UpgradedKVStorage<K, V> implements KeyValueStorage<K, V> {
     private class Position {
         private int numberOfFile;
         private long offsetValue;
+
         Position(int numberOfFile, long offset) {
             this.numberOfFile = numberOfFile;
             this.offsetValue = offset;
@@ -47,6 +49,7 @@ class UpgradedKVStorage<K, V> implements KeyValueStorage<K, V> {
         Cache() {
             super(MC_INITIALCAPACITY, 0.75f, true);
         }
+
         @Override
         protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
             return size() > MC_SIZEOFCASH;
@@ -146,9 +149,13 @@ class UpgradedKVStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     // Updates checksum for current file
-    private void getHashOfFile(String fileName, Adler32 checkSum) {
-        try (InputStream inStream = new BufferedInputStream(new FileInputStream(new File(fileName)));
+    private void getHashOfFile(String currentFileName, Adler32 checkSum) {
+        try (InputStream inStream = new BufferedInputStream(new FileInputStream(new File(currentFileName)));
              CheckedInputStream checkedInStream = new CheckedInputStream(inStream, checkSum)) {
+            byte[] buffer = new byte[MC_SIZEOFRECENTKV * MC_NUMBER];
+            while (checkedInStream.read(buffer) != -1) {
+                continue;
+            }
         } catch (IOException e) {
             throw new MalformedDataException("File not found");
         }
@@ -288,7 +295,7 @@ class UpgradedKVStorage<K, V> implements KeyValueStorage<K, V> {
         files.clear();
     }
 
-    private void isStorageClosed() throws MalformedDataException{
+    private void isStorageClosed() throws MalformedDataException {
         if (closed) {
             throw new MalformedDataException("File has already been closed");
         }

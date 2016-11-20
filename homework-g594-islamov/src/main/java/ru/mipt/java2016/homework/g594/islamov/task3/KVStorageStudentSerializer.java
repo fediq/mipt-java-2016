@@ -2,8 +2,6 @@ package ru.mipt.java2016.homework.g594.islamov.task3;
 
 import ru.mipt.java2016.homework.tests.task2.Student;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Date;
 
