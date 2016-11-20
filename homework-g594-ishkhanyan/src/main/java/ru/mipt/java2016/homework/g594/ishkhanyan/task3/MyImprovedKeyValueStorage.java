@@ -8,10 +8,8 @@ import ru.mipt.java2016.homework.g594.ishkhanyan.task2.Serializations;
 
 import java.io.*;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map.Entry;
-import java.util.Set;
 
 /**
  * Created by ${Semien}
@@ -25,7 +23,6 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private int maxSize = 900;
     private HashMap<K, V> newAdditions = new HashMap<>();
     private HashMap<K, Pair<Integer, Long>> pathToValue = new HashMap<>(); // keys and pair (number of file and index)
-    //private Set<K> usedKeys = new HashSet<>();
     private MySerialization keySerializer;
     private MySerialization valuSerializer;
     private boolean fileIsNotEmpty; // true files have already been written
@@ -37,8 +34,8 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private int numberOfFirstFile;
     private boolean isOpen;
 
-    public MyImprovedKeyValueStorage(String path, MySerialization keySer, String keyT,
-                                     MySerialization valueSer, String valueT) {
+    public MyImprovedKeyValueStorage(String path, MySerialization keySer, String keyT
+            , MySerialization valueSer, String valueT) {
         pathDirectory = path;
         keySerializer = keySer;
         valuSerializer = valueSer;
