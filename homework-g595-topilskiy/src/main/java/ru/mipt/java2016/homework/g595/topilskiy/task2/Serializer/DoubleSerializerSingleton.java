@@ -13,7 +13,7 @@ public class DoubleSerializerSingleton implements ISerializer<Double> {
     private static DoubleSerializerSingleton instance;
 
     /* FORBID: direct instantiation of a singleton class */
-    private DoubleSerializerSingleton() {}
+    private DoubleSerializerSingleton() { }
 
     /**
      * Return (and create if needed) the only instance of this singleton

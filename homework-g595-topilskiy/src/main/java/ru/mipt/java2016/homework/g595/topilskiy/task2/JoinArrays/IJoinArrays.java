@@ -14,5 +14,5 @@ public interface IJoinArrays<ArrayComponentType> {
      * @param  arraysToJoin - arrays to join into a single one
      * @return a single Array, containing all the arraysToJoin in order
      */
-    public ArrayComponentType[] joinArrays(ArrayComponentType[]... arraysToJoin);
+    ArrayComponentType[] joinArrays(ArrayComponentType[]... arraysToJoin);
 }

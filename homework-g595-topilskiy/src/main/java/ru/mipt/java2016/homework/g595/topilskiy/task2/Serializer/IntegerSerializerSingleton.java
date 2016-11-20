@@ -13,7 +13,7 @@ public class IntegerSerializerSingleton implements ISerializer<Integer> {
     private static IntegerSerializerSingleton instance;
 
     /* FORBID: direct instantiation of a singleton class */
-    private IntegerSerializerSingleton() {}
+    private IntegerSerializerSingleton() { }
 
     /**
      * Return (and create if needed) the only instance of this singleton

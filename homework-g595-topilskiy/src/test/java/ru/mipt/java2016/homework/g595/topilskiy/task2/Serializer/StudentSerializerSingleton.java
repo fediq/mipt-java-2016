@@ -36,8 +36,8 @@ public class StudentSerializerSingleton implements ISerializer<Student> {
 
 
     /* ClassSerializers for serializing and deserializing within the class */
-    private static final BooleanSerializer BOOLEAN_SERIALIZER =
-                         BooleanSerializer.getInstance();
+    private static final BooleanSerializerSingleton BOOLEAN_SERIALIZER =
+                         BooleanSerializerSingleton.getInstance();
     private static final IntegerSerializerSingleton INTEGER_SERIALIZER =
                          IntegerSerializerSingleton.getInstance();
     private static final DoubleSerializerSingleton DOUBLE_SERIALIZER  =
@@ -126,7 +126,7 @@ public class StudentSerializerSingleton implements ISerializer<Student> {
 
 
         /* READ HasDormitory */
-        valueBytesTail += BooleanSerializer.getBooleanByteSize();
+        valueBytesTail += BooleanSerializerSingleton.getBooleanByteSize();
         Boolean studentHasDormitory = BOOLEAN_SERIALIZER.deserialize(
                 copyOfRange(valueBytes, valueBytesHead, valueBytesTail)
         );

@@ -13,7 +13,7 @@ public class DateSerializerSingleton implements ISerializer<Date> {
     private static DateSerializerSingleton instance;
 
     /* FORBID: direct instantiation of a singleton class */
-    private DateSerializerSingleton() {}
+    private DateSerializerSingleton() { }
 
     /**
      * Return (and create if needed) the only instance of this singleton

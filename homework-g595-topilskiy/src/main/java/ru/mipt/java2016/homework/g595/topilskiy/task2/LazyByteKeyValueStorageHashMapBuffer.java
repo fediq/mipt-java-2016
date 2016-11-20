@@ -21,8 +21,8 @@ public class LazyByteKeyValueStorageHashMapBuffer<KeyType, ValueType> {
     public LazyByteKeyValueStorageHashMapBuffer(String pathToStorageDirectory,
                                                 ISerializer keyTypeSerializer,
                                                 ISerializer valueTypeSerializer) throws IOException {
-        fileIOWrapper = new LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType>
-                (pathToStorageDirectory, keyTypeSerializer, valueTypeSerializer);
+        fileIOWrapper = new LazyByteKeyValueStorageFileIOWrapper<>(pathToStorageDirectory,
+                                                                   keyTypeSerializer, valueTypeSerializer);
         hashMapBuffer = fileIOWrapper.read();
     }
 

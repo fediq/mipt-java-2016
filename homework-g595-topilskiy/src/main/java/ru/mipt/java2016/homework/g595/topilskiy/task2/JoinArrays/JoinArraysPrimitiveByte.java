@@ -9,7 +9,7 @@ package ru.mipt.java2016.homework.g595.topilskiy.task2.JoinArrays;
  */
 public class JoinArraysPrimitiveByte /* implements IJoinArrays<byte> */ {
     /* FORBID: direct instantiation of this class */
-    private JoinArraysPrimitiveByte() {}
+    private JoinArraysPrimitiveByte() { }
 
     /**
      * Method to join arraysToJoin into a single continuous joinedArrays

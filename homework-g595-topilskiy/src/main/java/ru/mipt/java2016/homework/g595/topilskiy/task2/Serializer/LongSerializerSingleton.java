@@ -13,7 +13,7 @@ public class LongSerializerSingleton implements ISerializer<Long> {
     private static LongSerializerSingleton instance;
 
     /* FORBID: direct instantiation of a singleton class */
-    private LongSerializerSingleton() {}
+    private LongSerializerSingleton() { }
 
     /**
      * Return (and create if needed) the only instance of this singleton

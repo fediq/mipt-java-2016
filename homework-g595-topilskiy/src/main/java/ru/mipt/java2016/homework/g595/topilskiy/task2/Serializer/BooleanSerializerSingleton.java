@@ -6,21 +6,21 @@ package ru.mipt.java2016.homework.g595.topilskiy.task2.Serializer;
  * @author Artem K. Topilskiy
  * @since 30.10.16
  */
-public class BooleanSerializer implements ISerializer<Boolean> {
+public class BooleanSerializerSingleton implements ISerializer<Boolean> {
     /* The single allowed instance of a singleton class */
-    private static BooleanSerializer instance;
+    private static BooleanSerializerSingleton instance;
 
     /* FORBID: direct instantiation of a singleton class */
-    private BooleanSerializer() {}
+    private BooleanSerializerSingleton() { }
 
     /**
      * Return (and create if needed) the only instance of this singleton
      *
      * @return a valid instance of the singleton
      */
-    public static BooleanSerializer getInstance() {
+    public static BooleanSerializerSingleton getInstance() {
         if (instance == null) {
-            instance = new BooleanSerializer();
+            instance = new BooleanSerializerSingleton();
         }
 
         return instance;

@@ -15,7 +15,7 @@ public class StringSerializerSingleton implements ISerializer<String> {
     private static StringSerializerSingleton instance;
 
     /* FORBID: direct instantiation of a singleton class */
-    private StringSerializerSingleton() {}
+    private StringSerializerSingleton() { }
 
     /**
      * Return (and create if needed) the only instance of this singleton

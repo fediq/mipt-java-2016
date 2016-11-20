@@ -23,8 +23,8 @@ public class LazyByteKeyValueStorage<KeyType, ValueType>
     public LazyByteKeyValueStorage(String pathToStorageDirectory,
                                    ISerializer keyTypeSerializer,
                                    ISerializer valueTypeSerializer) throws IOException {
-        storageBuffer = new LazyByteKeyValueStorageHashMapBuffer<>
-                (pathToStorageDirectory, keyTypeSerializer, valueTypeSerializer);
+        storageBuffer = new LazyByteKeyValueStorageHashMapBuffer<>(pathToStorageDirectory,
+                                                                   keyTypeSerializer, valueTypeSerializer);
         isClosed = false;
     }
     
