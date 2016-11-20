@@ -104,7 +104,7 @@ public class BestKeyValueStorageEver<K, V> implements KeyValueStorage<K, V> {
     }
 
     @Override
-    final public boolean exists(final K key) {
+    public boolean exists(final K key) {
         return map.containsKey(key);
     }
 
@@ -114,17 +114,17 @@ public class BestKeyValueStorageEver<K, V> implements KeyValueStorage<K, V> {
     }
 
     @Override
-    final public void delete(final K key) {
+    public void delete(final K key) {
         map.remove(key);
     }
 
     @Override
-    final public Iterator<K> readKeys() {
+    public Iterator<K> readKeys() {
         return map.keySet().iterator();
     }
 
     @Override
-    final public int size() {
+    public final int size() {
         return map.size();
     }
 
