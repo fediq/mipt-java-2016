@@ -18,11 +18,6 @@ import java.util.zip.CheckedInputStream;
 
 /**
  * Перзистентное хранилище ключ-значение.
- *
- * Хранилище не обязано сразу же после выполнения запроса изменять состояние на диске, т.е. в процессе работы допустимо
- * расхождение консистентности. Но после выполнения {@link #close()} хранилище должно перейти в консистентное состояние,
- * то есть, на диске должны остаться актуальные данные.
- *
  * @author Fedor S. Lavrentyev
  * @since 04.10.16
  */
@@ -51,14 +46,14 @@ public class MyAdvancedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private ArrayList<RandomAccessFile> files;
     private Adler32 hashsum;
 
-    private static final int memoryPageSize = 1000;  //размер страницы памяти.
+    private static final int MEMORYPAGESIZE = 1000;  //размер страницы памяти.
                                                     // Выделяемый буфер под Map кратен размерустраницы памяти
 
     private void getFileHash(Adler32 md, String name) {
         try (InputStream is = new BufferedInputStream(new FileInputStream(new File(name)));
              CheckedInputStream cheskedStream = new CheckedInputStream(is, md)) {
 
-            byte[] buffer = new byte[memoryPageSize * 100];
+            byte[] buffer = new byte[MEMORYPAGESIZE * 100];
             while (cheskedStream.read(buffer) != -1) {
                 continue;
             }
@@ -102,7 +97,7 @@ public class MyAdvancedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void reduceFresh(boolean close) {
-        if (close || tableFresh.size() >= memoryPageSize) {
+        if (close || tableFresh.size() >= MEMORYPAGESIZE) {
             int numNewFile = files.size();
             String newFile = getFileName(numNewFile);
             File file = new File(newFile);
