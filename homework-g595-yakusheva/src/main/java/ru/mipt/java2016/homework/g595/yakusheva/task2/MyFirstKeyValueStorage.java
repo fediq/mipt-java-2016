@@ -25,9 +25,9 @@ public class MyFirstKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     public MyFirstKeyValueStorage(String path, MyFirstSerializerInterface<K> newKeySerializerArg,
                                   MyFirstSerializerInterface<V> newValueSerializerArg) {
         boolean readFromOldFileFlag = false;
-        File f = new File(Paths.get(path, "storage.db").toString());
         keySerializer = newKeySerializerArg;
         valueSerializer = newValueSerializerArg;
+        File f = new File(Paths.get(path, "storage.db").toString());
         if (!f.exists()) {
             try {
                 f.createNewFile();
@@ -38,7 +38,7 @@ public class MyFirstKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
         map = new HashMap<K, V>();
         try {
-            file = new RandomAccessFile(f.getName(), "rw");
+            file = new RandomAccessFile(f.getPath(), "rw");
         } catch (IOException e) {
             throw new RuntimeException("error: can't create new RandomAccessFile");
         }
