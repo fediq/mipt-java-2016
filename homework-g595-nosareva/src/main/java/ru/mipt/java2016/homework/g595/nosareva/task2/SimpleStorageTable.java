@@ -38,7 +38,7 @@ class SimpleStorageTable<K, V> {
         }
     }
 
-    public SimpleStorageTable(String path, Serializer<K> serializerForKeys, Serializer<V> serializerForValues) {
+    SimpleStorageTable(String path, Serializer<K> serializerForKeys, Serializer<V> serializerForValues) {
 
         this.keySerializer = serializerForKeys;
         this.valueSerializer = serializerForValues;
@@ -111,7 +111,8 @@ class SimpleStorageTable<K, V> {
         }
 
         try {
-            DataOutputStream fileOutput = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(pathToFile)));
+            DataOutputStream fileOutput = new DataOutputStream(
+                    new BufferedOutputStream(new FileOutputStream(pathToFile)));
             fileOutput.writeInt(keyValueMap.size());
 
             for (Map.Entry<K, V> entry : keyValueMap.entrySet()) {

@@ -42,7 +42,7 @@ public class OptimizedKVStorage<K, V> implements KeyValueStorage<K, V> {
         valuesFile = new RandomAccessFile(fileV, "rw");
     }
 
-    public void openStorage() throws IOException, ValidationException{
+    public void openStorage() throws IOException, ValidationException {
         File fileK = new File(keysFileName);
         File fileV = new File(valuesFileName);
 
@@ -72,7 +72,7 @@ public class OptimizedKVStorage<K, V> implements KeyValueStorage<K, V> {
     public OptimizedKVStorage(String path,
                               Serializer<K> serializerForKeys,
                               Serializer<V> serializerForValues)
-            throws IOException, ValidationException{
+            throws IOException, ValidationException {
 
         this.directory = path;
         this.keySerializer = serializerForKeys;
@@ -151,7 +151,7 @@ public class OptimizedKVStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     @Override
-    public void flush() {}
+    public void flush() { }
 
     private void chekingForClosed() {
         if (closed) {

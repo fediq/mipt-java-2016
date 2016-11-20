@@ -8,7 +8,7 @@ import java.util.Date;
 /**
  * Created by maria on 19.11.16.
  */
-public class SerializerForDate implements Serializer<Date>{
+public class SerializerForDate implements Serializer<Date> {
     @Override
     public void serializeToStream(Date value, DataOutput outStream) throws IOException {
         outStream.writeLong(value.getTime());
