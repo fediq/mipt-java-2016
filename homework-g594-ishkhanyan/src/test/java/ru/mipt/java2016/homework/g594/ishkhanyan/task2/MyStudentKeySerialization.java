@@ -5,6 +5,7 @@ import ru.mipt.java2016.homework.tests.task2.StudentKey;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 
 public class MyStudentKeySerialization implements MySerialization<StudentKey> {
 
@@ -15,7 +16,20 @@ public class MyStudentKeySerialization implements MySerialization<StudentKey> {
     }
 
     @Override
+    public void writeToFile(StudentKey object, RandomAccessFile file) throws IOException {
+        file.writeInt(object.getGroupId()); // write all fields in series
+        file.writeUTF(object.getName());
+    }
+
+    @Override
     public StudentKey readFromFile(DataInputStream file) throws IOException {
+        Integer groupId = file.readInt();
+        String name = file.readUTF();
+        return new StudentKey(groupId, name);
+    }
+
+    @Override
+    public StudentKey readFromFile(RandomAccessFile file) throws IOException {
         Integer groupId = file.readInt();
         String name = file.readUTF();
         return new StudentKey(groupId, name);

@@ -1,6 +1,7 @@
 package ru.mipt.java2016.homework.tests.task3;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import ru.mipt.java2016.homework.tests.task2.AbstractSingleFileStorageTest;
 import ru.mipt.java2016.homework.tests.task2.StorageTestUtils;
@@ -190,7 +191,6 @@ public abstract class KeyValueStoragePerformanceTest extends AbstractSingleFileS
         print("%5d Reads per second from 100k", readsPerSecond);
         print("%5d millis for single 100kW 100kR iteration", iterationTimeMillis);
     }
-
 
     @Test
     public void measure10W20Rx1k() {
