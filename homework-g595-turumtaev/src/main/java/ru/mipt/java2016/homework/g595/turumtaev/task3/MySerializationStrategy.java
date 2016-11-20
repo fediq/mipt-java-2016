@@ -1,7 +1,5 @@
 package ru.mipt.java2016.homework.g595.turumtaev.task3;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 

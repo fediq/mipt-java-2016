@@ -15,7 +15,8 @@ public class MyStudentKeySerializationStrategy implements MySerializationStrateg
         return INSTANCE;
     }
 
-    private MyStudentKeySerializationStrategy() {}
+    private MyStudentKeySerializationStrategy() {
+    }
 
     @Override
     public Long write(StudentKey value, RandomAccessFile output) throws IOException {
