@@ -75,11 +75,13 @@ public class PartsController<K, V> implements Closeable {
     }
 
     public boolean isExistKey(K key) {
-        boolean exists = false;
-        for (StoragePart<K, V> iPart : mParts) {
-            exists = iPart.containsKey(key);
-            if (exists) {
-                break;
+        boolean exists = mCache.containsKey(key);
+        if (!exists) {
+            for (StoragePart<K, V> iPart : mParts) {
+                exists = iPart.containsKey(key);
+                if (exists) {
+                    break;
+                }
             }
         }
         //return mKeys.containsKey(key);
@@ -116,10 +118,14 @@ public class PartsController<K, V> implements Closeable {
 
     public void deleteKey(K key) throws IOException {
         mVersion++;
-        for (StoragePart<K, V> iPart : mParts) {
-            boolean exists = iPart.removeKey(key);
-            if (exists) {
-                break;
+        mKeys.remove(key);
+        V value = mCache.remove(key);
+        if (value == null) {
+            for (StoragePart<K, V> iPart : mParts) {
+                boolean exists = iPart.removeKey(key);
+                if (exists) {
+                    break;
+                }
             }
         }
 //        Integer index = mKeys.remove(key);

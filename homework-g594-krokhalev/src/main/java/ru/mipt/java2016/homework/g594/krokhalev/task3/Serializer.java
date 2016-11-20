@@ -107,6 +107,73 @@ class Serializer {
         return baos.toByteArray();
     }
 
+    static void serialize(Object object, DataOutputStream dos) throws IOException {
+        Class oClass = object.getClass();
+        if (oClass.isArray()) {
+
+            dos.write(serialize(Array.getLength(object)));
+
+            for (int i = 0; i < Array.getLength(object); i++) {
+                dos.write(serialize(Array.get(object, i)));
+            }
+
+        } else if (isPrimitive(oClass)) {
+            if (object.getClass().equals(boolean.class) || object.getClass().equals(Boolean.class)) {
+                boolean bObject = (boolean) object;
+                dos.writeBoolean(bObject);
+            } else if (object.getClass().equals(byte.class) || object.getClass().equals(Byte.class)) {
+                byte bObject = (byte) object;
+                dos.writeByte(bObject);
+            } else if (object.getClass().equals(char.class) || object.getClass().equals(Character.class)) {
+                char cObject = (char) object;
+                dos.writeChar(cObject);
+            } else if (object.getClass().equals(short.class) || object.getClass().equals(Short.class)) {
+                short sObject = (short) object;
+                dos.writeShort(sObject);
+            } else if (object.getClass().equals(int.class) || object.getClass().equals(Integer.class)) {
+                int iObject = (int) object;
+                dos.writeInt(iObject);
+            } else if (object.getClass().equals(long.class) || object.getClass().equals(Long.class)) {
+                Long lObject = (long) object;
+                dos.writeLong(lObject);
+            } else if (object.getClass().equals(float.class) || object.getClass().equals(Float.class)) {
+                Float fObject = (Float) object;
+                dos.writeFloat(fObject);
+            } else if (object.getClass().equals(double.class) || object.getClass().equals(Double.class)) {
+                Double dObject = (Double) object;
+                dos.writeDouble(dObject);
+            } else if (object.getClass().equals(String.class)) {
+                String sObject = (String) object;
+                dos.writeInt(sObject.length());
+                dos.write(sObject.getBytes());
+            } else if (object.getClass().equals(Date.class)) {
+                Date dObject = (Date) object;
+                dos.writeLong(dObject.getTime());
+            }
+        } else {
+            try {
+                if (!oClass.getSuperclass().equals(Object.class)) {
+                    Field[] fields = oClass.getSuperclass().getDeclaredFields();
+                    for (Field field : fields) {
+                        field.setAccessible(true);
+                        dos.write(serialize(field.get(object)));
+                    }
+                }
+
+                Field[] fields = oClass.getDeclaredFields();
+                for (Field field : fields) {
+                    field.setAccessible(true);
+                    dos.write(serialize(field.get(object)));
+                }
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    static void serialize(Object object, OutputStream stream) throws IOException {
+        serialize(object, new DataOutputStream(stream));
+    }
 
     private static Object deserialize(Class<?> oClass, ByteBuffer bb) {
         Object object = null;

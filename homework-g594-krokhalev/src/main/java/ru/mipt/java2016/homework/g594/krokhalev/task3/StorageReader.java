@@ -41,14 +41,6 @@ public class StorageReader<K, V> {
         return (int) Serializer.deserialize(int.class, intBuff);
     }
 
-    public int readInt(RandomAccessFile stream) throws IOException {
-        byte[] intBuff = new byte[INT_SIZE];
-
-        readAll(stream, intBuff, 0, INT_SIZE);
-
-        return (int) Serializer.deserialize(int.class, intBuff);
-    }
-
     public long readLong(InputStream stream) throws IOException {
         byte[] longBuff = new byte[LONG_SIZE];
 
@@ -58,11 +50,6 @@ public class StorageReader<K, V> {
     }
 
     public byte[] readItem(InputStream stream) throws IOException {
-        int size = readInt(stream);
-        return readBytes(stream, size);
-    }
-
-    public byte[] readItem(RandomAccessFile stream) throws IOException {
         int size = readInt(stream);
         return readBytes(stream, size);
     }
@@ -88,27 +75,12 @@ public class StorageReader<K, V> {
         return keyBuff;
     }
 
-    public byte[] readBytes(RandomAccessFile stream, int size) throws IOException {
-
-        byte[] keyBuff = new byte[size];
-
-        readAll(stream, keyBuff, 0, size);
-
-        return keyBuff;
-    }
-
     public K readKey(InputStream stream) throws IOException {
-        miss(stream, 4);
         return (K) Serializer.deserialize(keyClass, stream);
     }
 
     public V readValue(InputStream stream) throws IOException {
-        miss(stream, 4);
         return (V) Serializer.deserialize(valueClass, stream);
-    }
-
-    public void missNext(InputStream stream) throws IOException {
-        miss(stream, readInt(stream));
     }
 
     public void miss(InputStream stream, long count) throws IOException {
