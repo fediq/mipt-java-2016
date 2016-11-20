@@ -25,7 +25,7 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private int maxSize = 900;
     private HashMap<K, V> newAdditions = new HashMap<>();
     private HashMap<K, Pair<Integer, Long>> pathToValue = new HashMap<>(); // keys and pair (number of file and index)
-    private Set<K> usedKeys = new HashSet<>();
+    //private Set<K> usedKeys = new HashSet<>();
     private MySerialization keySerializer;
     private MySerialization valuSerializer;
     private boolean fileIsNotEmpty; // true files have already been written
@@ -67,7 +67,7 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public V read(K key) {
         closeInspection();
-        if (usedKeys.contains(key)) {
+        if (pathToValue.containsKey(key)) {
             if (newAdditions.containsKey(key)) {
                 return newAdditions.get(key);
             } else {
@@ -100,7 +100,7 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public boolean exists(K key) {
         closeInspection();
-        return usedKeys.contains(key);
+        return pathToValue.containsKey(key);
     }
 
     @Override
@@ -110,10 +110,10 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         if (fileIsNotEmpty) {
             ++numOfAdditions;
         }
-        if (usedKeys.contains(key) && fileIsNotEmpty) {
+        if (pathToValue.containsKey(key) && fileIsNotEmpty) {
             ++numOfDeletions;
         }
-        usedKeys.add(key);
+        pathToValue.put(key, new Pair(0,0));
         newAdditions.put(key, value);
     }
 
@@ -123,7 +123,6 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         if (fileIsNotEmpty) {
             ++numOfDeletions;
         }
-        usedKeys.remove(key);
         pathToValue.remove(key);
         newAdditions.remove(key);
     }
@@ -131,13 +130,13 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public Iterator<K> readKeys() {
         closeInspection();
-        return usedKeys.iterator();
+        return pathToValue.keySet().iterator();
     }
 
     @Override
     public int size() {
         closeInspection();
-        return usedKeys.size();
+        return pathToValue.size();
     }
 
     @Override
@@ -163,6 +162,7 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         } else {
             FileInputStream in = new FileInputStream(pathToConfigurations);
             DataInputStream configIn = new DataInputStream(in);
+            fileIsNotEmpty = true;
             int numKeys = configIn.readInt();
             numOfAdditions = configIn.readInt();
             numOfDeletions = configIn.readInt();
@@ -180,7 +180,6 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 key = (K) keySerializer.readFromFile(configIn);
                 numOfFile = configIn.readInt();
                 index = configIn.readLong();
-                usedKeys.add(key);
                 pathToValue.put(key, new Pair(numOfFile, index));
             }
             configIn.close();
@@ -196,14 +195,14 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void checkSizeAndCorruption() {
-        if (newAdditions.size() > maxSize) {
+        if (newAdditions.size() >= maxSize) {
             try {
                 recordNewAdditionToFile();
             } catch (IOException e) {
                 throw new MalformedDataException("Error while creating a new file");
             }
         }
-        if (fileIsNotEmpty && numOfAdditions < 2 * numOfDeletions && numOfDeletions > maxSize) {
+        if (fileIsNotEmpty && numOfAdditions < 2 * numOfDeletions && numOfDeletions > 20 * maxSize) {
             try {
                 rebuild();
             } catch (IOException e) {
@@ -214,6 +213,7 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private void recordNewAdditionToFile() throws IOException {
         File newFile = new File(intToPath(numberOfCurrentFile));
+        fileIsNotEmpty = true;
         if (newFile.exists()) {
             throw new MalformedDataException("file have already been created");
         } else {
@@ -244,7 +244,7 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             newFile.createNewFile();
         }
         RandomAccessFile fileOut = new RandomAccessFile(intToPath(numOfNewFile), "rw");
-        for (K key : usedKeys) {
+        for (K key : pathToValue.keySet()) {
             keySerializer.writeToFile(key, fileOut);
             long point = fileOut.getFilePointer();
             valuSerializer.writeToFile(read(key), fileOut);
@@ -261,7 +261,7 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private void writeToConfig() throws IOException {
         FileOutputStream out = new FileOutputStream(pathToConfigurations);
         DataOutputStream configOut = new DataOutputStream(out);
-        configOut.writeInt(usedKeys.size());
+        configOut.writeInt(pathToValue.size());
         configOut.writeInt(numOfAdditions);
         configOut.writeInt(numOfDeletions);
         configOut.writeInt(numberOfFirstFile);
