@@ -31,7 +31,7 @@ public class BestKeyValueStorageEver<K, V> implements KeyValueStorage<K, V> {
     /**
      * Name of our file.
      */
-    protected String fileName;
+    protected String filePath;
 
     /**
      * We'll use map from standard library to work with elements.
@@ -86,13 +86,11 @@ public class BestKeyValueStorageEver<K, V> implements KeyValueStorage<K, V> {
         }
 
         map = new HashMap<K, V>();
-        fileName = name;
+        filePath = path + File.separator + name;
         keySerialisation = kSerialisation;
         valueSerialisation = vSerialisation;
 
-        String storagePath  = path + File.separator + name;
-
-        file = new RandomAccessFile(storagePath, "rw");
+        file = new RandomAccessFile(filePath, "rw");
         if (file.length() != 0) {
             initStorage();
         }
@@ -124,7 +122,7 @@ public class BestKeyValueStorageEver<K, V> implements KeyValueStorage<K, V> {
     }
 
     @Override
-    public final int size() {
+    public int size() {
         return map.size();
     }
 

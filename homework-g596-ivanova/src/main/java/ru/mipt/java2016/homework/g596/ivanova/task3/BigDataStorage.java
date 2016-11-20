@@ -34,22 +34,22 @@ public class BigDataStorage<K extends Comparable<? super K>, V extends Comparabl
     /**
      * Max weight of elements we add but didn't write to file.
      */
-    private final long maxAddWeight = 10 * 1024 * 1024; // 10 MB
+    private final int maxAddWeight = 10 * 1024 * 1024; // 10 MB
 
     /**
      * Max weight of elements we cached.
      */
-    private final long maxCachedWeight = 10 * 1024 * 1024; // 10 MB
+    private final int maxCachedWeight = 10 * 1024 * 1024; // 10 MB
 
     /**
      * How many elements were deleted since last sync.
      */
-    private long deleteCount;
+    private int deleteCount;
 
     /**
      * Weight of elements which were added since last sync.
      */
-    private long addWeight;
+    private int addWeight;
 
     /**
      * Twin for the main file. We will use them alternately during working with database.
@@ -65,7 +65,7 @@ public class BigDataStorage<K extends Comparable<? super K>, V extends Comparabl
     /**
      * Name of our twin file.
      */
-    private String twinFileName;
+    private String twinFilePath;
 
     /**
      * Collection that stores keys and relevant values of offset in file.
@@ -118,19 +118,18 @@ public class BigDataStorage<K extends Comparable<? super K>, V extends Comparabl
     /**
      * @param path           - path to the directory with storage in filesystem.
      * @param name           - name of file with key-value storage.
-     * @param twinName       - name of twin file.
      * @param kSerialisation - Serialisation appropriate for key type.
      * @param vSerialisation - Serialisation appropriate for value type.
      * @throws IOException - if I/O problem occurs.
      */
-    public BigDataStorage(final String path, final String name, final String twinName,
+    public BigDataStorage(final String path, final String name,
             final Serialisation<K> kSerialisation, final Serialisation<V> vSerialisation)
             throws IOException {
         super(path, name, kSerialisation, vSerialisation);
 
-        twinFileName = twinName;
-        String twinStoragePath = path + File.separator + twinName;
-        twinFile = new RandomAccessFile(twinStoragePath, "rw");
+        String twinName = name + "_twin";
+        twinFilePath = path + File.separator + twinName;
+        twinFile = new RandomAccessFile(twinFilePath, "rw");
 
         deleteCount = 0;
         addWeight = 0;
@@ -212,10 +211,42 @@ public class BigDataStorage<K extends Comparable<? super K>, V extends Comparabl
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            addWeight = ObjectSize.getObjectSize(key) + ObjectSize.getObjectSize(key);
-        } else {
-            map.put(key, value);
+            addWeight = (int) (ObjectSize.getObjectSize(key) + ObjectSize.getObjectSize(value));
         }
+        map.put(key, value);
+        offsets.put(key, -1L);
+    }
+
+    /**
+     * Cleans file up when maxDeleteCount is reached.
+     * @throws IOException
+     */
+    private void fileCleaner() throws IOException {
+        RandomAccessFile newFile;
+        RandomAccessFile oldFile;
+        if (mainFileInUse) {
+            oldFile = file;
+            newFile = twinFile;
+        } else {
+            oldFile = twinFile;
+            newFile = file;
+        }
+        mainFileInUse = !mainFileInUse;
+
+        newFile.setLength(0);
+        newFile.seek(0);
+        for (Map.Entry<K, Long> entry : offsets.entrySet()) {
+            if (entry.getValue() == -1) {
+                continue;
+            }
+            keySerialisation.write(newFile, entry.getKey());
+            long offset = entry.getValue();
+            oldFile.seek(offset);
+            offsets.put(entry.getKey(), newFile.getFilePointer());
+            valueSerialisation.write(newFile, valueSerialisation.read(oldFile));
+        }
+
+        oldFile.setLength(0);
     }
 
     @Override
@@ -223,11 +254,51 @@ public class BigDataStorage<K extends Comparable<? super K>, V extends Comparabl
         map.remove(key);
         cache.invalidate(key);
         offsets.remove(key);
+        ++deleteCount;
+        if (deleteCount == maxDeleteCount) {
+            try {
+                fileCleaner();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override
     public final Iterator<K> readKeys() {
+        try {
+            writeToFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return offsets.keySet().iterator();
+    }
 
-        return map.keySet().iterator();
+    @Override
+    public final int size() {
+        return offsets.size();
+    }
+
+    @Override
+    public final void close() throws IOException {
+        cache.cleanUp();
+
+        fileCleaner();
+        writeToFile();
+
+        twinFile.close();
+
+        File twin = new File(twinFilePath, "");
+        if (mainFileInUse) {
+            twin.delete();
+            file.close();
+        } else {
+            file.close();
+            File mainFile = new File(filePath);
+            twin.renameTo(mainFile);
+        }
+
+        map.clear();
+        offsets.clear();
     }
 }
