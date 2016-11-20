@@ -1,7 +1,6 @@
 package ru.mipt.java2016.homework.g594.krokhalev.task3;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -10,6 +9,14 @@ import java.nio.ByteBuffer;
 import java.util.Date;
 
 class Serializer {
+    private static final int BOOL_SIZE   = 1;
+    private static final int BYTE_SIZE   = 1;
+    private static final int CHAR_SIZE   = 2;
+    private static final int SHORT_SIZE  = 2;
+    private static final int INT_SIZE    = 4;
+    private static final int LONG_SIZE   = 8;
+    private static final int FLOAT_SIZE  = 4;
+    private static final int DOUBLE_SIZE = 8;
 
     private static boolean isPrimitive(Class c) {
         return c.isPrimitive() ||
@@ -100,6 +107,7 @@ class Serializer {
         return baos.toByteArray();
     }
 
+
     private static Object deserialize(Class<?> oClass, ByteBuffer bb) {
         Object object = null;
         if (oClass.isArray()) {
@@ -161,5 +169,130 @@ class Serializer {
 
     static Object deserialize(Class<?> oClass, byte[] buffer) {
         return deserialize(oClass, ByteBuffer.wrap(buffer));
+    }
+
+    private static void read(InputStream stream, byte[] buff) throws IOException {
+        int pos = 0;
+        while (pos < buff.length) {
+            pos += stream.read(buff, pos, buff.length - pos);
+        }
+    }
+
+    private static byte readByte(InputStream stream) throws IOException {
+        byte[] buff = new byte[BYTE_SIZE];
+        read(stream, buff);
+        ByteBuffer bb = ByteBuffer.wrap(buff);
+        return bb.get();
+    }
+
+    private static char readChar(InputStream stream) throws IOException {
+        byte[] buff = new byte[CHAR_SIZE];
+        read(stream, buff);
+        ByteBuffer bb = ByteBuffer.wrap(buff);
+        return bb.getChar();
+    }
+
+    private static int readInt(InputStream stream) throws IOException {
+        byte[] buff = new byte[INT_SIZE];
+        read(stream, buff);
+        ByteBuffer bb = ByteBuffer.wrap(buff);
+        return bb.getInt();
+    }
+
+    private static long readLong(InputStream stream) throws IOException {
+        byte[] buff = new byte[LONG_SIZE];
+        read(stream, buff);
+        ByteBuffer bb = ByteBuffer.wrap(buff);
+        return bb.getLong();
+    }
+
+    private static short readShort(InputStream stream) throws IOException {
+        byte[] buff = new byte[SHORT_SIZE];
+        read(stream, buff);
+        ByteBuffer bb = ByteBuffer.wrap(buff);
+        return bb.getShort();
+    }
+
+    private static float readFloat(InputStream stream) throws IOException {
+        byte[] buff = new byte[FLOAT_SIZE];
+        read(stream, buff);
+        ByteBuffer bb = ByteBuffer.wrap(buff);
+        return bb.getFloat();
+    }
+
+    private static double readDouble(InputStream stream) throws IOException {
+        byte[] buff = new byte[DOUBLE_SIZE];
+        read(stream, buff);
+        ByteBuffer bb = ByteBuffer.wrap(buff);
+        return bb.getLong();
+    }
+
+    public static Object deserialize(Class<?> oClass, DataInputStream dis) throws IOException {
+        Object object = null;
+        if (oClass.isArray()) {
+            Integer length = dis.readInt();
+            object = (Array) Array.newInstance(oClass.getComponentType(), length);
+            for (int i = 0; i < length; ++i) {
+                Array.set(object, i, deserialize(oClass.getComponentType(), dis));
+            }
+        } else if (isPrimitive(oClass)) {
+            if (oClass.equals(boolean.class) || oClass.equals(Boolean.class)) {
+                object = (dis.readByte() == 1);
+            } else if (oClass.equals(byte.class) || oClass.equals(Byte.class)) {
+                object = dis.readByte();
+            } else if (oClass.equals(char.class) || oClass.equals(Character.class)) {
+                object = dis.readChar();
+            } else if (oClass.equals(short.class) || oClass.equals(Short.class)) {
+                object = dis.readShort();
+            } else if (oClass.equals(int.class) || oClass.equals(Integer.class)) {
+                object = dis.readInt();
+            } else if (oClass.equals(long.class) || oClass.equals(Long.class)) {
+                object = dis.readLong();
+            } else if (oClass.equals(float.class) || oClass.equals(Float.class)) {
+                object = dis.readFloat();
+            } else if (oClass.equals(double.class) || oClass.equals(Double.class)) {
+                object = dis.readDouble();
+            } else if (oClass.equals(String.class)) {
+                int length = dis.readInt();
+
+                ByteArrayOutputStream result = new ByteArrayOutputStream();
+                byte[] buffer = new byte[8096];
+                int readed = 0;
+                while (length > 0) {
+                    readed = dis.read(buffer, 0, Math.min(buffer.length, length));
+                    length -= readed;
+                    result.write(buffer, 0, readed);
+                }
+
+                object = result.toString();
+            } else if (oClass.equals(Date.class)) {
+                long time = dis.readLong();
+
+                object = new Date(time);
+            }
+        } else {
+            try {
+                Field[] fields = new Field[oClass.getSuperclass().getDeclaredFields().length +
+                        oClass.getDeclaredFields().length];
+                System.arraycopy(oClass.getSuperclass().getDeclaredFields(), 0, fields,
+                        0, oClass.getSuperclass().getDeclaredFields().length);
+                System.arraycopy(oClass.getDeclaredFields(), 0, fields,
+                        oClass.getSuperclass().getDeclaredFields().length, oClass.getDeclaredFields().length);
+
+                Object[] params = new Object[fields.length];
+                for (int i = 0; i < fields.length; ++i) {
+                    params[i] = deserialize(fields[i].getType(), dis);
+                }
+                Constructor<?>[] constructors = oClass.getConstructors();
+                object = constructors[0].newInstance(params);
+            } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
+        return object;
+    }
+
+    public static Object deserialize(Class<?> oClass, InputStream stream) throws IOException {
+        return deserialize(oClass, new DataInputStream(stream));
     }
 }

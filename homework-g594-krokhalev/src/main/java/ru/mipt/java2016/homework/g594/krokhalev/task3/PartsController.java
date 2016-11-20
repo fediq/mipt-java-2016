@@ -164,7 +164,7 @@ public class PartsController<K, V> implements Closeable {
 
         PositionBufferedOutputStream storageStream =
                 new PositionBufferedOutputStream(new FileOutputStream(mStorageFile));
-        OutputStream storageTable = new BufferedOutputStream(new FileOutputStream(mStorageTableFile));
+        OutputStream storageTable = new BufferedOutputStream(new FileOutputStream(mStorageTableFile), 16112);
 
         for (StoragePart<K, V> iPart : mParts) {
             iPart.copyTo(storageStream, storageTable);

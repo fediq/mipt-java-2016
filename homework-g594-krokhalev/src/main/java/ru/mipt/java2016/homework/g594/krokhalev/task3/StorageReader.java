@@ -98,15 +98,13 @@ public class StorageReader<K, V> {
     }
 
     public K readKey(InputStream stream) throws IOException {
-        return (K) Serializer.deserialize(keyClass, readItem(stream));
+        miss(stream, 4);
+        return (K) Serializer.deserialize(keyClass, stream);
     }
 
     public V readValue(InputStream stream) throws IOException {
-        return (V) Serializer.deserialize(valueClass, readItem(stream));
-    }
-
-    public V readValue(RandomAccessFile stream) throws IOException {
-        return (V) Serializer.deserialize(valueClass, readItem(stream));
+        miss(stream, 4);
+        return (V) Serializer.deserialize(valueClass, stream);
     }
 
     public void missNext(InputStream stream) throws IOException {

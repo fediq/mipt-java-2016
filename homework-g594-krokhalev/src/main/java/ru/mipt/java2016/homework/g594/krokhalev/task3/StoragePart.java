@@ -17,7 +17,7 @@ public class StoragePart<K, V> implements Closeable {
         mValueClass = valueClass;
 
         StorageReader<K, V> storageReader = new StorageReader<>(mKeyClass, mValueClass);
-        BufferedInputStream tableStream = new BufferedInputStream(new FileInputStream(tableFile));
+        BufferedInputStream tableStream = new PositionBufferedInputStream(new FileInputStream(tableFile));
 
         while (tableStream.available() > 0) {
             K key = storageReader.readKey(tableStream);
@@ -54,7 +54,7 @@ public class StoragePart<K, V> implements Closeable {
     public void copyTo(PositionBufferedOutputStream storage, OutputStream storageTable) throws IOException {
         StorageReader<K, V> storageReader = new StorageReader<>(mKeyClass, mValueClass);
 
-        InputStream partStream = new BufferedInputStream(new FileInputStream(mFile));
+        InputStream partStream = new PositionBufferedInputStream(new FileInputStream(mFile));
 
         byte[] buff;
         while (partStream.available() > 0) {
@@ -92,7 +92,7 @@ public class StoragePart<K, V> implements Closeable {
         Long offset = mKeys.get(key);
         V value = null;
         if (offset != null) {
-            BufferedInputStream thisStream = new BufferedInputStream(new FileInputStream(mFile));
+            BufferedInputStream thisStream = new PositionBufferedInputStream(new FileInputStream(mFile));
             StorageReader<K, V> storageReader = new StorageReader<K, V>(mKeyClass, mValueClass);
 
             storageReader.miss(thisStream, offset);
