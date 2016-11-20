@@ -2,6 +2,7 @@ package ru.mipt.java2016.homework.g594.krokhalev.task3;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class StoragePart<K, V> implements Closeable {
     private File mFile;
@@ -9,7 +10,7 @@ public class StoragePart<K, V> implements Closeable {
     private Class<K> mKeyClass;
     private Class<V> mValueClass;
 
-    private Map<K, Long> mKeys = new HashMap<>();
+    private Map<K, Long> mKeys = new HashMap<K, Long>();
 
     StoragePart(File file, File tableFile, Class<K> keyClass, Class<V> valueClass) throws IOException {
         mFile = file;
@@ -92,16 +93,13 @@ public class StoragePart<K, V> implements Closeable {
         Long offset = mKeys.get(key);
         V value = null;
         if (offset != null) {
-            RandomAccessFile raf = new RandomAccessFile(mFile, "r");
-            raf.seek(offset);
-            //BufferedInputStream thisStream = new BufferedInputStream(new FileInputStream(mFile));
+            BufferedInputStream thisStream = new BufferedInputStream(new FileInputStream(mFile));
             StorageReader<K, V> storageReader = new StorageReader<K, V>(mKeyClass, mValueClass);
 
-            //storageReader.miss(thisStream, offset);
-            value = storageReader.readValue(raf);
+            storageReader.miss(thisStream, offset);
+            value = storageReader.readValue(thisStream);
 
-            // thisStream.close()
-            raf.close();
+            thisStream.close();
         }
 
         return value;

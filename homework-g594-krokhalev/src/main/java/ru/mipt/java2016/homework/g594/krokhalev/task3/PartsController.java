@@ -1,7 +1,10 @@
 package ru.mipt.java2016.homework.g594.krokhalev.task3;
 
+import sun.security.util.Cache;
+
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class PartsController<K, V> implements Closeable {
 
@@ -14,7 +17,7 @@ public class PartsController<K, V> implements Closeable {
 
     private ArrayList<StoragePart<K, V>> mParts  = new ArrayList<>();
 
-    private Map<K, V> mCache = new HashMap<>();
+    private Map<K, V> mCache = new HashMap<K, V>();
     private Map<K, Integer> mKeys = new HashMap<K, Integer>();
 
     private int mVersion = 0;
