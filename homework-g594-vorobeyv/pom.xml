@@ -5,6 +5,7 @@
     <parent>
         <artifactId>mipt-java-2016</artifactId>
         <groupId>ru.mipt.java2016</groupId>
+
         <version>1.0.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -26,6 +27,5 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
 
 </project>

@@ -25,7 +25,8 @@ public class MCalculator implements Calculator {
             } else if (Character.isDigit(currentChar)) {
                 StringBuilder sNum = new StringBuilder();
                 boolean metDot = false;
-                while (i < expression.length() && (Character.isDigit(currentChar) || (currentChar == '.' && !metDot))) {
+                while (i < expression.length() && (Character.isDigit(currentChar)
+                        || (currentChar == '.' && !metDot))) {
                     sNum.append(currentChar);
                     if (currentChar == '.') {
                         metDot = true;
@@ -40,14 +41,16 @@ public class MCalculator implements Calculator {
                 gotUOp = false;
                 res.add(new NumToken(Double.parseDouble(sNum.toString())));
             } else if (currentChar == '(' || currentChar == ')') {
-                if (currentChar == '(' && res.size() > 0 && res.get(res.size() - 1) instanceof BracketToken
-                        && ((BracketToken) res.get(res.size() - 1)).getIsOpening()) {
+                if (currentChar == '(' && res.size() > 0
+                        && res.get(res.size() - 1) instanceof BracketToken &&
+                        ((BracketToken) res.get(res.size() - 1)).getIsOpening()) {
                     throw new ParsingException("Wrong bracket combination!");
                 }
                 gotNum = !(currentChar == '(');
                 gotUOp = false;
                 res.add(new BracketToken(currentChar));
-            } else if (currentChar == '+' || currentChar == '-' || currentChar == '*' || currentChar == '/') {
+            } else if (currentChar == '+' || currentChar == '-' || currentChar == '*'
+                       || currentChar == '/') {
                 if (!gotNum) {
                     if (gotUOp) {
                         throw new ParsingException("Wrong usage operators!");
@@ -88,7 +91,7 @@ public class MCalculator implements Calculator {
                 while (operators.size() > 0 && operators.peek() instanceof OperatorToken) {
                     Operator prev = ((OperatorToken) operators.peek()).getOperator();
                     if ((op.getPriority() <= prev.getPriority() && op.getIsLA())
-                            || (op.getPriority() < prev.getPriority())) {
+                        || (op.getPriority() < prev.getPriority())) {
                         prev.use(numbers);
                         operators.pop();
                     } else {
@@ -141,8 +144,8 @@ public class MCalculator implements Calculator {
     }
 
     private enum Operator {
-        PLUS(1, 2, true), MINUS(1, 2, true), MULTIPLY(2, 2, true), DIVIDE(2, 2, true), U_PLUS(3, 1,
-                false), U_MINUS(3, 1, false);
+        PLUS(1, 2, true), MINUS(1, 2, true), MULTIPLY(2, 2, true), DIVIDE(2, 2, true),
+        U_PLUS(3, 1, false), U_MINUS(3, 1, false);
 
         private int priority;
         private int valency;

@@ -8,7 +8,7 @@ import java.io.*;
 public class MyIntegerSerializer implements MyFirstSerializerInterface<Integer> {
     @Override
     public void serializeToStream(DataOutputStream dataOutputStream, Integer o) throws IOException {
-        dataOutputStream.writeDouble(o);
+        dataOutputStream.writeInt(o);
     }
 
     @Override
