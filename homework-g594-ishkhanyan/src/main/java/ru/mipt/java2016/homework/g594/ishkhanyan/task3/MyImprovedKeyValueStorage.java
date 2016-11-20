@@ -203,14 +203,14 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 throw new MalformedDataException("Error while creating a new file");
             }
         }
-        if(fileIsNotEmpty && numOfAdditions < 2*numOfDeletions && numOfDeletions > maxSize){
+        if (fileIsNotEmpty && numOfAdditions < 2 * numOfDeletions && numOfDeletions > maxSize) {
             try {
                 rebuild();
             } catch (IOException e) {
                 throw new MalformedDataException("rebuilding error");
             }
         }
-}
+    }
 
     private void recordNewAdditionToFile() throws IOException {
         File newFile = new File(intToPath(numberOfCurrentFile));
