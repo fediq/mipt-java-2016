@@ -35,7 +35,7 @@ public abstract class AbstractSingleFileStorageTest extends KeyValueStorageFacto
 
     @Test
     public void testReadWrite() {
-        doInTempDirectory(path -> doWithStrings(path, storage -> {
+            doInTempDirectory(path -> doWithStrings(path, storage -> {
             storage.write("foo", "bar");
             assertEquals("bar", storage.read("foo"));
             assertEquals(1, storage.size());
