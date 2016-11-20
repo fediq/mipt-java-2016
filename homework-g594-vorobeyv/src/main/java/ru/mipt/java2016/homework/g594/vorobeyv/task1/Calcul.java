@@ -23,6 +23,7 @@ public class Calcul implements Calculator {
     }
 
     // Если это +|- => то унарная, *,/=> false
+
     private boolean unaryOp(char c) {
 
         return c == '-';
