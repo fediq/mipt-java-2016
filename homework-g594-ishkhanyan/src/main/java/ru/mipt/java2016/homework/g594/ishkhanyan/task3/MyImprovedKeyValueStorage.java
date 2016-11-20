@@ -22,7 +22,7 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private String keyType;
     private String valueType;
-    private int maxSize = 700;
+    private int maxSize = 900;
     private HashMap<K, V> newAdditions = new HashMap<>();
     private HashMap<K, Pair<Integer, Long>> pathToValue = new HashMap<>(); // keys and pair (number of file and index)
     private Set<K> usedKeys = new HashSet<>();
@@ -143,8 +143,9 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public void close() throws IOException {
         closeInspection();
-        rebuild();
+        recordNewAdditionToFile();
         writeToConfig();
+        isOpen = false;
     }
 
     private void prepareToWork() throws IOException {
@@ -202,14 +203,14 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 throw new MalformedDataException("Error while creating a new file");
             }
         }
-//            if(fileIsNotEmpty && numOfAdditions < 2*numOfDeletions && numOfDeletions > maxSize){
-//                try {
-//                    rebuild();
-//                } catch (IOException e) {
-//                    throw new MalformedDataException("rebuilding error");
-//                }
-//            }
-    }
+        if(fileIsNotEmpty && numOfAdditions < 2*numOfDeletions && numOfDeletions > maxSize){
+            try {
+                rebuild();
+            } catch (IOException e) {
+                throw new MalformedDataException("rebuilding error");
+            }
+        }
+}
 
     private void recordNewAdditionToFile() throws IOException {
         File newFile = new File(intToPath(numberOfCurrentFile));
@@ -245,8 +246,9 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         RandomAccessFile fileOut = new RandomAccessFile(intToPath(numOfNewFile), "rw");
         for (K key : usedKeys) {
             keySerializer.writeToFile(key, fileOut);
-            pathToValue.put(key, new Pair(numOfNewFile, fileOut.getFilePointer()));
+            long point = fileOut.getFilePointer();
             valuSerializer.writeToFile(read(key), fileOut);
+            pathToValue.put(key, new Pair(numOfNewFile, point));
         }
         for (int i = numberOfFirstFile; i < numberOfCurrentFile; ++i) {
             File curFile = new File(intToPath(i));
