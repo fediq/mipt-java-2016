@@ -23,7 +23,7 @@ public class MyStudentSerialization implements MySerialization<Student> {
 
     @Override
     public Student read(String s) {
-        String parts[] = s.split("/");
+        String parts [] = s.split("/");
         int groupId = Integer.parseInt(parts[0]);
         String name = parts[1];
         String homeTown = parts[2];

@@ -7,5 +7,7 @@ public class MyDoubleSerialization implements MySerialization<Double> {
     }
 
     @Override
-    public Double read(String s) { return Double.parseDouble(s); }
+    public Double read(String s) {
+        return Double.parseDouble(s);
+    }
 }
