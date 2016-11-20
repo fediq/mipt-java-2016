@@ -30,10 +30,10 @@ public class KeyValueStorageMyNewRealization<K, V> implements KeyValueStorage<K,
     *   Типы хранящихся пар key-value в формате: "<тип key> --- <тип value>"
     *   Количество файлов с данными = k
     *   Количество данных - пар key-value = n
-    *   n строк с тройками вида: ключ key; номер файла, содержащего key; строчка в данном файле, соответствующая key
+    *   n строк с тройками вида: ключ key; номер файла, содержащего key; отступ в данном файле, соответствующий key
     *
     *   2) Каждый из n файлов с данными(их именя - имя глобального + уникальный номер):
-    *   Значения value, соответствующие ключам keys, для которых указаны данный файл и строка(отступ)
+    *   Значения value, соответствующие ключам keys, для которых указаны данный файл и отступ
     *
     *   3) Вспомогательный файл с hash-значениями, соответствующими файлам с данными:
     *   Количество фойлов с данными = k
@@ -153,7 +153,7 @@ public class KeyValueStorageMyNewRealization<K, V> implements KeyValueStorage<K,
         }
     }
 
-    private void decreaseData(boolean checkClose) {
+    private void decreaseData(boolean checkClose) { // уменьшение хранящихся данных - перераспределение по файлам
         if (checkClose || mapData.size() >= MAX_SIZE_OF_DATA) {
             int numberNewFile = files.size();
             String nameNewFile = getFileName(numberNewFile);
