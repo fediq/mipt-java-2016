@@ -1,14 +1,14 @@
 package ru.mipt.java2016.homework.g596.fattakhetdinov.task2;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Date;
 import ru.mipt.java2016.homework.tests.task2.Student;
 
 public class StudentSerializator implements SerializationStrategy<Student> {
     @Override
-    public void serializeToFile(Student student, DataOutputStream output) throws IOException {
+    public void serializeToFile(Student student, DataOutput output) throws IOException {
         output.writeInt(student.getGroupId());
         output.writeUTF(student.getName());
         output.writeUTF(student.getHometown());
@@ -18,7 +18,7 @@ public class StudentSerializator implements SerializationStrategy<Student> {
     }
 
     @Override
-    public Student deserializeFromFile(DataInputStream input) throws IOException {
+    public Student deserializeFromFile(DataInput input) throws IOException {
         int groupId = input.readInt();
         String name = input.readUTF();
         String hometown = input.readUTF();
