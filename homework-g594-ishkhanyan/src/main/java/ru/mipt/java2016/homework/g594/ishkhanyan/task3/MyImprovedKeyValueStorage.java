@@ -34,8 +34,8 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private int numberOfFirstFile;
     private boolean isOpen;
 
-    public MyImprovedKeyValueStorage(String path, MySerialization keySer, String keyT
-            , MySerialization valueSer, String valueT) {
+    public MyImprovedKeyValueStorage(String path, MySerialization keySer,
+                                     String keyT, MySerialization valueSer, String valueT) {
         pathDirectory = path;
         keySerializer = keySer;
         valuSerializer = valueSer;
@@ -110,7 +110,7 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         if (pathToValue.containsKey(key) && fileIsNotEmpty) {
             ++numOfDeletions;
         }
-        pathToValue.put(key, new Pair(0,0));
+        pathToValue.put(key, new Pair(0, 0));
         newAdditions.put(key, value);
     }
 
