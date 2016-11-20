@@ -3,8 +3,7 @@ package ru.mipt.java2016.homework.g595.topilskiy.task2;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-import ru.mipt.java2016.homework.g595.topilskiy.task2.Serializer.DoubleSerializer;
-import ru.mipt.java2016.homework.g595.topilskiy.task2.Serializer.StudentSerializer;
+import ru.mipt.java2016.homework.g595.topilskiy.task2.Serializer.*;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.tests.task2.AbstractSingleFileStorageTest;
@@ -37,10 +36,8 @@ public class LazyByteKeyValueStorageTest extends AbstractSingleFileStorageTest {
 
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String path) {
-        LazyByteKeyValueStorageInfo storageInfoInit =
-                new LazyByteKeyValueStorageInfo(path, "String", "String");
         try {
-            return new LazyByteKeyValueStorage<>(storageInfoInit);
+            return new LazyByteKeyValueStorage<>(path, new StringSerializer(), new StringSerializer());
         } catch (IOException discardException) {
             return null;
         }
@@ -48,11 +45,8 @@ public class LazyByteKeyValueStorageTest extends AbstractSingleFileStorageTest {
 
     @Override
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) {
-        LazyByteKeyValueStorageInfo storageInfoInit =
-                new LazyByteKeyValueStorageInfo(path, "Integer", "Double");
-
         try {
-            return new LazyByteKeyValueStorage<>(storageInfoInit);
+            return new LazyByteKeyValueStorage<>(path, new IntegerSerializer(), new DoubleSerializer());
         } catch (IOException discardException) {
             return null;
         }
@@ -60,11 +54,8 @@ public class LazyByteKeyValueStorageTest extends AbstractSingleFileStorageTest {
 
     @Override
     protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) {
-        LazyByteKeyValueStorageInfo storageInfoInit =
-                new LazyByteKeyValueStorageInfo(path, "StudentKey", "Student");
-
         try {
-            return new LazyByteKeyValueStorage<>(storageInfoInit);
+            return new LazyByteKeyValueStorage<>(path, new StudentKeySerializer(), new StudentSerializer());
         } catch (IOException discardException) {
             return null;
         }

@@ -1,5 +1,7 @@
 package ru.mipt.java2016.homework.g595.topilskiy.task2;
 
+import ru.mipt.java2016.homework.g595.topilskiy.task2.Serializer.ISerializer;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -16,10 +18,11 @@ public class LazyByteKeyValueStorageHashMapBuffer<KeyType, ValueType> {
     /* A File IO Wrapper for interactions with the Storage on disk */
     private final LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> fileIOWrapper;
 
-    public LazyByteKeyValueStorageHashMapBuffer(LazyByteKeyValueStorageInfo storageInfoInit)
-                                         throws IOException {
-        fileIOWrapper =
-                new LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType>(storageInfoInit);
+    public LazyByteKeyValueStorageHashMapBuffer(String pathToStorageDirectory,
+                                                ISerializer keyTypeSerializer,
+                                                ISerializer valueTypeSerializer) throws IOException {
+        fileIOWrapper = new LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType>
+                (pathToStorageDirectory, keyTypeSerializer, valueTypeSerializer);
         hashMapBuffer = fileIOWrapper.read();
     }
 

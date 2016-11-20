@@ -1,6 +1,7 @@
 package ru.mipt.java2016.homework.g595.topilskiy.task2;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
+import ru.mipt.java2016.homework.g595.topilskiy.task2.Serializer.ISerializer;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -19,11 +20,14 @@ public class LazyByteKeyValueStorage<KeyType, ValueType>
     private final LazyByteKeyValueStorageHashMapBuffer<KeyType, ValueType> storageBuffer;
     private Boolean isClosed;
 
-    public LazyByteKeyValueStorage(LazyByteKeyValueStorageInfo storageInfoInit) throws IOException {
-        storageBuffer = new LazyByteKeyValueStorageHashMapBuffer<>(storageInfoInit);
+    public LazyByteKeyValueStorage(String pathToStorageDirectory,
+                                   ISerializer keyTypeSerializer,
+                                   ISerializer valueTypeSerializer) throws IOException {
+        storageBuffer = new LazyByteKeyValueStorageHashMapBuffer<>
+                (pathToStorageDirectory, keyTypeSerializer, valueTypeSerializer);
         isClosed = false;
     }
-
+    
     /**
      * Return the Value with the corresponding Key from Storage
      *

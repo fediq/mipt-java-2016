@@ -18,12 +18,22 @@ import java.util.Map;
 public class LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> {
     /* The filename of the file of data storage */
     private static final String STORAGE_FILENAME = "storage.db";
-    /* A Class storing information on the current storage */
-    private final LazyByteKeyValueStorageInfo storageInfo;
+    /* A simple validation string */
+    private static final String ZERO_VALIDATION = "2K16 VALIDATION";
+    /* The path to the directory of data storage */
+    private final String pathToStorageDirectory;
+    /* A Serializer for KeyType in KeyValueStorage */
+    private final ISerializer keyTypeSerializer;
+    /* A Serializer for ValueType in KeyValueStorage */
+    private final ISerializer valueTypeSerializer;
 
-    public LazyByteKeyValueStorageFileIOWrapper(LazyByteKeyValueStorageInfo storageInfoInit) throws IOException {
-        storageInfo = storageInfoInit;
-        checkWhetherExistsAndDirectory(storageInfo.getPathToStorageDirectory());
+    public LazyByteKeyValueStorageFileIOWrapper(String pathToStorageDirectory,
+                                                ISerializer keyTypeSerializer,
+                                                ISerializer valueTypeSerializer) throws IOException {
+        this.pathToStorageDirectory = pathToStorageDirectory;
+        this.keyTypeSerializer = keyTypeSerializer;
+        this.valueTypeSerializer = valueTypeSerializer;
+        checkWhetherExistsAndDirectory(pathToStorageDirectory);
     }
 
     /**
@@ -45,7 +55,7 @@ public class LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> {
      * @return the path to the directory of data storage
      */
     public String getPathToStorageDirectory() {
-        return storageInfo.getPathToStorageDirectory();
+        return pathToStorageDirectory;
     }
 
     /**
@@ -55,7 +65,7 @@ public class LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> {
      * @return File, reflecting the data storage file
      */
     private File getStorageDataFile() {
-        return new File(storageInfo.getPathToStorageDirectory() +
+        return new File(pathToStorageDirectory +
                         File.separator +
                         STORAGE_FILENAME);
     }
@@ -101,27 +111,23 @@ public class LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> {
          * @throws IOException  - thrown by FileOutputStream.write()
          */
         public void write(HashMap<KeyType, ValueType> hashMapBuffer,
-                              FileOutputStream fileOut)       throws IOException {
-            byte[] keyTypeStringNumBytesAndBytes =
-                    getNumBytesAndBytes(storageInfo.getKeyTypeString(), "String");
-            byte[] valueTypeStringNumBytesAndBytes =
-                    getNumBytesAndBytes(storageInfo.getValueTypeString(), "String");
+                          FileOutputStream fileOut)       throws IOException {
+            byte[] zeroValidationStringNumBytesAndBytes =
+                    getNumBytesAndBytes(ZERO_VALIDATION, SerializerFactory.getSerializer("String"));
             byte[] keyOffsetMapSizeBytes =
                     integerTypeSerializer.serialize(hashMapBuffer.size());
 
             HashMap<KeyType, byte[]> keyKeyBytesMap   = getKeyKeyBytesMap(hashMapBuffer);
             HashMap<KeyType, byte[]> keyValueBytesMap = getKeyValueBytesMap(hashMapBuffer);
 
-            int sizeofHeaderOffsetBytes = keyTypeStringNumBytesAndBytes.length +
-                                          valueTypeStringNumBytesAndBytes.length +
+            int sizeofHeaderOffsetBytes = zeroValidationStringNumBytesAndBytes.length +
                                           keyOffsetMapSizeBytes.length;
 
             HashMap<KeyType, byte[]> keyOffsetBytesMap =
                     getKeyOffsetMap(sizeofHeaderOffsetBytes, keyKeyBytesMap, keyValueBytesMap);
 
 
-            fileOut.write(keyTypeStringNumBytesAndBytes);
-            fileOut.write(valueTypeStringNumBytesAndBytes);
+            fileOut.write(zeroValidationStringNumBytesAndBytes);
             fileOut.write(keyOffsetMapSizeBytes);
             for (Map.Entry<KeyType, byte[]> entry : keyOffsetBytesMap.entrySet()) {
                 KeyType currentKey = entry.getKey();
@@ -146,8 +152,7 @@ public class LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> {
 
             for (Map.Entry<KeyType, ValueType> entry : hashMapBuffer.entrySet()) {
                 keyKeyBytesMap.put(entry.getKey(),
-                                   getNumBytesAndBytes(entry.getKey(),
-                                                       storageInfo.getKeyTypeString()));
+                                   getNumBytesAndBytes(entry.getKey(), keyTypeSerializer));
             }
 
             return keyKeyBytesMap;
@@ -166,8 +171,7 @@ public class LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> {
 
             for (Map.Entry<KeyType, ValueType> entry : hashMapBuffer.entrySet()) {
                 keyValueBytesMap.put(entry.getKey(),
-                                     getNumBytesAndBytes(entry.getValue(),
-                                                         storageInfo.getValueTypeString()));
+                                     getNumBytesAndBytes(entry.getValue(), valueTypeSerializer));
             }
 
             return keyValueBytesMap;
@@ -210,14 +214,12 @@ public class LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> {
          * Serialize value with an extra length prefix for future linear reading
          *
          * @param value - element to be extra serialized (with length prefix)
-         * @param valueTypeString - the type of value in a string form
+         * @param typeSerializer - the serializer of value
          * @param <Type> - Type of the value
          * @return NumBytes + Value in binary form
          */
-        private <Type> byte[] getNumBytesAndBytes(Type value, String valueTypeString) {
-            ISerializer valueTypeSerializer = SerializerFactory.getSerializer(valueTypeString);
-
-            byte[] valueBytes     = valueTypeSerializer.serialize(value);
+        private <Type> byte[] getNumBytesAndBytes(Type value, ISerializer typeSerializer) {
+            byte[] valueBytes     = typeSerializer.serialize(value);
             byte[] valueNumBytes  = integerTypeSerializer.serialize(valueBytes.length);
             return joinArraysPrimitiveByte.joinArrays(valueNumBytes, valueBytes);
         }
@@ -243,7 +245,7 @@ public class LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> {
             for (Map.Entry<KeyType, Integer> entry : keyOffsetMap.entrySet()) {
                 storageDataFileIn.seek(entry.getValue());
                 ValueType valueRead =
-                        (ValueType) readType(storageInfo.getValueTypeString(), storageDataFileIn);
+                        (ValueType) readType(valueTypeSerializer, storageDataFileIn);
                 hashMapBuffer.put(entry.getKey(), valueRead);
             }
 
@@ -258,18 +260,17 @@ public class LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> {
          * @throws IOException - if file cannot be read properly
          */
         private HashMap<KeyType, Integer> readkeyOffsetMap(RandomAccessFile fileIn) throws IOException {
-            String keyTypeStringRead = (String) readType("String", fileIn);
-            String valueTypeStringRead = (String) readType("String", fileIn);
+            String zeroValidationStringRead =
+                    (String) readType(SerializerFactory.getSerializer("String"), fileIn);
 
-            if (!keyTypeStringRead.equals(storageInfo.getKeyTypeString()) ||
-                    !valueTypeStringRead.equals(storageInfo.getValueTypeString())) {
+            if (!zeroValidationStringRead.equals(ZERO_VALIDATION)) {
                 throw new IOException("Storage Database corrupted.");
             }
 
             int keyOffsetMapSize = readInteger(fileIn);
             HashMap<KeyType, Integer> keyOffsetMap = new HashMap<>();
             for (int i = 0; i < keyOffsetMapSize; ++i) {
-                KeyType keyRead = (KeyType) readType(storageInfo.getKeyTypeString(), fileIn);
+                KeyType keyRead = (KeyType) readType(keyTypeSerializer, fileIn);
                 Integer offsetRead = readInteger(fileIn);
                 keyOffsetMap.put(keyRead, offsetRead);
             }
@@ -293,19 +294,17 @@ public class LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> {
         /**
          * Read a Type value from fileIn
          *
-         * @param  typeBeingRead - the Type to be read in String form
+         * @param  readTypeSerializer - the Serializer of Type to be read
          * @param  fileIn - RandomAccessFile to be read from
          * @return an Object read, which can be casted to Type
          * @throws IOException - if file cannot be read properly
          */
-        private Object readType(String typeBeingRead, RandomAccessFile fileIn) throws IOException {
-            ISerializer typeSerializer = SerializerFactory.getSerializer(typeBeingRead);
-
+        private Object readType(ISerializer readTypeSerializer, RandomAccessFile fileIn) throws IOException {
             Integer lenRead = readInteger(fileIn);
             byte[] typeBytes = new byte[lenRead];
             fileIn.read(typeBytes);
 
-            return typeSerializer.deserialize(typeBytes);
+            return readTypeSerializer.deserialize(typeBytes);
         }
     }
 }
