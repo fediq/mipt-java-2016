@@ -8,10 +8,29 @@ import java.util.Date;
  * @author Artem K. Topilskiy
  * @since 30.10.16
  */
-public class DateSerializer implements ISerializer<Date> {
+public class DateSerializerSingleton implements ISerializer<Date> {
+    /* The single allowed instance of a singleton class */
+    private static DateSerializerSingleton instance;
+
+    /* FORBID: direct instantiation of a singleton class */
+    private DateSerializerSingleton() {}
+
+    /**
+     * Return (and create if needed) the only instance of this singleton
+     *
+     * @return a valid instance of the singleton
+     */
+    public static DateSerializerSingleton getInstance() {
+        if (instance == null) {
+            instance = new DateSerializerSingleton();
+        }
+
+        return instance;
+    }
+
+
     /* A LongSerializer for serializing and deserializing within the class */
-    private static final LongSerializer LONG_SERIALIZER = (LongSerializer)
-            SerializerFactory.getSerializer("Long");
+    private static final LongSerializerSingleton LONG_SERIALIZER = LongSerializerSingleton.getInstance();
 
 
     /**
@@ -20,7 +39,7 @@ public class DateSerializer implements ISerializer<Date> {
      * @return the number of bytes in Date
      */
     public static int getDateByteSize() {
-        return LongSerializer.getLongByteSize();
+        return LongSerializerSingleton.getLongByteSize();
     }
 
     /**

@@ -8,7 +8,27 @@ import java.nio.ByteBuffer;
  * @author Artem K. Topilskiy
  * @since 30.10.16
  */
-public class LongSerializer implements ISerializer<Long> {
+public class LongSerializerSingleton implements ISerializer<Long> {
+    /* The single allowed instance of a singleton class */
+    private static LongSerializerSingleton instance;
+
+    /* FORBID: direct instantiation of a singleton class */
+    private LongSerializerSingleton() {}
+
+    /**
+     * Return (and create if needed) the only instance of this singleton
+     *
+     * @return a valid instance of the singleton
+     */
+    public static LongSerializerSingleton getInstance() {
+        if (instance == null) {
+            instance = new LongSerializerSingleton();
+        }
+
+        return instance;
+    }
+
+
     /* Number of BYTES in the java class Long */
     private static final int LONG_BYTE_SIZE = Long.SIZE / Byte.SIZE;
 

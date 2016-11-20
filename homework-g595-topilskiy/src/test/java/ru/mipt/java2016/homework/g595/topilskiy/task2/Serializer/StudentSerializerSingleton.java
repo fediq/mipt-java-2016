@@ -14,18 +14,38 @@ import static java.util.Arrays.copyOfRange;
  * @author Artem K. Topilskiy
  * @since 30.10.16
  */
-public class StudentSerializer implements ISerializer<Student> {
+public class StudentSerializerSingleton implements ISerializer<Student> {
+    /* The single allowed instance of a singleton class */
+    private static StudentSerializerSingleton instance;
+
+    /* FORBID: direct instantiation of a singleton class */
+    private StudentSerializerSingleton() {}
+
+    /**
+     * Return (and create if needed) the only instance of this singleton
+     *
+     * @return a valid instance of the singleton
+     */
+    public static StudentSerializerSingleton getInstance() {
+        if (instance == null) {
+            instance = new StudentSerializerSingleton();
+        }
+
+        return instance;
+    }
+
+
     /* ClassSerializers for serializing and deserializing within the class */
-    private static final BooleanSerializer BOOLEAN_SERIALIZER = (BooleanSerializer)
-            SerializerFactory.getSerializer("Boolean");
-    private static final IntegerSerializer INTEGER_SERIALIZER = (IntegerSerializer)
-            SerializerFactory.getSerializer("Integer");
-    private static final DoubleSerializer  DOUBLE_SERIALIZER  = (DoubleSerializer)
-            SerializerFactory.getSerializer("Double");
-    private static final DateSerializer    DATE_SERIALIZER    = (DateSerializer)
-            SerializerFactory.getSerializer("Date");
-    private static final StringSerializer  STRING_SERIALIZER  = (StringSerializer)
-            SerializerFactory.getSerializer("String");
+    private static final BooleanSerializer BOOLEAN_SERIALIZER =
+                         BooleanSerializer.getInstance();
+    private static final IntegerSerializerSingleton INTEGER_SERIALIZER =
+                         IntegerSerializerSingleton.getInstance();
+    private static final DoubleSerializerSingleton DOUBLE_SERIALIZER  =
+                         DoubleSerializerSingleton.getInstance();
+    private static final DateSerializerSingleton DATE_SERIALIZER    =
+                         DateSerializerSingleton.getInstance();
+    private static final StringSerializerSingleton STRING_SERIALIZER  =
+                         StringSerializerSingleton.getInstance();
 
     /**
      * Serialize a Student object into Bytes
@@ -35,15 +55,13 @@ public class StudentSerializer implements ISerializer<Student> {
      */
     @Override
     public byte[] serialize(Student value) {
-        JoinArraysPrimitiveByte joinArraysPrimitiveByte = new JoinArraysPrimitiveByte();
-
         byte[] studentGroupIDBytes       = INTEGER_SERIALIZER.serialize(value.getGroupId());
         byte[] studentNameBytes          =  STRING_SERIALIZER.serialize(value.getName());
         byte[] studentHometownBytes      =  STRING_SERIALIZER.serialize(value.getHometown());
         byte[] studentBirthdateBytes     =    DATE_SERIALIZER.serialize(value.getBirthDate());
         byte[] studentHasDormitoryBytes  = BOOLEAN_SERIALIZER.serialize(value.isHasDormitory());
         byte[] studentAverageScoreBytes  =  DOUBLE_SERIALIZER.serialize(value.getAverageScore());
-        return joinArraysPrimitiveByte.joinArrays(studentGroupIDBytes,
+        return JoinArraysPrimitiveByte.joinArrays(studentGroupIDBytes,
                                                   studentNameBytes,
                                                   studentHometownBytes,
                                                   studentBirthdateBytes,
@@ -60,12 +78,12 @@ public class StudentSerializer implements ISerializer<Student> {
      */
     @Override
     public Student deserialize(byte[] valueBytes) throws IllegalArgumentException {
-        if (valueBytes.length < IntegerSerializer.getIntegerByteSize()) {
+        if (valueBytes.length < IntegerSerializerSingleton.getIntegerByteSize()) {
             throw new IllegalArgumentException("Illegal Deserialization");
         }
 
         int valueBytesHead = 0;
-        int valueBytesTail = IntegerSerializer.getIntegerByteSize();
+        int valueBytesTail = IntegerSerializerSingleton.getIntegerByteSize();
 
 
         /* READ GroupID */
@@ -76,7 +94,7 @@ public class StudentSerializer implements ISerializer<Student> {
 
 
         /* READ Name */
-        valueBytesTail += IntegerSerializer.getIntegerByteSize();
+        valueBytesTail += IntegerSerializerSingleton.getIntegerByteSize();
         int nameLen = INTEGER_SERIALIZER.deserialize(
                 copyOfRange(valueBytes, valueBytesHead, valueBytesTail)
         );
@@ -88,7 +106,7 @@ public class StudentSerializer implements ISerializer<Student> {
 
 
         /* READ Hometown */
-        valueBytesTail += IntegerSerializer.getIntegerByteSize();
+        valueBytesTail += IntegerSerializerSingleton.getIntegerByteSize();
         int hometownLen = INTEGER_SERIALIZER.deserialize(
                 copyOfRange(valueBytes, valueBytesHead, valueBytesTail)
         );
@@ -100,7 +118,7 @@ public class StudentSerializer implements ISerializer<Student> {
 
 
         /* READ Birthday */
-        valueBytesTail += DateSerializer.getDateByteSize();
+        valueBytesTail += DateSerializerSingleton.getDateByteSize();
         Date studentBirthday = DATE_SERIALIZER.deserialize(
                 copyOfRange(valueBytes, valueBytesHead, valueBytesTail)
         );
@@ -116,7 +134,7 @@ public class StudentSerializer implements ISerializer<Student> {
 
 
         /* READ Average Score */
-        valueBytesTail += DoubleSerializer.getDoubleByteSize();
+        valueBytesTail += DoubleSerializerSingleton.getDoubleByteSize();
         Double studentAverageScore = DOUBLE_SERIALIZER.deserialize(
                 copyOfRange(valueBytes, valueBytesHead, valueBytesTail)
         );

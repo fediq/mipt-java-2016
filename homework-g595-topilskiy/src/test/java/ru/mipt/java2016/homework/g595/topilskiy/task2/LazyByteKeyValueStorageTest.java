@@ -19,7 +19,7 @@ import java.io.IOException;
 public class LazyByteKeyValueStorageTest extends AbstractSingleFileStorageTest {
     @Test
     public void testSerializers() {
-        final DoubleSerializer doubleSerializer  = new DoubleSerializer();
+        final DoubleSerializerSingleton doubleSerializer = DoubleSerializerSingleton.getInstance();
         final double DOUBLE_CONST = 981237518.234123;
         final double EPSILON = 0.001;
         double deserializeSerializedDoubleConst = doubleSerializer.deserialize(
@@ -27,7 +27,7 @@ public class LazyByteKeyValueStorageTest extends AbstractSingleFileStorageTest {
         assertEquals(DOUBLE_CONST, deserializeSerializedDoubleConst, EPSILON);
 
 
-        final StudentSerializer studentSerializer = new StudentSerializer();
+        final StudentSerializerSingleton studentSerializer = StudentSerializerSingleton.getInstance();
         Student deserializeSerializedStudentValue1 = studentSerializer.deserialize(
                                                      studentSerializer.serialize(VALUE_1));
         assertEquals(VALUE_1, deserializeSerializedStudentValue1);
@@ -37,7 +37,8 @@ public class LazyByteKeyValueStorageTest extends AbstractSingleFileStorageTest {
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String path) {
         try {
-            return new LazyByteKeyValueStorage<>(path, new StringSerializer(), new StringSerializer());
+            return new LazyByteKeyValueStorage<>(path, StringSerializerSingleton.getInstance(),
+                                                       StringSerializerSingleton.getInstance());
         } catch (IOException discardException) {
             return null;
         }
@@ -46,7 +47,8 @@ public class LazyByteKeyValueStorageTest extends AbstractSingleFileStorageTest {
     @Override
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) {
         try {
-            return new LazyByteKeyValueStorage<>(path, new IntegerSerializer(), new DoubleSerializer());
+            return new LazyByteKeyValueStorage<>(path, IntegerSerializerSingleton.getInstance(),
+                                                       DoubleSerializerSingleton.getInstance());
         } catch (IOException discardException) {
             return null;
         }
@@ -55,7 +57,8 @@ public class LazyByteKeyValueStorageTest extends AbstractSingleFileStorageTest {
     @Override
     protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) {
         try {
-            return new LazyByteKeyValueStorage<>(path, new StudentKeySerializer(), new StudentSerializer());
+            return new LazyByteKeyValueStorage<>(path, StudentKeySerializerSingleton.getInstance(),
+                                                       StudentSerializerSingleton.getInstance());
         } catch (IOException discardException) {
             return null;
         }

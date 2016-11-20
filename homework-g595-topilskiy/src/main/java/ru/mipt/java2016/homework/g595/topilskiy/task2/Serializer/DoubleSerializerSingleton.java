@@ -8,7 +8,27 @@ import java.nio.ByteBuffer;
  * @author Artem K. Topilskiy
  * @since 30.10.16
  */
-public class DoubleSerializer implements ISerializer<Double> {
+public class DoubleSerializerSingleton implements ISerializer<Double> {
+    /* The single allowed instance of a singleton class */
+    private static DoubleSerializerSingleton instance;
+
+    /* FORBID: direct instantiation of a singleton class */
+    private DoubleSerializerSingleton() {}
+
+    /**
+     * Return (and create if needed) the only instance of this singleton
+     *
+     * @return a valid instance of the singleton
+     */
+    public static DoubleSerializerSingleton getInstance() {
+        if (instance == null) {
+            instance = new DoubleSerializerSingleton();
+        }
+
+        return instance;
+    }
+
+
     /* Number of BYTES in the java class Double */
     private static final int DOUBLE_BYTE_SIZE = Double.SIZE / Byte.SIZE;
 

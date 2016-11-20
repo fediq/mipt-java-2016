@@ -7,6 +7,26 @@ package ru.mipt.java2016.homework.g595.topilskiy.task2.Serializer;
  * @since 30.10.16
  */
 public class BooleanSerializer implements ISerializer<Boolean> {
+    /* The single allowed instance of a singleton class */
+    private static BooleanSerializer instance;
+
+    /* FORBID: direct instantiation of a singleton class */
+    private BooleanSerializer() {}
+
+    /**
+     * Return (and create if needed) the only instance of this singleton
+     *
+     * @return a valid instance of the singleton
+     */
+    public static BooleanSerializer getInstance() {
+        if (instance == null) {
+            instance = new BooleanSerializer();
+        }
+
+        return instance;
+    }
+
+
     /* Number of BYTES in the java class Boolean */
     private static final int BOOLEAN_BYTE_SIZE = Byte.SIZE / Byte.SIZE;
     /* Wrappers for (byte) to use for Boolean serialization and deserialization */

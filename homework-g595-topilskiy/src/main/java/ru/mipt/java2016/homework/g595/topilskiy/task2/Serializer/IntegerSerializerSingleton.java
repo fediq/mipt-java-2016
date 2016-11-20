@@ -8,7 +8,27 @@ import java.nio.ByteBuffer;
  * @author Artem K. Topilskiy
  * @since 30.10.16
  */
-public class IntegerSerializer implements ISerializer<Integer> {
+public class IntegerSerializerSingleton implements ISerializer<Integer> {
+    /* The single allowed instance of a singleton class */
+    private static IntegerSerializerSingleton instance;
+
+    /* FORBID: direct instantiation of a singleton class */
+    private IntegerSerializerSingleton() {}
+
+    /**
+     * Return (and create if needed) the only instance of this singleton
+     *
+     * @return a valid instance of the singleton
+     */
+    public static IntegerSerializerSingleton getInstance() {
+        if (instance == null) {
+            instance = new IntegerSerializerSingleton();
+        }
+
+        return instance;
+    }
+
+
     /* Number of BYTES in the java class Integer */
     private static final int INTEGER_BYTE_SIZE = Integer.SIZE / Byte.SIZE;
 
@@ -20,6 +40,7 @@ public class IntegerSerializer implements ISerializer<Integer> {
     public static int getIntegerByteSize() {
         return INTEGER_BYTE_SIZE;
     }
+
 
     /**
      * Serialize a Integer object into Bytes

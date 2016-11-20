@@ -1,9 +1,9 @@
 package ru.mipt.java2016.homework.g595.topilskiy.task2;
 
 import ru.mipt.java2016.homework.g595.topilskiy.task2.Serializer.ISerializer;
-import ru.mipt.java2016.homework.g595.topilskiy.task2.Serializer.SerializerFactory;
-import ru.mipt.java2016.homework.g595.topilskiy.task2.Serializer.IntegerSerializer;
+import ru.mipt.java2016.homework.g595.topilskiy.task2.Serializer.IntegerSerializerSingleton;
 import ru.mipt.java2016.homework.g595.topilskiy.task2.JoinArrays.JoinArraysPrimitiveByte;
+import ru.mipt.java2016.homework.g595.topilskiy.task2.Serializer.StringSerializerSingleton;
 
 import java.io.*;
 import java.util.HashMap;
@@ -109,8 +109,8 @@ public class LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> {
 
     /* Class wrapping everything needed to write to disk */
     private class FileOutputWrapper {
-        private final JoinArraysPrimitiveByte joinArraysPrimitiveByte = new JoinArraysPrimitiveByte();
-        private final IntegerSerializer integerTypeSerializer = new IntegerSerializer();
+        private final IntegerSerializerSingleton integerTypeSerializer =
+                      IntegerSerializerSingleton.getInstance();
 
         /**
          * Writes hashMapBuffer data in a SSTable-like format to FileOut
@@ -122,7 +122,7 @@ public class LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> {
         public void write(HashMap<KeyType, ValueType> hashMapBuffer,
                           BufferedOutputStream fileOut)       throws IOException {
             byte[] zeroValidationStringNumBytesAndBytes =
-                    getNumBytesAndBytes(ZERO_VALIDATION, SerializerFactory.getSerializer("String"));
+                    getNumBytesAndBytes(ZERO_VALIDATION, StringSerializerSingleton.getInstance());
             byte[] keyOffsetMapSizeBytes =
                     integerTypeSerializer.serialize(hashMapBuffer.size());
 
@@ -208,7 +208,7 @@ public class LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> {
                 numberOffsetBytes += entry.getValue().length;
             }
 
-            numberOffsetBytes += IntegerSerializer.getIntegerByteSize() * keyKeyBytesMap.size();
+            numberOffsetBytes += IntegerSerializerSingleton.getIntegerByteSize() * keyKeyBytesMap.size();
 
             for (Map.Entry<KeyType, byte[]> entry : keyValueBytesMap.entrySet()) {
                 keyOffsetBytesMap.put(entry.getKey(),
@@ -230,14 +230,12 @@ public class LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> {
         private <Type> byte[] getNumBytesAndBytes(Type value, ISerializer typeSerializer) {
             byte[] valueBytes     = typeSerializer.serialize(value);
             byte[] valueNumBytes  = integerTypeSerializer.serialize(valueBytes.length);
-            return joinArraysPrimitiveByte.joinArrays(valueNumBytes, valueBytes);
+            return JoinArraysPrimitiveByte.joinArrays(valueNumBytes, valueBytes);
         }
     }
 
     /* Class wrapping everything needed to read from disk */
     private class FileInputWrapper {
-        private final IntegerSerializer integerTypeSerializer = new IntegerSerializer();
-
         /**
          * Read hashMapBuffer from storage File Descriptor
          *
@@ -270,7 +268,7 @@ public class LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> {
          */
         private HashMap<KeyType, Integer> readkeyOffsetMap(RandomAccessFile fileIn) throws IOException {
             String zeroValidationStringRead =
-                    (String) readType(SerializerFactory.getSerializer("String"), fileIn);
+                    (String) readType(StringSerializerSingleton.getInstance(), fileIn);
 
             if (!zeroValidationStringRead.equals(ZERO_VALIDATION)) {
                 throw new IOException("Storage Database corrupted.");
@@ -295,9 +293,9 @@ public class LazyByteKeyValueStorageFileIOWrapper<KeyType, ValueType> {
          * @throws IOException - if file cannot be read properly
          */
         private Integer readInteger(RandomAccessFile fileIn) throws IOException {
-            byte[] integerBytes = new byte[IntegerSerializer.getIntegerByteSize()];
+            byte[] integerBytes = new byte[IntegerSerializerSingleton.getIntegerByteSize()];
             fileIn.read(integerBytes);
-            return integerTypeSerializer.deserialize(integerBytes);
+            return IntegerSerializerSingleton.getInstance().deserialize(integerBytes);
         }
 
         /**
