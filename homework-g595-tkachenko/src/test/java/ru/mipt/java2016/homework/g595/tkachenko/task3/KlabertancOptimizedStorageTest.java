@@ -1,14 +1,14 @@
 package ru.mipt.java2016.homework.g595.tkachenko.task3;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.util.Date;
+
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.tests.task2.Student;
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
 import ru.mipt.java2016.homework.tests.task3.KeyValueStoragePerformanceTest;
-
-import javax.xml.bind.ValidationException;
-
-import java.io.*;
-import java.util.Date;
 
 /**
  * Created by Dmitry on 20/11/2016.
@@ -52,14 +52,10 @@ public class KlabertancOptimizedStorageTest extends KeyValueStoragePerformanceTe
     protected KeyValueStorage<String, String> buildStringsStorage(String path) {
         KlabertancOptimizedStorage<String, String> res = null;
         try {
-            try {
-                res = new KlabertancOptimizedStorage<>(path, new StringSerialization(),
-                        new StringSerialization());
-            } catch (IOException e) {
-                System.out.println(e.getMessage());
-            }
-        } catch (ValidationException ve) {
-            System.out.println(ve.getMessage());
+            res = new KlabertancOptimizedStorage<>(path, new StringSerialization(),
+                    new StringSerialization());
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
         }
         return res;
     }
@@ -69,14 +65,10 @@ public class KlabertancOptimizedStorageTest extends KeyValueStoragePerformanceTe
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) {
         KlabertancOptimizedStorage<Integer, Double> res = null;
         try {
-            try {
-                res = new KlabertancOptimizedStorage<>(path, new IntSerialization(),
-                        new DoubleSerialization());
-            } catch (IOException excep) {
-                System.out.println(excep.getMessage());
-            }
-        } catch (ValidationException ve) {
-            System.out.println(ve.getMessage());
+            res = new KlabertancOptimizedStorage<>(path, new IntSerialization(),
+                    new DoubleSerialization());
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
         }
         return res;
     }
@@ -85,14 +77,10 @@ public class KlabertancOptimizedStorageTest extends KeyValueStoragePerformanceTe
     protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) {
         KlabertancOptimizedStorage<StudentKey, Student> res = null;
         try {
-            try {
-                res = new KlabertancOptimizedStorage<>(path, new StudentKeySerialization(),
-                        new StudentSerialization());
-            } catch (IOException excep) {
-                System.out.println(excep.getMessage());
-            }
-        } catch (ValidationException ve) {
-            System.out.println(ve.getMessage());
+            res = new KlabertancOptimizedStorage<>(path, new StudentKeySerialization(),
+                    new StudentSerialization());
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
         }
         return res;
     }

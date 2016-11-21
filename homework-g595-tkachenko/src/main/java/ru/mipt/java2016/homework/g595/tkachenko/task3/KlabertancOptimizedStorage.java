@@ -81,9 +81,9 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
 
         File receivedFile = new File(directory);
         if (receivedFile.exists() && receivedFile.isDirectory()) {
-            this.storageFile = new File(directory + File.separator + storageFile);
+            storageFile = new File(directory + File.separator + storageFile);
         } else {
-            throw new RuntimeException("path" + directory + " isn't available");
+            throw new RuntimeException("path" + directory + " is not valid!");
         }
 
         if (storageFile.exists()) {
@@ -164,6 +164,7 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
 
         keyAndOffset.remove(key);
     }
+
 
     @Override
     public Iterator<K> readKeys() {
