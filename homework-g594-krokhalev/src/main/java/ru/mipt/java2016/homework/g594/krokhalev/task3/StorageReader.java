@@ -11,40 +11,34 @@ class StorageReader<K, V> {
         mValueSerializer = valueSerializer;
     }
 
-    int writeKey(K key, OutputStream stream) throws IOException {
-        byte[] keyByte = mKeySerializer.serialize(key);
-        writeInt(keyByte.length, stream);
-        stream.write(keyByte);
-        return 4 + keyByte.length;
+    void writeKey(K key, OutputStream stream) throws IOException {
+        DataOutputStream dos = new DataOutputStream(stream);
+        mKeySerializer.serialize(dos, key);
     }
 
-    int writeValue(V value, OutputStream stream) throws IOException {
-        byte[] valueByte = mValueSerializer.serialize(value);
-        writeInt(valueByte.length, stream);
-        stream.write(valueByte);
-        return 4 + valueByte.length;
+    void writeValue(V value, OutputStream stream) throws IOException {
+        DataOutputStream dos = new DataOutputStream(stream);
+        mValueSerializer.serialize(dos, value);
     }
 
-    int writeInt(int val, OutputStream stream) throws IOException {
+    void writeInt(int val, OutputStream stream) throws IOException {
         DataOutputStream dos = new DataOutputStream(stream);
         dos.writeInt(val);
-        return 4;
     }
 
-    int writeLong(long val, OutputStream stream) throws IOException {
+    void writeLong(long val, OutputStream stream) throws IOException {
         DataOutputStream dos = new DataOutputStream(stream);
         dos.writeLong(val);
-        return 8;
     }
 
     K readKey(InputStream stream) throws IOException {
-        skip(4, stream);
-        return (K) mKeySerializer.deserialize(stream);
+        DataInputStream dis = new DataInputStream(stream);
+        return mKeySerializer.deserialize(dis);
     }
 
     V readValue(InputStream stream) throws IOException {
-        skip(4, stream);
-        return (V) mValueSerializer.deserialize(stream);
+        DataInputStream dis = new DataInputStream(stream);
+        return mValueSerializer.deserialize(dis);
     }
 
     void skip(long len, InputStream stream) throws IOException {
@@ -91,15 +85,11 @@ class StorageReader<K, V> {
     }
 
     void writeKey(K key, RandomAccessFile file) throws IOException {
-        byte[] keyByte = mKeySerializer.serialize(key);
-        writeInt(keyByte.length, file);
-        file.write(keyByte);
+        mKeySerializer.serialize(file, key);
     }
 
     void writeValue(V value, RandomAccessFile file) throws IOException {
-        byte[] keyByte = mValueSerializer.serialize(value);
-        writeInt(keyByte.length, file);
-        file.write(keyByte);
+        mValueSerializer.serialize(file, value);
     }
 
     void writeInt(int val, RandomAccessFile file) throws IOException {
@@ -111,29 +101,14 @@ class StorageReader<K, V> {
     }
 
     K readKey(RandomAccessFile file) throws IOException {
-        byte[] buff = new byte[readInt(file)];
-        ByteArrayInputStream bais = new ByteArrayInputStream(buff);
-        file.read(buff);
-        K key = mKeySerializer.deserialize(bais);
-        bais.close();
-        return key;
+        return mKeySerializer.deserialize(file);
     }
 
     V readValue(RandomAccessFile file) throws IOException {
-        byte[] buff = new byte[readInt(file)];
-        ByteArrayInputStream bais = new ByteArrayInputStream(buff);
-        file.read(buff);
-        V value = mValueSerializer.deserialize(bais);
-        bais.close();
-        return value;
+        return mValueSerializer.deserialize(file);
     }
 
     void skip(long len, RandomAccessFile file) throws IOException {
-        file.seek(file.getFilePointer() + len);
-    }
-
-    void skipItem(RandomAccessFile file) throws IOException {
-        int len = readInt(file);
         file.seek(file.getFilePointer() + len);
     }
 

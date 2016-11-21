@@ -29,58 +29,38 @@ class Serializer<T> implements SerializationStrategy<T> {
                 c.equals(String.class);
     }
 
-    public byte[] serialize(Object object) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    public void serialize(DataOutput dos, Object object) throws IOException {
         Class oClass = object.getClass();
         if (oClass.isArray()) {
 
-            baos.write(serialize(Array.getLength(object)));
+            serialize(dos, Array.getLength(object));
 
             for (int i = 0; i < Array.getLength(object); i++) {
-                baos.write(serialize(Array.get(object, i)));
+                serialize(dos, Array.get(object, i));
             }
 
         } else if (isPrimitive(oClass)) {
             if (object.getClass().equals(boolean.class) || object.getClass().equals(Boolean.class)) {
-                boolean bObject = (boolean) object;
-                if (bObject) {
-                    baos.write(new byte[]{1});
-                } else {
-                    baos.write(new byte[]{0});
-                }
+                dos.writeBoolean((boolean) object);
             } else if (object.getClass().equals(byte.class) || object.getClass().equals(Byte.class)) {
-                baos.write(new byte[]{(byte) object});
+                dos.write(new byte[]{(byte) object});
             } else if (object.getClass().equals(char.class) || object.getClass().equals(Character.class)) {
-                ByteBuffer bb = ByteBuffer.allocate(2);
-                bb.putChar((char) object);
-                baos.write(bb.array());
+                dos.writeChar((char) object);
             } else if (object.getClass().equals(short.class) || object.getClass().equals(Short.class)) {
-                ByteBuffer bb = ByteBuffer.allocate(2);
-                bb.putShort((short) object);
-                baos.write(bb.array());
+                dos.writeShort((short) object);
             } else if (object.getClass().equals(int.class) || object.getClass().equals(Integer.class)) {
-                ByteBuffer bb = ByteBuffer.allocate(4);
-                bb.putInt((int) object);
-                baos.write(bb.array());
+                dos.writeInt((int) object);
             } else if (object.getClass().equals(long.class) || object.getClass().equals(Long.class)) {
-                ByteBuffer bb = ByteBuffer.allocate(8);
-                bb.putLong((long) object);
-                baos.write(bb.array());
+                dos.writeLong((long) object);
             } else if (object.getClass().equals(float.class) || object.getClass().equals(Float.class)) {
-                ByteBuffer bb = ByteBuffer.allocate(4);
-                bb.putFloat((float) object);
-                baos.write(bb.array());
+                dos.writeFloat((float) object);
             } else if (object.getClass().equals(double.class) || object.getClass().equals(Double.class)) {
-                ByteBuffer bb = ByteBuffer.allocate(8);
-                bb.putDouble((double) object);
-                baos.write(bb.array());
+                dos.writeDouble((double) object);
             } else if (object.getClass().equals(String.class)) {
-                String sObject = (String) object;
-                baos.write(serialize(sObject.length()));
-                baos.write(sObject.getBytes());
+                dos.writeUTF((String) object);
             } else if (object.getClass().equals(Date.class)) {
                 Date dObject = (Date) object;
-                baos.write(serialize(dObject.getTime()));
+                serialize(dos, dObject.getTime());
             }
         } else {
             try {
@@ -88,23 +68,22 @@ class Serializer<T> implements SerializationStrategy<T> {
                     Field[] fields = oClass.getSuperclass().getDeclaredFields();
                     for (Field field : fields) {
                         field.setAccessible(true);
-                        baos.write(serialize(field.get(object)));
+                        serialize(dos, field.get(object));
                     }
                 }
 
                 Field[] fields = oClass.getDeclaredFields();
                 for (Field field : fields) {
                     field.setAccessible(true);
-                    baos.write(serialize(field.get(object)));
+                    serialize(dos, field.get(object));
                 }
             } catch (IllegalAccessException e) {
                 e.printStackTrace();
             }
         }
-        return baos.toByteArray();
     }
 
-    private static Object deserialize(Class<?> oClass, DataInputStream dis) throws IOException {
+    private static Object deserialize(Class<?> oClass, DataInput dis) throws IOException {
         Object object = null;
         if (oClass.isArray()) {
             Integer length = dis.readInt();
@@ -114,7 +93,7 @@ class Serializer<T> implements SerializationStrategy<T> {
             }
         } else if (isPrimitive(oClass)) {
             if (oClass.equals(boolean.class) || oClass.equals(Boolean.class)) {
-                object = (dis.readByte() == 1);
+                object = dis.readBoolean();
             } else if (oClass.equals(byte.class) || oClass.equals(Byte.class)) {
                 object = dis.readByte();
             } else if (oClass.equals(char.class) || oClass.equals(Character.class)) {
@@ -130,18 +109,7 @@ class Serializer<T> implements SerializationStrategy<T> {
             } else if (oClass.equals(double.class) || oClass.equals(Double.class)) {
                 object = dis.readDouble();
             } else if (oClass.equals(String.class)) {
-                int length = dis.readInt();
-
-                ByteArrayOutputStream result = new ByteArrayOutputStream();
-                byte[] buffer = new byte[8096];
-                int readed = 0;
-                while (length > 0) {
-                    readed = dis.read(buffer, 0, Math.min(buffer.length, length));
-                    length -= readed;
-                    result.write(buffer, 0, readed);
-                }
-
-                object = result.toString();
+                object = dis.readUTF();
             } else if (oClass.equals(Date.class)) {
                 long time = dis.readLong();
 
@@ -169,7 +137,7 @@ class Serializer<T> implements SerializationStrategy<T> {
         return object;
     }
 
-    public T deserialize(InputStream stream) throws IOException {
-        return (T) deserialize(mClassT, new DataInputStream(stream));
+    public T deserialize(DataInput dis) throws IOException {
+        return (T) deserialize(mClassT, dis);
     }
 }
