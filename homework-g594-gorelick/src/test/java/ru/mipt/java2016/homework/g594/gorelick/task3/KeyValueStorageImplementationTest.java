@@ -11,7 +11,7 @@ public class KeyValueStorageImplementationTest extends KeyValueStoragePerformanc
     protected KeyValueStorage<String, String> buildStringsStorage(String path) {
         try {
             KeyValueStorageImplementation test = new KeyValueStorageImplementation<>(path,
-                    new StringSerializer(), new StringSerializer());
+                    new StringFileWorker(), new StringFileWorker());
             return test;
         } catch (IOException error) {
             error.printStackTrace();
@@ -23,7 +23,7 @@ public class KeyValueStorageImplementationTest extends KeyValueStoragePerformanc
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) {
         try {
             KeyValueStorageImplementation test = new KeyValueStorageImplementation<>(path,
-                    new IntegerSerializer(), new DoubleSerializer());
+                    new IntegerFileWorker(), new DoubleFileWorker());
             return test;
         } catch (IOException error) {
             error.printStackTrace();
@@ -35,7 +35,7 @@ public class KeyValueStorageImplementationTest extends KeyValueStoragePerformanc
     protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) {
         try {
             KeyValueStorageImplementation test = new KeyValueStorageImplementation<>(path,
-                    new StudentKeySerializer(), new StudentSerializer());
+                    new StudentKeyFileWorker(), new StudentFileWorker());
             return test;
         } catch (IOException error) {
             error.printStackTrace();

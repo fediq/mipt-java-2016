@@ -4,22 +4,22 @@ import ru.mipt.java2016.homework.tests.task2.StudentKey;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
-class StudentKeySerializer implements Serializer<StudentKey> {
+class StudentKeyFileWorker implements FileWorker<StudentKey> {
     @Override
     public StudentKey read(RandomAccessFile file, long position) throws IOException {
-        IntegerSerializer integerSerializer = new IntegerSerializer();
-        StringSerializer stringSerializer = new StringSerializer();
+        IntegerFileWorker integerFileWorker = new IntegerFileWorker();
+        StringFileWorker stringSerializer = new StringFileWorker();
         file.seek(position);
-        int groupId = integerSerializer.read(file, file.getFilePointer());
+        int groupId = integerFileWorker.read(file, file.getFilePointer());
         String name = stringSerializer.read(file, file.getFilePointer());
         return new StudentKey(groupId, name);
     }
     @Override
     public void write(RandomAccessFile file, StudentKey object, long position) throws IOException {
-        IntegerSerializer integerSerializer = new IntegerSerializer();
-        StringSerializer stringSerializer = new StringSerializer();
+        IntegerFileWorker integerFileWorker = new IntegerFileWorker();
+        StringFileWorker stringSerializer = new StringFileWorker();
         file.seek(position);
-        integerSerializer.write(file, object.getGroupId(), file.getFilePointer());
+        integerFileWorker.write(file, object.getGroupId(), file.getFilePointer());
         stringSerializer.write(file, object.getName(), file.getFilePointer());
     }
 }

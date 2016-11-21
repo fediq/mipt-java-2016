@@ -3,7 +3,7 @@ package ru.mipt.java2016.homework.g594.gorelick.task3;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
-public class IntegerSerializer implements Serializer<Integer> {
+public class IntegerFileWorker implements FileWorker<Integer> {
     @Override
     public Integer read(RandomAccessFile file, long position) throws IOException {
         file.seek(position);

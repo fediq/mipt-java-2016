@@ -20,16 +20,16 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
     private ArrayList<File> filesTable;
     private HashSet<K> setKeys;
     private HashMap<K, V> valueMap;
-    private HashMap<K, keyPlace> fileMap;
-    private final Serializer<K> keySerializer;
-    private final Serializer<V> valueSerializer;
-    private static final int DATA_CAPACITY = 250;
+    private HashMap<K, KeyPosition> fileMap;
+    private final FileWorker<K> keyFileWorker;
+    private final FileWorker<V> valueFileWorker;
+    private static final int DATA_CAPACITY = 600;
 
-    private class keyPlace {
+    private class KeyPosition {
         private int id;
         private long position;
 
-        keyPlace(int id, long position) {
+        KeyPosition(int id, long position) {
             this.id = id;
             this.position = position;
         }
@@ -43,7 +43,7 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
         }
     }
 
-    KeyValueStorageImplementation(String path, Serializer<K> keyS, Serializer<V> valueS) throws IOException {
+    KeyValueStorageImplementation(String path, FileWorker<K> keyS, FileWorker<V> valueS) throws IOException {
         if (Files.notExists(Paths.get(path))) {
             throw new IOException("Wrong path");
         }
@@ -55,24 +55,24 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
         valueMap = new HashMap<>();
         fileMap = new HashMap<>();
         filesTable = new ArrayList<>();
-        keySerializer = keyS;
-        valueSerializer = valueS;
+        keyFileWorker = keyS;
+        valueFileWorker = valueS;
         databasePath = path;
         File database = new File(databasePath + File.separator + DATABASE_NAME_TEMPLATE);
         boolean isCreated = database.createNewFile();
         file = new RandomAccessFile(database, "rw");
         if (!isCreated) {
-            IntegerSerializer intS = new IntegerSerializer();
-            LLongSerializer longS = new LLongSerializer();
+            IntegerFileWorker intS = new IntegerFileWorker();
+            LLongFileWorker longS = new LLongFileWorker();
             int countFiles = intS.read(file, file.getFilePointer());
             int sizeKeys = intS.read(file, file.getFilePointer());
             for (int i = 0; i < sizeKeys; i++) {
-                K key = keySerializer.read(file, file.getFilePointer());
+                K key = keyFileWorker.read(file, file.getFilePointer());
                 int id = intS.read(file, file.getFilePointer());
                 long shift = longS.read(file, file.getFilePointer());
 
                 setKeys.add(key);
-                fileMap.put(key, new keyPlace(id, shift));
+                fileMap.put(key, new KeyPosition(id, shift));
             }
 
             for (int i = 0; i < countFiles; i++) {
@@ -91,9 +91,9 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
             int id = fileMap.get(key).getId();
             long shift = fileMap.get(key).getPosition();
             try {
-                RandomAccessFile file = new RandomAccessFile(filesTable.get(id), "rw");
-                V value = valueSerializer.read(file, shift);
-                file.close();
+                RandomAccessFile tmp = new RandomAccessFile(filesTable.get(id), "rw");
+                V value = valueFileWorker.read(tmp, shift);
+                tmp.close();
                 return value;
             } catch (IOException error) {
                 error.printStackTrace();
@@ -118,9 +118,9 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
                 current.setLength(0);
                 current.seek(0);
                 for (Map.Entry<K, V> entry : valueMap.entrySet()) {
-                    keyPlace place = new keyPlace(id, current.getFilePointer());
+                    KeyPosition place = new KeyPosition(id, current.getFilePointer());
                     fileMap.put(entry.getKey(), place);
-                    valueSerializer.write(current, entry.getValue(), current.getFilePointer());
+                    valueFileWorker.write(current, entry.getValue(), current.getFilePointer());
                 }
                 valueMap.clear();
                 current.close();
@@ -163,9 +163,9 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
             current.setLength(0);
             current.seek(0);
             for (Map.Entry<K, V> entry : valueMap.entrySet()) {
-                keyPlace place = new keyPlace(id, current.getFilePointer());
+                KeyPosition place = new KeyPosition(id, current.getFilePointer());
                 fileMap.put(entry.getKey(), place);
-                valueSerializer.write(current, entry.getValue(), current.getFilePointer());
+                valueFileWorker.write(current, entry.getValue(), current.getFilePointer());
             }
             valueMap.clear();
             current.close();
@@ -174,16 +174,16 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
         }
         file.setLength(0);
         file.seek(0);
-        IntegerSerializer integerSerializer = new IntegerSerializer();
-        LLongSerializer longSerializer = new LLongSerializer();
-        integerSerializer.write(file, filesTable.size(), file.getFilePointer());
-        integerSerializer.write(file, fileMap.size(), file.getFilePointer());
-        for (Map.Entry<K, keyPlace> entry : fileMap.entrySet()) {
+        IntegerFileWorker integerFileWorker = new IntegerFileWorker();
+        LLongFileWorker longFileWorker = new LLongFileWorker();
+        integerFileWorker.write(file, filesTable.size(), file.getFilePointer());
+        integerFileWorker.write(file, fileMap.size(), file.getFilePointer());
+        for (Map.Entry<K, KeyPosition> entry : fileMap.entrySet()) {
             K key = entry.getKey();
-            keyPlace place = entry.getValue();
-            keySerializer.write(file, key, file.getFilePointer());
-            integerSerializer.write(file, place.getId(), file.getFilePointer());
-            longSerializer.write(file, place.getPosition(), file.getFilePointer());
+            KeyPosition place = entry.getValue();
+            keyFileWorker.write(file, key, file.getFilePointer());
+            integerFileWorker.write(file, place.getId(), file.getFilePointer());
+            longFileWorker.write(file, place.getPosition(), file.getFilePointer());
         }
         file.close();
         Files.delete(ifopen.toPath());

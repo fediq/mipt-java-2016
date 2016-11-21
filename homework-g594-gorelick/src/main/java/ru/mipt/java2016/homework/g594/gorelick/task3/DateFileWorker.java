@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Date;
 
-public class DateSerializer implements Serializer<Date> {
+public class DateFileWorker implements FileWorker<Date> {
     @Override
     public Date read(RandomAccessFile file, long position) throws IOException {
         file.seek(position);
