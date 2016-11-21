@@ -56,7 +56,6 @@ public class PartsController<K, V> implements Closeable {
         mWorkDirectory = workDirectory;
 
         mStorageReader = storageReader;
-
         if (restore) {
             Part<K, V> tmpPart = new Part<K, V>(mWorkDirectory, storageFile, storageTable, storageReader);
             addPart(tmpPart);
