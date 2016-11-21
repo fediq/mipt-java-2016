@@ -2,8 +2,8 @@ package ru.mipt.java2016.homework.g595.topilskiy.task2;
 
 import ru.mipt.java2016.homework.g595.topilskiy.task2.Serializer.ISerializer;
 import ru.mipt.java2016.homework.g595.topilskiy.task2.Serializer.IntegerSerializerSingleton;
-import ru.mipt.java2016.homework.g595.topilskiy.task2.JoinArrays.JoinArraysPrimitiveByte;
 import ru.mipt.java2016.homework.g595.topilskiy.task2.Serializer.StringSerializerSingleton;
+import ru.mipt.java2016.homework.g595.topilskiy.task2.JoinArrays.JoinArraysPrimitiveByte;
 
 import java.io.*;
 import java.util.HashMap;

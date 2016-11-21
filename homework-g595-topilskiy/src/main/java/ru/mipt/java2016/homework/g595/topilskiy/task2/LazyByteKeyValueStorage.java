@@ -8,7 +8,7 @@ import java.util.Iterator;
 
 /**
  * A KeyValueStorage implementation for <KeyType, ValueType> pair that uses
- * - a JSON-like format for persistent Storage
+ * - a special byte-serializer format for persistent Storage
  * - a HashMap for buffered use of the Storage
  *
  * @author Artem K. Topilskiy
