@@ -26,6 +26,7 @@ public abstract class MySerializer<K> {
         }
         return ByteBuffer.wrap(data).getInt();
     }
+
     protected Long getLong(RandomAccessFile in) {
         int len = Long.BYTES;
         byte[] data = new byte[len];
@@ -48,6 +49,7 @@ public abstract class MySerializer<K> {
             throw new IllegalStateException("Invalid work with file");
         }
     }
+
     protected void putLong(FileOutputStream out, Long val) {
         ByteBuffer data = ByteBuffer.allocate(Long.BYTES);
         data.putLong(val);

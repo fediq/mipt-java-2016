@@ -15,49 +15,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 class MyStorage<K, V> implements KeyValueStorage<K, V> {
 
-    public static void main(String[] args) {
-        MyStringSerializer Str = new MyStringSerializer();
-        MyStorage<String, String> a = new MyStorage<String, String>("/home/masya/java", Str, Str);
-        a.write("179", "179");
-        a.write("abac", "uuu");
-        a.write("abad", "u1uu");
-        a.write("abae", "7uuu");
-        a.write("abac", "uu9u");
-        a.write("abaq", "uu9u");
-        a.write("abaw", "uu9u");
-        a.write("abar", "uu9u");
-        a.write("abar", "uu9u");
-        a.write("abar", "uu9u");
-        a.write("abar", "uu9u");
-        a.write("abar", "uu9u");
-        a.write("abar", "uu9u");
-        a.write("abar", "uu9u");
-        a.write("abad", "uu79u");
-        a.write("abae", "uu89u");
-        System.out.println(a.size());
-        System.out.println(a.read("179"));
-        System.out.println(a.read("abac"));
-        System.out.println(a.read("abad"));
-        System.out.println(a.read("abae"));
-        //a.delete("abac");
-        //a.delete("abad");
-        //a.delete("abae");
-        //a.delete("abac");
-        System.out.println(a.size());
-        System.out.println(a.read("179"));
-        System.out.println(a.read("abac"));
-        System.out.println(a.read("abad"));
-        System.out.println(a.read("abae"));
-        a.close();
-        //a.readKeys();
-        a.write("K", "L");
-        //a.read("trololo"));
-        //storage.write("trololo", "yarr");
-        //assertEquals("yarr", storage.read("trololo"));
-        //storage.close();
-        //storage.readKeys();
-    }
-
     private MySerializer<Long> offsetSerializer;
     private MySerializer<Integer> lengthSerializer;
     private MySerializer<K> keySerializer;
@@ -91,7 +48,7 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
             }
             byte[] check = new byte[1]; ///check for EOF cause file might be longer
             if (in.read(check) != -1) {
-            throw new IllegalStateException("Invalid file");
+                throw new IllegalStateException("Invalid file");
             }
             in.close();
             values.seek(0);
@@ -101,7 +58,7 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
-    public MyStorage(String path, MySerializer keyS, MySerializer valS) {
+    MyStorage(String path, MySerializer keyS, MySerializer valS) { //Can't make it public, it doesn't pass maven test...
         filepath = path;
         lengthSerializer = new MyIntSerializer();
         offsetSerializer = new MyLongSerializer();
@@ -150,8 +107,7 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
         load();
     }
 
-    void checkFileSize()
-    {
+    void checkFileSize() {
         try {
             if (25 < inFile && map.size() * 2  < inFile) {
                 File newDataFile = new File(filepath + "/data2.db");
@@ -161,15 +117,15 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
                 valuesout.close();
                 valuesout = new FileOutputStream(newDataFile);
                 lengthSerializer.put(valuesout, map.size());
-                HashSet Offsets = new HashSet(map.values());
+                HashSet offsets = new HashSet(map.values());
                 values.seek(0);
                 System.out.println(values.length());
                 lengthSerializer.get(values);
                 long pointer = values.getFilePointer();
                 int newSize = 0;
-                while(pointer < values.length()) {
+                while (pointer < values.length()) {
                     V val = valSerializer.get(values);
-                    if (Offsets.contains(pointer)) {
+                    if (offsets.contains(pointer)) {
                         valSerializer.put(valuesout, val);
                         newSize++;
                     }
@@ -178,8 +134,7 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
                 values.close();
                 datafile.delete();
                 boolean success = newDataFile.renameTo(datafile);
-                if (!success)
-                {
+                if (!success) {
                     throw new IllegalStateException();
                 }
                 values = new RandomAccessFile(datafile, "rw");
@@ -207,7 +162,7 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
 
     private void checkExistence() {
         if (!open) {
-            try{
+            try {
                 readlock.unlock();
                 writelock.unlock();
             } catch (Exception exp) {
@@ -223,16 +178,9 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
         V val;
         if (!map.containsKey(key)) {
             val =  null;
-        }
-        else if (updates.containsKey(key)) {
+        } else if (updates.containsKey(key)) {
             val =  updates.get(key);
-        }
-        /*else if (readCache.containsKey(key))
-        {
-            val = readCache.get(key);
-        }*/
-        else {
-
+        } else {
             Long offset = map.get(key);
             try {
                 Long length = values.length();
@@ -273,8 +221,7 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
     public void write(K key, V value) {
         writelock.lock();
         checkExistence();
-        if (updatesSize > 250)
-        {
+        if (updatesSize > 250) {
             writeValues();
         }
         updates.put(key, value);
