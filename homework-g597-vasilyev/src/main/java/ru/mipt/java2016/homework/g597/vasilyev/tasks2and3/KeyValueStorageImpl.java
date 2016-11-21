@@ -166,10 +166,6 @@ public class KeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
-    private void trim() {
-        ;
-    }
-
     private V readValue(long offset) throws IOException {
         valuesFiles.seek(offset);
         return valueSerializer.read(valuesFiles);
