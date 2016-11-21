@@ -1,8 +1,9 @@
-package ru.mipt.java2016.homework.g594.kalinichenko.task3;
+package ru.mipt.java2016.homework.g594.kalinichenko.task2;
+
 
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
 
-import java.io.RandomAccessFile;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 
 /**
@@ -11,7 +12,7 @@ import java.io.FileOutputStream;
 
 public class MyStudentKeySerializer extends MySerializer<StudentKey> {
     @Override
-    public StudentKey get(RandomAccessFile in) {
+    public StudentKey get(FileInputStream in) {
         Integer groupID = getInt(in);
         String name = getStr(in);
         return new StudentKey(groupID, name);

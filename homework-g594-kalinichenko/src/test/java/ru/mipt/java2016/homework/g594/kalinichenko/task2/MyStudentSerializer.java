@@ -1,8 +1,8 @@
-package ru.mipt.java2016.homework.g594.kalinichenko.task3;
+package ru.mipt.java2016.homework.g594.kalinichenko.task2;
 
 import ru.mipt.java2016.homework.tests.task2.Student;
 
-import java.io.RandomAccessFile;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.nio.ByteBuffer;
 import java.util.Date;
@@ -12,7 +12,7 @@ import java.util.Date;
  */
 public class MyStudentSerializer extends MySerializer<Student> {
     @Override
-    public Student get(RandomAccessFile in) {
+    public Student get(FileInputStream in) {
         Integer groupID = getInt(in);
         String name = getStr(in);
         String hometown = getStr(in);
@@ -32,7 +32,7 @@ public class MyStudentSerializer extends MySerializer<Student> {
         putDouble(out, student.getAverageScore());
     }
 
-    private Date getDate(RandomAccessFile in) {
+    private Date getDate(FileInputStream in) {
         int len = Double.BYTES;
         byte[] data = new byte[len];
         try {
@@ -56,7 +56,7 @@ public class MyStudentSerializer extends MySerializer<Student> {
         }
     }
 
-    private boolean getBool(RandomAccessFile in) {
+    private boolean getBool(FileInputStream in) {
         int len = 1;
         byte[] data = new byte[len];
         try {
