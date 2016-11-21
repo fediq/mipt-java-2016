@@ -19,9 +19,8 @@ public class QuickKeyStorage<K, V> implements KeyValueStorage<K, V> {
     private final File mWorkDirectory;
     private File mPartsDirectory;
 
-    private PartsController<K, V> mPartsController;
+    private Part<K, V> mMainPart;
     private Cache<K, V> mCache;
-    private Set<K> mKeys = new HashSet<K>();
 
     private boolean isClosed = false;
 
@@ -57,12 +56,10 @@ public class QuickKeyStorage<K, V> implements KeyValueStorage<K, V> {
                     storageTable = new File(mWorkDirectory.getAbsolutePath() + File.separatorChar + STORAGE_TABLE_NAME);
                 }
 
-                mPartsController = new PartsController<K, V>(mPartsDirectory, storageFile, storageTable, mKeys,
-                        storageReader, false);
+                mMainPart = new Part<K, V>(mPartsDirectory, storageFile, storageTable, storageReader, false);
 
             } else {
-                mPartsController = new PartsController<K, V>(mPartsDirectory, storageFile, storageTable, mKeys,
-                        storageReader, true);
+                mMainPart = new Part<K, V>(mPartsDirectory, storageFile, storageTable, storageReader, true);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -78,7 +75,7 @@ public class QuickKeyStorage<K, V> implements KeyValueStorage<K, V> {
         }
 
         try {
-            value = mPartsController.read(key);
+            value = mMainPart.read(key);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -91,16 +88,15 @@ public class QuickKeyStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public boolean exists(K key) {
         checkClosed();
-        return mKeys.contains(key);
+        return mMainPart.exists(key);
     }
 
     @Override
     public void write(K key, V value) {
         checkClosed();
         mCache.put(key, value);
-        mKeys.add(key);
         try {
-            mPartsController.write(key, value);
+            mMainPart.write(key, value);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -110,32 +106,25 @@ public class QuickKeyStorage<K, V> implements KeyValueStorage<K, V> {
     public void delete(K key) {
         checkClosed();
         mCache.invalidate(key);
-        boolean exists = mKeys.remove(key);
-        if (exists) {
-            try {
-                mPartsController.remove(key);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+        mMainPart.remove(key);
     }
 
     @Override
     public Iterator<K> readKeys() {
         checkClosed();
-        return mKeys.iterator();
+        return mMainPart.getKeys().iterator();
     }
 
     @Override
     public int size() {
         checkClosed();
-        return mPartsController.size();
+        return mMainPart.getSize();
     }
 
     @Override
     public void close() throws IOException {
         isClosed = true;
-        mPartsController.close();
+        mMainPart.close();
         if (!mPartsDirectory.delete()) {
             throw new RuntimeException("Can not delete part directory");
         }

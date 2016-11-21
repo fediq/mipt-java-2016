@@ -11,26 +11,30 @@ class StorageReader<K, V> {
         mValueSerializer = valueSerializer;
     }
 
-    void writeKey(K key, OutputStream stream) throws IOException {
+    int writeKey(K key, OutputStream stream) throws IOException {
         byte[] keyByte = mKeySerializer.serialize(key);
         writeInt(keyByte.length, stream);
         stream.write(keyByte);
+        return 4 + keyByte.length;
     }
 
-    void writeValue(V value, OutputStream stream) throws IOException {
-        byte[] keyByte = mValueSerializer.serialize(value);
-        writeInt(keyByte.length, stream);
-        stream.write(keyByte);
+    int writeValue(V value, OutputStream stream) throws IOException {
+        byte[] valueByte = mValueSerializer.serialize(value);
+        writeInt(valueByte.length, stream);
+        stream.write(valueByte);
+        return 4 + valueByte.length;
     }
 
-    void writeInt(int val, OutputStream stream) throws IOException {
+    int writeInt(int val, OutputStream stream) throws IOException {
         DataOutputStream dos = new DataOutputStream(stream);
         dos.writeInt(val);
+        return 4;
     }
 
-    void writeLong(long val, OutputStream stream) throws IOException {
+    int writeLong(long val, OutputStream stream) throws IOException {
         DataOutputStream dos = new DataOutputStream(stream);
         dos.writeLong(val);
+        return 8;
     }
 
     K readKey(InputStream stream) throws IOException {
@@ -84,5 +88,68 @@ class StorageReader<K, V> {
     int readInt(InputStream stream) throws IOException {
         DataInputStream dis = new DataInputStream(stream);
         return dis.readInt();
+    }
+
+    void writeKey(K key, RandomAccessFile file) throws IOException {
+        byte[] keyByte = mKeySerializer.serialize(key);
+        writeInt(keyByte.length, file);
+        file.write(keyByte);
+    }
+
+    void writeValue(V value, RandomAccessFile file) throws IOException {
+        byte[] keyByte = mValueSerializer.serialize(value);
+        writeInt(keyByte.length, file);
+        file.write(keyByte);
+    }
+
+    void writeInt(int val, RandomAccessFile file) throws IOException {
+        file.writeInt(val);
+    }
+
+    void writeLong(long val, RandomAccessFile file) throws IOException {
+       file.writeLong(val);
+    }
+
+    K readKey(RandomAccessFile file) throws IOException {
+        byte[] buff = new byte[readInt(file)];
+        ByteArrayInputStream bais = new ByteArrayInputStream(buff);
+        file.read(buff);
+        K key = mKeySerializer.deserialize(bais);
+        bais.close();
+        return key;
+    }
+
+    V readValue(RandomAccessFile file) throws IOException {
+        byte[] buff = new byte[readInt(file)];
+        ByteArrayInputStream bais = new ByteArrayInputStream(buff);
+        file.read(buff);
+        V value = mValueSerializer.deserialize(bais);
+        bais.close();
+        return value;
+    }
+
+    void skip(long len, RandomAccessFile file) throws IOException {
+        file.seek(file.getFilePointer() + len);
+    }
+
+    void skipItem(RandomAccessFile file) throws IOException {
+        int len = readInt(file);
+        file.seek(file.getFilePointer() + len);
+    }
+
+    void read(byte[] dist, RandomAccessFile file) throws IOException {
+        read(dist, 0, dist.length, file);
+    }
+
+    void read(byte[] dist, int offset, int len, RandomAccessFile file) throws IOException {
+        file.read(dist, offset, len);
+    }
+
+    long readLong(RandomAccessFile file) throws IOException {
+        return file.readLong();
+    }
+
+    int readInt(RandomAccessFile file) throws IOException {
+        return file.readInt();
     }
 }

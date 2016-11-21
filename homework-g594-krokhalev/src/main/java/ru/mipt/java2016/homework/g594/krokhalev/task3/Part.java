@@ -10,51 +10,42 @@ class Part<K, V> implements Closeable {
     private final StorageReader<K, V> mStorageReader;
     private final File mFile;
 
+    private final File mStorageFile;
+    private final File mStorageTable;
+
     private Map<K, Long> mKeysPositions = new LinkedHashMap<K, Long>();
+    private RandomAccessFile mRAFile;
     private int mActualSize;
-
-    Part(File workDirectory, StorageReader<K, V> storageReader) throws FileNotFoundException {
-        mFile = new File(workDirectory.getAbsolutePath() + File.separatorChar + PartsController.getNextPartName());
-        mStorageReader = storageReader;
-        mActualSize = 0;
-    }
-
-    Part(File workDirectory, Map<K, V> memPart, StorageReader<K, V> storageReader) throws IOException {
-        mFile = new File(workDirectory.getAbsolutePath() + File.separatorChar + PartsController.getNextPartName());
-        mStorageReader = storageReader;
-        mActualSize = memPart.size();
-
-        PositionBufferedOutputStream partStream = new PositionBufferedOutputStream(new FileOutputStream(mFile));
-        for (Map.Entry<K, V> iPair : memPart.entrySet()) {
-            mKeysPositions.put(iPair.getKey(), partStream.getPosition());
-
-            mStorageReader.writeValue(iPair.getValue(), partStream);
-        }
-        partStream.close();
-        memPart.clear();
-    }
 
     Part(File workDirectory,
          File storageFile,
          File storageTable,
-         StorageReader<K, V> storageReader) throws IOException {
+         StorageReader<K, V> storageReader,
+         boolean restore) throws IOException {
 
-        mFile = new File(workDirectory.getAbsolutePath() + File.separatorChar + PartsController.getNextPartName());
+        mFile = new File(workDirectory.getAbsolutePath() + File.separatorChar + "Part");
         mStorageReader = storageReader;
+        mStorageFile = storageFile;
+        mStorageTable = storageTable;
 
-        if (!storageFile.renameTo(mFile)) {
-            throw new RuntimeException("Can not create part from storage file");
+        if (restore) {
+            if (!storageFile.renameTo(mFile)) {
+                throw new RuntimeException("Can not create part from storage file");
+            }
+
+            BufferedInputStream tableStream = new BufferedInputStream(new FileInputStream(storageTable));
+            while (tableStream.available() > 0) {
+                K key = mStorageReader.readKey(tableStream);
+                Long pos = mStorageReader.readLong(tableStream);
+
+                mKeysPositions.put(key, pos);
+            }
+            tableStream.close();
+            mActualSize = getSize();
+        } else {
+            mActualSize = 0;
         }
-
-        BufferedInputStream tableStream = new BufferedInputStream(new FileInputStream(storageTable));
-        while (tableStream.available() > 0) {
-            K key = mStorageReader.readKey(tableStream);
-            Long pos = mStorageReader.readLong(tableStream);
-
-            mKeysPositions.put(key, pos);
-        }
-        tableStream.close();
-        mActualSize = getSize();
+        mRAFile = new RandomAccessFile(mFile, "rw");
     }
 
     int getSize() {
@@ -66,6 +57,9 @@ class Part<K, V> implements Closeable {
     }
 
     double getUse() {
+        if (getActualSize() == 0) {
+            return 1;
+        }
         return getSize() / getActualSize();
     }
 
@@ -87,51 +81,28 @@ class Part<K, V> implements Closeable {
         return value;
     }
 
-    void append(Part<K, V> appPart) throws IOException {
-        PositionBufferedInputStream appStream = new PositionBufferedInputStream(new FileInputStream(appPart.mFile));
-        PositionBufferedOutputStream partStream = new PositionBufferedOutputStream(new FileOutputStream(mFile, true));
+    boolean write(K key, V value) throws IOException {
+        mRAFile.seek(mRAFile.length());
 
-        mActualSize += appPart.getSize();
-
-        int buffLen;
-        byte[] buff;
-        long fileSize = mFile.length();
-        for (Map.Entry<K, Long> iKeyPosition : appPart.mKeysPositions.entrySet()) {
-            mStorageReader.skip(iKeyPosition.getValue() - appStream.getPosition(), appStream);
-            iKeyPosition.setValue(partStream.getPosition() + fileSize);
-
-            buffLen = mStorageReader.readInt(appStream);
-            buff = new byte[buffLen];
-            mStorageReader.read(buff, appStream);
-
-            mStorageReader.writeInt(buffLen, partStream);
-            partStream.write(buff);
-        }
-        appStream.close();
-        partStream.close();
-        mKeysPositions.putAll(appPart.mKeysPositions);
-
-        appPart.close();
-    }
-
-    void save(File storageFile, File storageTable) throws IOException {
-        if (getSize() > 0) {
-            if (!mFile.renameTo(storageFile)) {
-                throw new RuntimeException("Can not rename to save");
-            }
-            BufferedOutputStream tableStream = new BufferedOutputStream(new FileOutputStream(storageTable));
-            for (Map.Entry<K, Long> iKeyPosition : mKeysPositions.entrySet()) {
-                mStorageReader.writeKey(iKeyPosition.getKey(), tableStream);
-                mStorageReader.writeLong(iKeyPosition.getValue(), tableStream);
-            }
-            tableStream.close();
-        }
+        Long exists = mKeysPositions.put(key, mRAFile.getFilePointer());
+        mStorageReader.writeValue(value, mRAFile);
+        return exists != null;
     }
 
     @Override
     public void close() throws IOException {
-        if (!mFile.delete()) {
-            throw new RuntimeException("Can not delete Part file to close");
+        BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(mStorageTable));
+
+        for (Map.Entry<K, Long> iKeyPosition : mKeysPositions.entrySet()) {
+            mStorageReader.writeKey(iKeyPosition.getKey(), bos);
+            mStorageReader.writeLong(iKeyPosition.getValue(), bos);
+        }
+
+        bos.close();
+
+        mRAFile.close();
+        if (!mFile.renameTo(mStorageFile)) {
+            throw new RuntimeException("Can not rename Part file to close");
         }
     }
 
@@ -144,56 +115,51 @@ class Part<K, V> implements Closeable {
         V value = null;
 
         if (offset != null) {
-            FileInputStream fileStream = new FileInputStream(mFile);
-            mStorageReader.skip(mKeysPositions.get(key), fileStream);
+            mRAFile.seek(offset);
 
-            InputStream partStream = new BufferedInputStream(fileStream);
-            value = mStorageReader.readValue(partStream);
-
-            partStream.close();
-            fileStream.close();
+            value = mStorageReader.readValue(mRAFile);
         }
         return value;
     }
 
     private V rebuildAndFind(K key) throws IOException {
         V value = null;
-        Long findOffset = mKeysPositions.get(key);
-
-        File tmpFile = getTmpFile();
-        if (!mFile.renameTo(tmpFile)) {
-            throw new RuntimeException("Can not create Tmp file to rebuild");
-        }
-
-        PositionBufferedInputStream tmpStream = new PositionBufferedInputStream(new FileInputStream(tmpFile));
-        PositionBufferedOutputStream partStream = new PositionBufferedOutputStream(new FileOutputStream(mFile));
-
-        int buffLen;
-        byte[] buff;
-        for (Map.Entry<K, Long> iKeyPosition : mKeysPositions.entrySet()) {
-            mStorageReader.skip(iKeyPosition.getValue() - tmpStream.getPosition(), tmpStream);
-            iKeyPosition.setValue(partStream.getPosition());
-
-            buffLen = mStorageReader.readInt(tmpStream);
-
-            buff = new byte[buffLen];
-            if (tmpStream.getPosition() == findOffset) {
-                mStorageReader.read(buff, tmpStream);
-                ByteArrayInputStream valueStream = new ByteArrayInputStream(buff);
-                value = mStorageReader.readValue(valueStream);
-                valueStream.close();
-            } else {
-                mStorageReader.read(buff, tmpStream);
-            }
-
-            partStream.write(buff);
-        }
-        tmpStream.close();
-        partStream.close();
-
-        if (!tmpFile.delete()) {
-            throw new RuntimeException("Can not delete Tmp file to rebuild");
-        }
+//        Long findOffset = mKeysPositions.get(key);
+//
+//        File tmpFile = getTmpFile();
+//        if (!mFile.renameTo(tmpFile)) {
+//            throw new RuntimeException("Can not create Tmp file to rebuild");
+//        }
+//
+//        PositionBufferedInputStream tmpStream = new PositionBufferedInputStream(new FileInputStream(tmpFile));
+//        PositionBufferedOutputStream partStream = new PositionBufferedOutputStream(new FileOutputStream(mFile));
+//
+//        int buffLen;
+//        byte[] buff;
+//        for (Map.Entry<K, Long> iKeyPosition : mKeysPositions.entrySet()) {
+//            mStorageReader.skip(iKeyPosition.getValue() - tmpStream.getPosition(), tmpStream);
+//            iKeyPosition.setValue(partStream.getPosition());
+//
+//            buffLen = mStorageReader.readInt(tmpStream);
+//
+//            buff = new byte[buffLen];
+//            if (tmpStream.getPosition() == findOffset) {
+//                mStorageReader.read(buff, tmpStream);
+//                ByteArrayInputStream valueStream = new ByteArrayInputStream(buff);
+//                value = mStorageReader.readValue(valueStream);
+//                valueStream.close();
+//            } else {
+//                mStorageReader.read(buff, tmpStream);
+//            }
+//
+//            partStream.write(buff);
+//        }
+//        tmpStream.close();
+//        partStream.close();
+//
+//        if (!tmpFile.delete()) {
+//            throw new RuntimeException("Can not delete Tmp file to rebuild");
+//        }
 
         return value;
     }
