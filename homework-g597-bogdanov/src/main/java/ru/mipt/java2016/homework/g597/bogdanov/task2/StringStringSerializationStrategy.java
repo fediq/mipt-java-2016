@@ -14,14 +14,19 @@ public class StringStringSerializationStrategy implements SerializationStrategy<
     }
 
     @Override
-    public void write(RandomAccessFile file, String key, String value) throws IOException {
+    public void writeKey(RandomAccessFile file, String key) throws IOException {
         byte[] bytes = key.getBytes();
         file.writeInt(bytes.length);
         file.write(bytes);
-        bytes = value.getBytes();
+    }
+
+    @Override
+    public void writeValue(RandomAccessFile file, String value) throws IOException {
+        byte[] bytes = value.getBytes();
         file.writeInt(bytes.length);
         file.write(bytes);
     }
+
 
     @Override
     public String readKey(RandomAccessFile file) throws IOException {
