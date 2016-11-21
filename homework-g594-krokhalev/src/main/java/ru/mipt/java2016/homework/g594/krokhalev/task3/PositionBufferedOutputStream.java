@@ -1,4 +1,4 @@
-package ru.mipt.java2016.homework.g594.krokhalev.TestStorage;
+package ru.mipt.java2016.homework.g594.krokhalev.task3;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;

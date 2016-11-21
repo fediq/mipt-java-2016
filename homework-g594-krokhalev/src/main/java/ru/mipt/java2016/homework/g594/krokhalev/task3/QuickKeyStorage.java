@@ -1,4 +1,4 @@
-package ru.mipt.java2016.homework.g594.krokhalev.TestStorage;
+package ru.mipt.java2016.homework.g594.krokhalev.task3;
 
 import com.google.common.cache.CacheBuilder;
 import com.sun.istack.internal.NotNull;
@@ -14,10 +14,9 @@ import java.util.Set;
 
 public class QuickKeyStorage<K, V> implements KeyValueStorage<K, V> {
 
-    private final static int BASE_PART_SIZE = 100;
-    private final static int LEVEL_INCREASE = 10;
-    private final static String STORAGE_NAME = "storage.db";
-    private final static String STORAGE_TABLE_NAME = "storageTable.db";
+    private static final String STORAGE_NAME = "storage.db";
+    private static final String STORAGE_TABLE_NAME = "storageTable.db";
+
     private final File mWorkDirectory;
     private File mPartsDirectory;
 
@@ -60,11 +59,11 @@ public class QuickKeyStorage<K, V> implements KeyValueStorage<K, V> {
                 }
 
                 mPartsController = new PartsController<K, V>(mPartsDirectory, storageFile, storageTable, mKeys,
-                        storageReader, BASE_PART_SIZE, LEVEL_INCREASE, false);
+                        storageReader, false);
 
             } else {
                 mPartsController = new PartsController<K, V>(mPartsDirectory, storageFile, storageTable, mKeys,
-                        storageReader, BASE_PART_SIZE, LEVEL_INCREASE, true);
+                        storageReader, true);
             }
         } catch (IOException e) {
             e.printStackTrace();

@@ -1,12 +1,9 @@
-package ru.mipt.java2016.homework.g594.krokhalev.TestStorage;
+package ru.mipt.java2016.homework.g594.krokhalev.task3;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-/**
- * Created by wheeltune on 16.11.16.
- */
 public class PositionBufferedInputStream extends BufferedInputStream {
     private long pos = 0;
     private long mark = 0;

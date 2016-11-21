@@ -1,7 +1,6 @@
-package ru.mipt.java2016.homework.g594.krokhalev.TestStorage;
+package ru.mipt.java2016.homework.g594.krokhalev.task3;
 
 import com.sun.istack.internal.NotNull;
-import ru.mipt.java2016.homework.g594.krokhalev.task3.Location;
 
 import java.io.*;
 import java.util.LinkedHashMap;
@@ -31,7 +30,6 @@ class Part<K, V> implements Closeable {
         for (Map.Entry<K, V> iPair : memPart.entrySet()) {
             mKeysPositions.put(iPair.getKey(), partStream.getPosition());
 
-            mStorageReader.writeKey(iPair.getKey(), partStream);
             mStorageReader.writeValue(iPair.getValue(), partStream);
         }
         partStream.close();
@@ -104,14 +102,12 @@ class Part<K, V> implements Closeable {
             mStorageReader.skip(iKeyPosition.getValue() - appStream.getPosition(), appStream);
             iKeyPosition.setValue(partStream.getPosition() + fileSize);
 
-            for (int i = 0; i < 2; ++i) {
-                buffLen = mStorageReader.readInt(appStream);
-                buff = new byte[buffLen];
-                mStorageReader.read(buff, appStream);
+            buffLen = mStorageReader.readInt(appStream);
+            buff = new byte[buffLen];
+            mStorageReader.read(buff, appStream);
 
-                mStorageReader.writeInt(buffLen, partStream);
-                partStream.write(buff);
-            }
+            mStorageReader.writeInt(buffLen, partStream);
+            partStream.write(buff);
         }
         appStream.close();
         partStream.close();
@@ -151,10 +147,9 @@ class Part<K, V> implements Closeable {
 
         if (offset != null) {
             FileInputStream fileStream = new FileInputStream(mFile);
+            mStorageReader.skip(mKeysPositions.get(key), fileStream);
 
             InputStream partStream = new BufferedInputStream(fileStream);
-            mStorageReader.skip(mKeysPositions.get(key), partStream);
-            mStorageReader.skipItem(partStream);
             value = mStorageReader.readValue(partStream);
 
             partStream.close();
@@ -165,7 +160,7 @@ class Part<K, V> implements Closeable {
 
     private V rebuildAndFind(K key) throws IOException {
         V value = null;
-        Long keyOffset = mKeysPositions.get(key);
+        Long findOffset = mKeysPositions.get(key);
 
         File tmpFile = getTmpFile();
         if (!mFile.renameTo(tmpFile)) {
@@ -181,21 +176,19 @@ class Part<K, V> implements Closeable {
             mStorageReader.skip(iKeyPosition.getValue() - tmpStream.getPosition(), tmpStream);
             iKeyPosition.setValue(partStream.getPosition());
 
-            for (int i = 0; i < 2; ++i) {
-                buffLen = mStorageReader.readInt(tmpStream);
+            buffLen = mStorageReader.readInt(tmpStream);
 
-                buff = new byte[buffLen];
-                if (tmpStream.getPosition() == keyOffset) {
-                    mStorageReader.read(buff, tmpStream);
-                    ByteArrayInputStream valueStream = new ByteArrayInputStream(buff);
-                    value = mStorageReader.readValue(valueStream);
-                    valueStream.close();
-                } else {
-                    mStorageReader.read(buff, tmpStream);
-                }
-
-                partStream.write(buff);
+            buff = new byte[buffLen];
+            if (tmpStream.getPosition() == findOffset) {
+                mStorageReader.read(buff, tmpStream);
+                ByteArrayInputStream valueStream = new ByteArrayInputStream(buff);
+                value = mStorageReader.readValue(valueStream);
+                valueStream.close();
+            } else {
+                mStorageReader.read(buff, tmpStream);
             }
+
+            partStream.write(buff);
         }
         tmpStream.close();
         partStream.close();

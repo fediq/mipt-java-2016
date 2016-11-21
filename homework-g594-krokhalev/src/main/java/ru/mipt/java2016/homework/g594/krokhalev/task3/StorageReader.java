@@ -1,91 +1,88 @@
 package ru.mipt.java2016.homework.g594.krokhalev.task3;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.RandomAccessFile;
+import java.io.*;
 
-public class StorageReader<K, V> {
-    public static final int BOOL_SIZE = 1;
-    public static final int INT_SIZE = 4;
-    public static final int LONG_SIZE = 8;
+class StorageReader<K, V> {
+    private final SerializationStrategy<K> mKeySerializer;
+    private final SerializationStrategy<V> mValueSerializer;
 
-    private Class<K> keyClass;
-    private Class<V> valueClass;
-
-    public StorageReader(Class<K> keyClass, Class<V> valueClass) {
-        this.keyClass = keyClass;
-        this.valueClass = valueClass;
+    StorageReader(SerializationStrategy<K> keySerializer, SerializationStrategy<V> valueSerializer) {
+        mKeySerializer = keySerializer;
+        mValueSerializer = valueSerializer;
     }
 
-    private void readAll(InputStream stream, byte[] buff, int offset, int size) throws IOException {
-        while (size > 0) {
-            int get = stream.read(buff, offset, size);
-            offset += get;
-            size -= get;
+    void writeKey(K key, OutputStream stream) throws IOException {
+        byte[] keyByte = mKeySerializer.serialize(key);
+        writeInt(keyByte.length, stream);
+        stream.write(keyByte);
+    }
+
+    void writeValue(V value, OutputStream stream) throws IOException {
+        byte[] keyByte = mValueSerializer.serialize(value);
+        writeInt(keyByte.length, stream);
+        stream.write(keyByte);
+    }
+
+    void writeInt(int val, OutputStream stream) throws IOException {
+        DataOutputStream dos = new DataOutputStream(stream);
+        dos.writeInt(val);
+    }
+
+    void writeLong(long val, OutputStream stream) throws IOException {
+        DataOutputStream dos = new DataOutputStream(stream);
+        dos.writeLong(val);
+    }
+
+    K readKey(InputStream stream) throws IOException {
+        skip(4, stream);
+        return (K) mKeySerializer.deserialize(stream);
+    }
+
+    V readValue(InputStream stream) throws IOException {
+        skip(4, stream);
+        return (V) mValueSerializer.deserialize(stream);
+    }
+
+    void skip(long len, InputStream stream) throws IOException {
+        while (len > 0) {
+            long skiped = stream.skip(len);
+            if (skiped > 0) {
+                len -= skiped;
+            } else {
+                throw new RuntimeException("Bad stream");
+            }
         }
     }
 
-    private void readAll(RandomAccessFile stream, byte[] buff, int offset, int size) throws IOException {
-        while (size > 0) {
-            int get = stream.read(buff, offset, size);
-            offset += get;
-            size -= get;
+//    void skipItem(InputStream stream) throws IOException {
+//        int len = readInt(stream);
+//        skip(len, stream);
+//    }
+
+    void read(byte[] dist, InputStream stream) throws IOException {
+        read(dist, 0, dist.length, stream);
+    }
+
+    void read(byte[] dist, int offset, int len, InputStream stream) throws IOException {
+        while (len > 0) {
+            int readed = stream.read(dist, offset, len);
+
+            if (readed > 0) {
+                len -= readed;
+                offset += readed;
+            } else {
+                throw new RuntimeException("Bad stream");
+            }
         }
     }
 
-    public int readInt(InputStream stream) throws IOException {
-        byte[] intBuff = new byte[INT_SIZE];
-
-        readAll(stream, intBuff, 0, INT_SIZE);
-
-        return (int) Serializer.deserialize(int.class, intBuff);
+    long readLong(InputStream stream) throws IOException {
+        DataInputStream dis = new DataInputStream(stream);
+        return dis.readLong();
     }
 
-    public long readLong(InputStream stream) throws IOException {
-        byte[] longBuff = new byte[LONG_SIZE];
-
-        readAll(stream, longBuff, 0, LONG_SIZE);
-
-        return (long) Serializer.deserialize(long.class, longBuff);
-    }
-
-    public byte[] readItem(InputStream stream) throws IOException {
-        int size = readInt(stream);
-        return readBytes(stream, size);
-    }
-
-    public byte[] readBlockItem(InputStream stream) throws IOException {
-        byte[] sizeBuff = readBytes(stream, INT_SIZE);
-        int size = (int) Serializer.deserialize(int.class, sizeBuff);
-
-        byte[] blockItemBuff = new byte[INT_SIZE + size];
-        System.arraycopy(sizeBuff, 0, blockItemBuff, 0, INT_SIZE);
-
-        readAll(stream, blockItemBuff, INT_SIZE, size);
-
-        return blockItemBuff;
-    }
-
-    public byte[] readBytes(InputStream stream, int size) throws IOException {
-
-        byte[] keyBuff = new byte[size];
-
-        readAll(stream, keyBuff, 0, size);
-
-        return keyBuff;
-    }
-
-    public K readKey(InputStream stream) throws IOException {
-        return (K) Serializer.deserialize(keyClass, stream);
-    }
-
-    public V readValue(InputStream stream) throws IOException {
-        return (V) Serializer.deserialize(valueClass, stream);
-    }
-
-    public void miss(InputStream stream, long count) throws IOException {
-        while (count > 0) {
-            count -= stream.skip(count);
-        }
+    int readInt(InputStream stream) throws IOException {
+        DataInputStream dis = new DataInputStream(stream);
+        return dis.readInt();
     }
 }

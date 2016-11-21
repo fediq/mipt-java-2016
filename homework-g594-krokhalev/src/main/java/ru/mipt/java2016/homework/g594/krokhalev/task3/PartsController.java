@@ -1,192 +1,167 @@
 package ru.mipt.java2016.homework.g594.krokhalev.task3;
 
-import java.io.*;
-import java.time.temporal.ValueRange;
-import java.util.*;
+import com.sun.istack.internal.NotNull;
+
+import java.io.Closeable;
+import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Set;
 
 public class PartsController<K, V> implements Closeable {
+    private static final int BASE_PART_SIZE = 100;
+    private static final int LEVEL_INCREASE = 10;
 
-    private File mStorageFile;
-    private File mStorageTableFile;
-    private File mPartsDirectory;
+    private final StorageReader<K, V> mStorageReader;
 
-    private Class<K> mKeyClass;
-    private Class<V> mValueClass;
+    private Map<K, V> mLevel0 = new HashMap<K, V>();
+    private LinkedList<Level<K, V>> mLevels = new LinkedList<>();
 
-    private ArrayList<StoragePart<K, V>> mParts  = new ArrayList<>();
+    private final File mStorageFile;
+    private final File mStorageTable;
+    private final File mWorkDirectory;
 
-    private Map<K, V> mCache = new HashMap<K, V>();
-    private Map<K, Integer> mKeys = new HashMap<K, Integer>();
+    private static long partId = 1;
 
-    private int mVersion = 0;
-
-    private File getPartFileName(int ind) throws IOException {
-        String name = "Part_" + String.valueOf(ind);
-
-        return new File(mPartsDirectory.getAbsolutePath() + File.separator + name);
+    static String getNextPartName() {
+        return "Part_" + partId++;
     }
 
-    public PartsController(File storageFile, File storageTableFile, Class<K> keyClass, Class<V> valueClass)
-            throws IOException {
+    public PartsController(@NotNull File workDirectory,
+                           @NotNull File storageFile,
+                           @NotNull File storageTable,
+                           Set<K> keys,
+                           StorageReader<K, V> storageReader,
+                           boolean restore) throws IOException {
 
-        this.mStorageFile = storageFile;
-        this.mKeyClass = keyClass;
-        this.mValueClass = valueClass;
-        this.mStorageTableFile = storageTableFile;
+        if (restore) {
+            if (!workDirectory.exists() || !workDirectory.isDirectory()) {
+                throw new RuntimeException("\"" + workDirectory.getAbsolutePath() + "\" "
+                        + "do not exist or not a directory");
+            }
 
-        mPartsDirectory = new File(mStorageFile.getParentFile().getAbsolutePath() + File.separator + "Parts");
+            if (!storageFile.exists() || storageFile.isDirectory()) {
+                throw new RuntimeException("\"" + storageFile.getAbsolutePath() + "\" "
+                        + "do not exist or a directory");
+            }
 
-        if (!mPartsDirectory.mkdir()) {
-            throw new RuntimeException("Can not create directory for parts");
+            if (!storageFile.exists() || storageFile.isDirectory()) {
+                throw new RuntimeException("\"" + storageTable.getAbsolutePath() + "\" "
+                        + "do not exist or a directory");
+            }
         }
 
-        File part = getPartFileName(mParts.size());
-        if (!mStorageFile.renameTo(part)) {
-            throw new RuntimeException("Bad directory");
+        mStorageFile = storageFile;
+        mStorageTable = storageTable;
+        mWorkDirectory = workDirectory;
+
+        mStorageReader = storageReader;
+
+        if (restore) {
+            Part<K, V> tmpPart = new Part<K, V>(mWorkDirectory, storageFile, storageTable, storageReader);
+            addPart(tmpPart);
+            mLevels.getFirst().getKeys(keys);
         }
 
-        mParts.add(new StoragePart<>(part, storageTableFile, keyClass, valueClass));
-        for (K iKey : mParts.get(0).getKeys()) {
-            mKeys.put(iKey, 0);
-        }
     }
 
-    public void flush() throws IOException {
-        mParts.add(new StoragePart<>(mCache, getPartFileName(mParts.size()), mKeyClass, mValueClass));
-        mCache.clear();
-    }
-
-    public V getValue(K key) throws IOException {
-//        V value = mCache.get(key);
-
-//        if (value == null) {
-//            for (StoragePart<K, V> iPart : mParts) {
-//                value = iPart.getValue(key);
-//                if (value != null) {
-//                    break;
-//                }
-//            }
-//        }
-        Integer index = mKeys.get(key);
-
-        V value = null;
-        if (index != null) {
-            if (index == mParts.size()) {
-                value =  mCache.get(key);
-            } else if (index != null) {
-                value = mParts.get(index).getValue(key);
+    V read(K key) throws IOException {
+        V value = mLevel0.get(key);
+        if (value == null) {
+            for (Level<K, V> iLevel : mLevels) {
+                value = iLevel.read(key);
+                if (value != null) {
+                    break;
+                }
             }
         }
         return value;
     }
 
-    public boolean isExistKey(K key) {
-//        boolean exists = mCache.containsKey(key);
-//        if (!exists) {
-//            for (StoragePart<K, V> iPart : mParts) {
-//                exists = iPart.containsKey(key);
-//                if (exists) {
-//                    break;
-//                }
-//            }
-//        }
-        return mKeys.containsKey(key);
-//        return exists;
-    }
-
-    public void setValue(K key, V value) throws IOException {
-        if (!mCache.containsKey(key)) {
-//            boolean exists = false;
-//            for (StoragePart<K, V> iPart : mParts) {
-//                exists = iPart.removeKey(key);
-//                if (exists) {
-//                    break;
-//                }
-//            }
-//            if (!exists) {
-//                mVersion++;
-//            }
-            Integer index = mKeys.get(key);
-
-            if (index == null) {
-                mVersion++;
-            } else {
-                mParts.get(index).removeKey(key);
-            }
-
-            if (mCache.size() == KrokhalevsKeyValueStorage.CACHE_SIZE) {
-                flush();
+    boolean exists(K key) throws IOException {
+        boolean exists = mLevel0.containsKey(key);
+        if (!exists) {
+            for (Level<K, V> iLevel : mLevels) {
+                exists = iLevel.exists(key);
+                if (exists) {
+                    break;
+                }
             }
         }
-        mCache.put(key, value);
-        mKeys.put(key, mParts.size());
+        return exists;
     }
 
-    public void deleteKey(K key) throws IOException {
-        mVersion++;
-//        mKeys.remove(key);
-//        V value = mCache.remove(key);
-//        if (value == null) {
-//            for (StoragePart<K, V> iPart : mParts) {
-//                boolean exists = iPart.removeKey(key);
-//                if (exists) {
-//                    break;
-//                }
-//            }
-//        }
-        Integer index = mKeys.remove(key);
-        if (index != null) {
-            if (index == mParts.size()) {
-                mCache.remove(key);
-            } else {
-                mParts.get(index).removeKey(key);
+    boolean write(K key, V value) throws IOException {
+        boolean exists = (mLevel0.put(key, value) != null);
+        if (!exists) {
+            for (Level<K, V> iLevel : mLevels) {
+                exists = iLevel.remove(key);
+                if (exists) {
+                    break;
+                }
             }
         }
+
+        if (mLevel0.size() >= BASE_PART_SIZE) {
+            addPart(new Part<K, V>(mWorkDirectory, mLevel0, mStorageReader));
+        }
+
+        return exists;
     }
 
-    public int getCountKeys() {
-        return mKeys.size();
+    boolean remove(K key) throws IOException {
+        boolean exists = (mLevel0.remove(key) != null);
+        if (!exists) {
+            for (Level<K, V> iLevel : mLevels) {
+                exists = iLevel.remove(key);
+                if (exists) {
+                    break;
+                }
+            }
+        }
+        return exists;
     }
 
-    public Iterator<K> getKeyIterator() {
-        return new Iterator<K>() {
-            private Iterator<K> iterator = mKeys.keySet().iterator();
-            private int itVersion = mVersion;
-            @Override
-            public boolean hasNext() {
-                if (mVersion != itVersion) {
-                    throw new ConcurrentModificationException();
-                }
-                return iterator.hasNext();
-            }
+    int size() {
+        int size = mLevel0.size();
+        for (Level<K, V> iLevel : mLevels) {
+            size += iLevel.getSize();
+        }
+        return size;
+    }
 
-            @Override
-            public K next() {
-                if (mVersion != itVersion) {
-                    throw new ConcurrentModificationException();
-                }
-                return iterator.next();
+    private void addPart(Part<K, V> part) throws IOException {
+        boolean added = false;
+        while (!added && mLevels.size() > 0) {
+            Level<K, V> level = mLevels.getFirst();
+            if (level.addPart(part) > level.getCapacity()) {
+                part = level.merge();
+                mLevels.remove(0);
+            } else {
+                added = true;
             }
-        };
+        }
+        if (!added) {
+            int currentSize = BASE_PART_SIZE * LEVEL_INCREASE;
+            while (currentSize < part.getSize()) {
+                currentSize *= LEVEL_INCREASE;
+            }
+            mLevels.add(new Level<K, V>(mWorkDirectory, mStorageReader, currentSize));
+            mLevels.getFirst().addPart(part);
+        }
     }
 
     @Override
     public void close() throws IOException {
-        flush();
-
-        PositionBufferedOutputStream storageStream =
-                new PositionBufferedOutputStream(new FileOutputStream(mStorageFile));
-        OutputStream storageTable = new BufferedOutputStream(new FileOutputStream(mStorageTableFile), 16112);
-
-        for (StoragePart<K, V> iPart : mParts) {
-            iPart.copyTo(storageStream, storageTable);
-            iPart.close();
+        Part<K, V> part = new Part<K, V>(mWorkDirectory, mStorageReader);
+        if (mLevel0.size() > 0) {
+            part.append(new Part<K, V>(mWorkDirectory, mLevel0, mStorageReader));
         }
-        if (!mPartsDirectory.delete()) {
-            throw new IOException("Can not delete directory");
+        for (Level<K, V> iLevel : mLevels) {
+            iLevel.merge(part);
         }
-
-        storageStream.close();
-        storageTable.close();
+        part.save(mStorageFile, mStorageTable);
     }
 }
