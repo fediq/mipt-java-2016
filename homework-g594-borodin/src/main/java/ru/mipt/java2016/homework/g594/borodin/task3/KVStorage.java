@@ -22,7 +22,7 @@ import ru.mipt.java2016.homework.g594.borodin.task3.SerializationStrategies.Seri
 public class KVStorage<K, V> implements KeyValueStorage<K, V> {
 
     private static final String VALIDATION = "We gonna celebrate. https://youtu.be/-ao7LpSIL7A?t=58s";
-    private static final int MAX_SIZE_OF_CACHE = 1500;
+    private static final int MAX_SIZE_OF_CACHE = 100;
 
     private boolean isOpen;
 
