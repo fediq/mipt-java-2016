@@ -107,7 +107,7 @@ class StorageReader<K, V> {
     }
 
     void writeLong(long val, RandomAccessFile file) throws IOException {
-       file.writeLong(val);
+        file.writeLong(val);
     }
 
     K readKey(RandomAccessFile file) throws IOException {

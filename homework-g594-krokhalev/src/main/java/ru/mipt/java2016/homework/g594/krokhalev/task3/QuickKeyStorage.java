@@ -7,9 +7,7 @@ import com.google.common.cache.Cache;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Set;
 
 public class QuickKeyStorage<K, V> implements KeyValueStorage<K, V> {
 
