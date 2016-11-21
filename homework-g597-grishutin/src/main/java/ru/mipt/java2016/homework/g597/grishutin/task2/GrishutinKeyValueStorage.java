@@ -7,30 +7,34 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
+
 import java.util.Iterator;
 import java.util.Map;
 
 
-class GrishutinKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
-    private final SerializationStrategy<K> keySerializationStrategy;
-    private final SerializationStrategy<V> valueSerializationStrategy;
-    private RandomAccessFile storageFile;
-    private File lock;
-    private HashMap<K, V> kvHashMap = new HashMap<>();
+public class GrishutinKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
+    protected SerializationStrategy<K> keySerializationStrategy;
+    protected SerializationStrategy<V> valueSerializationStrategy;
+    protected RandomAccessFile storageFile;
+    protected File lock;
 
-    private Integer numEpoch = 0;
-    private int numRecords = 0;
-    private boolean isClosed = false;
+    protected HashMap<K, V> cached = new HashMap<>();
 
-    GrishutinKeyValueStorage(String directoryPath,
+    protected Integer numEpoch = 0;
+    protected int numRecords = 0;
+    protected boolean isClosed = false;
+
+    protected final String storageFilename = "Azazaza.db";
+    protected String directoryPath;
+
+    public GrishutinKeyValueStorage(String directoryPathInit,
                              SerializationStrategy<K> keyStrat,
                              SerializationStrategy<V> valueStrat) throws IOException, IllegalAccessException {
-
-        final String preferredFilename = "Azazaza.db";
+        directoryPath = directoryPathInit;
         keySerializationStrategy = keyStrat;
         valueSerializationStrategy = valueStrat;
-        Path filePath = Paths.get(directoryPath, preferredFilename);
-        Path lockFilePath = Paths.get(directoryPath, preferredFilename + ".lock");
+        Path filePath = Paths.get(directoryPath, storageFilename);
+        Path lockFilePath = Paths.get(directoryPath, storageFilename + ".lock");
 
         lock = lockFilePath.toFile();
         if (!lock.createNewFile()) { // if lock is hold by other kvStorage
@@ -44,36 +48,39 @@ class GrishutinKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
         storageFile = new RandomAccessFile(filePath.toFile(), "rw");
         if (storageFile.length() != 0) {
-            readData();
+            readEntriesFromDisk();
         }
     }
 
-    private void readData() throws IOException {
+    public GrishutinKeyValueStorage() {
+    }
+
+    /*
+        File with SSTable looks like:
+        numEntries: int | (key, value, tombstone : boolean) | (key, value, tombstone : boolean) | ....
+        tombstone
+     */
+    protected void readEntriesFromDisk() throws IOException {
         numRecords = storageFile.readInt();
         for (int i = 0; i < numRecords; ++i) {
             K key = keySerializationStrategy.deserialize(storageFile);
             V value = valueSerializationStrategy.deserialize(storageFile);
-            kvHashMap.put(key, value);
+
+            cached.put(key, value);
         }
     }
 
     @Override
-    public V read(K key) {
+    public synchronized V read(K key) {
         checkOpened();
 
-        return kvHashMap.get(key);
-    }
-
-    private void checkOpened() {
-        if (isClosed) {
-            throw new IllegalStateException("Storage is closed!");
-        }
+        return cached.get(key);
     }
 
     @Override
-    public boolean exists(K key) {
+    public synchronized boolean exists(K key) {
         checkOpened();
-        return kvHashMap.containsKey(key);
+        return cached.containsKey(key);
     }
 
     @Override
@@ -82,7 +89,7 @@ class GrishutinKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         if (!(exists(key))) {
             numRecords++;
         }
-        kvHashMap.put(key, value);
+        cached.put(key, value);
         numEpoch++;
     }
 
@@ -92,7 +99,7 @@ class GrishutinKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         if (!(exists(key))) {
             throw new IllegalArgumentException(String.format("No such key: %s", key.toString()));
         }
-        kvHashMap.remove(key);
+        cached.remove(key);
         numEpoch++;
         numRecords--;
     }
@@ -100,11 +107,11 @@ class GrishutinKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public Iterator<K> readKeys() {
         checkOpened();
-        return kvHashMap.keySet().iterator();
+        return cached.keySet().iterator();
     }
 
     @Override
-    public int size() {
+    public synchronized int size() {
         checkOpened();
         return numRecords;
     }
@@ -115,17 +122,23 @@ class GrishutinKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             overwrite();
             isClosed = true;
         }
-        kvHashMap.clear();
+        cached.clear();
         storageFile.close();
         Files.delete(lock.toPath());
     }
 
-    private void overwrite() throws IOException {
+    protected void checkOpened() {
+        if (isClosed) {
+            throw new IllegalStateException("Storage is closed!");
+        }
+    }
+
+    protected void overwrite() throws IOException {
         storageFile.seek(0);
         storageFile.setLength(0);
         IntegerSerializationStrategy integerSerializationStrategy = IntegerSerializationStrategy.getInstance();
         integerSerializationStrategy.serialize(numRecords, storageFile);
-        for (Map.Entry<K, V> entry: kvHashMap.entrySet()) {
+        for (Map.Entry<K, V> entry: cached.entrySet()) {
             keySerializationStrategy.serialize(entry.getKey(), storageFile);
             valueSerializationStrategy.serialize(entry.getValue(), storageFile);
         }

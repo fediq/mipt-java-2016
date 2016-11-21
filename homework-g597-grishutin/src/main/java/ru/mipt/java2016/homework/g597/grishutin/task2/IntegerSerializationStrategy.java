@@ -19,4 +19,9 @@ public class IntegerSerializationStrategy implements SerializationStrategy<Integ
     public Integer deserialize(RandomAccessFile raf) throws IOException {
         return raf.readInt();
     }
+
+    @Override
+    public Long bytesSize(Integer value) {
+        return (long) 4;
+    }
 }

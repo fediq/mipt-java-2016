@@ -19,4 +19,9 @@ public class BooleanSerializationStrategy implements SerializationStrategy<Boole
     public Boolean deserialize(RandomAccessFile raf) throws IOException {
         return raf.readBoolean();
     }
+
+    @Override
+    public Long bytesSize(Boolean value) {
+        return (long)1;
+    }
 }

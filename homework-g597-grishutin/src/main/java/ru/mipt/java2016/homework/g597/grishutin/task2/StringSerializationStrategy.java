@@ -26,4 +26,9 @@ public class StringSerializationStrategy implements SerializationStrategy<String
         raf.read(bytes);
         return new String(bytes);
     }
+
+    @Override
+    public Long bytesSize(String value) {
+        return (long) 4 + value.getBytes().length; // string length + string itself
+    }
 }

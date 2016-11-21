@@ -22,4 +22,9 @@ class DateSerializationStrategy implements SerializationStrategy<Date> {
     public Date deserialize(RandomAccessFile raf) throws IOException {
         return new Date(longSerializationStrategy.deserialize(raf));
     }
+
+    @Override
+    public Long bytesSize(Date value) {
+        return (long) 8; // since we consider date as 1 long value
+    }
 }

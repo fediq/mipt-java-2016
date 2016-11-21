@@ -19,4 +19,9 @@ class LongSerializationStrategy implements SerializationStrategy<Long> {
     public Long deserialize(RandomAccessFile raf) throws IOException {
         return raf.readLong();
     }
+
+    @Override
+    public Long bytesSize(Long value) {
+        return (long)8;
+    }
 }

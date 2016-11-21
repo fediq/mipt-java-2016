@@ -14,7 +14,7 @@ import java.io.RandomAccessFile;
     boolean hasDormitory,
     double averageScore
  */
-class StudentSerializationStrategy implements SerializationStrategy<Student> {
+public class StudentSerializationStrategy implements SerializationStrategy<Student> {
     private IntegerSerializationStrategy integerSerializationStrategy = IntegerSerializationStrategy.getInstance();
     private StringSerializationStrategy stringSerializationStrategy = StringSerializationStrategy.getInstance();
     private DateSerializationStrategy dateSerializationStrategy = DateSerializationStrategy.getInstance();
@@ -39,5 +39,15 @@ class StudentSerializationStrategy implements SerializationStrategy<Student> {
                 dateSerializationStrategy.deserialize(raf),
                 booleanSerializationStrategy.deserialize(raf),
                 doubleSerializationStrategy.deserialize(raf));
+    }
+
+    @Override
+    public Long bytesSize(Student value) {
+        return integerSerializationStrategy.bytesSize(value.getGroupId()) +
+                stringSerializationStrategy.bytesSize(value.getName()) +
+                stringSerializationStrategy.bytesSize(value.getHometown()) +
+                dateSerializationStrategy.bytesSize(value.getBirthDate()) +
+                booleanSerializationStrategy.bytesSize(value.isHasDormitory()) +
+                doubleSerializationStrategy.bytesSize(value.getAverageScore());
     }
 }

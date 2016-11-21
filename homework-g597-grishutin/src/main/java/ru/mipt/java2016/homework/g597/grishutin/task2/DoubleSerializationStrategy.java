@@ -19,4 +19,9 @@ public class DoubleSerializationStrategy implements SerializationStrategy<Double
     public Double deserialize(RandomAccessFile raf) throws IOException {
         return raf.readDouble();
     }
+
+    @Override
+    public Long bytesSize(Double value) {
+        return (long) 8;
+    }
 }
