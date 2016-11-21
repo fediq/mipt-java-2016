@@ -159,8 +159,9 @@ class AdvancedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private void eraseCacheStorage() {
         File transfer = new File(workspaceDir + File.separator + DEFAULT_STORAGE_TRANSFER_FILENAME);
 
-        if (!checkTransferFileIsOk(transfer))
+        if (!checkTransferFileIsOk(transfer)) {
             return;
+        }
 
         try (RandomAccessFile transferWriter = new RandomAccessFile(transfer, "rw")) {
 
