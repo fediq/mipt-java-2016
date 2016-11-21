@@ -32,7 +32,13 @@ public class StudentKeyStudentSerializationStrategy implements SerializationStra
     }
 
     @Override
-    public void write(RandomAccessFile file, StudentKey key, Student value) throws IOException {
+    public void writeKey(RandomAccessFile file, StudentKey key) throws IOException {
+        file.writeInt(key.getGroupId());
+        writeString(file, key.getName());
+    }
+
+    @Override
+    public void writeValue(RandomAccessFile file, Student value) throws IOException {
         file.writeInt(value.getGroupId());
         writeString(file, value.getName());
         writeString(file, value.getHometown());
@@ -43,10 +49,8 @@ public class StudentKeyStudentSerializationStrategy implements SerializationStra
 
     @Override
     public StudentKey readKey(RandomAccessFile file) throws IOException {
-        long startPos = file.getFilePointer();
         int groupId = file.readInt();
         String name = readString(file);
-        file.seek(startPos);
         return new StudentKey(groupId, name);
     }
 

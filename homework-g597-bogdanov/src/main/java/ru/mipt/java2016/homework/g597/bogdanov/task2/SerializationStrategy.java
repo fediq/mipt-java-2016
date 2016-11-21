@@ -5,7 +5,9 @@ import java.io.RandomAccessFile;
 
 public interface SerializationStrategy<K, V> {
 
-    void write(RandomAccessFile file, K key, V value) throws IOException;
+    void writeKey(RandomAccessFile file, K key) throws IOException;
+
+    void writeValue(RandomAccessFile file, V value) throws IOException;
 
     K readKey(RandomAccessFile file) throws IOException;
 
