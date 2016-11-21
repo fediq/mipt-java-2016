@@ -5,6 +5,7 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -151,16 +152,16 @@ public class MyKeyValueStorage64<K, V> implements KeyValueStorage<K, V> {
 
     public void writeToFile() throws IOException {
         RandomAccessFile headerOut = new RandomAccessFile(path + headerName, "rw");
-      /*  String tmpFileName = "tmp.db";
+        String tmpFileName = "tmp.db";
         RandomAccessFile tmpFile = new RandomAccessFile(path + tmpFileName, "rw");
-       */ lengthHandler.putToOutput(headerOut, cache.size());
+        lengthHandler.putToOutput(headerOut, cache.size());
         lengthHandler.putToOutput(headerOut, generalOffset);
         for (Map.Entry entry : cache.entrySet()) {
             keyHandler.putToOutput(headerOut, (K) entry.getKey());
             lengthHandler.putToOutput(headerOut, (Integer) entry.getValue());
         }
 
-       /* Integer[] offset = new Integer[cache.size()];
+        Integer[] offset = new Integer[cache.size()];
         int i = 0;
         for (Map.Entry entry : cache.entrySet()) {
             offset[i] = (Integer) entry.getValue();
@@ -174,12 +175,12 @@ public class MyKeyValueStorage64<K, V> implements KeyValueStorage<K, V> {
             valueHandler.putToOutput(tmpFile, useful);
         }
         tmpFile.close();
-       */ headerOut.close();
+        headerOut.close();
         dataFile.close();
 
-       /* File data = new File(path + dataName);
+        File data = new File(path + dataName);
         File tmp = new File(path + tmpFileName);
-        tmp.renameTo(data);*/
+        tmp.renameTo(data);
 
     }
 
