@@ -1,15 +1,22 @@
 package ru.mipt.java2016.homework.g594.ishkhanyan.task3;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map.Entry;
 import javafx.util.Pair;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.base.task2.MalformedDataException;
 import ru.mipt.java2016.homework.g594.ishkhanyan.task2.MySerialization;
 import ru.mipt.java2016.homework.g594.ishkhanyan.task2.Serializations;
-
-import java.io.*;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map.Entry;
 
 /**
  * Created by ${Semien}
@@ -22,14 +29,15 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private String valueType;
     private int maxSize = 900;
     private HashMap<K, V> newAdditions = new HashMap<>();
-    private HashMap<K, Pair<Integer, Long>> pathToValue = new HashMap<>(); // keys and pair (number of file and index)
+    private HashMap<K, Pair<Integer, Long>> pathToValue = new HashMap<>(); // keys and path to value
     private MySerialization keySerializer;
-    private MySerialization valuSerializer;
+    private MySerialization valueSerializer;
     private boolean fileIsNotEmpty; // true files have already been written
     private String pathDirectory;
     private String pathToConfigurations; // file with configurations
-    private int numOfAdditions; // how many write operations have been done after the first record to disk
-    private int numOfDeletions; // how many deletions(or update) have been done after the first record to disk
+    private List<RandomAccessFile> storageFiles = new ArrayList<>();
+    private int numOfAdditions; // how many write operations have been done
+    private int numOfDeletions; // how many deletions(or update) have been done
     private int numberOfCurrentFile;
     private int numberOfFirstFile;
     private boolean isOpen;
@@ -38,7 +46,7 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                                      String keyT, MySerialization valueSer, String valueT) {
         pathDirectory = path;
         keySerializer = keySer;
-        valuSerializer = valueSer;
+        valueSerializer = valueSer;
         keyType = keyT;
         valueType = valueT;
         try {
@@ -54,7 +62,7 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         this.valueType = valueType;
         try {
             keySerializer = Serializations.takeSerializer(keyType);
-            valuSerializer = Serializations.takeSerializer(valueType);
+            valueSerializer = Serializations.takeSerializer(valueType);
             prepareToWork();
         } catch (Exception e) {
             throw new MalformedDataException(e.getMessage());
@@ -70,23 +78,12 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             } else {
                 int numOfFile = pathToValue.get(key).getKey();
                 long index = pathToValue.get(key).getValue();
-                RandomAccessFile file = null;
                 try {
-                    file = new RandomAccessFile(intToPath(numOfFile), "r");
-                    file.seek(index);
-                    return (V) valuSerializer.readFromFile(file);
+                    storageFiles.get(numOfFile).seek(index);
+                    return (V) valueSerializer.readFromFile(storageFiles.get(numOfFile));
                 } catch (IOException e) {
                     e.printStackTrace();
                     throw new MalformedDataException(e.getMessage());
-                } finally {
-                    if (file != null) {
-                        try {
-                            file.close();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                            throw new MalformedDataException(e.getMessage());
-                        }
-                    }
                 }
             }
         } else {
@@ -140,6 +137,9 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     public void close() throws IOException {
         closeInspection();
         recordNewAdditionToFile();
+        for (RandomAccessFile file : storageFiles) {
+            file.close();
+        }
         writeToConfig();
         isOpen = false;
     }
@@ -181,6 +181,10 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             }
             configIn.close();
             in.close();
+            for (int i = numberOfFirstFile; i < numberOfCurrentFile; ++i) {
+                RandomAccessFile file = new RandomAccessFile(intToPath(i), "r");
+                storageFiles.add(file);
+            }
         }
         isOpen = true;
     }
@@ -218,8 +222,9 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             for (Entry<K, V> i : newAdditions.entrySet()) {
                 keySerializer.writeToFile(i.getKey(), fileOut);
                 pathToValue.put(i.getKey(), new Pair(numberOfCurrentFile, fileOut.getFilePointer()));
-                valuSerializer.writeToFile(i.getValue(), fileOut);
+                valueSerializer.writeToFile(i.getValue(), fileOut);
             }
+            storageFiles.add(fileOut);
         }
         newAdditions.clear();
         ++numberOfCurrentFile;
@@ -244,7 +249,7 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         for (K key : pathToValue.keySet()) {
             keySerializer.writeToFile(key, fileOut);
             long point = fileOut.getFilePointer();
-            valuSerializer.writeToFile(read(key), fileOut);
+            valueSerializer.writeToFile(read(key), fileOut);
             pathToValue.put(key, new Pair(numOfNewFile, point));
         }
         for (int i = numberOfFirstFile; i < numberOfCurrentFile; ++i) {
