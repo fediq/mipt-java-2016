@@ -33,17 +33,17 @@ public class BigDataStorage<K, V> implements KeyValueStorage<K, V> {
      * It will clean file from waste entries, which appeared when some entries were deleted
      * from the map with offsets. We don't delete them physically in order to save time.
      */
-    private final int maxDeleteCount = 10000;
+    private final int maxDeleteCount = 50000;
 
     /**
      * Max weight of elements we add but didn't write to file.
      */
-    private final int maxAddWeight = 2 * 1024 * 1024; // 1 MB
+    private final int maxAddWeight = 1024 * 1024; // 1 MB
 
     /**
      * Max weight of elements we cache.
      */
-    private final int maxCachedWeight = 512 * 1024; // 1 MB
+    private final int maxCachedWeight = 512 * 1024; // 0.5 MB
 
     private boolean isInitialized;
 
