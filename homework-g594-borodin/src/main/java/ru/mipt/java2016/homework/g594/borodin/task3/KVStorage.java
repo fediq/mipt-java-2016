@@ -143,12 +143,11 @@ public class KVStorage<K, V> implements KeyValueStorage<K, V> {
         if (!isOpen) {
             throw new RuntimeException("Storage is closed");
         }
-        if (toWriteStorage.size() < MAX_SIZE_OF_CACHE) {
-            toWriteStorage.put(key, value);
-            keys.put(key, new KeyPosition(-1, -1));
-        } else {
+        if (toWriteStorage.size() >= MAX_SIZE_OF_CACHE) {
             writeTemporaryStorage();
         }
+        toWriteStorage.put(key, value);
+        keys.put(key, new KeyPosition(-1, -1));
     }
 
     /**
