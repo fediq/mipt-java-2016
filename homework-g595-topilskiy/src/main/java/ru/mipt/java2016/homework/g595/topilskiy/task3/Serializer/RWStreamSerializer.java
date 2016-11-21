@@ -1,4 +1,4 @@
-package ru.mipt.java2016.homework.g595.topilskiy.task3;
+package ru.mipt.java2016.homework.g595.topilskiy.task3.Serializer;
 
 import ru.mipt.java2016.homework.g595.topilskiy.task2.JoinArrays.JoinArraysPrimitiveByte;
 import ru.mipt.java2016.homework.g595.topilskiy.task2.Serializer.*;
@@ -10,10 +10,10 @@ import java.io.OutputStream;
 import java.util.Date;
 
 /**
- * Class for reading/writing serialized values to s stream
+ * Class for reading/writing serialized values to a stream
  *
  * @author Artem K. Topilskiy
- * @since 28.10.16
+ * @since 21.11.16
  */
 public class RWStreamSerializer {
     /**
