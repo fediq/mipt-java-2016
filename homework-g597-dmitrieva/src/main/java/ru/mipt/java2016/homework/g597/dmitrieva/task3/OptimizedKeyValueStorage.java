@@ -14,8 +14,8 @@ import java.util.*;
  */
 public class OptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
-    private static final int MAX_SIZE_OF_CACHE = 20;
-    private static final int MAX_SIZE_OF_KEY_AND_VALUE_MAP = 1200;
+    private static final int MAX_SIZE_OF_CACHE = 0;
+    private static final int MAX_SIZE_OF_KEY_AND_VALUE_MAP = 1300;
 
     private class Position {
         private int fileNumber;
