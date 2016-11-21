@@ -48,6 +48,7 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     MyStorage(String path, MySerializer keyS, MySerializer valS) {
+        //I can't make it public, it doesn't pass maven test...
         lengthSerializer = new MyIntSerializer();
         keySerializer = keyS;
         valSerializer = valS;
