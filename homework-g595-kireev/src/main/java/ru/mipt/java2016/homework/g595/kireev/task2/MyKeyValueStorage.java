@@ -107,9 +107,9 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             if (cache.containsKey(key)) {
                 ++uselessData;
             }
-            cache.put(key, generalOffset); //TODO по идее заменяет предыдущий оффсет на новый
+            cache.put(key, generalOffset);
             try {
-                dataFile.seek(generalOffset); //TODO нужно посмотреть насколько полезно это
+                dataFile.seek(generalOffset);
                 generalOffset += valueHandler.putToOutput(dataFile, value);
             } catch (IOException e) {
                 throw new RuntimeException("IO error during writting");
@@ -157,10 +157,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
-
-
-
-    public void writeToFile () throws IOException {
+    public void writeToFile() throws IOException {
         RandomAccessFile headerOut = new RandomAccessFile(path + headerName, "rw");
 
         lengthHandler.putToOutput(headerOut, cache.size());
@@ -171,8 +168,6 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
         headerOut.close();
         dataFile.close();
-        //время магии
-        //TODO посортим мап по оффсетам и сиками пройдемся по данным в сторадже
 
     }
 

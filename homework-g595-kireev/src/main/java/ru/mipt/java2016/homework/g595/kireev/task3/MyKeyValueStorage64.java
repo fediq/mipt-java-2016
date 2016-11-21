@@ -1,7 +1,6 @@
 package ru.mipt.java2016.homework.g595.kireev.task3;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
-import ru.mipt.java2016.homework.g595.kireev.task3.MyBufferedBinaryHandler;
 
 import java.io.*;
 import java.util.HashMap;
@@ -21,7 +20,6 @@ public class MyKeyValueStorage64<K, V> implements KeyValueStorage<K, V> {
     private MyBufferedBinaryHandler<K> keyHandler;
     private MyBufferedBinaryHandler<V> valueHandler;
     private MyBufferedBinaryHandler<Integer> lengthHandler;
-    private int uselessData = 0;
     private Object sync = new Object();
     private boolean isClosed = false;
 
@@ -37,7 +35,6 @@ public class MyKeyValueStorage64<K, V> implements KeyValueStorage<K, V> {
             dir.mkdir();
         }
         dataFile = new RandomAccessFile(path + dataName, "rw");
-        //  dataFile.close();
         takeCacheFromFile();
     }
 
@@ -46,13 +43,12 @@ public class MyKeyValueStorage64<K, V> implements KeyValueStorage<K, V> {
         if (!inFile.exists()) {
             inFile.createNewFile();
         }
-        // RandomAccessFile in = new RandomAccessFile(path + headerName, "rw");
         RandomAccessFile in = new RandomAccessFile(path + headerName, "r");
         if (!cache.isEmpty()) {
             cache.clear();
         }
         Integer n;
-        if (in.length() == 0) { //TODO уточнить точно ли при пустом файле legth выдаст 0
+        if (in.length() == 0) {
             n = 0;
             generalOffset = 0;
         } else {
@@ -98,18 +94,13 @@ public class MyKeyValueStorage64<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
-
-
     @Override
     public void write(K key, V value)  {
         synchronized (sync) {
             checkClose();
-            if (cache.containsKey(key)) {
-                ++uselessData;
-            }
-            cache.put(key, generalOffset); //TODO по идее заменяет предыдущий оффсет на новый
+            cache.put(key, generalOffset);
             try {
-                dataFile.seek(generalOffset); //TODO нужно посмотреть насколько полезно это
+                dataFile.seek(generalOffset);
                 generalOffset += valueHandler.putToOutput(dataFile, value);
             } catch (IOException e) {
                 throw new RuntimeException("IO error during writting");
@@ -122,7 +113,6 @@ public class MyKeyValueStorage64<K, V> implements KeyValueStorage<K, V> {
         synchronized (sync) {
             checkClose();
             cache.remove(key);
-            ++uselessData;
         }
     }
 
@@ -157,10 +147,7 @@ public class MyKeyValueStorage64<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
-
-
-
-    public void writeToFile () throws IOException {
+    public void writeToFile() throws IOException {
         RandomAccessFile headerOut = new RandomAccessFile(path + headerName, "rw");
 
         lengthHandler.putToOutput(headerOut, cache.size());
@@ -171,8 +158,6 @@ public class MyKeyValueStorage64<K, V> implements KeyValueStorage<K, V> {
         }
         headerOut.close();
         dataFile.close();
-        //время магии
-        //TODO посортим мап по оффсетам и сиками пройдемся по данным в сторадже
 
     }
 
