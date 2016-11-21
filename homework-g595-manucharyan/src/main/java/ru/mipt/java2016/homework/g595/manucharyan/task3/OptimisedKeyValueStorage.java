@@ -97,8 +97,12 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
      */
     @Override
     public boolean exists(K key) {
-        if (isClosed) return false;
-        if (cache.containsKey(key)) return true;
+        if (isClosed) {
+            return false;
+        }
+        if (cache.containsKey(key)) {
+            return true;
+        }
         return base.containsKey(key);
     }
 

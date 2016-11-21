@@ -1,7 +1,5 @@
 package ru.mipt.java2016.homework.g595.manucharyan.task3;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
@@ -11,7 +9,7 @@ import java.io.RandomAccessFile;
  */
 public class ConcreteStrategyIntegerRandomAccess implements SerializationStrategyRandomAccess<Integer> {
     @Override
-    public void serializeToFile(Integer value,RandomAccessFile output) throws IOException {
+    public void serializeToFile(Integer value, RandomAccessFile output) throws IOException {
         output.writeInt(value);
     }
 
