@@ -7,6 +7,7 @@ import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import ru.mipt.java2016.homework.g596.ivanova.task2.BestKeyValueStorageEver;
@@ -22,7 +23,7 @@ import ru.mipt.java2016.homework.g596.ivanova.task2.Serialisation;
  * @param <K> - type of key.
  * @param <V> - type of value.
  */
-public class BigDataStorage<K extends Comparable<? super K>, V extends Comparable<? super V>>
+public class BigDataStorage<K, V>
         extends BestKeyValueStorageEver<K, V> {
     /**
      * We will update our file when quantity of deleted elements reach this point.
@@ -83,21 +84,17 @@ public class BigDataStorage<K extends Comparable<? super K>, V extends Comparabl
     private Cache<K, V> cache;
 
     @Override
-    protected final void initStorage() throws IOException {
-        RandomAccessFile usedFile;
-        if (mainFileInUse) {
-            usedFile = file;
-        } else {
-            usedFile = twinFile;
+    protected final void initStorage(boolean isBigDataStorage) throws IOException {
+        if (!isBigDataStorage) {
+            return;
         }
-
-        usedFile.seek(0); // go to the start
+        file.seek(0); // go to the start
         map.clear();
         offsets.clear();
 
         K key;
-        while (usedFile.getFilePointer() < usedFile.length()) {
-            key = keySerialisation.read(usedFile);
+        while (file.getFilePointer() < file.length()) {
+            key = keySerialisation.read(file);
 
             if (map.containsKey(key)) {
                 throw new RuntimeException("File contains two equal keys.");
@@ -106,7 +103,7 @@ public class BigDataStorage<K extends Comparable<? super K>, V extends Comparabl
             long offset = file.getFilePointer();
 
             try {
-                V value = valueSerialisation.read(usedFile);
+                V value = valueSerialisation.read(file);
             } catch (EOFException e) {
                 throw new RuntimeException("No value for some key.");
             }
@@ -141,6 +138,12 @@ public class BigDataStorage<K extends Comparable<? super K>, V extends Comparabl
                 .maximumWeight(maxCachedWeight)
                 .weigher(weigher)
                 .build();
+
+        offsets = new HashMap<>();
+        boolean isBigDataStorage = true;
+        if (file.length() != 0) {
+            initStorage(isBigDataStorage);
+        }
     }
 
     @Override
@@ -149,6 +152,9 @@ public class BigDataStorage<K extends Comparable<? super K>, V extends Comparabl
         if (value == null) {
             value = map.get(key);
             if (value == null) {
+                if (!offsets.containsKey(key)) {
+                    return null;
+                }
                 long offset = offsets.get(key);
                 RandomAccessFile usedFile;
                 if (mainFileInUse) {
@@ -170,8 +176,9 @@ public class BigDataStorage<K extends Comparable<? super K>, V extends Comparabl
                 }
             }
         }
-
-        cache.put(key, value);
+        if (value != null) {
+            cache.put(key, value);
+        }
         return value;
     }
 
@@ -283,7 +290,9 @@ public class BigDataStorage<K extends Comparable<? super K>, V extends Comparabl
     public final void close() throws IOException {
         cache.cleanUp();
 
-        fileCleaner();
+        if (deleteCount > 0) {
+            fileCleaner();
+        }
         writeToFile();
 
         twinFile.close();
@@ -298,6 +307,7 @@ public class BigDataStorage<K extends Comparable<? super K>, V extends Comparabl
             twin.renameTo(mainFile);
         }
 
+        mainFileInUse = true;
         map.clear();
         offsets.clear();
     }

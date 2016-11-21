@@ -49,7 +49,7 @@ public class BestKeyValueStorageEver<K, V> implements KeyValueStorage<K, V> {
      * @throws IOException - if I/O troubles occure.
      * @throws RuntimeException - if file containes two equal keys or key without value.
      */
-    protected void initStorage() throws IOException {
+    protected void initStorage(boolean isBigDataStorage) throws IOException {
         file.seek(0); // go to the start
         map.clear();
 
@@ -85,14 +85,15 @@ public class BestKeyValueStorageEver<K, V> implements KeyValueStorage<K, V> {
             throw new FileNotFoundException("No such directory.");
         }
 
-        map = new HashMap<K, V>();
+        map = new HashMap<>();
         filePath = path + File.separator + name;
         keySerialisation = kSerialisation;
         valueSerialisation = vSerialisation;
 
         file = new RandomAccessFile(filePath, "rw");
+        boolean isBigDataStorage = false;
         if (file.length() != 0) {
-            initStorage();
+            initStorage(isBigDataStorage);
         }
     }
 

@@ -9,11 +9,14 @@ import java.lang.instrument.Instrumentation;
 public class ObjectSize {
     private static Instrumentation instrumentation;
 
-    public static void premain(String args, Instrumentation inst) {
+    public static void premain(final String args, final Instrumentation inst) {
         instrumentation = inst;
     }
 
-    public static long getObjectSize(Object o) {
+    public static long getObjectSize(final Object o) {
+        if (instrumentation == null) {
+            throw new IllegalStateException("Agent not initialised");
+        }
         return instrumentation.getObjectSize(o);
     }
 }

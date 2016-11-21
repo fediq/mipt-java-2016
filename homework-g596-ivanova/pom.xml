@@ -29,7 +29,49 @@
             <version>20.0</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.javassist</groupId>
+            <artifactId>javassist</artifactId>
+            <version>3.21.0-GA</version>
+            <type>jar</type>
+        </dependency>
+
     </dependencies>
 
+    <build>
+        <plugins>
+            <!-- Prepares Agent JAR before test execution -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.0.2</version>
+                <executions>
+                    <execution>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                        <configuration>
+                            <archive>
+                                <manifestentries>
+                                    <premain-class>org.javabenchmark.instrumentation.Agent</premain-class>
+                                </manifestentries>
+                            </archive>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- executes test with -javaagent option -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.19.1</version>
+                <configuration>
+                    <argLine>"-javaagent:/home/julia/Projects/mipt-java-2016/homework-g596-ivanova/src/main/java/ru/mipt/java2016/homework/g596/ivanova/task3/ObjectSize.jar"</argLine>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>

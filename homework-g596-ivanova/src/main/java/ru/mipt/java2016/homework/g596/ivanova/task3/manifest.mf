@@ -1,0 +1,1 @@
+PreMain-Class: ru.mipt.java2016.homework.g596.ivanova.task3.ObjectSize
