@@ -2,11 +2,9 @@ package ru.mipt.java2016.homework.g594.krokhalev.task3;
 
 import java.io.Closeable;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class PartsController<K, V> implements Closeable {
     private static final int BASE_PART_SIZE = 100;
@@ -15,7 +13,8 @@ public class PartsController<K, V> implements Closeable {
     private final StorageReader<K, V> mStorageReader;
 
     private Map<K, V> mLevel0 = new HashMap<K, V>();
-    private LinkedList<Level<K, V>> mLevels = new LinkedList<>();
+    private LinkedList<Level<K, V>> mLevels = new LinkedList<Level<K, V>>();
+    private Part<K, V> mainPart;
 
     private final File mStorageFile;
     private final File mStorageTable;
@@ -58,7 +57,7 @@ public class PartsController<K, V> implements Closeable {
         mStorageReader = storageReader;
         if (restore) {
             Part<K, V> tmpPart = new Part<K, V>(mWorkDirectory, storageFile, storageTable, storageReader);
-            addPart(tmpPart);
+            createFromPart(tmpPart);
             mLevels.getFirst().getKeys(keys);
         }
 
@@ -102,7 +101,7 @@ public class PartsController<K, V> implements Closeable {
         }
 
         if (mLevel0.size() >= BASE_PART_SIZE) {
-            addPart(new Part<K, V>(mWorkDirectory, mLevel0, mStorageReader));
+            addMemPart(new Part<K, V>(mWorkDirectory, mLevel0, mStorageReader));
         }
 
         return exists;
@@ -129,25 +128,48 @@ public class PartsController<K, V> implements Closeable {
         return size;
     }
 
-    private void addPart(Part<K, V> part) throws IOException {
+    private void addMemPart(Part<K, V> part) throws IOException {
+        int i = 0;
+        int currentCapacity = BASE_PART_SIZE * LEVEL_INCREASE;
         boolean added = false;
-        while (!added && mLevels.size() > 0) {
-            Level<K, V> level = mLevels.getFirst();
-            if (level.addPart(part) > level.getCapacity()) {
-                part = level.merge();
-                mLevels.remove(0);
-            } else {
+        for (Level<K, V> iLevel : mLevels) {
+            if (iLevel.getCapacity() > currentCapacity) {
+                Level<K, V> level = new Level<K, V>(mWorkDirectory, mStorageReader, currentCapacity);
+                level.addPart(part);
+                mLevels.add(i, level);
+
                 added = true;
+                break;
+            } else {
+                if (iLevel.getSize() + part.getSize() > iLevel.getCapacity()) {
+                    Part<K, V> tmpPart = iLevel.merge();
+                    iLevel.addPart(part);
+                    part = tmpPart;
+                } else {
+                    iLevel.addPart(part);
+
+                    added = true;
+                    break;
+                }
             }
+            i++;
+            currentCapacity *= LEVEL_INCREASE;
         }
         if (!added) {
-            int currentSize = BASE_PART_SIZE * LEVEL_INCREASE;
-            while (currentSize < part.getSize()) {
-                currentSize *= LEVEL_INCREASE;
-            }
-            mLevels.add(new Level<K, V>(mWorkDirectory, mStorageReader, currentSize));
-            mLevels.getFirst().addPart(part);
+            mLevels.addLast(new Level<K, V>(mWorkDirectory, mStorageReader, currentCapacity));
+            mLevels.getLast().addPart(part);
         }
+    }
+
+    private void createFromPart(Part<K, V> part) throws FileNotFoundException {
+        mLevels.clear();
+
+        int currentSize = BASE_PART_SIZE * LEVEL_INCREASE;
+        while (currentSize < part.getSize()) {
+            currentSize *= LEVEL_INCREASE;
+        }
+        mLevels.addFirst(new Level<K, V>(mWorkDirectory, mStorageReader, currentSize));
+        mLevels.getFirst().addPart(part);
     }
 
     @Override
