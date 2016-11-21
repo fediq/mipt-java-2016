@@ -15,7 +15,6 @@ import java.util.Iterator;
 import java.util.Map;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.base.task2.MalformedDataException;
-import ru.mipt.java2016.homework.g596.ivanova.task2.BestKeyValueStorageEver;
 import ru.mipt.java2016.homework.g596.ivanova.task2.Serialisation;
 
 /**
@@ -39,12 +38,12 @@ public class BigDataStorage<K, V> implements KeyValueStorage<K, V> {
     /**
      * Max weight of elements we add but didn't write to file.
      */
-    private final int maxAddWeight = 1 * 1024 * 1024; // 1 MB
+    private final int maxAddWeight = 2 * 1024 * 1024; // 1 MB
 
     /**
      * Max weight of elements we cache.
      */
-    private final int maxCachedWeight = 1 * 1024 * 1024; // 1 MB
+    private final int maxCachedWeight = 512 * 1024; // 1 MB
 
     private boolean isInitialized;
 
@@ -172,13 +171,12 @@ public class BigDataStorage<K, V> implements KeyValueStorage<K, V> {
         addWeight = 0;
         mainFileInUse = true;
 
-        Weigher<K, V> weigher =
-                (key, value) -> (int) ObjectSize.deepSizeOf(key) + (int) ObjectSize
-                        .deepSizeOf(value);
+        Weigher<K, V> weigher = (key, value) -> (int) ObjectSize.deepSizeOf(key) + (int) ObjectSize
+                .deepSizeOf(value);
         cache = CacheBuilder.newBuilder().maximumWeight(maxCachedWeight).weigher(weigher).build();
 
         offsets = new HashMap<>();
-            initStorage();
+        initStorage();
     }
 
     public final V read(final K key) throws MalformedDataException {
@@ -219,7 +217,7 @@ public class BigDataStorage<K, V> implements KeyValueStorage<K, V> {
         return value;
     }
 
-    public final boolean exists(final K key) throws MalformedDataException{
+    public final boolean exists(final K key) throws MalformedDataException {
         if (!isInitialized) {
             throw new MalformedDataException("Storage is closed.");
         }
