@@ -8,7 +8,7 @@ import java.util.Iterator;
 import java.util.HashMap;
 import java.util.Map;
 
-public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V> {
+public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V>, AutoCloseable {
     private HashMap<K, V> kvHashMap = new HashMap<>();
     private RandomAccessFileManager RAFManager;
     private boolean closed;
@@ -63,12 +63,11 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
         closed = true;
         RAFManager.clearRAF();
         for (Map.Entry<K, V> pair: kvHashMap.entrySet()) {
-            keySerializer.serialize(pair.getKey());
-            valueSerializer.serialize(pair.getValue());
+            RAFManager.write(keySerializer.serialize(pair.getKey()));
+            RAFManager.write(valueSerializer.serialize(pair.getValue()));
         }
         kvHashMap.clear();
         RAFManager.closeRAF();
-        RAFManager.clearRAF();
     }
 
     @Override

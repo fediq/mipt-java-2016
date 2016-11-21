@@ -2,6 +2,7 @@ package ru.mipt.java2016.homework.g594.gorelick.task2;
 
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /**
@@ -10,7 +11,7 @@ import java.nio.ByteBuffer;
 
 public class StudentKeySerializer implements Serializer<StudentKey> {
     @Override
-    public ByteBuffer serialize(StudentKey object) {
+    public ByteBuffer serialize(StudentKey object) throws IOException {
         IntegerSerializer int_serialize = new IntegerSerializer();
         StringSerializer str_serialize = new StringSerializer();
         ByteBuffer group_id = int_serialize.serialize(object.getGroupId());
@@ -21,7 +22,7 @@ public class StudentKeySerializer implements Serializer<StudentKey> {
         return result;
     }
     @Override
-    public StudentKey deserialize(ByteBuffer array) {
+    public StudentKey deserialize(ByteBuffer array) throws IOException {
         IntegerSerializer int_deserialize = new IntegerSerializer();
         StringSerializer str_deserialize = new StringSerializer();
         Integer group_id = int_deserialize.deserialize(array);
