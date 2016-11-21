@@ -1,104 +1,180 @@
-package ru.mipt.java2016.homework.g594.gorelick.task2;
+package ru.mipt.java2016.homework.g594.gorelick.task3;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
-
-import java.io.EOFException;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.io.RandomAccessFile;
 import java.io.IOException;
-import java.util.Iterator;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.HashSet;
+import java.util.ArrayList;
 
-public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V>, AutoCloseable {
-    private HashMap<K, V> kvHashMap = new HashMap<>();
-    private RandomAccessFileManager RAFManager;
-    private boolean closed;
-    private Serializer<K> keySerializer;
-    private Serializer<V> valueSerializer;
-    private String filePath;
-    
-    public KeyValueStorageImplementation(String path, Serializer<K> key_serializer, Serializer<V> value_serializer) throws IOException {
-        RAFManager = new RandomAccessFileManager(path, "database.db");
-        filePath = path + "database.db";
-        keySerializer = key_serializer;
-        valueSerializer = value_serializer;
-        K key;
-        V value;
-        while (true) {
-            try {
-                key = keySerializer.deserialize(RAFManager.read());
-            } catch (EOFException exception) {
-                break;
+public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V> {
+    private static final String DATABASE_NAME_TEMPLATE = "storage.db";
+    private static String database_path;
+    private RandomAccessFile file;
+    private File ifopen;
+    private ArrayList<File> filesTable;
+    private HashSet<K> setKeys;
+    private HashMap<K, V> value_map;
+    private HashMap<K, key_place> file_map;
+    private final Serializer<K> keySerializer;
+    private final Serializer<V> valueSerializer;
+    private static final int DATA_CAPACITY = 250;
+    private class key_place {
+        public int id;
+        public long position;
+        key_place(int id, long position) {
+            this.id = id;
+            this.position = position;
+        }
+    }
+    KeyValueStorageImplementation(String path, Serializer<K> keyS, Serializer<V> valueS) throws IOException {
+        if (Files.notExists(Paths.get(path))) {
+            throw new IOException("Wrong path");
+        }
+        ifopen = new File(path + File.separator + DATABASE_NAME_TEMPLATE + ".check");
+        if (!ifopen.createNewFile()) {
+            throw new IOException("Database is already opened.");
+        }
+        setKeys = new HashSet<>();
+        value_map = new HashMap<>();
+        file_map = new HashMap<>();
+        filesTable = new ArrayList<>();
+        keySerializer = keyS;
+        valueSerializer = valueS;
+        database_path = path;
+        File database = new File(database_path + File.separator + DATABASE_NAME_TEMPLATE);
+        boolean isCreated = database.createNewFile();
+        file = new RandomAccessFile(database, "rw");
+        if (!isCreated) {
+            IntegerSerializer intS = new IntegerSerializer();
+            LLongSerializer longS = new LLongSerializer();
+            int countFiles = intS.read(file, file.getFilePointer());
+            int sizeKeys = intS.read(file, file.getFilePointer());
+            for (int i = 0; i < sizeKeys; i++) {
+                K key = keySerializer.read(file, file.getFilePointer());
+                int id = intS.read(file, file.getFilePointer());
+                long shift = longS.read(file, file.getFilePointer());
+
+                setKeys.add(key);
+                file_map.put(key, new key_place(id, shift));
             }
-            try {
-                value = valueSerializer.deserialize(RAFManager.read());
-            } catch (EOFException exception) {
-                break;
+
+            for (int id = 0; id < countFiles; id++) {
+                File currentFile = new File(database_path + File.separator + DATABASE_NAME_TEMPLATE + "." + id);
+                currentFile.createNewFile();
+                filesTable.add(currentFile);
             }
-            kvHashMap.put(key, value);
         }
-        closed = false;
-    }
-
-    @Override
-    public Iterator<K> readKeys() {
-        if (closed) {
-            throw new RuntimeException("Storage is closed");
-        }
-        return kvHashMap.keySet().iterator();
-    }
-
-    @Override
-    public boolean exists(K key) {
-        if (closed) {
-            throw new RuntimeException("Storage is closed");
-        }
-        return kvHashMap.containsKey(key);
-    }
-
-    @Override
-    public void close() throws IOException {
-        if (closed) {
-            throw new RuntimeException("Storage is closed");
-        }
-        closed = true;
-        RAFManager.clearRAF();
-        for (Map.Entry<K, V> pair: kvHashMap.entrySet()) {
-            RAFManager.write(keySerializer.serialize(pair.getKey()));
-            RAFManager.write(valueSerializer.serialize(pair.getValue()));
-        }
-        kvHashMap.clear();
-        RAFManager.closeRAF();
-    }
-
-    @Override
-    public int size() {
-        if (closed) {
-            throw new RuntimeException("Storage is closed");
-        }
-        return kvHashMap.size();
-    }
-
-    @Override
-    public void delete(K key) {
-        if (closed) {
-            throw new RuntimeException("Storage is closed");
-        }
-        kvHashMap.remove(key);
-    }
-
-    @Override
-    public void write(K key, V value) {
-        if (closed) {
-            throw new RuntimeException("Storage is closed");
-        }
-        kvHashMap.put(key, value);
     }
 
     @Override
     public V read(K key) {
-        if (closed) {
-            throw new RuntimeException("Storage is closed");
+        if (value_map.keySet().contains(key)) {
+            return value_map.get(key);
+        } else if (file_map.containsKey(key)) {
+            int id = file_map.get(key).id;
+            long shift = file_map.get(key).position;
+            try {
+                RandomAccessFile file = new RandomAccessFile(filesTable.get(id), "rw");
+                V value = valueSerializer.read(file, shift);
+                file.close();
+                return value;
+            } catch (IOException error) {
+                error.printStackTrace();
+                return null;
+            }
+        } else {
+            return null;
         }
-        return kvHashMap.get(key);
+    }
+
+    @Override
+    public void write(K key, V value) {
+        setKeys.add(key);
+        value_map.put(key, value);
+        if (value_map.size() >= DATA_CAPACITY) {
+            int id = filesTable.size();
+            File tmp = new File(database_path + File.separator + DATABASE_NAME_TEMPLATE + "." + id);
+            try {
+                tmp.createNewFile();
+                filesTable.add(tmp);
+                RandomAccessFile current = new RandomAccessFile(tmp, "rw");
+                current.setLength(0);
+                current.seek(0);
+                for (Map.Entry<K, V> entry : value_map.entrySet()) {
+                    key_place place = new key_place(id, current.getFilePointer());
+                    file_map.put(entry.getKey(), place);
+                    valueSerializer.write(current, entry.getValue(), current.getFilePointer());
+                }
+                value_map.clear();
+                current.close();
+            } catch (IOException error) {
+                error.printStackTrace();
+            }
+        }
+    }
+
+
+    @Override
+    public boolean exists(K key) {
+        return setKeys.contains(key);
+    }
+
+    @Override
+    public void delete(K key) {
+        setKeys.remove(key);
+        file_map.remove(key);
+    }
+
+    @Override
+    public Iterator<K> readKeys() {
+        return setKeys.iterator();
+    }
+
+    @Override
+    public int size() {
+        return setKeys.size();
+    }
+
+    @Override
+    public void close() throws IOException {
+        int id = filesTable.size();
+        File tmp = new File(database_path + File.separator + DATABASE_NAME_TEMPLATE + "." + id);
+        try {
+            tmp.createNewFile();
+            filesTable.add(tmp);
+            RandomAccessFile current = new RandomAccessFile(tmp, "rw");
+            current.setLength(0);
+            current.seek(0);
+            for (Map.Entry<K, V> entry : value_map.entrySet()) {
+                key_place place = new key_place(id, current.getFilePointer());
+                file_map.put(entry.getKey(), place);
+                valueSerializer.write(current, entry.getValue(), current.getFilePointer());
+            }
+            value_map.clear();
+            current.close();
+        } catch (IOException error) {
+            error.printStackTrace();
+        }
+        file.setLength(0);
+        file.seek(0);
+        IntegerSerializer integerSerializer = new IntegerSerializer();
+        LLongSerializer longSerializer = new LLongSerializer();
+        integerSerializer.write(file, filesTable.size(), file.getFilePointer());
+        integerSerializer.write(file, file_map.size(), file.getFilePointer());
+        for (Map.Entry<K, key_place> entry : file_map.entrySet()) {
+            K key = entry.getKey();
+            key_place place = entry.getValue();
+            keySerializer.write(file, key, file.getFilePointer());
+            integerSerializer.write(file, place.id, file.getFilePointer());
+            longSerializer.write(file, place.position, file.getFilePointer());
+        }
+        file.close();
+        Files.delete(ifopen.toPath());
     }
 }
