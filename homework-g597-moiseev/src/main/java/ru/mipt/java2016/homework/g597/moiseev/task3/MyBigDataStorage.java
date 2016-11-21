@@ -12,7 +12,9 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Дисковое хранилище.
@@ -41,9 +43,10 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
     private int numberOfDeletedElements;
     private boolean isOptimising;
     private boolean isDumping;
-    private ReentrantLock readLock = new ReentrantLock();
-    private ReentrantLock writeLock = new ReentrantLock();
-    private ReentrantLock fileAccessLock = new ReentrantLock();
+    private ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+    private Lock writeLock = lock.writeLock();
+    private Lock readLock = lock.readLock();
+    private Lock fileAccessLock = new ReentrantLock();
     private boolean isOpened;
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
 
@@ -125,7 +128,7 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
             if (offset == null) {
                 return null;
             }
-            if (offset == IS_NOT_IN_FILE) {
+            if (offset != IS_NOT_IN_FILE) {
                 fileAccessLock.lock();
                 valuesFile.seek(offset);
                 try {
@@ -157,7 +160,6 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
 
     @Override
     public void write(K key, V value) {
-        readLock.lock();
         writeLock.lock();
         try {
             checkNotClosed();
@@ -173,14 +175,12 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
 
             checkSizeAndDumpOrOptimize();
         } finally {
-            readLock.unlock();
             writeLock.unlock();
         }
     }
 
     @Override
     public void delete(K key) {
-        readLock.lock();
         writeLock.lock();
         try {
             checkNotClosed();
@@ -190,7 +190,6 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
             }
             memTable.remove(key);
         } finally {
-            readLock.unlock();
             writeLock.unlock();
         }
     }
@@ -203,23 +202,21 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
 
     @Override
     public int size() {
-        writeLock.lock();
+        readLock.lock();
         checkNotClosed();
         try {
             return offsets.size();
         } finally {
-            writeLock.unlock();
+            readLock.unlock();
         }
     }
 
     @Override
     public void close() throws IOException {
-        readLock.lock();
         writeLock.lock();
         try {
             if (isOpened) {
                 isOpened = false;
-                //executorService.wait();
                 dumpMemTable();
 
                 keysFile.seek(0);
@@ -241,7 +238,6 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            readLock.unlock();
             writeLock.unlock();
         }
     }
