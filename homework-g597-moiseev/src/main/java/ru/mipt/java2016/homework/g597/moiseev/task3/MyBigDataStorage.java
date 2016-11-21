@@ -166,12 +166,13 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
             while (isDumping) {
                 Thread.yield();
             }
-            if (offsets.containsKey(key) && !memTable.containsKey(key)) {
-                numberOfDeletedElements++;
-            }
 
             memTable.put(key, value);
-            offsets.put(key, IS_NOT_IN_FILE);
+            Long previousOffset = offsets.put(key, IS_NOT_IN_FILE);
+
+            if (previousOffset != null && previousOffset != IS_NOT_IN_FILE) {
+                numberOfDeletedElements++;
+            }
 
             checkSizeAndDumpOrOptimize();
         } finally {
@@ -243,6 +244,9 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
 
     private void checkSizeAndDumpOrOptimize() {
         if (!isDumping && !isOptimising) {
+            if (numberOfDeletedElements / size() > MAX_DELETED_PROPORTION) {
+                optimizeMemory();
+            }
             if (memTable.size() > MAX_MEM_TABLE_SIZE) {
                 dumpMemTable();
             }
@@ -299,7 +303,7 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
                     newOffsets.put(entry.getKey(), newValuesFile.length());
                     valueSerializationStrategy.write(newValuesFile, value);
                 } finally {
-                    readLock.unlock();
+                    fileAccessLock.unlock();
                 }
             }
 
