@@ -242,14 +242,12 @@ public class KVStorage<K, V> implements KeyValueStorage<K, V> {
             RandomAccessFile newRAFile = new RandomAccessFile(newFile, "rw");
             newRAFile.setLength(0);
             newRAFile.seek(0);
-            DataOutputStream dataOutputStream = new DataOutputStream(new FileOutputStream(newFileName));
             for (Map.Entry<K, V> entry : toWriteStorage.entrySet()) {
                 KeyPosition keyPosition = new KeyPosition(files.size(), newRAFile.getFilePointer());
                 keys.remove(entry.getKey());
                 keys.put(entry.getKey(), keyPosition);
-                valueStrategy.serialize(entry.getValue(), dataOutputStream);
+                valueStrategy.serialize(entry.getValue(), newRAFile);
             }
-            dataOutputStream.close();
             toWriteStorage.clear();
             files.add(newRAFile);
         } catch (IOException e) {
