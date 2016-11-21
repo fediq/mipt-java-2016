@@ -15,7 +15,6 @@ public class UpdatedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private Identification<V> valueIdentification;
     private RandomAccessFile keysStorage;
     private RandomAccessFile valuesStorage;
-    private HashMap<K, V> buffer;
     private HashMap<K, Long> bufferShufts;
     private Boolean closedStreem;
     private File security;
@@ -29,7 +28,6 @@ public class UpdatedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
 
         closedStreem = false;
-        buffer = new HashMap<K, V>();
         bufferShufts = new HashMap<K, Long>();
         File directory = new File(nameDirectory);
         keyIdentification = key;
@@ -61,7 +59,6 @@ public class UpdatedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private  void read() throws IOException {
         bufferShufts.clear();
-        buffer.clear();
 
         int readSize = IntegerIdentification.get().read(keysStorage);
         for (int i = 0; i < readSize; i++) {
@@ -70,15 +67,19 @@ public class UpdatedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void write() throws IOException {
-        keysStorage.seek(0);
-        IntegerIdentification.get().write(keysStorage, bufferShufts.size());
-        for (Map.Entry<K, Long> entry : bufferShufts.entrySet()) {
-            keyIdentification.write(keysStorage, entry.getKey());
-            LongIdentification.get().write(keysStorage, entry.getValue());
+        try {
+            keysStorage.seek(0);
+            IntegerIdentification.get().write(keysStorage, bufferShufts.size());
+            for (Map.Entry<K, Long> entry : bufferShufts.entrySet()) {
+                keyIdentification.write(keysStorage, entry.getKey());
+                LongIdentification.get().write(keysStorage, entry.getValue());
+            }
+            keysStorage.close();
+            valuesStorage.close();
         }
-        keysStorage.close();
-        valuesStorage.close();
-        security.delete();
+        finally {
+            security.delete();
+        }
     }
 
     @Override
@@ -144,12 +145,9 @@ public class UpdatedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         if (!exists(key)) {
             return null;
         }
-        V vallue = buffer.get(key);
-        if (vallue != null) {
-            return vallue;
-        }
+        Long vallue = bufferShufts.get(key);
         try {
-            valuesStorage.seek(bufferShufts.get(key));
+            valuesStorage.seek(vallue);
             return valueIdentification.read(valuesStorage);
         } catch (IOException e) {
             throw new RuntimeException("Error read");
