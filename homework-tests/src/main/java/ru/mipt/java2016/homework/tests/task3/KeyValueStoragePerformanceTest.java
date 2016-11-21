@@ -148,48 +148,48 @@ public abstract class KeyValueStoragePerformanceTest extends AbstractSingleFileS
         print("%5d millis for single 10kW 10kR iteration", iterationTimeMillis);
     }
 
-//    // Вы можете пометить этот тест как @Ignored во время отладки, если он занимает у вас слишком много времени
-//    @Test
-//    public void measure100kWDump100kR() {
-//        AtomicLong summaryWriteTime = new AtomicLong(0L);
-//        AtomicLong summaryReadTime = new AtomicLong(0L);
-//        long beginTime = System.currentTimeMillis();
-//        for (int t = 0; t < 10; ++t) {
-//            StorageTestUtils.doInTempDirectory(path -> {
-//                doWithStrings(path, storage -> {
-//                    Random random = new Random(42);
-//                    long writeTime = StorageTestUtils.measureTime(() -> {
-//                        for (int i = 0; i < 100000; ++i) {
-//                            String key = randomKey(random);
-//                            String value = randomValue(random);
-//                            storage.write(key, value);
-//                        }
-//                    });
-//                    summaryWriteTime.addAndGet(writeTime);
-//                });
-//
-//                doWithStrings(path, storage -> {
-//                    Random random = new Random(42);
-//                    long readTime = StorageTestUtils.measureTime(() -> {
-//                        for (int i = 0; i < 100000; ++i) {
-//                            String key = randomKey(random);
-//                            String value = randomValue(random);
-//                            Assert.assertEquals(value, storage.read(key));
-//                        }
-//                    });
-//                    summaryReadTime.addAndGet(readTime);
-//                });
-//            });
-//        }
-//        long endTime = System.currentTimeMillis();
-//        long iterationTimeMillis = (endTime - beginTime) / 10;
-//        long readsPerSecond = 10 * 100000 * 1000 / summaryReadTime.get();
-//        long writesPerSecond = 10 * 100000 * 1000 / summaryWriteTime.get();
-//
-//        print("%5d Writes per second up to 100k", writesPerSecond);
-//        print("%5d Reads per second from 100k", readsPerSecond);
-//        print("%5d millis for single 100kW 100kR iteration", iterationTimeMillis);
-//    }
+    // Вы можете пометить этот тест как @Ignored во время отладки, если он занимает у вас слишком много времени
+    @Test
+    public void measure100kWDump100kR() {
+        AtomicLong summaryWriteTime = new AtomicLong(0L);
+        AtomicLong summaryReadTime = new AtomicLong(0L);
+        long beginTime = System.currentTimeMillis();
+        for (int t = 0; t < 10; ++t) {
+            StorageTestUtils.doInTempDirectory(path -> {
+                doWithStrings(path, storage -> {
+                    Random random = new Random(42);
+                    long writeTime = StorageTestUtils.measureTime(() -> {
+                        for (int i = 0; i < 100000; ++i) {
+                            String key = randomKey(random);
+                            String value = randomValue(random);
+                            storage.write(key, value);
+                        }
+                    });
+                    summaryWriteTime.addAndGet(writeTime);
+                });
+
+                doWithStrings(path, storage -> {
+                    Random random = new Random(42);
+                    long readTime = StorageTestUtils.measureTime(() -> {
+                        for (int i = 0; i < 100000; ++i) {
+                            String key = randomKey(random);
+                            String value = randomValue(random);
+                            Assert.assertEquals(value, storage.read(key));
+                        }
+                    });
+                    summaryReadTime.addAndGet(readTime);
+                });
+            });
+        }
+        long endTime = System.currentTimeMillis();
+        long iterationTimeMillis = (endTime - beginTime) / 10;
+        long readsPerSecond = 10 * 100000 * 1000 / summaryReadTime.get();
+        long writesPerSecond = 10 * 100000 * 1000 / summaryWriteTime.get();
+
+        print("%5d Writes per second up to 100k", writesPerSecond);
+        print("%5d Reads per second from 100k", readsPerSecond);
+        print("%5d millis for single 100kW 100kR iteration", iterationTimeMillis);
+    }
 
 
     @Test
