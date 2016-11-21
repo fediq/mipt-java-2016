@@ -3,7 +3,6 @@ package ru.mipt.java2016.homework.g594.kalinichenko.task3;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 
 import java.io.*;
-import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -11,6 +10,10 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Created by masya on 27.10.16.
+ */
+/* Stores key and offsets in keyfile, values in value file.
+Cache is not used because it takes more time with it.
+Updates are written to value file in parts, when there are more than 250 updates.
  */
 
 class MyStorage<K, V> implements KeyValueStorage<K, V> {

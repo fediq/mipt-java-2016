@@ -19,8 +19,7 @@ public class MyIntSerializer extends MySerializer<Integer> {
         putInt(out, val);
     }
 
-    public void putRandom(RandomAccessFile out, Integer val)
-    {
+    public void putRandom(RandomAccessFile out, Integer val) {
         try {
             ByteBuffer data = ByteBuffer.allocate(Integer.BYTES);
             data.putInt(val);
