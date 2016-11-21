@@ -8,15 +8,8 @@ import java.util.Stack;
 import java.util.StringTokenizer;
 
 
-public class CStackCalculator implements Calculator {
+class CStackCalculator implements Calculator {
     private final String operators = "+*/_";
-    /*
-     * Operators list
-     * +,*,/ - binary operators
-     * _ - unary operator
-     */
-    private final String brackets = "()";
-    private final String symbols = "0123456789.";
     /*
      * List of allowed symbols in numbers
      * and list of operator valencies,assuming,that
@@ -93,7 +86,8 @@ public class CStackCalculator implements Calculator {
         /*
          * Replacing binary minus signs with unary ones.
          */
-        return new StringTokenizer(expression, this.operators + this.brackets, true);
+        String brackets = "()";
+        return new StringTokenizer(expression, this.operators + brackets, true);
     }
 
     private void getPolishNotation(StringTokenizer tokenList) throws ParsingException {
@@ -157,6 +151,7 @@ public class CStackCalculator implements Calculator {
     private boolean isNumber(String token) {
         Integer delimiterCounter = 0;
         for (int i = 0; i < token.length(); ++i) {
+            String symbols = "0123456789.";
             if (!symbols.contains(String.valueOf(token.charAt(i)))) {
                 return false;
             }

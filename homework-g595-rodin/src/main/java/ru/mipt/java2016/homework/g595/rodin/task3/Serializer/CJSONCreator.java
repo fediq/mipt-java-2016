@@ -7,11 +7,11 @@ import java.util.StringTokenizer;
 /**
  * Created by Dmitry on 27.10.16.
  */
-public class CJSONCreator<KeyType, ValueType> {
+class CJSONCreator<KeyType, ValueType> {
 
-    private ISerialize<KeyType> keySerializer;
+    private final ISerialize<KeyType> keySerializer;
 
-    private ISerialize<ValueType> valueSerializer;
+    private final ISerialize<ValueType> valueSerializer;
 
     public CJSONCreator(ISerialize<KeyType> keySerializer,
                         ISerialize<ValueType> valueSerializer) {

@@ -6,7 +6,7 @@ import java.io.*;
  * Created by Dmitry on 26.10.16.
  */
 
-public class CDiskTable {
+class CDiskTable {
 
     private final File file;
 

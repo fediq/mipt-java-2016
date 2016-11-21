@@ -19,7 +19,7 @@ public class CSerializeLong implements ISerialize<Long> {
             throw new IllegalArgumentException("Null Argument");
         }
         try {
-           return Long.parseLong(argument);
+            return Long.parseLong(argument);
         } catch (NumberFormatException exception) {
             throw new IllegalArgumentException("Invalid Argument");
         }

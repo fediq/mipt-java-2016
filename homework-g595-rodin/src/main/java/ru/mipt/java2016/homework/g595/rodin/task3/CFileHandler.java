@@ -4,172 +4,180 @@ import java.io.*;
 import java.nio.ByteBuffer;
 
 
-public class CFileHandler implements Closeable {
+class CFileHandler implements Closeable {
 
     private final File file;
 
-    private final String fileName;
+    private OutputStream outputStream = null;
 
-    private BufferedInputStream inputStream = null;
+    private InputStream inputStream = null;
 
-    private BufferedOutputStream outputStream = null;
+    private long currOffset = 0;
 
-    private long offset = 0;
-
-    CFileHandler(String fileName){
-        file = new File(fileName);
-        this.fileName = fileName;
+    public CFileHandler(String fileName) {
+        this.file = new File(fileName);
     }
 
-    public String getFileName() {
-        return fileName;
+    public void createFile() {
+        try {
+            file.createNewFile();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void appMode() {
+        try {
+            close();
+            outputStream = new FileOutputStream(file.getAbsoluteFile(), true);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public boolean exists() {
         return file.exists();
     }
 
-    public void createFile() {
-        try {
-            file.createNewFile();
-        } catch (IOException exception) {
-            throw new RuntimeException(exception.getMessage());
+    private boolean checkExists() throws FileNotFoundException {
+        if (!file.exists()) {
+            throw new FileNotFoundException(file.getName());
         }
+        return true;
     }
 
-    private void checkExistence() throws FileNotFoundException{
-        if(!exists()) {
-            throw new RuntimeException("File not found " + fileName);
-        }
-    }
-
-    private void checkOutputBuffer(){
-        try {
-            if (outputStream == null) {
-                outputStream = new BufferedOutputStream(new FileOutputStream(file.getAbsoluteFile(),true));
+    public void flushWrite() {
+        if (outputStream != null) {
+            try {
+                outputStream.flush();
+                outputStream.close();
+                outputStream = null;
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
-        } catch (IOException exception){
-            throw new RuntimeException(exception.getMessage());
         }
     }
 
-    private void checkInputBuffer(){
+    public long write(String text) {
         try {
-            if(inputStream == null){
-                inputStream = new BufferedInputStream(new FileInputStream(file.getAbsoluteFile()));
-                offset = 0;
-            }
-        } catch (IOException exception){
-            throw new RuntimeException(exception.getMessage());
-        }
-    }
-
-    private void flushOutput(){
-        try{
-            outputStream.flush();
-        } catch (IOException exception){
-            throw new RuntimeException(exception.getMessage());
-        }
-    }
-
-    private void closeInput(){
-        try{
-            inputStream.close();
-            inputStream = null;
-        } catch (IOException exception){
-            throw new RuntimeException(exception.getMessage());
-        }
-    }
-
-    public long write(String text){
-        try {
-            checkExistence();
-            checkOutputBuffer();
-            outputStream.write(ByteBuffer.allocate(4).putInt(text.length()).array());
+            checkExists();
+            checkOutput();
+            byte[] bytes = ByteBuffer.allocate(4).putInt(text.length()).array();
+            outputStream.write(bytes);
             outputStream.write(text.getBytes());
             return text.getBytes().length + 4;
-        } catch (IOException exception){
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void checkInput() {
+        try {
+            if (inputStream == null) {
+                inputStream = new BufferedInputStream(new FileInputStream(file.getAbsoluteFile()));
+                currOffset = 0;
+            }
+        } catch (IOException exception) {
             throw new RuntimeException(exception);
         }
     }
 
-    public long append(String text){
+    private void checkOutput() {
         try {
-            checkExistence();
-            checkOutputBuffer();
-            byte[] textLength = ByteBuffer.allocate(4).putInt(text.getBytes().length).array();
-            outputStream.write(textLength);
-            outputStream.write(text.getBytes());
-            long temp = offset;
-            offset += text.getBytes().length + 4;
-            return temp;
-        } catch (IOException exception){
-            throw new RuntimeException(exception.getMessage());
+            if (outputStream == null) {
+                outputStream = new BufferedOutputStream(new FileOutputStream(file.getAbsoluteFile()));
+            }
+        } catch (IOException exception) {
+            throw new RuntimeException(exception);
         }
     }
 
-    public String readToken(){
+    public String readNextToken() {
         try {
-            checkExistence();
-            checkInputBuffer();
-            if(inputStream.available() < 4){
+            checkExists();
+            checkInput();
+            if (inputStream.available() < 4) {
                 closeInput();
                 return null;
             }
-            byte[] buffer =  new byte[4];
-            int readLength = inputStream.read(buffer, 0, 4);
-            if(readLength < 4){
-                throw new RuntimeException("Cannot read data");
+            byte[] bytes = new byte[4];
+            int read = inputStream.read(bytes, 0, 4);
+            if (read < 4) {
+                inputStream.close();
+                throw new RuntimeException("Failed to read");
             }
-            int length = ByteBuffer.wrap(buffer).getInt();
-            offset += readLength;
-            buffer = new byte[length];
-            readLength = inputStream.read(buffer, 0, length);
-            if(readLength < length){
-                throw new RuntimeException("Cannot read data");
+            currOffset += read;
+            int len = ByteBuffer.wrap(bytes).getInt();
+            bytes = new byte[len];
+            read = inputStream.read(bytes, 0, len);
+            if (read < len) {
+                inputStream.close();
+                throw new RuntimeException("Failed to read");
             }
-            offset += readLength;
-            return new String(buffer);
-        } catch (IOException exception){
-            throw new RuntimeException(exception.getMessage());
+            currOffset += read;
+            return new String(bytes);
+        } catch (IOException exception) {
+            throw new RuntimeException(exception);
         }
     }
 
-
-    public void reposition(long targetOffset){
-        try{
-            checkExistence();
-            checkInputBuffer();
-            if(offset > targetOffset){
-                closeInput();
-                checkInputBuffer();
-            }
-            long shift = inputStream.skip(targetOffset - offset);
-            while(shift != 0) {
-                offset += shift;
-                inputStream.skip(targetOffset - offset);
-            }
-        } catch (IOException exception){
-            throw new RuntimeException(exception.getMessage());
+    public long length() {
+        try (FileInputStream sin = new FileInputStream(file.getAbsoluteFile())) {
+            return sin.available();
+        } catch (IOException exception) {
+            throw new RuntimeException(exception);
         }
     }
 
-
-    public String loadKey(long offset) {
-        reposition(offset);
-        return readToken();
+    public void reposition(long offset) {
+        try {
+            checkExists();
+            if (inputStream == null || currOffset > offset) {
+                if (inputStream != null) {
+                    inputStream.close();
+                }
+                inputStream = new BufferedInputStream(new FileInputStream(file.getAbsoluteFile()));
+                currOffset = 0;
+            }
+            while (currOffset < offset) {
+                currOffset += inputStream.skip(offset - currOffset);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-
-    public void delete(){
+    public void delete() {
         file.delete();
+    }
+
+    private void closeInput() {
+        try {
+            if (inputStream != null) {
+                inputStream.close();
+                currOffset = 0;
+                inputStream = null;
+            }
+        } catch (IOException exception) {
+            throw new RuntimeException(exception);
+        }
+    }
+
+    private void closeOutput() {
+        try {
+            if (outputStream != null) {
+                outputStream.flush();
+                outputStream.close();
+                outputStream = null;
+            }
+        } catch (IOException exception) {
+            throw new RuntimeException(exception);
+        }
     }
 
     @Override
     public void close() {
-            closeInput();
-            flushOutput();
+        closeInput();
+        closeOutput();
     }
-
-
 }
