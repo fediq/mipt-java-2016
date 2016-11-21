@@ -53,9 +53,7 @@
                     </goals>
                     <configuration>
                         <archive>
-                            <manifest>
-                                <manifestFile>/home/julia/Projects/mipt-java-2016/homework-g596-ivanova/src/main/java/ru/mipt/java2016/homework/g596/ivanova/task3/manifest.mf</manifestFile>
-                            </manifest>
+                            <manifestFile>${project.basedir}/src/main/java/ru/mipt/java2016/homework/g596/ivanova/task3/manifest.mf</manifestFile>
                         </archive>
                     </configuration>
                 </execution>
@@ -68,7 +66,7 @@
             <artifactId>maven-surefire-plugin</artifactId>
             <version>2.19.1</version>
             <configuration>
-                <argLine>"-javaagent:/home/julia/Projects/mipt-java-2016/homework-g596-ivanova/src/main/java/ru/mipt/java2016/homework/g596/ivanova/task3/ObjectSize.jar"</argLine>
+                <argLine>"-javaagent:${project.basedir}/src/main/java/ru/mipt/java2016/homework/g596/ivanova/task3/ObjectSize.jar"</argLine>
             </configuration>
         </plugin>
     </plugins>
