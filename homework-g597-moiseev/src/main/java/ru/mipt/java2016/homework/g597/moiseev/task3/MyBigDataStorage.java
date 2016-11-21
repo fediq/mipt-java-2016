@@ -10,9 +10,8 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.HashMap;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -23,13 +22,15 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 
 public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoCloseable {
-    private static final int MAX_MEM_TABLE_SIZE = 4000;
+    private static final int MAX_MEM_TABLE_SIZE = 1000;
     private static final double MAX_DELETED_PROPORTION = 0.2;
+    private static final long IS_NOT_IN_FILE = -1;
 
     private final SerializationStrategy<K> keySerializationStrategy;
     private final SerializationStrategy<V> valueSerializationStrategy;
     private final SerializationStrategy<Long> offsetSerializationStrategy = LongSerializationStrategy.getInstance();
-    private final SerializationStrategy<Integer> integerSerializationStrategy = IntegerSerializationStrategy.getInstance();
+    private final SerializationStrategy<Integer> integerSerializationStrategy = 
+            IntegerSerializationStrategy.getInstance();
     private String name;
     private String path;
     private RandomAccessFile valuesFile;
@@ -38,12 +39,13 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
     private HashMap<K, V> memTable;
     private HashMap<K, Long> offsets;
     private int numberOfDeletedElements;
-    private int numberOfDuplicates;
     private boolean isOptimising;
     private boolean isDumping;
     private ReentrantLock readLock = new ReentrantLock();
     private ReentrantLock writeLock = new ReentrantLock();
-    private ReentrantLock duplicateLock = new ReentrantLock();
+    private ReentrantLock fileAccessLock = new ReentrantLock();
+    private boolean isOpened;
+    private ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     public MyBigDataStorage(String path, String name, SerializationStrategy<K> keySerializationStrategy,
                              SerializationStrategy<V> valueSerializationStrategy) throws IOException {
@@ -51,7 +53,6 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
         if (Files.notExists(Paths.get(path))) {
             throw new FileNotFoundException("Directory doesn't exist");
         }
-
 
         String lockPath = path + File.separator + name + ".lock";
         lockFile = new File(lockPath);
@@ -65,19 +66,19 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
         this.keySerializationStrategy = keySerializationStrategy;
         this.valueSerializationStrategy = valueSerializationStrategy;
 
-        String valuesPath = path + File.separator + this.name + "_values";
+        String valuesPath = path + File.separator + this.name + "_values.db";
         File values = new File(valuesPath);
 
-        String keysPath = path + File.separator + this.name + "_keys";
+        String keysPath = path + File.separator + this.name + "_keys.db";
         File keys = new File(keysPath);
 
         valuesFile = new RandomAccessFile(values, "rw");
         keysFile = new RandomAccessFile(keys, "rw");
 
         numberOfDeletedElements = 0;
-        numberOfDuplicates = 0;
+        isOpened = true;
         isDumping = false;
-        isOptimising = true;
+        isOptimising = false;
 
         if (!values.createNewFile() || !keys.createNewFile()) {
             loadFromFiles();
@@ -89,6 +90,10 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
         memTable.clear();
 
         long fileLength = keysFile.length();
+
+        if (fileLength == 0) {
+            return;
+        }
 
         numberOfDeletedElements = integerSerializationStrategy.read(keysFile);
 
@@ -105,18 +110,28 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
         }
     }
 
+    private void checkNotClosed() throws IllegalStateException {
+        if (!isOpened) {
+            throw new IllegalStateException("The storage is closed");
+        }
+    }
+
     @Override
     public V read(K key) {
         readLock.lock();
         V result = null;
         try {
-            if(offsets.containsKey(key)) {
-                if (memTable.containsKey(key)) {
-                    result = memTable.get(key);
-                } else {
-                    long offset = offsets.get(key);
-                    valuesFile.seek(offset);
+            checkNotClosed();
+            if (memTable.containsKey(key)) {
+                result = memTable.get(key);
+            } else if (offsets.containsKey(key)) {
+                long offset = offsets.get(key);
+                fileAccessLock.lock();
+                valuesFile.seek(offset);
+                try {
                     result = valueSerializationStrategy.read(valuesFile);
+                } finally {
+                    fileAccessLock.unlock();
                 }
             }
         } catch (IOException e) {
@@ -132,7 +147,8 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
         writeLock.lock();
         boolean result;
         try {
-            result = offsets.containsKey(key) || memTable.containsKey(key);
+            checkNotClosed();
+            result = offsets.containsKey(key);
         } finally {
             writeLock.unlock();
         }
@@ -144,12 +160,16 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
         readLock.lock();
         writeLock.lock();
         try {
-            if(offsets.containsKey(key) && !memTable.containsKey(key)) {
+            checkNotClosed();
+            while (isDumping) {
+                Thread.yield();
+            }
+            if (offsets.containsKey(key) && !memTable.containsKey(key)) {
                 numberOfDeletedElements++;
             }
 
             memTable.put(key, value);
-            offsets.remove(key);
+            offsets.put(key, IS_NOT_IN_FILE);
 
             checkSizeAndDumpOrOptimize();
 
@@ -164,10 +184,11 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
         readLock.lock();
         writeLock.lock();
         try {
+            checkNotClosed();
             if (offsets.containsKey(key)) {
                 numberOfDeletedElements++;
+                offsets.remove(key);
             }
-            offsets.remove(key);
             memTable.remove(key);
         } finally {
             readLock.unlock();
@@ -177,19 +198,19 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
 
     @Override
     public Iterator<K> readKeys() {
+        checkNotClosed();
         return offsets.keySet().iterator();
     }
 
     @Override
     public int size() {
+        checkNotClosed();
         int result = 0;
         writeLock.lock();
-        duplicateLock.lock();
         try {
-            result = offsets.size() + memTable.size() - numberOfDuplicates;
+            result = offsets.size();
         } finally {
             writeLock.unlock();
-            duplicateLock.unlock();
         }
         return result;
     }
@@ -199,21 +220,30 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
         readLock.lock();
         writeLock.lock();
         try {
-            dumpMemTable();
+            if (isOpened) {
+                isOpened = false;
+                //executorService.wait();
+                dumpMemTable();
 
-            keysFile.seek(0);
-            keysFile.setLength(0);
+                keysFile.seek(0);
+                keysFile.setLength(0);
 
-            integerSerializationStrategy.write(keysFile, numberOfDeletedElements);
+                integerSerializationStrategy.write(keysFile, numberOfDeletedElements);
 
-            for (Map.Entry<K, Long> entry : offsets.entrySet()) {
-                keySerializationStrategy.write(keysFile, entry.getKey());
-                offsetSerializationStrategy.write(keysFile, entry.getValue());
+                for (Map.Entry<K, Long> entry : offsets.entrySet()) {
+                    keySerializationStrategy.write(keysFile, entry.getKey());
+                    offsetSerializationStrategy.write(keysFile, entry.getValue());
+                }
+
+                //executorService.shutdown();
+                keysFile.close();
+                valuesFile.close();
+                Files.delete(lockFile.toPath());
             }
+
+        } catch (Exception e) {
+            e.printStackTrace();
         } finally {
-            keysFile.close();
-            valuesFile.close();
-            Files.delete(lockFile.toPath());
             readLock.unlock();
             writeLock.unlock();
         }
@@ -222,11 +252,9 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
     private void checkSizeAndDumpOrOptimize() {
         if (!isDumping && !isOptimising) {
             if (numberOfDeletedElements / size() > MAX_DELETED_PROPORTION) {
-                Thread thread = new Thread(() -> optimizeMemory());
-                thread.start();
+                executorService.execute(() -> optimizeMemory());
             } else if (memTable.size() > MAX_MEM_TABLE_SIZE) {
-                Thread thread = new Thread(() -> dumpMemTable());
-                thread.start();
+                dumpMemTable();
             }
         }
     }
@@ -238,23 +266,21 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
         try {
             long offset = valuesFile.length();
             for (Map.Entry<K, V> entry : memTable.entrySet()) {
-                duplicateLock.lock();
+                offsets.put(entry.getKey(), offset);
+                fileAccessLock.lock();
                 try {
-                    offsets.put(entry.getKey(), offset);
-                    numberOfDuplicates++;
+                    valuesFile.seek(offset);
+                    valueSerializationStrategy.write(valuesFile, entry.getValue());
                 } finally {
-                    duplicateLock.unlock();
+                    fileAccessLock.unlock();
                 }
-                valueSerializationStrategy.write(valuesFile, entry.getValue());
                 offset = valuesFile.length();
-                memTable.clear();
-                duplicateLock.lock();
-                numberOfDuplicates = 0;
-                duplicateLock.unlock();
-                isDumping = false;
             }
+            memTable.clear();
         } catch (IOException e) {
-
+            int x = 2;
+        } finally {
+            isDumping = false;
         }
     }
 
@@ -266,8 +292,8 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
 
         try {
             HashMap<K, Long> newOffsets = new HashMap<>();
-            String newValuesPath = path + File.separator + "new_" + this.name + "_values";
-            String valuesPath = path + File.separator + this.name + "_values";
+            String newValuesPath = path + File.separator + "new_" + this.name + "_values.db";
+            String valuesPath = path + File.separator + this.name + "_values.db";
             File newValues = new File(newValuesPath);
             File values = new File(valuesPath);
 
@@ -279,12 +305,16 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
 
             for (Map.Entry<K, Long> entry : offsets.entrySet()) {
                 readLock.lock();
-                valuesFile.seek(entry.getValue());
-                V value = valueSerializationStrategy.read(valuesFile);
-                readLock.unlock();
-
-                newOffsets.put(entry.getKey(), newValuesFile.length());
-                valueSerializationStrategy.write(newValuesFile, value);
+                fileAccessLock.lock();
+                try {
+                    valuesFile.seek(entry.getValue());
+                    V value = valueSerializationStrategy.read(valuesFile);
+                    newOffsets.put(entry.getKey(), newValuesFile.length());
+                    valueSerializationStrategy.write(newValuesFile, value);
+                } finally {
+                    readLock.unlock();
+                    fileAccessLock.unlock();
+                }
             }
 
             readLock.lock();
@@ -292,12 +322,14 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
             offsets = newOffsets;
             valuesFile = newValuesFile;
             Files.delete(values.toPath());
-            while (!newValues.renameTo(values));
+            if (!newValues.renameTo(values)) {
+                throw new IOException("Can't rename values file");
+            }
             readLock.unlock();
-
-        }
-        catch (IOException e) {
-
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            isOptimising = false;
         }
     }
 }
