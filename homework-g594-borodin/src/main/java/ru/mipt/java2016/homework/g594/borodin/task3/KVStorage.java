@@ -177,7 +177,7 @@ public class KVStorage<K, V> implements KeyValueStorage<K, V> {
         if (!isOpen) {
             throw new RuntimeException("Storage is closed");
         }
-        return cacheStorage.keySet().iterator();
+        return keys.keySet().iterator();
     }
 
     /**
@@ -200,6 +200,7 @@ public class KVStorage<K, V> implements KeyValueStorage<K, V> {
         if (!isOpen) {
             throw new RuntimeException("Storage is closed");
         }
+        writeTemporaryStorage();
         saveToStorage();
         isOpen = false;
     }
