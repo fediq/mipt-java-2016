@@ -7,7 +7,6 @@ import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
 import java.util.zip.Adler32;
 import java.util.zip.CheckedInputStream;
 
@@ -46,7 +45,7 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
         try {
             CheckedInputStream hashIn = new CheckedInputStream(
                     new BufferedInputStream(new FileInputStream(datafile)), hashvalue);
-            byte[] tmp = new byte[179179]; //reading in parts
+            byte[] tmp = new byte[17179]; //reading in parts
             while (hashIn.read(tmp) != -1) {
                 continue;
             }
