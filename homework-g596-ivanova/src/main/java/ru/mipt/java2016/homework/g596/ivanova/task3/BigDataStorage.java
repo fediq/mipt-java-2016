@@ -5,11 +5,16 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.Weigher;
 import java.io.EOFException;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
+import ru.mipt.java2016.homework.base.task2.MalformedDataException;
 import ru.mipt.java2016.homework.g596.ivanova.task2.BestKeyValueStorageEver;
 import ru.mipt.java2016.homework.g596.ivanova.task2.Serialisation;
 
@@ -23,8 +28,7 @@ import ru.mipt.java2016.homework.g596.ivanova.task2.Serialisation;
  * @param <K> - type of key.
  * @param <V> - type of value.
  */
-public class BigDataStorage<K, V>
-        extends BestKeyValueStorageEver<K, V> {
+public class BigDataStorage<K, V> implements KeyValueStorage<K, V> {
     /**
      * We will update our file when quantity of deleted elements reach this point.
      * It will clean file from waste entries, which appeared when some entries were deleted
@@ -38,9 +42,38 @@ public class BigDataStorage<K, V>
     private final int maxAddWeight = 1 * 1024 * 1024; // 1 MB
 
     /**
-     * Max weight of elements we cached.
+     * Max weight of elements we cache.
      */
     private final int maxCachedWeight = 1 * 1024 * 1024; // 1 MB
+
+    private boolean isInitialized;
+
+    /**
+     * Serialisation instance for serialising keys.
+     */
+    private Serialisation<K> keySerialisation;
+
+    /**
+     * Serialisation instance for serialising values.
+     */
+    private Serialisation<V> valueSerialisation;
+
+    /**
+     * Name of our file.
+     */
+    private String filePath;
+
+    /**
+     * We'll use map from standard library to work with elements.
+     * This map will be initialised at the beginning of work, when file is opened.
+     * After the process of working with storage, elements from map will be written to the file.
+     */
+    private Map<K, V> map;
+
+    /**
+     * File where all the data stored.
+     */
+    private RandomAccessFile file;
 
     /**
      * How many elements were deleted since last sync.
@@ -83,11 +116,7 @@ public class BigDataStorage<K, V>
      */
     private Cache<K, V> cache;
 
-    @Override
-    protected final void initStorage(boolean isBigDataStorage) throws IOException {
-        if (!isBigDataStorage) {
-            return;
-        }
+    protected final void initStorage() throws IOException {
         file.seek(0); // go to the start
         map.clear();
         offsets.clear();
@@ -110,6 +139,8 @@ public class BigDataStorage<K, V>
 
             offsets.put(key, offset);
         }
+
+        isInitialized = true;
     }
 
     /**
@@ -122,7 +153,16 @@ public class BigDataStorage<K, V>
     public BigDataStorage(final String path, final String name,
             final Serialisation<K> kSerialisation, final Serialisation<V> vSerialisation)
             throws IOException {
-        super(path, name, kSerialisation, vSerialisation);
+        if (Files.notExists(Paths.get(path))) {
+            throw new FileNotFoundException("No such directory.");
+        }
+
+        map = new HashMap<>();
+        filePath = path + File.separator + name;
+        keySerialisation = kSerialisation;
+        valueSerialisation = vSerialisation;
+
+        file = new RandomAccessFile(filePath, "rw");
 
         String twinName = name + "_twin";
         twinFilePath = path + File.separator + twinName;
@@ -132,22 +172,19 @@ public class BigDataStorage<K, V>
         addWeight = 0;
         mainFileInUse = true;
 
-        Weigher<K, V> weigher = (key, value) ->
-                (int) ObjectSize.getObjectSize(key) + (int) ObjectSize.getObjectSize(value);
-        cache = CacheBuilder.newBuilder()
-                .maximumWeight(maxCachedWeight)
-                .weigher(weigher)
-                .build();
+        Weigher<K, V> weigher =
+                (key, value) -> (int) ObjectSize.deepSizeOf(key) + (int) ObjectSize
+                        .deepSizeOf(value);
+        cache = CacheBuilder.newBuilder().maximumWeight(maxCachedWeight).weigher(weigher).build();
 
         offsets = new HashMap<>();
-        boolean isBigDataStorage = true;
-        if (file.length() != 0) {
-            initStorage(isBigDataStorage);
-        }
+            initStorage();
     }
 
-    @Override
-    public final V read(final K key) {
+    public final V read(final K key) throws MalformedDataException {
+        if (!isInitialized) {
+            throw new MalformedDataException("Storage is closed.");
+        }
         V value = cache.getIfPresent(key);
         if (value == null) {
             value = map.get(key);
@@ -182,15 +219,20 @@ public class BigDataStorage<K, V>
         return value;
     }
 
-    @Override
-    public final boolean exists(final K key) {
+    public final boolean exists(final K key) throws MalformedDataException{
+        if (!isInitialized) {
+            throw new MalformedDataException("Storage is closed.");
+        }
         return cache.getIfPresent(key) != null || map.containsKey(key) || offsets.containsKey(key);
     }
 
     /**
      * @throws IOException
      */
-    private void writeToFile() throws IOException {
+    private void writeToFile() throws IOException, MalformedDataException {
+        if (!isInitialized) {
+            throw new MalformedDataException("Storage is closed.");
+        }
         RandomAccessFile usedFile;
         if (mainFileInUse) {
             usedFile = file;
@@ -205,20 +247,23 @@ public class BigDataStorage<K, V>
         }
 
         map.clear();
+        addWeight = 0;
     }
 
-    @Override
     public final void write(final K key, final V value) {
-        addWeight += ObjectSize.getObjectSize(key);
-        addWeight += ObjectSize.getObjectSize(value);
+        if (!isInitialized) {
+            throw new MalformedDataException("Storage is closed.");
+        }
+        addWeight += ObjectSize.deepSizeOf(key);
+        addWeight += ObjectSize.deepSizeOf(value);
 
-        if (addWeight >= maxAddWeight) {
+        if (addWeight > maxAddWeight) {
             try {
                 writeToFile();
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            addWeight = (int) (ObjectSize.getObjectSize(key) + ObjectSize.getObjectSize(value));
+            addWeight = (int) (ObjectSize.deepSizeOf(key) + ObjectSize.deepSizeOf(value));
         }
         map.put(key, value);
         offsets.put(key, -1L);
@@ -226,9 +271,11 @@ public class BigDataStorage<K, V>
 
     /**
      * Cleans file up when maxDeleteCount is reached.
-     * @throws IOException
      */
-    private void fileCleaner() throws IOException {
+    private void fileCleaner() throws IOException, MalformedDataException {
+        if (!isInitialized) {
+            throw new MalformedDataException("Storage is closed.");
+        }
         RandomAccessFile newFile;
         RandomAccessFile oldFile;
         if (mainFileInUse) {
@@ -254,10 +301,13 @@ public class BigDataStorage<K, V>
         }
 
         oldFile.setLength(0);
+        deleteCount = 0;
     }
 
-    @Override
-    public final void delete(final K key) {
+    public final void delete(final K key) throws MalformedDataException {
+        if (!isInitialized) {
+            throw new MalformedDataException("Storage is closed.");
+        }
         map.remove(key);
         cache.invalidate(key);
         offsets.remove(key);
@@ -271,8 +321,10 @@ public class BigDataStorage<K, V>
         }
     }
 
-    @Override
-    public final Iterator<K> readKeys() {
+    public final Iterator<K> readKeys() throws MalformedDataException {
+        if (!isInitialized) {
+            throw new MalformedDataException("Storage is closed.");
+        }
         try {
             writeToFile();
         } catch (IOException e) {
@@ -281,19 +333,25 @@ public class BigDataStorage<K, V>
         return offsets.keySet().iterator();
     }
 
-    @Override
-    public final int size() {
+    public final int size() throws MalformedDataException {
+        if (!isInitialized) {
+            throw new MalformedDataException("Storage is closed.");
+        }
         return offsets.size();
     }
 
-    @Override
-    public final void close() throws IOException {
+    public final void close() throws IOException, MalformedDataException {
+        if (!isInitialized) {
+            throw new MalformedDataException("Storage is closed.");
+        }
         cache.cleanUp();
 
         if (deleteCount > 0) {
             fileCleaner();
         }
-        writeToFile();
+        if (addWeight > 0) {
+            writeToFile();
+        }
 
         twinFile.close();
 
@@ -310,5 +368,6 @@ public class BigDataStorage<K, V>
         mainFileInUse = true;
         map.clear();
         offsets.clear();
+        isInitialized = false;
     }
 }

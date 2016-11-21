@@ -21,35 +21,35 @@ public class BestKeyValueStorageEver<K, V> implements KeyValueStorage<K, V> {
     /**
      * Serialisation instance for serialising keys.
      */
-    protected Serialisation<K> keySerialisation;
+    private Serialisation<K> keySerialisation;
 
     /**
      * Serialisation instance for serialising values.
      */
-    protected Serialisation<V> valueSerialisation;
+    private Serialisation<V> valueSerialisation;
 
     /**
      * Name of our file.
      */
-    protected String filePath;
+    private String filePath;
 
     /**
      * We'll use map from standard library to work with elements.
      * This map will be initialised at the beginning of work, when file is opened.
      * After the process of working with storage, elements from map will be written to the file.
      */
-    protected Map<K, V> map;
+    private Map<K, V> map;
 
     /**
      * File where all the data stored.
      */
-    protected RandomAccessFile file;
+    private RandomAccessFile file;
 
     /**
      * @throws IOException - if I/O troubles occure.
      * @throws RuntimeException - if file containes two equal keys or key without value.
      */
-    protected void initStorage(boolean isBigDataStorage) throws IOException {
+    private void initStorage() throws IOException {
         file.seek(0); // go to the start
         map.clear();
 
@@ -91,44 +91,43 @@ public class BestKeyValueStorageEver<K, V> implements KeyValueStorage<K, V> {
         valueSerialisation = vSerialisation;
 
         file = new RandomAccessFile(filePath, "rw");
-        boolean isBigDataStorage = false;
         if (file.length() != 0) {
-            initStorage(isBigDataStorage);
+            initStorage();
         }
     }
 
     @Override
-    public V read(final K key) {
+    public final V read(final K key) {
         return map.get(key);
     }
 
     @Override
-    public boolean exists(final K key) {
+    public final boolean exists(final K key) {
         return map.containsKey(key);
     }
 
     @Override
-    public void write(final K key, final V value) {
+    public final void write(final K key, final V value) {
         map.put(key, value);
     }
 
     @Override
-    public void delete(final K key) {
+    public final void delete(final K key) {
         map.remove(key);
     }
 
     @Override
-    public Iterator<K> readKeys() {
+    public final Iterator<K> readKeys() {
         return map.keySet().iterator();
     }
 
     @Override
-    public int size() {
+    public final int size() {
         return map.size();
     }
 
     @Override
-    public void close() throws IOException {
+    public final void close() throws IOException {
         file.setLength(0); // clear file
         file.seek(0); // go to the beginning
 
