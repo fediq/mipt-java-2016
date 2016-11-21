@@ -124,7 +124,15 @@ public class MyAwesomeUpdatedKeyValueStorage<K, V> implements KeyValueStorage<K,
         }
     }
 
-    private void updateData(boolean checkClose) {  // создаем новый id-файл данных
+    private synchronized void isFileDBopened() throws IllegalStateException {
+        File checkFB = new File(mainPath + File.separator + DB_NAME + ".check");
+        if (!checkFB.exists()) {  // на случай если какой-то хитрец закроет базу до завершения всех потоков
+            throw new IllegalStateException("The storage is closed.");
+        }
+    }
+
+    private synchronized void updateData(boolean checkClose) {  // создаем новый id-файл данных
+        isFileDBopened();
         if (checkClose || mapKeyValue.size() >= MAX_SIZE_OF_DATA) {
             int id = filesTable.size();
             File file = new File(mainPath + File.separator + DB_NAME + "." + id);
@@ -153,7 +161,8 @@ public class MyAwesomeUpdatedKeyValueStorage<K, V> implements KeyValueStorage<K,
 
 
     @Override
-    public V read(K key) {
+    public synchronized V read(K key) {
+        isFileDBopened();
         if (mapKeyValue.keySet().contains(key)) {  // это дает чтение по времени за О(1) для одного и того же ключа.
             return mapKeyValue.get(key);
         } else if (mapKeyFile.containsKey(key)) {  // O(log(n))
@@ -174,35 +183,40 @@ public class MyAwesomeUpdatedKeyValueStorage<K, V> implements KeyValueStorage<K,
     }
 
     @Override
-    public boolean exists(K key) {  // O(log(n))
+    public synchronized boolean exists(K key) {  // O(log(n))
+        isFileDBopened();
         return setKeys.contains(key);
     }
 
     @Override
-    public void write(K key, V value) {  // O(log(n))
+    public synchronized void write(K key, V value) {  // O(log(n))
+        isFileDBopened();
         setKeys.add(key);
         mapKeyValue.put(key, value);
         updateData(false);
     }
 
     @Override
-    public void delete(K key) {  // O(log(n))
+    public synchronized void delete(K key) {  // O(log(n))
+        isFileDBopened();
         setKeys.remove(key);
         mapKeyFile.remove(key);
     }
 
     @Override
-    public Iterator<K> readKeys() {
+    public synchronized Iterator<K> readKeys() {
+        isFileDBopened();
         return setKeys.iterator();
     }
 
     @Override
-    public int size() {
+    public synchronized int size() {
+        isFileDBopened();
         return setKeys.size();
     }
 
     @Override
-    public void close() throws IOException {
+    public synchronized void close() throws IOException {
         updateData(true);
         fileDB.setLength(0);  // удаляем содержимое базы
         fileDB.seek(0);
