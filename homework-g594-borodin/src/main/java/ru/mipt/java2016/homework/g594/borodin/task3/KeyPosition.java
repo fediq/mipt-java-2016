@@ -5,9 +5,9 @@ package ru.mipt.java2016.homework.g594.borodin.task3;
  */
 public class KeyPosition {
 	private long fileNumber;
-	private long positionInFile;
+    private long positionInFile;
 
-	KeyPosition (long fileNumber, long positionInFile) {
+		KeyPosition(long fileNumber, long positionInFile) {
 		this.fileNumber = fileNumber;
 		this.positionInFile = positionInFile;
 	}

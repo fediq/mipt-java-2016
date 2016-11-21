@@ -15,12 +15,11 @@ import java.util.Map;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.g594.borodin.task3.SerializationStrategies.SerializationStrategy;
-import ru.mipt.java2016.homework.g594.borodin.task3.KeyPosition;
 
 /**
  * Created by Maxim on 10/28/2016.
  */
-public class KVStorage<K, V> implements  KeyValueStorage<K, V> {
+public class KVStorage<K, V> implements KeyValueStorage<K, V> {
 
 	private static final String VALIDATION = "We gonna celebrate. https://youtu.be/-ao7LpSIL7A?t=58s";
 	private static final int MAX_SIZE_OF_CACHE = 500;
@@ -66,7 +65,7 @@ public class KVStorage<K, V> implements  KeyValueStorage<K, V> {
 					files.add(new RandomAccessFile(newFile, "rw"));
 				}
 				int keysCount = dataInputStream.readInt();
-				for (int i = 0;i < keysCount; ++i) {
+				for (int i = 0; i < keysCount; ++i) {
 					K newKey = keyStrategy.deserialize(dataInputStream);
 					keys.put(newKey, new KeyPosition(dataInputStream.readLong(), dataInputStream.readLong()));
 				}
@@ -108,10 +107,10 @@ public class KVStorage<K, V> implements  KeyValueStorage<K, V> {
 			return toWriteStorage.get(key);
 		}
 		KeyPosition keyPosition = keys.get(key);
-		RandomAccessFile randomAccessFile = files.get((int)keyPosition.getFileNumber());
+		RandomAccessFile randomAccessFile = files.get((int) keyPosition.getFileNumber());
 		try {
 			randomAccessFile.seek(keyPosition.getPositionInFile());
-			V value = (V)valueStrategy.deserialize(randomAccessFile);
+			V value = (V) valueStrategy.deserialize(randomAccessFile);
 			if (cacheStorage.size() >= MAX_SIZE_OF_CACHE) {
 				cacheStorage.clear();
 			}
@@ -239,11 +238,11 @@ public class KVStorage<K, V> implements  KeyValueStorage<K, V> {
 			RandomAccessFile newRAFile = new RandomAccessFile(newFile, "rw");
 			newRAFile.seek(0);
 			DataOutputStream dataOutputStream = new DataOutputStream(new FileOutputStream(newFileName));
-			for (Map.Entry<K, V> entry: toWriteStorage.entrySet()) {
+				for (Map.Entry<K, V> entry : toWriteStorage.entrySet()) {
 				KeyPosition keyPosition = new KeyPosition(files.size(), newRAFile.getFilePointer());
 				keys.remove(entry.getKey());
 				keys.put(entry.getKey(), keyPosition);
-				valueStrategy.serialize(entry.getValue(), dataOutputStream);
+					valueStrategy.serialize(entry.getValue(), dataOutputStream);
 			}
 			dataOutputStream.close();
 			toWriteStorage.clear();

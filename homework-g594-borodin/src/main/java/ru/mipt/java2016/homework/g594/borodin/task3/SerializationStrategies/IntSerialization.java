@@ -9,13 +9,13 @@ import java.io.IOException;
  */
 public class IntSerialization implements SerializationStrategy<Integer> {
 
-		@Override
-		public void serialize(Integer value, DataOutput dataOutput) throws IOException {
-			dataOutput.writeInt(value);
-		}
-
-		@Override
-		public Integer deserialize(DataInput dataInput) throws IOException {
-			return dataInput.readInt();
-		}
+	@Override
+	public void serialize(Integer value, DataOutput dataOutputStream) throws IOException {
+		dataOutputStream.writeInt(value);
 	}
+
+	@Override
+	public Integer deserialize(DataInput dataInputStream) throws IOException {
+		return dataInputStream.readInt();
+	}
+}

@@ -10,12 +10,12 @@ import java.io.IOException;
 public class StringSerialization implements SerializationStrategy<String> {
 
 	@Override
-	public void serialize(String value, DataOutput dataOutput) throws IOException {
-		dataOutput.writeUTF(value);
+	public void serialize(String value, DataOutput dataOutputStream) throws IOException {
+		dataOutputStream.writeUTF(value);
 	}
 
 	@Override
-	public String deserialize(DataInput dataInput) throws IOException {
-		return dataInput.readUTF();
+	public String deserialize(DataInput dataInputStream) throws IOException {
+		return dataInputStream.readUTF();
 	}
 }

@@ -15,7 +15,7 @@ import ru.mipt.java2016.homework.tests.task3.KeyValueStoragePerformanceTest;
 public class KVStorageTest extends KeyValueStoragePerformanceTest {
 	@Override
 	protected KeyValueStorage<String, String> buildStringsStorage(String path) {
-		return new KVStorage<String, String> (path, new StringSerialization(), new StringSerialization());
+		return new KVStorage<String, String>(path, new StringSerialization(), new StringSerialization());
 	}
 
 	@Override
@@ -25,7 +25,7 @@ public class KVStorageTest extends KeyValueStoragePerformanceTest {
 
 	@Override
 	protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) {
-		return new KVStorage<StudentKey, Student> (path, new StudentKeySerialization(),
+		return new KVStorage<StudentKey, Student>(path, new StudentKeySerialization(),
 				new StudentSerialization());
 	}
 }
