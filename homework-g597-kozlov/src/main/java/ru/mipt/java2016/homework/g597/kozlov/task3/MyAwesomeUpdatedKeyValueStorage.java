@@ -44,7 +44,7 @@ import java.util.ArrayList;
 
 public class MyAwesomeUpdatedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private static final String DB_NAME = "storage.db";  // название всей базы в целом
-    private static String PATH; // путь к базе
+    private static String mainPath; // путь к базе
     private RandomAccessFile fileDB;  // файл-база
 
     private File ifopen;  // файл для проверки, что database уже открыта
@@ -96,9 +96,9 @@ public class MyAwesomeUpdatedKeyValueStorage<K, V> implements KeyValueStorage<K,
         filesTable = new ArrayList<>();
         keySerialization = keyS;
         valueSerialization = valueS;
-        PATH = path;
+        mainPath = path;
 
-        File database = new File(PATH + File.separator + DB_NAME);
+        File database = new File(mainPath + File.separator + DB_NAME);
         boolean isDBcreated = database.createNewFile();
         fileDB = new RandomAccessFile(database, "rw");
 
@@ -117,7 +117,7 @@ public class MyAwesomeUpdatedKeyValueStorage<K, V> implements KeyValueStorage<K,
             }
 
             for (int id = 0; id < countFiles; id++) {  // заносим id-файлы в массив
-                File currentFile = new File(PATH + File.separator + DB_NAME + "." + id);
+                File currentFile = new File(mainPath + File.separator + DB_NAME + "." + id);
                 currentFile.createNewFile();
                 filesTable.add(currentFile);
             }
@@ -127,7 +127,7 @@ public class MyAwesomeUpdatedKeyValueStorage<K, V> implements KeyValueStorage<K,
     private void updateData(boolean checkClose) {  // создаем новый id-файл данных
         if (checkClose || mapKeyValue.size() >= MAX_SIZE_OF_DATA) {
             int id = filesTable.size();
-            File file = new File(PATH + File.separator + DB_NAME + "." + id);
+            File file = new File(mainPath + File.separator + DB_NAME + "." + id);
             try {
                 file.createNewFile();
                 filesTable.add(file);
