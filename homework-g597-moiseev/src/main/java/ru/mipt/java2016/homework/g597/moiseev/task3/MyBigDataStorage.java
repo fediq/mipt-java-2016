@@ -244,7 +244,7 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
     private void checkSizeAndDumpOrOptimize() {
         if (!isDumping && !isOptimising) {
             if (numberOfDeletedElements / size() > MAX_DELETED_PROPORTION) {
-                //executorService.execute(() -> optimizeMemory());
+                executorService.execute(() -> optimizeMemory());
             } else if (memTable.size() > MAX_MEM_TABLE_SIZE) {
                 dumpMemTable();
             }
