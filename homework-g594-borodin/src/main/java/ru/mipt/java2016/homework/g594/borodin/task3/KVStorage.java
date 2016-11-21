@@ -240,6 +240,7 @@ public class KVStorage<K, V> implements KeyValueStorage<K, V> {
         try {
             newFile.createNewFile();
             RandomAccessFile newRAFile = new RandomAccessFile(newFile, "rw");
+            newRAFile.setLength(0);
             newRAFile.seek(0);
             DataOutputStream dataOutputStream = new DataOutputStream(new FileOutputStream(newFileName));
             for (Map.Entry<K, V> entry : toWriteStorage.entrySet()) {
