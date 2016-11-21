@@ -9,8 +9,8 @@ import java.io.RandomAccessFile;
 
 public abstract class SerializationStrategy<T> {
 
-    abstract T read(RandomAccessFile file) throws IOException;
+    public abstract T read(RandomAccessFile file) throws IOException;
 
-    abstract void write(RandomAccessFile file, T value) throws IOException;
+    public abstract void write(RandomAccessFile file, T value) throws IOException;
 }
 
