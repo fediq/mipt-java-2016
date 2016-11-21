@@ -74,7 +74,7 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
      * Иначе возвращает null.
      */
     @Override
-    public V read(K key) {
+    public synchronized V read(K key) {
         if (!exists(key)) {
             return null;
         } else {
@@ -110,7 +110,7 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
      * Записывает в хранилище пару ключ-значение.
      */
     @Override
-    public void write(K key, V value) {
+    public synchronized void write(K key, V value) {
         if (isClosed) {
             throw new RuntimeException("Can't write: storage is closed");
         } else {
@@ -127,7 +127,7 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
      * Удаляет пару ключ-значение из хранилища.
      */
     @Override
-    public void delete(K key) {
+    public synchronized void delete(K key) {
         if (isClosed) {
             throw new RuntimeException("Can't delete: storage is closed");
         } else {
@@ -156,11 +156,15 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
      */
     @Override
     public int size() {
-        return base.size();
+        if (isClosed) {
+            throw new RuntimeException("Can't know size: storage is closed");
+        } else {
+            return base.size();
+        }
     }
 
     @Override
-    public void close() {
+    public synchronized void close() {
         writeCacheToStorage();
         reorganiseStorage();
         downnloadDataToStorage();
