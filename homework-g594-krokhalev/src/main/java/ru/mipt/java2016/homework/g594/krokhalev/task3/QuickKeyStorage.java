@@ -15,7 +15,6 @@ public class QuickKeyStorage<K, V> implements KeyValueStorage<K, V> {
     private static final String STORAGE_TABLE_NAME = "storageTable.db";
 
     private final File mWorkDirectory;
-    private File mPartsDirectory;
 
     private Part<K, V> mMainPart;
     private Cache<K, V> mCache;
@@ -44,7 +43,6 @@ public class QuickKeyStorage<K, V> implements KeyValueStorage<K, V> {
         try {
             File storageFile = findFile(STORAGE_NAME);
             File storageTable = findFile(STORAGE_TABLE_NAME);
-            mPartsDirectory = createPartsDirectory();
 
             if (storageFile == null || storageTable == null) {
                 if (storageFile == null) {
@@ -54,10 +52,10 @@ public class QuickKeyStorage<K, V> implements KeyValueStorage<K, V> {
                     storageTable = new File(mWorkDirectory.getAbsolutePath() + File.separatorChar + STORAGE_TABLE_NAME);
                 }
 
-                mMainPart = new Part<K, V>(mPartsDirectory, storageFile, storageTable, storageReader, false);
+                mMainPart = new Part<K, V>(storageFile, storageTable, storageReader, false);
 
             } else {
-                mMainPart = new Part<K, V>(mPartsDirectory, storageFile, storageTable, storageReader, true);
+                mMainPart = new Part<K, V>(storageFile, storageTable, storageReader, true);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -123,26 +121,12 @@ public class QuickKeyStorage<K, V> implements KeyValueStorage<K, V> {
     public void close() throws IOException {
         isClosed = true;
         mMainPart.close();
-        if (!mPartsDirectory.delete()) {
-            throw new RuntimeException("Can not delete part directory");
-        }
     }
 
     private void checkClosed() {
         if (isClosed) {
             throw new RuntimeException("Storage closed");
         }
-    }
-
-    private File createPartsDirectory() throws IOException {
-        String name = String.valueOf(mWorkDirectory.getAbsoluteFile()) +
-                File.separatorChar +
-                "Parts";
-        File partsDirectory = new File(name);
-        if (!partsDirectory.mkdir()) {
-            throw new RuntimeException("Can not create directory for parts");
-        }
-        return partsDirectory;
     }
 
     private File findFile(String fileName) {
