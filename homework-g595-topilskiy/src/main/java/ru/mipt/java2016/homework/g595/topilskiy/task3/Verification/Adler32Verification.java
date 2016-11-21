@@ -1,7 +1,6 @@
 package ru.mipt.java2016.homework.g595.topilskiy.task3.Verification;
 
 import java.io.BufferedInputStream;
-import java.io.File;
 import java.io.FileInputStream;
 
 import java.io.IOException;
@@ -28,7 +27,11 @@ public class Adler32Verification {
         BufferedInputStream bufferedFileInStream = new BufferedInputStream(fileInStream);
         CheckedInputStream checkedFileInStream = new CheckedInputStream(bufferedFileInStream, new Adler32());
 
-        while(checkedFileInStream.read(buffer) < 0);
+        while (true) {
+            if (checkedFileInStream.read(buffer) < 0) {
+                break;
+            }
+        }
 
         checkedFileInStream.close();
         bufferedFileInStream.close();
@@ -45,11 +48,10 @@ public class Adler32Verification {
 
         try {
             checksumSame = (checksum == calculateAdler32Checksum(filename));
-        } catch(IOException ignored) {
+        } catch (IOException caught) {
             checksumSame = false;
         }
 
         return checksumSame;
     }
-
 }

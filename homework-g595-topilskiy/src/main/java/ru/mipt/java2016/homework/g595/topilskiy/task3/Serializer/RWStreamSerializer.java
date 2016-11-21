@@ -47,18 +47,23 @@ public class RWStreamSerializer {
     public static void serializeBoolean(Boolean value, OutputStream outStream) throws IOException {
         serialize(value, BooleanSerializerSingleton.getInstance(), outStream);
     }
+
     public static void serializeDate(Date value, OutputStream outStream) throws IOException {
         serialize(value, DateSerializerSingleton.getInstance(), outStream);
     }
+
     public static void serializeDouble(Double value, OutputStream outStream) throws IOException {
         serialize(value, DoubleSerializerSingleton.getInstance(), outStream);
     }
+
     public static void serializeInteger(Integer value, OutputStream outStream) throws IOException {
         serialize(value, IntegerSerializerSingleton.getInstance(), outStream);
     }
+
     public static void serializeLong(Long value, OutputStream outStream) throws IOException {
         serialize(value, LongSerializerSingleton.getInstance(), outStream);
     }
+
     public static void serializeString(String value, OutputStream outStream) throws IOException {
         serialize(value, StringSerializerSingleton.getInstance(), outStream);
     }
@@ -98,18 +103,23 @@ public class RWStreamSerializer {
     public static Boolean deserializeBoolean(InputStream inStream) throws IOException {
         return (Boolean) deserialize(BooleanSerializerSingleton.getInstance(), inStream);
     }
+
     public static Date deserializeDate(InputStream inStream) throws IOException {
         return (Date) deserialize(DateSerializerSingleton.getInstance(), inStream);
     }
+
     public static Double deserializeDouble(InputStream inStream) throws IOException {
         return (Double) deserialize(DoubleSerializerSingleton.getInstance(), inStream);
     }
+
     public static Integer deserializeInteger(InputStream inStream) throws IOException {
         return (Integer) deserialize(IntegerSerializerSingleton.getInstance(), inStream);
     }
+
     public static Long deserializeLong(InputStream inStream) throws IOException {
         return (Long) deserialize(LongSerializerSingleton.getInstance(), inStream);
     }
+
     public static String deserializeString(InputStream inStream) throws IOException {
         return (String) deserialize(StringSerializerSingleton.getInstance(), inStream);
     }
