@@ -58,7 +58,7 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
     /* The filename of the file of the hashes for storage */
     private static final String HASH_FILENAME = "storage_hash.db";
     /* Maximum size of buffer before the need for a Buffer Flush */
-    private static final int MAX_BUFFER_SIZE = 1300;
+    private static final int MAX_BUFFER_SIZE = 1000;
 
 
     /**
