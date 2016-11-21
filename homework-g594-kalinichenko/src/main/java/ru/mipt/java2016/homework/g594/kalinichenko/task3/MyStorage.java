@@ -8,6 +8,9 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import java.util.zip.Adler32;
+import java.util.zip.CheckedInputStream;
+
 /**
  * Created by masya on 27.10.16.
  */
@@ -32,9 +35,27 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
     private boolean open = false;
     private int inFile = 0;
     private String filepath;
-    private ReadWriteLock lock = new ReentrantReadWriteLock();
-    private Lock writelock = lock.writeLock();
-    private Lock readlock = lock.readLock();
+    private ReadWriteLock lock;
+    private Lock writelock;
+    private Lock readlock;
+
+    private Adler32 valueHash;
+
+    private Adler32 getHash() {
+        Adler32 hashvalue = new Adler32();
+        try {
+            CheckedInputStream hashIn = new CheckedInputStream(
+                    new BufferedInputStream(new FileInputStream(datafile)), hashvalue);
+            byte[] tmp = new byte[179179]; //reading in parts
+            while (hashIn.read(tmp) != -1) {
+                continue;
+            }
+            hashIn.close();
+        } catch (Exception exp) {
+            throw new IllegalStateException("Invalid getting hash");
+        }
+        return hashvalue;
+    }
 
     private void load() {
         RandomAccessFile in;
@@ -46,6 +67,10 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
                 Long val = offsetSerializer.get(in);
                 map.put(key, val);
             }
+            valueHash = getHash();
+            if (valueHash.getValue() != offsetSerializer.get(in)) {
+                throw new IllegalStateException("Invalid database");
+            }
             byte[] check = new byte[1]; ///check for EOF cause file might be longer
             if (in.read(check) != -1) {
                 throw new IllegalStateException("Invalid file");
@@ -54,7 +79,7 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
             values.seek(0);
             inFile = lengthSerializer.get(values);
         } catch (Exception exc) {
-            throw new IllegalStateException("Failed creating file");
+            throw new IllegalStateException("Invalid database");
         }
     }
 
@@ -67,6 +92,11 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
         map = new HashMap();
         updates = new HashMap();
         updatesSize = 0L;
+
+        lock = new ReentrantReadWriteLock();
+        writelock = lock.writeLock();
+        readlock = lock.readLock();
+
         File directory = new File(path);
 
         if (!directory.exists() || !directory.isDirectory()) {
@@ -86,6 +116,8 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
                 dataout = new FileOutputStream(datafile);
                 lengthSerializer.put(out, 0);
                 lengthSerializer.put(dataout, 0);
+                valueHash = getHash();
+                offsetSerializer.put(out, valueHash.getValue());
                 out.close();
                 dataout.close();
             } else {
@@ -142,6 +174,8 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void writeValues() {
+        //checkFileSize();
+        ///Copies value file when too many unused items. Works long.
         inFile += updates.size();
         try {
             for (HashMap.Entry<K, V> elem : updates.entrySet()) {
@@ -260,11 +294,13 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
                 keySerializer.put(out, elem.getKey());
                 offsetSerializer.put(out, elem.getValue());
             }
-            out.close();
             values.seek(0);
             lengthSerializer.putRandom(values, inFile);
             values.close();
             valuesout.close();
+            valueHash = getHash();
+            offsetSerializer.put(out, valueHash.getValue());
+            out.close();
             writelock.unlock();
         } catch (Exception exc) {
             throw new IllegalStateException("Invalid work with file");
