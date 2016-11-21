@@ -34,7 +34,7 @@ class CKeyValueStorage<KeyType, ValueType> implements KeyValueStorage<KeyType, V
 
     private static final String VALIDATION_STRING = "Task2Storage";
 
-    public CKeyValueStorage(String directoryPath,
+    CKeyValueStorage(String directoryPath,
                             ISerialize<KeyType> keyTypeSerialize,
                             ISerialize<ValueType> valueTypeSerialize,
                             String keyName,

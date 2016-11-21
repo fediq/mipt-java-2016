@@ -14,7 +14,7 @@ class CFileHandler implements Closeable {
 
     private long currOffset = 0;
 
-    public CFileHandler(String fileName) {
+    CFileHandler(String fileName) {
         this.file = new File(fileName);
     }
 

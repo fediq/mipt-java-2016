@@ -10,7 +10,7 @@ class CDiskTable {
 
     private final File file;
 
-    public CDiskTable(String filePath) {
+    CDiskTable(String filePath) {
         this.file = new File(filePath);
     }
 
