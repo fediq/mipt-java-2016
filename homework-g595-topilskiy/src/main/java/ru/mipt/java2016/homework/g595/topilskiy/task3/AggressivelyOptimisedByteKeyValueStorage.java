@@ -23,7 +23,8 @@ import java.util.*;
  * @author Artem K. Topilskiy
  * @since 21.11.16
  */
-public class AggressivelyOptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValueStorage<KeyType, ValueType> {
+public class AggressivelyOptimisedByteKeyValueStorage<KeyType, ValueType>
+        implements KeyValueStorage<KeyType, ValueType> {
     /**
      *  Static Final Exception Strings
      */
