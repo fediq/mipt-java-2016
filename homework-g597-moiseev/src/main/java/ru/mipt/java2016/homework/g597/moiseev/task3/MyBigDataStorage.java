@@ -24,7 +24,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 
 public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoCloseable {
-    private static final int MAX_MEM_TABLE_SIZE = 500;
+    private static final int MAX_MEM_TABLE_SIZE = 100;
     private static final double MAX_DELETED_PROPORTION = 0.2;
     private static final long IS_NOT_IN_FILE = -1;
 
@@ -184,9 +184,8 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
         writeLock.lock();
         try {
             checkNotClosed();
-            if (offsets.containsKey(key)) {
+            if (offsets.remove(key) != IS_NOT_IN_FILE) {
                 numberOfDeletedElements++;
-                offsets.remove(key);
             }
             memTable.remove(key);
         } finally {
@@ -245,7 +244,7 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
     private void checkSizeAndDumpOrOptimize() {
         if (!isDumping && !isOptimising) {
             if (numberOfDeletedElements / size() > MAX_DELETED_PROPORTION) {
-                executorService.execute(() -> optimizeMemory());
+                //executorService.execute(() -> optimizeMemory());
             } else if (memTable.size() > MAX_MEM_TABLE_SIZE) {
                 dumpMemTable();
             }
@@ -253,9 +252,7 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
     }
 
     private void dumpMemTable() {
-        writeLock.lock();
         isDumping = true;
-        writeLock.unlock();
         try {
             long offset = valuesFile.length();
             for (Map.Entry<K, V> entry : memTable.entrySet()) {
@@ -264,10 +261,10 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
                 try {
                     valuesFile.seek(offset);
                     valueSerializationStrategy.write(valuesFile, entry.getValue());
+                    offset = valuesFile.getFilePointer();
                 } finally {
                     fileAccessLock.unlock();
                 }
-                offset = valuesFile.getFilePointer();
             }
             memTable.clear();
         } catch (IOException e) {
@@ -297,7 +294,6 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
             newValuesFile.setLength(0);
 
             for (Map.Entry<K, Long> entry : offsets.entrySet()) {
-                readLock.lock();
                 fileAccessLock.lock();
                 try {
                     valuesFile.seek(entry.getValue());
@@ -306,7 +302,6 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
                     valueSerializationStrategy.write(newValuesFile, value);
                 } finally {
                     readLock.unlock();
-                    fileAccessLock.unlock();
                 }
             }
 
