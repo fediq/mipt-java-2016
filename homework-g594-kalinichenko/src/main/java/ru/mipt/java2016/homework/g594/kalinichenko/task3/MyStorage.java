@@ -21,9 +21,6 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
     private MySerializer<V> valSerializer;
     private HashMap<K, Long> map;
     private HashMap<K, V> updates;
-    //private HashMap<K, V> readCache;
-    //ArrayList<K> cacheQueue;
-    //int beg;
     private Long updatesSize;
     private File datafile;
     private File keyfile;
@@ -66,9 +63,6 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
         valSerializer = valS;
         map = new HashMap();
         updates = new HashMap();
-        //readCache = new HashMap();
-        //cacheQueue = new ArrayList();
-        //beg = 0;
         updatesSize = 0L;
         File directory = new File(path);
 
@@ -76,7 +70,6 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
             throw new IllegalStateException("Wrong path to directory");
         }
         keyfile = new File(path + "/keys.db");
-        //System.out.println("KEK");
         datafile = new File(path + "/data.db");
         try {
             if (!keyfile.exists()) {
@@ -188,16 +181,6 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
                     throw new IllegalStateException("Invalid value file");
                 }
                 values.seek(offset);
-                /*if (readCache.size() > 150)
-                {
-                    if (beg != cacheQueue.size())
-                    {
-                        //readCache.remove(cacheQueue.get(beg)); ///May remove but needn't. ispr
-                        //beg++;
-                    }
-                }*/
-                //readCache.put(key, valSerializer.get(values));
-                //cacheQueue.add(key);
                 val = valSerializer.get(values);
             } catch (Exception exp) {
                 throw new IllegalStateException("Invalid work with value file");
@@ -264,7 +247,7 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
 
         try {
             writelock.lock();
-            //checkExistence();
+            checkExistence();
             open = false;
             FileOutputStream out;
             out = new FileOutputStream(keyfile);
