@@ -1,4 +1,4 @@
-package ru.mipt.java2016.homework.g597.vasilyev.task2;
+package ru.mipt.java2016.homework.g597.vasilyev.tasks2and3;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -21,5 +21,10 @@ public class StringSerializer implements Serializer<String> {
         byte[] buffer = new byte[length];
         source.readFully(buffer);
         return new String(buffer, StandardCharsets.UTF_8);
+    }
+
+    @Override
+    public long size(String value) {
+        return 4 + value.length();
     }
 }

@@ -1,4 +1,4 @@
-package ru.mipt.java2016.homework.g597.vasilyev.task2;
+package ru.mipt.java2016.homework.g597.vasilyev.tasks2and3;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -16,5 +16,10 @@ public class DoubleSerializer implements Serializer<Double> {
     @Override
     public Double read(DataInput source) throws IOException {
         return source.readDouble();
+    }
+
+    @Override
+    public long size(Double value) {
+        return 8;
     }
 }

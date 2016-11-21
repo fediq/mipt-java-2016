@@ -1,9 +1,9 @@
-package ru.mipt.java2016.homework.g597.vasilyev.task2;
+package ru.mipt.java2016.homework.g597.vasilyev.tasks2and3;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
-import ru.mipt.java2016.homework.tests.task2.AbstractSingleFileStorageTest;
 import ru.mipt.java2016.homework.tests.task2.Student;
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
+import ru.mipt.java2016.homework.tests.task3.KeyValueStoragePerformanceTest;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -13,7 +13,7 @@ import java.util.Date;
 /**
  * Created by mizabrik on 30.10.16.
  */
-public class KeyValueStorageImplTest extends AbstractSingleFileStorageTest {
+public class KeyValueStorageImplTest extends KeyValueStoragePerformanceTest {
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String path) {
         StringSerializer serializer = new StringSerializer();
@@ -72,6 +72,12 @@ public class KeyValueStorageImplTest extends AbstractSingleFileStorageTest {
             return new Student(groupId, name, hometown, birthDate,
                     hasDormitory, averageScore);
         }
+
+        @Override
+        public long size(Student value) {
+            return 21 + stringSerializer.size(value.getName())
+                    + stringSerializer.size(value.getHometown());
+        }
     }
 
     private class StudentKeySerializer implements Serializer<StudentKey> {
@@ -92,6 +98,11 @@ public class KeyValueStorageImplTest extends AbstractSingleFileStorageTest {
             int groupId = source.readInt();
             String name = stringSerializer.read(source);
             return new StudentKey(groupId, name);
+        }
+
+        @Override
+        public long size(StudentKey value) {
+            return 4 + stringSerializer.size(value.getName());
         }
     }
 }

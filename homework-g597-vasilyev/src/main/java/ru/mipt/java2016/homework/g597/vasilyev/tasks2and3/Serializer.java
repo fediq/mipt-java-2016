@@ -1,4 +1,4 @@
-package ru.mipt.java2016.homework.g597.vasilyev.task2;
+package ru.mipt.java2016.homework.g597.vasilyev.tasks2and3;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -11,4 +11,6 @@ public interface Serializer<E> {
     void write(E value, DataOutput destination) throws IOException;
 
     E read(DataInput source) throws IOException;
+
+    long size(E value);
 }
