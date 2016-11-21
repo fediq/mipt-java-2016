@@ -35,12 +35,12 @@ public class BigDataStorage<K, V>
     /**
      * Max weight of elements we add but didn't write to file.
      */
-    private final int maxAddWeight = 10 * 1024 * 1024; // 10 MB
+    private final int maxAddWeight = 1 * 1024 * 1024; // 1 MB
 
     /**
      * Max weight of elements we cached.
      */
-    private final int maxCachedWeight = 10 * 1024 * 1024; // 10 MB
+    private final int maxCachedWeight = 1 * 1024 * 1024; // 1 MB
 
     /**
      * How many elements were deleted since last sync.
