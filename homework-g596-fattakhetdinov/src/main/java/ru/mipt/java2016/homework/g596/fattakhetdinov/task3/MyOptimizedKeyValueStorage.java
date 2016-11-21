@@ -51,9 +51,9 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private final Lock readLock = readWriteLock.readLock();
     private SerializationStrategy<K> keySerializationStrategy;
     private SerializationStrategy<V> valueSerializationStrategy;
-    final private String keysFileName = "keysFile.db";
-    final private String valuesFileName = "valuesFile.db";
-    final private String initFileName = "initKeyValueStorage.txt";
+    private final String keysFileName = "keysFile.db";
+    private final String valuesFileName = "valuesFile.db";
+    private final String initFileName = "initKeyValueStorage.txt";
 
     private String currentStorageType; //Строка для проверки типа хранилища
     private boolean isClosed;
