@@ -19,11 +19,11 @@ package ru.mipt.java2016.homework.g597.kozlov.task3;
  * <значение ключа> - n раз.
  *
  *
- * Чтобы достать value по ключу key, нужно сначала вытащить id и shift (смещение относительно начала файла) из storage.db,
- * затем по этому смещению вытащить из storage.db.id значение value.
+ * Чтобы достать value по ключу key, нужно сначала вытащить id и shift (смещение относительно начала файла)
+ * из storage.db, затем по этому смещению вытащить из storage.db.id значение value.
  *
- * В ходе выполнений моего кода старые данные в старых id-файлах НЕ удаляются (как в той статье про LSM-Tree и было описано),
- * но мы их никогда не сможем прочесть больше.
+ * В ходе выполнений моего кода старые данные в старых id-файлах НЕ удаляются (как в той статье про LSM-Tree
+ * и было описано), но мы их никогда не сможем прочесть больше.
  *
  *
  */
@@ -52,20 +52,25 @@ public class MyAwesomeUpdatedKeyValueStorage<K, V> implements KeyValueStorage<K,
 
     private HashSet<K> setKeys;  // храним <ключ> в множестве здесь
     private HashMap<K, V> mapKeyValue;  // храним пары <ключ, значение> здесь
+
     private class PlaceOfKey {
         private int id;
         private long shift;
+
         PlaceOfKey(int id, long row) {
             this.id = id;
             this.shift = row;
         }
+
         int getid() {
             return id;
         }
+
         long getshift() {
             return shift;
         }
     }
+
     private HashMap<K, PlaceOfKey> mapKeyFile;  // храним данные типа "ключ лежит в id файле" здесь
 
     private final Serialization<K> keySerialization;
@@ -149,7 +154,7 @@ public class MyAwesomeUpdatedKeyValueStorage<K, V> implements KeyValueStorage<K,
 
     @Override
     public V read(K key) {
-        if (mapKeyValue.keySet().contains(key)) {  // это условие гарантирует чтение по времени за О(1) для одного и того же ключа.
+        if (mapKeyValue.keySet().contains(key)) {  // это дает чтение по времени за О(1) для одного и того же ключа.
             return mapKeyValue.get(key);
         } else if (mapKeyFile.containsKey(key)) {  // O(log(n))
             int id = mapKeyFile.get(key).getid();
