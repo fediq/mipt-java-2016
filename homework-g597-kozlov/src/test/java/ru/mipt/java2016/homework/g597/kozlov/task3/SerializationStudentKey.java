@@ -1,7 +1,7 @@
 package ru.mipt.java2016.homework.g597.kozlov.task3;
 
 /**
- * Created by Alexander on 31.10.2016.
+ * Created by Alexander on 21.11.2016.
  */
 
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
