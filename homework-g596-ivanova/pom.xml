@@ -53,9 +53,9 @@
                     </goals>
                     <configuration>
                         <archive>
-                            <manifestentries>
-                                <premain-class>org.javabenchmark.instrumentation.Agent</premain-class>
-                            </manifestentries>
+                            <manifest>
+                                <manifestFile>/home/julia/Projects/mipt-java-2016/homework-g596-ivanova/src/main/java/ru/mipt/java2016/homework/g596/ivanova/task3/manifest.mf</manifestFile>
+                            </manifest>
                         </archive>
                     </configuration>
                 </execution>
@@ -69,18 +69,6 @@
             <version>2.19.1</version>
             <configuration>
                 <argLine>"-javaagent:/home/julia/Projects/mipt-java-2016/homework-g596-ivanova/src/main/java/ru/mipt/java2016/homework/g596/ivanova/task3/ObjectSize.jar"</argLine>
-            </configuration>
-        </plugin>
-
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-jar-plugin</artifactId>
-            <configuration>
-                <archive>
-                    <manifest>
-                        <manifestFile>/home/julia/Projects/mipt-java-2016/homework-g596-ivanova/src/main/java/ru/mipt/java2016/homework/g596/ivanova/task3/manifest.mf</manifestFile>
-                    </manifest>
-                </archive>
             </configuration>
         </plugin>
     </plugins>
