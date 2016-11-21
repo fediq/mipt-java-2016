@@ -5,6 +5,9 @@ import ru.mipt.java2016.homework.base.task2.MalformedDataException;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.zip.Adler32;
 import java.util.zip.CheckedInputStream;
 
@@ -48,10 +51,14 @@ public class UpgKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private boolean opened;
     private ArrayList<RandomAccessFile> files;
     private Adler32 validate;
+    private ReadWriteLock lock;
+    private Lock readLock;
+    private Lock writeLock;
 
     private static final int MAX_SIZE_OF_FRESH = 1300;
 
     private void getFileHash(Adler32 md, String name) {
+        writeLock.lock();
         try (InputStream is = new BufferedInputStream(new FileInputStream(new File(name)));
              CheckedInputStream cis = new CheckedInputStream(is, md)) {
             byte[] buffer = new byte[MAX_SIZE_OF_FRESH * 100];
@@ -62,6 +69,8 @@ public class UpgKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             throw new MalformedDataException("Couldn't find file", e);
         } catch (IOException e) {
             throw new MalformedDataException("Couldn't read file", e);
+        } finally {
+            writeLock.unlock();
         }
     }
 
@@ -85,8 +94,8 @@ public class UpgKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     */
 
     private void checkIntegrity(int numOfFiles) {
+        writeLock.lock();
         try (DataInputStream rd = new DataInputStream(new FileInputStream(intFileName))) {
-
             if (numOfFiles != rd.readInt()) {
                 throw new MalformedDataException("Invalid data base");
             }
@@ -99,6 +108,8 @@ public class UpgKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             }
         } catch (IOException e) {
             throw new MalformedDataException("Couldn't find or read file", e);
+        } finally {
+            writeLock.unlock();
         }
     }
 
@@ -116,37 +127,42 @@ public class UpgKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void reduceFresh(boolean doAnyway) {
-        if (doAnyway || tableFresh.size() >= MAX_SIZE_OF_FRESH) {
-            int numNewFile = files.size();
-            String newFile = getFileName(numNewFile);
-            File file = new File(newFile);
+        writeLock.lock();
+        try {
+            if (doAnyway || tableFresh.size() >= MAX_SIZE_OF_FRESH) {
+                int numNewFile = files.size();
+                String newFile = getFileName(numNewFile);
+                File file = new File(newFile);
 
-            if (!file.exists()) {
-                try {
-                    file.createNewFile();
-                } catch (IOException e) {
-                    throw new MalformedDataException("Couldn't create new file", e);
-                }
-            }
-            try {
-                files.add(new RandomAccessFile(newFile, "rw"));
-                RandomAccessFile curFile = files.get(numNewFile);
-                curFile.setLength(0);
-                curFile.seek(0);
-                for (Map.Entry<K, V> entry: tableFresh.entrySet()) {
-                    if (entry.getValue().equals(null)) {
-                        mapPlace.remove(entry.getKey());
-                        continue;
+                if (!file.exists()) {
+                    try {
+                        file.createNewFile();
+                    } catch (IOException e) {
+                        throw new MalformedDataException("Couldn't create new file", e);
                     }
-                    Location newLoc = new Location(numNewFile, curFile.getFilePointer());
-                    mapPlace.put(entry.getKey(), newLoc);
-                    curFile.writeUTF(valSerializator.serialize(entry.getValue()));
                 }
-                tableFresh.clear();
-                getFileHash(validate, newFile);
-            } catch (IOException e) {
-                throw new MalformedDataException("Couldn't get RandomAccessFile", e);
+                try {
+                    files.add(new RandomAccessFile(newFile, "rw"));
+                    RandomAccessFile curFile = files.get(numNewFile);
+                    curFile.setLength(0);
+                    curFile.seek(0);
+                    for (Map.Entry<K, V> entry: tableFresh.entrySet()) {
+                        if (entry.getValue().equals(null)) {
+                            mapPlace.remove(entry.getKey());
+                            continue;
+                        }
+                        Location newLoc = new Location(numNewFile, curFile.getFilePointer());
+                        mapPlace.put(entry.getKey(), newLoc);
+                        curFile.writeUTF(valSerializator.serialize(entry.getValue()));
+                    }
+                    tableFresh.clear();
+                    getFileHash(validate, newFile);
+                } catch (IOException e) {
+                    throw new MalformedDataException("Couldn't get RandomAccessFile", e);
+                }
             }
+        } finally {
+            writeLock.unlock();
         }
     }
 
@@ -163,120 +179,156 @@ public class UpgKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         opened = true;
         files = new ArrayList<RandomAccessFile>();
         opened = true;
+        lock = new ReentrantReadWriteLock();
+        readLock = lock.readLock();
+        writeLock = lock.writeLock();
 
         String mainFile = getFileName(-1);
         File file = new File(mainFile);
         File integrityFile = new File(intFileName);
 
-        if (!file.exists()) {
-            try {
-                file.createNewFile();
-                if (!integrityFile.exists()) {
-                    integrityFile.createNewFile();
+        writeLock.lock();
+        try {
+            if (!file.exists()) {
+                try {
+                    file.createNewFile();
+                    if (!integrityFile.exists()) {
+                        integrityFile.createNewFile();
+                    }
+                } catch (IOException e) {
+                    throw new MalformedDataException("Couldn't create new file", e);
+                }
+                try (DataOutputStream wr = new DataOutputStream(new FileOutputStream(mainFile));
+                     DataOutputStream wrInt = new DataOutputStream(new FileOutputStream(intFileName))) {
+                    wr.writeUTF(type);
+                    wr.writeInt(0);
+                    wr.writeInt(0);
+                    wrInt.writeInt(0);
+                } catch (IOException e) {
+                    throw new MalformedDataException("Couldn't write to file", e);
+                }
+            }
+
+            if (!integrityFile.exists()) {
+                throw new MalformedDataException("Couldn't find file");
+            }
+
+            try (DataInputStream rd = new DataInputStream(new FileInputStream(mainFile))) {
+                if (!rd.readUTF().equals(type)) {
+                    throw new MalformedDataException("Invalid file");
+                }
+                int numberOfFiles = rd.readInt();
+                checkIntegrity(numberOfFiles);
+                for (int i = 0; i < numberOfFiles; ++i) {
+                    File curFile = new File(getFileName(i));
+                    if (!curFile.exists()) {
+                        throw new MalformedDataException("Couldn't find file with data");
+                    }
+                    files.add(new RandomAccessFile(curFile, "rw"));
+                }
+                int numberOfLines = rd.readInt();
+                for (int i = 0; i < numberOfLines; ++i) {
+                    K key = keySerializator.deserialize(rd.readUTF());
+                    int fileNum = rd.readInt();
+                    long offset = rd.readLong();
+                    mapPlace.put(key, new Location(fileNum, offset));
+                    setExist.add(key);
                 }
             } catch (IOException e) {
-                throw new MalformedDataException("Couldn't create new file", e);
+                throw new MalformedDataException("Couldn't read from file", e);
             }
-            try (DataOutputStream wr = new DataOutputStream(new FileOutputStream(mainFile));
-                 DataOutputStream wrInt = new DataOutputStream(new FileOutputStream(intFileName))) {
-                wr.writeUTF(type);
-                wr.writeInt(0);
-                wr.writeInt(0);
-                wrInt.writeInt(0);
-            } catch (IOException e) {
-                throw new MalformedDataException("Couldn't write to file", e);
-            }
-        }
-
-        if (!integrityFile.exists()) {
-            throw new MalformedDataException("Couldn't find file");
-        }
-
-        try (DataInputStream rd = new DataInputStream(new FileInputStream(mainFile))) {
-            if (!rd.readUTF().equals(type)) {
-                throw new MalformedDataException("Invalid file");
-            }
-            int numberOfFiles = rd.readInt();
-            checkIntegrity(numberOfFiles);
-            for (int i = 0; i < numberOfFiles; ++i) {
-                File curFile = new File(getFileName(i));
-                if (!curFile.exists()) {
-                    throw new MalformedDataException("Couldn't find file with data");
-                }
-                files.add(new RandomAccessFile(curFile, "rw"));
-            }
-            int numberOfLines = rd.readInt();
-            for (int i = 0; i < numberOfLines; ++i) {
-                K key = keySerializator.deserialize(rd.readUTF());
-                int fileNum = rd.readInt();
-                long offset = rd.readLong();
-                mapPlace.put(key, new Location(fileNum, offset));
-                setExist.add(key);
-            }
-        } catch (IOException e) {
-            throw new MalformedDataException("Couldn't read from file", e);
+        } finally {
+            writeLock.unlock();
         }
     }
 
     @Override
     public V read(K key) {
-        checkIfNotOpened();
-        if (tableCash.keySet().contains(key)) {
-            return tableCash.get(key);
-        }
-        if (tableFresh.keySet().contains(key)) {
-            return tableFresh.get(key);
-        }
-        if (!mapPlace.keySet().contains(key)) {
-            return null;
-        }
-        int fileNum = mapPlace.get(key).fileNum;
-        long offset = mapPlace.get(key).offset;
-        RandomAccessFile curFile = files.get(fileNum);
+        readLock.lock();
         try {
+            checkIfNotOpened();
+            if (tableCash.keySet().contains(key)) {
+                return tableCash.get(key);
+            }
+            if (tableFresh.keySet().contains(key)) {
+                return tableFresh.get(key);
+            }
+            if (!mapPlace.keySet().contains(key)) {
+                return null;
+            }
+            int fileNum = mapPlace.get(key).fileNum;
+            long offset = mapPlace.get(key).offset;
+            RandomAccessFile curFile = files.get(fileNum);
             curFile.seek(offset);
             V value = valSerializator.deserialize(curFile.readUTF());
             tableCash.put(key, value);
             return value;
         } catch (IOException e) {
             throw new MalformedDataException("Couldn't reach needed data in file", e);
+        } finally {
+            readLock.unlock();
         }
     }
 
     @Override
     public boolean exists(K key) {
-        checkIfNotOpened();
-        return (setExist.contains(key));
+        readLock.lock();
+        try {
+            checkIfNotOpened();
+            return (setExist.contains(key));
+        } finally {
+            readLock.unlock();
+        }
     }
 
     @Override
     public void write(K key, V value) {
-        checkIfNotOpened();
-        tableFresh.put(key, value);
-        setExist.add(key);
-        reduceFresh(false);
+        writeLock.lock();
+        try {
+            checkIfNotOpened();
+            tableFresh.put(key, value);
+            setExist.add(key);
+            reduceFresh(false);
+        } finally {
+            writeLock.unlock();
+        }
     }
 
     @Override
     public void delete(K key) {
-        checkIfNotOpened();
-        if (exists(key)) {
-            mapPlace.remove(key);
-            tableCash.remove(key);
-            setExist.remove(key);
+        writeLock.lock();
+        try {
+            checkIfNotOpened();
+            if (exists(key)) {
+                mapPlace.remove(key);
+                tableCash.remove(key);
+                setExist.remove(key);
+            }
+        } finally {
+            writeLock.unlock();
         }
     }
 
     @Override
     public Iterator<K> readKeys() {
-        checkIfNotOpened();
-        return setExist.iterator();
+        readLock.lock();
+        try {
+            checkIfNotOpened();
+            return setExist.iterator();
+        } finally {
+            readLock.unlock();
+        }
     }
 
     @Override
     public int size() {
-        checkIfNotOpened();
-        return setExist.size();
+        readLock.lock();
+        try {
+            checkIfNotOpened();
+            return setExist.size();
+        } finally {
+            readLock.unlock();
+        }
     }
 
     @Override
@@ -284,25 +336,29 @@ public class UpgKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         checkIfNotOpened();
         reduceFresh(true);
         opened = false;
-
-        String mainFile = getFileName(-1);
-        try (DataOutputStream wr = new DataOutputStream(new FileOutputStream(mainFile))) {
-            wr.writeUTF(type);
-            wr.writeInt(files.size());
-            wr.writeInt(mapPlace.size());
-            for (Map.Entry<K, Location> entry : mapPlace.entrySet()) {
-                wr.writeUTF(keySerializator.serialize(entry.getKey()));
-                wr.writeInt(entry.getValue().fileNum);
-                wr.writeLong(entry.getValue().offset);
+        writeLock.lock();
+        try {
+            String mainFile = getFileName(-1);
+            try (DataOutputStream wr = new DataOutputStream(new FileOutputStream(mainFile))) {
+                wr.writeUTF(type);
+                wr.writeInt(files.size());
+                wr.writeInt(mapPlace.size());
+                for (Map.Entry<K, Location> entry : mapPlace.entrySet()) {
+                    wr.writeUTF(keySerializator.serialize(entry.getKey()));
+                    wr.writeInt(entry.getValue().fileNum);
+                    wr.writeLong(entry.getValue().offset);
+                }
             }
-        }
 
-        try (DataOutputStream wr = new DataOutputStream(new FileOutputStream(intFileName))) {
-            wr.writeInt(files.size());
-            for (int i = 0; i < files.size(); ++i) {
-                files.get(i).close();
+            try (DataOutputStream wr = new DataOutputStream(new FileOutputStream(intFileName))) {
+                wr.writeInt(files.size());
+                for (int i = 0; i < files.size(); ++i) {
+                    files.get(i).close();
+                }
+                wr.writeLong(validate.getValue());
             }
-            wr.writeLong(validate.getValue());
+        } finally {
+            writeLock.unlock();
         }
     }
 }
