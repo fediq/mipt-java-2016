@@ -202,7 +202,7 @@ public class KVStorage<K, V> implements KeyValueStorage<K, V> {
         }
         writeTemporaryStorage();
         saveToStorage();
-        for (int i = 0;i < files.size();++i){
+        for (int i = 0; i < files.size(); ++i) {
             files.get(i).close();
         }
         isOpen = false;
