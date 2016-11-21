@@ -17,6 +17,7 @@ public class SSTable<K, V> implements Closeable {
     private static final String STORAGE_VALIDATE_STRING = "SSTableDB";
     private static final String KEYS_FILE_SUFFIX = "_keys";
     private static final String DATA_FILE_SUFFIX = "_data";
+    private static final int MAX_SKEEP_BYTES = 300;
 
 
     private enum StorageState { OPENED, CLOSED }
@@ -140,6 +141,15 @@ public class SSTable<K, V> implements Closeable {
         storage.clear();
     }
 
+    private void jumpToBytes(RandomAccessFile file, long position) throws IOException {
+        long dist = position - file.getFilePointer();
+        if (0 <= dist && dist < MAX_SKEEP_BYTES) {
+            file.skipBytes((int)dist);
+        } else {
+            file.seek(position);
+        }
+    }
+
     public V read(K key) {
         throwIfClosed();
         if (!storage.containsKey(key)) {
@@ -147,7 +157,8 @@ public class SSTable<K, V> implements Closeable {
         }
         ValueInfo valueInfo = storage.get(key);
         try {
-            fileData.seek(valueInfo.valueOffset);
+//            fileData.seek(valueInfo.valueOffset);
+            jumpToBytes(fileData, valueInfo.valueOffset);
             return valueSerializer.deserialize(fileData);
         } catch (IOException e) {
             e.printStackTrace();
@@ -172,7 +183,8 @@ public class SSTable<K, V> implements Closeable {
 
     public void appendHashMapData(HashMap<K, V> data) throws IOException {
         throwIfClosed();
-        fileData.seek(fileData.length());
+//        fileData.seek(fileData.length());
+        jumpToBytes(fileData, fileData.length());
         for (HashMap.Entry<K, V> entry : data.entrySet()) {
             storage.put(entry.getKey(), new ValueInfo(fileData.length()));
             valueSerializer.serialize(entry.getValue(), fileData);
@@ -181,7 +193,8 @@ public class SSTable<K, V> implements Closeable {
 
     public void appendEntry(K key, V value) throws IOException {
         throwIfClosed();
-        fileData.seek(fileData.length());
+//        fileData.seek(fileData.length());
+        jumpToBytes(fileData, fileData.length());
         storage.put(key, new ValueInfo(fileData.length()));
         valueSerializer.serialize(value, fileData);
     }

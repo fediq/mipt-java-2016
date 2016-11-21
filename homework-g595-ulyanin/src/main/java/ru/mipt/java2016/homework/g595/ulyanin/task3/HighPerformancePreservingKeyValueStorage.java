@@ -93,11 +93,7 @@ public class HighPerformancePreservingKeyValueStorage<K, V> implements KeyValueS
 
     @Override
     public V read(K key) {
-        V value = readFromCache(key);
-        if (value == null) {
-            value = storage.read(key);
-        }
-        return value;
+        return storage.read(key);
     }
 
     @Override
@@ -153,6 +149,7 @@ public class HighPerformancePreservingKeyValueStorage<K, V> implements KeyValueS
         StringSerializer.getInstance().serialize(STORAGE_VALIDATE_STRING, dataOS);
         StringSerializer.getInstance().serialize(storage.getDBName(), dataOS);
         dataOS.close();
+        fileOutputStream.close();
         storage.close();
     }
 }
