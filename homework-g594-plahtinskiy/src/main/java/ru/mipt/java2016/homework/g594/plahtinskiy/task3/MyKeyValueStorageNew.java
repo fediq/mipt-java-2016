@@ -83,7 +83,7 @@ public class MyKeyValueStorageNew<K, V> implements KeyValueStorage<K, V> {
 
         try {
             int count = keys.readInt();
-            for (int i = 0; i < count; i++ ) {
+            for (int i = 0; i < count; i++) {
                 K key;
                 Long offset;
                 key = serializationKey.read(keys);
