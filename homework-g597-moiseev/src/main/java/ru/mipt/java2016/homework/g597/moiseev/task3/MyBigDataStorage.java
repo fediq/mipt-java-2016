@@ -25,7 +25,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoCloseable {
     private static final int MAX_MEM_TABLE_SIZE = 100;
-    private static final double MAX_DELETED_PROPORTION = 0.2;
+    private static final double MAX_DELETED_PROPORTION = 0.5;
     private static final long IS_NOT_IN_FILE = -1;
 
     private final SerializationStrategy<K> keySerializationStrategy;
@@ -243,9 +243,7 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
 
     private void checkSizeAndDumpOrOptimize() {
         if (!isDumping && !isOptimising) {
-            if (numberOfDeletedElements / size() > MAX_DELETED_PROPORTION) {
-                executorService.execute(() -> optimizeMemory());
-            } else if (memTable.size() > MAX_MEM_TABLE_SIZE) {
+            if (memTable.size() > MAX_MEM_TABLE_SIZE) {
                 dumpMemTable();
             }
         }
