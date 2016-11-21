@@ -13,7 +13,9 @@ public class NewStrategyForDouble implements NewSerializationStrategy<Double> {
         return INSTANCE;
     }
 
-    private NewStrategyForDouble() {}
+    private NewStrategyForDouble() {
+
+    }
 
     @Override
     public Long write(Double value, RandomAccessFile output) throws IOException {

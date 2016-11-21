@@ -13,7 +13,9 @@ public class NewStrategyForInteger implements NewSerializationStrategy<Integer> 
         return INSTANCE;
     }
 
-    private NewStrategyForInteger() {}
+    private NewStrategyForInteger() {
+
+    }
 
     @Override
     public Long write(Integer value, RandomAccessFile output) throws IOException {

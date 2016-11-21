@@ -15,7 +15,9 @@ public class NewStrategyForStudentKey implements NewSerializationStrategy<Studen
         return INSTANCE;
     }
 
-    private NewStrategyForStudentKey() {}
+    private NewStrategyForStudentKey() {
+
+    }
 
     @Override
     public Long write(StudentKey value, RandomAccessFile output) throws IOException {

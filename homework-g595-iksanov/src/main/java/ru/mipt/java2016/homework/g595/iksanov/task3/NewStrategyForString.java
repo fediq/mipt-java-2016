@@ -13,7 +13,9 @@ public class NewStrategyForString implements NewSerializationStrategy<String> {
         return INSTANCE;
     }
 
-    private NewStrategyForString() {}
+    private NewStrategyForString() {
+
+    }
 
     @Override
     public Long write(String value, RandomAccessFile output) throws IOException {
