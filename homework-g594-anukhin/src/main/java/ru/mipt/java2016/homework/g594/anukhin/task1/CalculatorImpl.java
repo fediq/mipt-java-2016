@@ -145,9 +145,6 @@ public class CalculatorImpl implements Calculator {
                 postfixString.length() == 0) {
             throw new ParsingException("Invalid expression");
         }
-        System.out.println(expression);
-        System.out.println(postfixString);
-        System.out.println();
         return postfixString.toString();
     }
 
