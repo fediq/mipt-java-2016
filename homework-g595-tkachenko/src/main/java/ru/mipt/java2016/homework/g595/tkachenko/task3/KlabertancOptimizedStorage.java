@@ -111,7 +111,6 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
         keys.close();
         values.close();
 
-        lockAccess.delete();
         flagForClose = true;
     }
 
@@ -170,13 +169,11 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
     public Iterator<K> readKeys() {
         isStorageClosed();
 
-        return null;
+        return keyAndOffset.keySet().iterator();
     }
 
     @Override
     public int size() {
-        isStorageClosed();
-
         return keyAndOffset.size();
     }
 
@@ -185,5 +182,6 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
         isStorageClosed();
 
         putStorageOnDisk();
+        lockAccess.delete();
     }
 }
