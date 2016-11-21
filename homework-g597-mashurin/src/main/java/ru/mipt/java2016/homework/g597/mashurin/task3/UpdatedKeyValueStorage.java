@@ -76,8 +76,7 @@ public class UpdatedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             }
             keysStorage.close();
             valuesStorage.close();
-        }
-        finally {
+        } finally {
             security.delete();
         }
     }
