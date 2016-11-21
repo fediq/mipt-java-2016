@@ -16,7 +16,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 class MyStorage<K, V> implements KeyValueStorage<K, V> {
 
     private MySerializer<Long> offsetSerializer;
-    private MySerializer<Integer> lengthSerializer;
+    private MyIntSerializer lengthSerializer;
     private MySerializer<K> keySerializer;
     private MySerializer<V> valSerializer;
     private HashMap<K, Long> map;
@@ -259,9 +259,7 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
             }
             out.close();
             values.seek(0);
-            ByteBuffer data = ByteBuffer.allocate(Integer.BYTES);
-            data.putInt(inFile);
-            values.write(data.array());
+            lengthSerializer.putRandom(values, inFile);
             values.close();
             valuesout.close();
             writelock.unlock();
