@@ -16,6 +16,8 @@ import java.util.Map;
 public class MySecondKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private static final long NOT_WRITED = -1;
+    private static final int BUFFER_SIZE = 1024 * 10;
+    private static final int BIG_BUFFER_SIZE = BUFFER_SIZE * 10;
     private final Map<K, V> map;
     private final Map<K, Long> bigMap;
     private boolean isClosedFlag;
@@ -87,8 +89,8 @@ public class MySecondKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 value = map.get(key);
             } else {
                 valueFile.seek(addr);
-                DataInputStream valuesDataInputStream = new DataInputStream(
-                        Channels.newInputStream(valueFile.getChannel()));
+                DataInputStream valuesDataInputStream = new DataInputStream(new BufferedInputStream(
+                        Channels.newInputStream(valueFile.getChannel()), BUFFER_SIZE));
                 value = valueSerializer.deserializeFromStream(valuesDataInputStream);
             }
             return value;
@@ -145,8 +147,8 @@ public class MySecondKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private void readKeysFromFile() {
 
         try {
-            DataInputStream keysDataInputStream = new DataInputStream(
-                    Channels.newInputStream(keyFile.getChannel()));
+            DataInputStream keysDataInputStream = new DataInputStream(new BufferedInputStream(
+                    Channels.newInputStream(keyFile.getChannel()), BIG_BUFFER_SIZE));
             int count = keysDataInputStream.readInt();
             for (int i = 0; i < count; i++) {
                 K newKey = keySerializer.deserializeFromStream(keysDataInputStream);
@@ -162,14 +164,16 @@ public class MySecondKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private void writePieToFile() {
         try {
             valueFile.seek(valueFile.length());
-            DataOutputStream valuesDataOutputStream = new DataOutputStream(
-                    Channels.newOutputStream(valueFile.getChannel()));
+            Long initialPosition = valueFile.getFilePointer();
+            DataOutputStream valuesDataOutputStream = new DataOutputStream(new BufferedOutputStream(
+                    Channels.newOutputStream(valueFile.getChannel()), BIG_BUFFER_SIZE));
             for (Map.Entry<K, V> entry : map.entrySet()) {
                 K nextKey = entry.getKey();
-                bigMap.put(nextKey, valueFile.getFilePointer());
+                bigMap.put(nextKey, initialPosition + (long) valuesDataOutputStream.size());
                 valueSerializer.serializeToStream(valuesDataOutputStream, entry.getValue());
             }
             map.clear();
+            valuesDataOutputStream.flush();
         } catch (IOException e) {
             throw new RuntimeException("error!");
         }
@@ -181,21 +185,23 @@ public class MySecondKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             newvf.createNewFile();
         }
         RandomAccessFile newValueFile = new RandomAccessFile(newvf.getPath(), "rw");
-        DataOutputStream newValuesDataOutputStream = new DataOutputStream(
-                Channels.newOutputStream(newValueFile.getChannel()));
+        DataOutputStream newValuesDataOutputStream = new DataOutputStream(new BufferedOutputStream(
+                Channels.newOutputStream(newValueFile.getChannel()), BIG_BUFFER_SIZE));
 
         newValueFile.writeInt(bigMap.size());
 
+        Long initialPosition = newValueFile.getFilePointer();
         for (Map.Entry<K, Long> entry : bigMap.entrySet()) {
             valueFile.seek(entry.getValue());
-            DataInputStream valuesDataInputStream = new DataInputStream(
-                    Channels.newInputStream(valueFile.getChannel()));
+            DataInputStream valuesDataInputStream = new DataInputStream(new BufferedInputStream(
+                    Channels.newInputStream(valueFile.getChannel()), BUFFER_SIZE));
             V nextValue = valueSerializer.deserializeFromStream(valuesDataInputStream);
 
-            bigMap.put(entry.getKey(), newValueFile.getFilePointer());
+            bigMap.put(entry.getKey(), initialPosition + (long) newValuesDataOutputStream.size());
             valueSerializer.serializeToStream(newValuesDataOutputStream, nextValue);
         }
 
+        newValuesDataOutputStream.flush();
         newValueFile.close();
         valueFile.close();
         if (!valf.delete()) {
@@ -209,13 +215,15 @@ public class MySecondKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private void writeKeysToFile() throws IOException {
         keyFile.seek(0);
-        DataOutputStream keysDataOutputStream = new DataOutputStream(Channels.newOutputStream(keyFile.getChannel()));
+        DataOutputStream keysDataOutputStream = new DataOutputStream(new BufferedOutputStream(
+                Channels.newOutputStream(keyFile.getChannel()), BIG_BUFFER_SIZE));
         keyFile.writeInt(bigMap.size());
 
         for (Map.Entry<K, Long> entry : bigMap.entrySet()) {
             keySerializer.serializeToStream(keysDataOutputStream, entry.getKey());
             biasSerializer.serializeToStream(keysDataOutputStream, entry.getValue());
         }
+        keysDataOutputStream.flush();
         keyFile.close();
     }
 }
