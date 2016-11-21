@@ -35,7 +35,6 @@
         <version>3.21.0-GA</version>
         <type>jar</type>
     </dependency>
-
 </dependencies>
 
 <build>
@@ -66,9 +65,23 @@
             <artifactId>maven-surefire-plugin</artifactId>
             <version>2.19.1</version>
             <configuration>
-                <argLine>"-javaagent:${project.basedir}/src/main/java/ru/mipt/java2016/homework/g596/ivanova/task3/ObjectSize.jar"</argLine>
+                <argLine>-javaagent:${project.basedir}/src/main/java/ru/mipt/java2016/homework/g596/ivanova/task3/ObjectSize.jar</argLine>
                 <argLine>-Xmx1024m -XX:MaxPermSize=256m</argLine>
+                <useSystemClassLoader>true</useSystemClassLoader>
             </configuration>
+        </plugin>
+
+        <plugin>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>2.10</version>
+        <executions>
+            <execution>
+                <id>getClasspathFilenames</id>
+                <goals>
+                    <goal>properties</goal>
+                </goals>
+            </execution>
+        </executions>
         </plugin>
     </plugins>
 </build>
