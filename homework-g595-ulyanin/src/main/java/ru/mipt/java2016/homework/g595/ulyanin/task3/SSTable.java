@@ -144,7 +144,7 @@ public class SSTable<K, V> implements Closeable {
     private void jumpToBytes(RandomAccessFile file, long position) throws IOException {
         long dist = position - file.getFilePointer();
         if (0 <= dist && dist < MAX_SKEEP_BYTES) {
-            file.skipBytes((int)dist);
+            file.skipBytes((int) dist);
         } else {
             file.seek(position);
         }
