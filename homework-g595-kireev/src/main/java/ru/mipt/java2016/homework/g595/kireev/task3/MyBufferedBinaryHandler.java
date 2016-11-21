@@ -1,20 +1,23 @@
-package ru.mipt.java2016.homework.g595.kireev.task2;
+package ru.mipt.java2016.homework.g595.kireev.task3;
+
+import ru.mipt.java2016.homework.g595.kireev.task2.MySerializator;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 
 /**
- * Created by Карим on 26.10.2016.
+ * Created by sun on 17.11.16.
  */
-public class MyBinaryHandler<T> {
+public class MyBufferedBinaryHandler <T> {
     private MySerializator<T> tSerializator;
 
-    public MyBinaryHandler(String type) {
+    public MyBufferedBinaryHandler(String type) {
         tSerializator = new MySerializator<T>(type);
     }
 
-    public T getFromInput(FileInputStream in) throws IOException {
+    public T getFromInput(RandomAccessFile in) throws IOException {
         byte[] lenByte = new byte[8];
         in.read(lenByte);
         long len = tSerializator.bytesToLong(lenByte);
@@ -24,10 +27,11 @@ public class MyBinaryHandler<T> {
         return tSerializator.deserialize(obj);
     }
 
-    public void putToOutput(FileOutputStream out, T obj) throws IOException {
+    public int putToOutput(RandomAccessFile out, T obj) throws IOException {
         byte[] serT = tSerializator.serialize(obj);
-        byte[] serTLen = tSerializator.toByteArray(serT.length);
+        byte[] serTLen = MySerializator.toByteArray(serT.length + 0l);
         out.write(serTLen);
         out.write(serT);
+        return serT.length + serTLen.length;
     }
 }

@@ -1,4 +1,4 @@
-package ru.mipt.java2016.homework.g595.kireev.task2;
+package ru.mipt.java2016.homework.g595.kireev.task3;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.g595.kireev.task3.MyBufferedBinaryHandler;
@@ -11,7 +11,7 @@ import java.util.Map;
 /**
  * Created by sun on 17.11.16.
  */
-public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
+public class MyKeyValueStorage64<K, V> implements KeyValueStorage<K, V> {
     private Integer generalOffset;
     private HashMap<K, Integer> cache = new HashMap<K, Integer>();
     private String path;
@@ -25,7 +25,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private Object sync = new Object();
     private boolean isClosed = false;
 
-    MyKeyValueStorage(String keyType, String valueType, String path) throws IOException {
+    MyKeyValueStorage64(String keyType, String valueType, String path) throws IOException {
 
         this.path = path;
         keyHandler = new MyBufferedBinaryHandler<K>(keyType);
@@ -37,7 +37,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             dir.mkdir();
         }
         dataFile = new RandomAccessFile(path + dataName, "rw");
-      //  dataFile.close();
+        //  dataFile.close();
         takeCacheFromFile();
     }
 
@@ -46,7 +46,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         if (!inFile.exists()) {
             inFile.createNewFile();
         }
-       // RandomAccessFile in = new RandomAccessFile(path + headerName, "rw");
+        // RandomAccessFile in = new RandomAccessFile(path + headerName, "rw");
         RandomAccessFile in = new RandomAccessFile(path + headerName, "r");
         if (!cache.isEmpty()) {
             cache.clear();

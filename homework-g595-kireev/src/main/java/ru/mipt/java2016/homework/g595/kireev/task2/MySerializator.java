@@ -28,14 +28,14 @@ public class MySerializator<T> {
         USABLE_TYPES = Collections.unmodifiableSet(set);
     }
 
-    MySerializator(String type) {
+    public MySerializator(String type) {
         if (!USABLE_TYPES.contains(type)) {
             throw new RuntimeException("Wrong type");
         }
         this.type = type;
     }
 
-    byte[] serialize(T obj) {
+    public byte[] serialize(T obj) {
         switch (type) {
             case "String":
                 return toByteArray((String) obj);
@@ -52,7 +52,7 @@ public class MySerializator<T> {
         }
     }
 
-    T deserialize(byte[] bytes) {
+    public T deserialize(byte[] bytes) {
         switch (type) {
             case "String":
                 return (T) bytesToString(bytes);
@@ -77,13 +77,13 @@ public class MySerializator<T> {
         }
     }
 
-    private static byte[] toByteArray(int val) {
+    public static byte[] toByteArray(int val) {
         byte[] bytes = new byte[4];
         ByteBuffer.wrap(bytes).putInt(val);
         return bytes;
     }
 
-    static long bytesToLong(byte[] bytes) {
+    public static long bytesToLong(byte[] bytes) {
         if (bytes.length != 8) {
             throw new RuntimeException("Invalid Conversion");
         } else {
@@ -91,7 +91,7 @@ public class MySerializator<T> {
         }
     }
 
-    static byte[] toByteArray(long val) {
+    public static byte[] toByteArray(long val) {
         byte[] bytes = new byte[8];
         ByteBuffer.wrap(bytes).putLong(val);
         return bytes;
