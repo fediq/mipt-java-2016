@@ -9,13 +9,13 @@ import java.io.IOException;
  */
 public class DoubleSerialization implements SerializationStrategy<Double> {
 
-	@Override
-	public void serialize(Double value, DataOutput dataOutputStream) throws IOException {
-		dataOutputStream.writeDouble(value);
-	}
+    @Override
+    public void serialize(Double value, DataOutput dataOutputStream) throws IOException {
+        dataOutputStream.writeDouble(value);
+    }
 
-	@Override
-	public Double deserialize(DataInput dataInputStream) throws IOException {
-			return dataInputStream.readDouble();
-	}
+    @Override
+    public Double deserialize(DataInput dataInputStream) throws IOException {
+        return dataInputStream.readDouble();
+    }
 }
