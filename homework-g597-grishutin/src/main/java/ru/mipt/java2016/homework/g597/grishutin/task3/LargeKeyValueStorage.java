@@ -1,8 +1,6 @@
 package ru.mipt.java2016.homework.g597.grishutin.task3;
 
-import ru.mipt.java2016.homework.g597.grishutin.task2.BooleanSerializationStrategy;
 import ru.mipt.java2016.homework.g597.grishutin.task2.GrishutinKeyValueStorage;
-import ru.mipt.java2016.homework.g597.grishutin.task2.IntegerSerializationStrategy;
 import ru.mipt.java2016.homework.g597.grishutin.task2.SerializationStrategy;
 
 import java.io.File;
@@ -14,24 +12,45 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+
 public class LargeKeyValueStorage<K, V> extends GrishutinKeyValueStorage<K, V> {
-    protected HashMap<K, Long> valueOffset = new HashMap<> ();
-    protected HashMap<K, Long> tombstoneOffset = new HashMap<> ();
-    protected HashSet<K> obsolete = new HashSet<> ();
+    private static final Long CACHED = -1L;
 
-    protected Integer totalCached;
-    protected final int maxKeyByteSize = 50;
-    protected final int maxValueByteSize = 10_000;
-    protected final int maxCachedEntries = 40_000_000 / (maxKeyByteSize + maxValueByteSize); // 40 Mb RAM for cache
-    protected final int BUFFER_SIZE = 1024;
+    protected HashMap<K, Long> valueOffset = new HashMap<>();
+    protected HashSet<K> obsolete;
 
-    protected final BooleanSerializationStrategy tombstoneSerializer = BooleanSerializationStrategy.getInstance();
-    private double maxDeletedPercentage = 1 / 3;
+    protected static final int maxKeyByteSize = 50;
+    protected static final int maxValueByteSize = 10_000;
+    protected static final int maxCachedEntries = 15_000_000 / (maxKeyByteSize + maxValueByteSize); // 30 Mb RAM for cache
+    protected static final int BUFFER_SIZE = 1024;
 
-    public LargeKeyValueStorage(String directoryPath,
+    private static double maxDeletedPart = (double)4 / 5;
+    private static double cacheDropPart = (double) 1 / 10;
+    public LargeKeyValueStorage(String directoryPathInit,
                                 SerializationStrategy<K> keyStrat,
                                 SerializationStrategy<V> valueStrat) throws IOException, IllegalAccessException {
-        super(directoryPath, keyStrat, valueStrat);
+        valueOffset = new HashMap<>();
+        obsolete = new HashSet<>();
+        directoryPath = directoryPathInit;
+        keySerializationStrategy = keyStrat;
+        valueSerializationStrategy = valueStrat;
+        Path filePath = Paths.get(directoryPath, storageFilename);
+        Path lockFilePath = Paths.get(directoryPath, storageFilename + ".lock");
+
+        lock = lockFilePath.toFile();
+        if (!lock.createNewFile()) { // if lock is hold by other kvStorage
+            throw new IllegalAccessException("Database is already opened");
+        }
+
+        Files.createDirectories(filePath.getParent());
+        if (!(Files.exists(filePath))) {
+            Files.createFile(filePath);
+        }
+
+        storageFile = new RandomAccessFile(filePath.toFile(), "rw");
+        if (storageFile.length() != 0) {
+            readEntriesFromDisk();
+        }
     }
 
     /*
@@ -45,18 +64,14 @@ public class LargeKeyValueStorage<K, V> extends GrishutinKeyValueStorage<K, V> {
         while (curOffset < fileSize) {
             K key = keySerializationStrategy.deserialize(storageFile);
             V value = valueSerializationStrategy.deserialize(storageFile);
-            Boolean valid = tombstoneSerializer.deserialize(storageFile);
             Long curValueOffset = curOffset + keySerializationStrategy.bytesSize(key);
-            Long curTombstoneOffset = curValueOffset + valueSerializationStrategy.bytesSize(value);
-
-            if (valid) {
-                if (cached.size() < maxCachedEntries) {
-                    cached.put(key, value);
-                }
-                valueOffset.put(key, curValueOffset);
-                tombstoneOffset.put(key, curTombstoneOffset);
+            if (cached.size() < maxCachedEntries) {
+                cached.put(key, value);
             }
-            curOffset += curTombstoneOffset + tombstoneSerializer.bytesSize(valid);
+
+            valueOffset.put(key, curValueOffset);
+            numRecords++;
+            curOffset = curValueOffset + valueSerializationStrategy.bytesSize(value);
         }
     }
 
@@ -68,37 +83,35 @@ public class LargeKeyValueStorage<K, V> extends GrishutinKeyValueStorage<K, V> {
     }
 
     @Override
-    public synchronized void write(K key, V value) {
+    public synchronized V read(K key) {
         if (cached.containsKey(key)) {
+            return cached.get(key);
+        } else if (valueOffset.containsKey(key)) {
+            try {
+                storageFile.seek(valueOffset.get(key));
+                return valueSerializationStrategy.deserialize(storageFile);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+        return null;
+    }
+
+    @Override
+    public synchronized void write(K key, V value) {
+        if (!exists(key)) {
             numRecords++;
             numEpoch++;
         }
         cached.put(key, value);
+        valueOffset.put(key, CACHED);
         if (cached.size() > maxCachedEntries) {
             try {
-                DropCacheOnDisk();
+                DropCacheOnDisk(cacheDropPart);
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
-    }
-
-    private void DropCacheOnDisk() throws IOException {
-        storageFile.seek(storageFile.length());
-        Integer dropped = 0;
-        HashSet<K> droppedKeys = new HashSet<>();
-        for (K key : cached.keySet()) {
-            if (dropped < cached.size() / 2) {
-                keySerializationStrategy.serialize(key, storageFile);
-                valueSerializationStrategy.serialize(cached.get(key), storageFile);
-                tombstoneSerializer.serialize(true, storageFile);
-                droppedKeys.add(key);
-                dropped++;
-            }
-        }
-
-        for (K key : droppedKeys) {
-            cached.remove(key);
         }
     }
 
@@ -111,8 +124,11 @@ public class LargeKeyValueStorage<K, V> extends GrishutinKeyValueStorage<K, V> {
         if (cached.containsKey(key)) {
             cached.remove(key);
         }
+        if (valueOffset.containsKey(key)) {
+            valueOffset.remove(key);
+        }
         obsolete.add(key);
-        if (((double) obsolete.size()) / numRecords > maxDeletedPercentage) {
+        if ((double) obsolete.size() >= numRecords * maxDeletedPart) {
             try {
                 RefreshSSTable();
             } catch (IOException e) {
@@ -123,25 +139,59 @@ public class LargeKeyValueStorage<K, V> extends GrishutinKeyValueStorage<K, V> {
         numEpoch++;
     }
 
-    private void RefreshSSTable() throws IOException {
-        storageFile.seek(0);
-        Long curOffset = 0L;
-        Long fileSize = storageFile.length();
-        Path tmpFilePath = Paths.get(directoryPath, storageFilename + ".tmp");
-        RandomAccessFile tmpFile = new RandomAccessFile(tmpFilePath.toFile(), "w");
-        while (curOffset < fileSize) {
-            K key = keySerializationStrategy.deserialize(storageFile);
-            V value = valueSerializationStrategy.deserialize(storageFile);
-            Boolean valid = tombstoneSerializer.deserialize(storageFile);
+    @Override
+    public Iterator<K> readKeys() {
+        return valueOffset.keySet().iterator();
+    }
 
-            if (valid && !obsolete.contains(key)) {
-                keySerializationStrategy.serialize(key, tmpFile);
-                valueSerializationStrategy.serialize(value, tmpFile);
-                tombstoneSerializer.serialize(true, tmpFile);
+    @Override
+    public synchronized void close() throws IOException {
+        if (!isClosed) {
+            DropCacheOnDisk(1.0);
+            RefreshSSTable();
+            isClosed = true;
+        }
+
+        cached.clear();
+        valueOffset.clear();
+
+        storageFile.close();
+        Files.delete(lock.toPath());
+    }
+
+    private void DropCacheOnDisk(double part) throws IOException {
+        Long curOffset = storageFile.length();
+        storageFile.seek(curOffset);
+        Integer dropped = 0;
+        HashSet<K> droppedKeys = new HashSet<>();
+        for (K key : cached.keySet()) {
+            if (dropped < cached.size() * part) {
+                keySerializationStrategy.serialize(key, storageFile);
+                valueSerializationStrategy.serialize(cached.get(key), storageFile);
+                valueOffset.put(key, curOffset + keySerializationStrategy.bytesSize(key));
+                droppedKeys.add(key);
+                dropped++;
+                curOffset += keySerializationStrategy.bytesSize(key) +
+                        valueSerializationStrategy.bytesSize(cached.get(key));
             }
-            curOffset += keySerializationStrategy.bytesSize(key) +
-                    valueSerializationStrategy.bytesSize(value) +
-                    tombstoneSerializer.bytesSize(true);
+        }
+
+        for (K key : droppedKeys) {
+            cached.remove(key);
+        }
+    }
+
+    private void RefreshSSTable() throws IOException {
+        Path tmpFilePath = Paths.get(directoryPath, storageFilename + ".tmp");
+        RandomAccessFile tmpFile = new RandomAccessFile(tmpFilePath.toFile(), "rw");
+        for (K key : valueOffset.keySet()) {
+            if (valueOffset.get(key).equals(CACHED)) {
+                continue;
+            }
+            keySerializationStrategy.serialize(key, tmpFile);
+            storageFile.seek(valueOffset.get(key));
+            valueSerializationStrategy.serialize(
+                    valueSerializationStrategy.deserialize(storageFile), tmpFile);
         }
 
         Files.deleteIfExists(Paths.get(directoryPath, storageFilename));
@@ -152,29 +202,6 @@ public class LargeKeyValueStorage<K, V> extends GrishutinKeyValueStorage<K, V> {
             throw new IOException("Unable to rename file");
         }
         storageFile = new RandomAccessFile(extraTmpFile, "rw");
-    }
-
-    private void markDeleted(K key) throws IOException {
-        if (tombstoneOffset.containsKey(key)) {
-            storageFile.seek(tombstoneOffset.get(key));
-            tombstoneSerializer.serialize(false, storageFile);
-        }
-    }
-
-    @Override
-    public Iterator<K> readKeys() {
-        return valueOffset.keySet().iterator();
-    }
-
-    @Override
-    public synchronized void close() throws IOException {
-        if (!isClosed) {
-            DropCacheOnDisk();
-            RefreshSSTable();
-            isClosed = true;
-        }
-        cached.clear();
-        storageFile.close();
-        Files.delete(lock.toPath());
+        obsolete.clear();
     }
 }

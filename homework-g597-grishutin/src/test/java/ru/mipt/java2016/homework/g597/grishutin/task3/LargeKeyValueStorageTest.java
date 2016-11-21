@@ -14,7 +14,7 @@ public class LargeKeyValueStorageTest extends KeyValueStoragePerformanceTest {
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String path) throws MalformedDataException {
         try {
-            return new GrishutinKeyValueStorage<>(path,
+            return new LargeKeyValueStorage<>(path,
                     new StringSerializationStrategy(),
                     new StringSerializationStrategy());
         } catch (IOException | IllegalAccessException e) {
@@ -26,7 +26,7 @@ public class LargeKeyValueStorageTest extends KeyValueStoragePerformanceTest {
     @Override
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) throws MalformedDataException {
         try {
-            return new GrishutinKeyValueStorage<>(path,
+            return new LargeKeyValueStorage<>(path,
                     new IntegerSerializationStrategy(),
                     new DoubleSerializationStrategy());
         } catch (IOException | IllegalAccessException e) {
@@ -38,7 +38,7 @@ public class LargeKeyValueStorageTest extends KeyValueStoragePerformanceTest {
     @Override
     protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) throws MalformedDataException {
         try {
-            return new GrishutinKeyValueStorage<>(path,
+            return new LargeKeyValueStorage<>(path,
                     new StudentKeySerializationStrategy(),
                     new StudentSerializationStrategy());
         } catch (IOException | IllegalAccessException e) {
