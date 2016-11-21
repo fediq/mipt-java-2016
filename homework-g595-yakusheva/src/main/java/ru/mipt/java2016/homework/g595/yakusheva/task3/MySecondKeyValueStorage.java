@@ -18,6 +18,7 @@ public class MySecondKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private static final long NOT_WRITED = -1;
     private static final int BUFFER_SIZE = 1024 * 10;
     private static final int BIG_BUFFER_SIZE = BUFFER_SIZE * 10;
+    private static final double REBUILD_COEFFICIENT = 2.0;
     private final Map<K, V> map;
     private final Map<K, Long> bigMap;
     private boolean isClosedFlag;
@@ -29,6 +30,7 @@ public class MySecondKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private File keyf;
     private File valf;
     private String way;
+    private int reallyStored;
 
     public MySecondKeyValueStorage(String path,
                                    MySecondSerializerInterface<K> newKeySerializerArg,
@@ -39,6 +41,7 @@ public class MySecondKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         keySerializer = newKeySerializerArg;
         valueSerializer = newValueSerializerArg;
         biasSerializer = new MyLongSerializer();
+        reallyStored = 0;
         try {
             boolean readFromOldFileFlag = true;
             keyf = new File(Paths.get(path, "storage_keys.db").toString());
@@ -108,10 +111,18 @@ public class MySecondKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public void write(K key, V value) {
         closedCheck();
+        ++reallyStored;
         map.put(key, value);
         bigMap.put(key, NOT_WRITED);
         if (map.size() > 1023) {
             writePieToFile();
+        }
+        if (reallyStored > REBUILD_COEFFICIENT * bigMap.size()) {
+            try {
+                rebuildStorage();
+            } catch (IOException e) {
+                throw new RuntimeException("Can't rebuild storage");
+            }
         }
     }
 
@@ -137,7 +148,6 @@ public class MySecondKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     public void close() throws IOException {
         closedCheck();
         writePieToFile();
-        rebuildStorage();
         writeKeysToFile();
         valueFile.close();
         keyFile.close();
@@ -150,6 +160,7 @@ public class MySecondKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             DataInputStream keysDataInputStream = new DataInputStream(new BufferedInputStream(
                     Channels.newInputStream(keyFile.getChannel()), BIG_BUFFER_SIZE));
             int count = keysDataInputStream.readInt();
+            reallyStored = keysDataInputStream.readInt();
             for (int i = 0; i < count; i++) {
                 K newKey = keySerializer.deserializeFromStream(keysDataInputStream);
                 Long newBias = biasSerializer.deserializeFromStream(keysDataInputStream);
@@ -218,6 +229,7 @@ public class MySecondKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         DataOutputStream keysDataOutputStream = new DataOutputStream(new BufferedOutputStream(
                 Channels.newOutputStream(keyFile.getChannel()), BIG_BUFFER_SIZE));
         keyFile.writeInt(bigMap.size());
+        keyFile.writeInt(reallyStored);
 
         for (Map.Entry<K, Long> entry : bigMap.entrySet()) {
             keySerializer.serializeToStream(keysDataOutputStream, entry.getKey());
