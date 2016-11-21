@@ -1,8 +1,7 @@
-package ru.mipt.java2016.homework.g594.krokhalev.TestStorage;
+package ru.mipt.java2016.homework.g594.krokhalev.task3;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.RandomAccessFile;
 
 public interface SerializationStrategy<T> {
     T deserialize(InputStream stream) throws IOException;
