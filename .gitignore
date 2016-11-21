@@ -5,7 +5,7 @@
 *.class
 out/
 target/
-
+*~
 temp/
 tmp/
 
