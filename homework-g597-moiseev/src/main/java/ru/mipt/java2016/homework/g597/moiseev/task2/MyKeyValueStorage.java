@@ -27,7 +27,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V>, AutoClose
     public MyKeyValueStorage(String path, String name, SerializationStrategy<K> keySerializationStrategy,
                              SerializationStrategy<V> valueSerializationStrategy) throws IOException {
         if (Files.notExists(Paths.get(path))) {
-            throw new FileNotFoundException("Directory not exist");
+            throw new FileNotFoundException("Directory doesn't exist");
         }
 
         String lockPath = path + File.separator + name + ".lock";

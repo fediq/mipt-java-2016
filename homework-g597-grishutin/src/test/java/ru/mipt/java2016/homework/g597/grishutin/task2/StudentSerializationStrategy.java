@@ -14,12 +14,12 @@ import java.io.RandomAccessFile;
     boolean hasDormitory,
     double averageScore
  */
-class StudentSerializationStrategy implements SerializationStrategy<Student> {
-    private IntegerSerializationStrategy integerSerializationStrategy = IntegerSerializationStrategy.INSTANCE;
-    private StringSerializationStrategy stringSerializationStrategy = StringSerializationStrategy.INSTANCE;
-    private DateSerializationStrategy dateSerializationStrategy = DateSerializationStrategy.INSTANCE;
-    private BooleanSerializationStrategy booleanSerializationStrategy = BooleanSerializationStrategy.INSTANCE;
-    private DoubleSerializationStrategy doubleSerializationStrategy = DoubleSerializationStrategy.INSTANCE;
+public class StudentSerializationStrategy implements SerializationStrategy<Student> {
+    private IntegerSerializationStrategy integerSerializationStrategy = IntegerSerializationStrategy.getInstance();
+    private StringSerializationStrategy stringSerializationStrategy = StringSerializationStrategy.getInstance();
+    private DateSerializationStrategy dateSerializationStrategy = DateSerializationStrategy.getInstance();
+    private BooleanSerializationStrategy booleanSerializationStrategy = BooleanSerializationStrategy.getInstance();
+    private DoubleSerializationStrategy doubleSerializationStrategy = DoubleSerializationStrategy.getInstance();
 
     @Override
     public void serialize(Student student, RandomAccessFile raf) throws IOException {
@@ -39,5 +39,15 @@ class StudentSerializationStrategy implements SerializationStrategy<Student> {
                 dateSerializationStrategy.deserialize(raf),
                 booleanSerializationStrategy.deserialize(raf),
                 doubleSerializationStrategy.deserialize(raf));
+    }
+
+    @Override
+    public Long bytesSize(Student value) {
+        return integerSerializationStrategy.bytesSize(value.getGroupId()) +
+                stringSerializationStrategy.bytesSize(value.getName()) +
+                stringSerializationStrategy.bytesSize(value.getHometown()) +
+                dateSerializationStrategy.bytesSize(value.getBirthDate()) +
+                booleanSerializationStrategy.bytesSize(value.isHasDormitory()) +
+                doubleSerializationStrategy.bytesSize(value.getAverageScore());
     }
 }

@@ -5,8 +5,12 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 public class StringSerializationStrategy implements SerializationStrategy<String> {
-    public static StringSerializationStrategy INSTANCE = new StringSerializationStrategy();
-    private IntegerSerializationStrategy integerSerializationStrategy = IntegerSerializationStrategy.INSTANCE;
+    private static StringSerializationStrategy instance = new StringSerializationStrategy();
+    private IntegerSerializationStrategy integerSerializationStrategy = IntegerSerializationStrategy.getInstance();
+
+    public static StringSerializationStrategy getInstance() {
+        return instance;
+    }
 
     @Override
     public void serialize(String value, RandomAccessFile raf) throws IOException {
@@ -21,5 +25,10 @@ public class StringSerializationStrategy implements SerializationStrategy<String
         byte[] bytes = new byte[numBytes];
         raf.read(bytes);
         return new String(bytes);
+    }
+
+    @Override
+    public Long bytesSize(String value) {
+        return (long) 4 + value.getBytes().length; // string length + string itself
     }
 }

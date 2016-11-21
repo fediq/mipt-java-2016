@@ -4,7 +4,11 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 public class IntegerSerializationStrategy implements SerializationStrategy<Integer> {
-    public static IntegerSerializationStrategy INSTANCE = new IntegerSerializationStrategy();
+    private static IntegerSerializationStrategy instance = new IntegerSerializationStrategy();
+
+    public static IntegerSerializationStrategy getInstance() {
+        return instance;
+    }
 
     @Override
     public void serialize(Integer value, RandomAccessFile raf) throws IOException {
@@ -14,5 +18,10 @@ public class IntegerSerializationStrategy implements SerializationStrategy<Integ
     @Override
     public Integer deserialize(RandomAccessFile raf) throws IOException {
         return raf.readInt();
+    }
+
+    @Override
+    public Long bytesSize(Integer value) {
+        return (long) 4;
     }
 }

@@ -4,7 +4,11 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 public class BooleanSerializationStrategy implements SerializationStrategy<Boolean> {
-    public static BooleanSerializationStrategy INSTANCE = new BooleanSerializationStrategy();
+    private static BooleanSerializationStrategy instance = new BooleanSerializationStrategy();
+
+    public static BooleanSerializationStrategy getInstance() {
+        return instance;
+    }
 
     @Override
     public void serialize(Boolean value, RandomAccessFile raf) throws IOException {
@@ -14,5 +18,10 @@ public class BooleanSerializationStrategy implements SerializationStrategy<Boole
     @Override
     public Boolean deserialize(RandomAccessFile raf) throws IOException {
         return raf.readBoolean();
+    }
+
+    @Override
+    public Long bytesSize(Boolean value) {
+        return (long)1;
     }
 }

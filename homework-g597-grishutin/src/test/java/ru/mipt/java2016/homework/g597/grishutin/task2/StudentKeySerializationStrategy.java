@@ -5,9 +5,9 @@ import ru.mipt.java2016.homework.tests.task2.StudentKey;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
-class StudentKeySerializationStrategy implements SerializationStrategy<StudentKey> {
-    private IntegerSerializationStrategy integerSerializationStrategy = IntegerSerializationStrategy.INSTANCE;
-    private StringSerializationStrategy stringSerializationStrategy = StringSerializationStrategy.INSTANCE;
+public class StudentKeySerializationStrategy implements SerializationStrategy<StudentKey> {
+    private IntegerSerializationStrategy integerSerializationStrategy = IntegerSerializationStrategy.getInstance();
+    private StringSerializationStrategy stringSerializationStrategy = StringSerializationStrategy.getInstance();
 
     @Override
     public void serialize(StudentKey studentKey, RandomAccessFile raf) throws IOException {
@@ -19,5 +19,11 @@ class StudentKeySerializationStrategy implements SerializationStrategy<StudentKe
     public StudentKey deserialize(RandomAccessFile raf) throws IOException {
         return new StudentKey(integerSerializationStrategy.deserialize(raf),
                 stringSerializationStrategy.deserialize(raf));
+    }
+
+    @Override
+    public Long bytesSize(StudentKey value) {
+        return integerSerializationStrategy.bytesSize(value.getGroupId()) +
+                stringSerializationStrategy.bytesSize(value.getName());
     }
 }

@@ -14,6 +14,9 @@ public interface SerializationStrategy<T> {
      */
     T deserialize(RandomAccessFile raf) throws IOException;
 
-
+    /*
+        returns number of bytes value will take after serialization
+     */
+    Long bytesSize(T value);
 }
 
