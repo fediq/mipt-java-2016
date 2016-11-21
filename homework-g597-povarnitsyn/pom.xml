@@ -21,6 +21,11 @@
             <version>1.0.0</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>ru.mipt.java2016</groupId>
+            <artifactId>homework-base</artifactId>
+            <version>1.0.0</version>
+        </dependency>
     </dependencies>
 
 

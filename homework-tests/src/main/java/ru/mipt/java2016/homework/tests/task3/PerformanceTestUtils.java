@@ -1,7 +1,6 @@
 package ru.mipt.java2016.homework.tests.task3;
 
 import org.apache.commons.lang3.RandomStringUtils;
-
 import java.util.Random;
 
 public class PerformanceTestUtils {

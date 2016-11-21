@@ -10,7 +10,6 @@ import java.util.*;
  */
 public class Calculator3000  implements Calculator {
 
-    @Override
     public double calculate(String expression) throws ParsingException {
         if (expression == null) {
             throw new ParsingException("expression is null");
