@@ -15,8 +15,12 @@ public class IntegerDoubleSerializationStrategy implements SerializationStrategy
     }
 
     @Override
-    public void write(RandomAccessFile file, Integer key, Double value) throws IOException {
+    public void writeKey(RandomAccessFile file, Integer key) throws IOException {
         file.writeInt(key);
+    }
+
+    @Override
+    public void writeValue(RandomAccessFile file, Double value) throws IOException {
         file.writeDouble(value);
     }
 
