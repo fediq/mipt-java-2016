@@ -14,24 +14,35 @@ import java.util.ArrayList;
 
 public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V> {
     private static final String DATABASE_NAME_TEMPLATE = "storage.db";
-    private static String database_path;
+    private static String databasePath;
     private RandomAccessFile file;
     private File ifopen;
     private ArrayList<File> filesTable;
     private HashSet<K> setKeys;
-    private HashMap<K, V> value_map;
-    private HashMap<K, key_place> file_map;
+    private HashMap<K, V> valueMap;
+    private HashMap<K, keyPlace> fileMap;
     private final Serializer<K> keySerializer;
     private final Serializer<V> valueSerializer;
     private static final int DATA_CAPACITY = 250;
-    private class key_place {
-        public int id;
-        public long position;
-        key_place(int id, long position) {
+
+    private class keyPlace {
+        private int id;
+        private long position;
+
+        keyPlace(int id, long position) {
             this.id = id;
             this.position = position;
         }
+
+        public int getId() {
+            return this.id;
+        }
+
+        public long getPosition() {
+            return this.position;
+        }
     }
+
     KeyValueStorageImplementation(String path, Serializer<K> keyS, Serializer<V> valueS) throws IOException {
         if (Files.notExists(Paths.get(path))) {
             throw new IOException("Wrong path");
@@ -41,13 +52,13 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
             throw new IOException("Database is already opened.");
         }
         setKeys = new HashSet<>();
-        value_map = new HashMap<>();
-        file_map = new HashMap<>();
+        valueMap = new HashMap<>();
+        fileMap = new HashMap<>();
         filesTable = new ArrayList<>();
         keySerializer = keyS;
         valueSerializer = valueS;
-        database_path = path;
-        File database = new File(database_path + File.separator + DATABASE_NAME_TEMPLATE);
+        databasePath = path;
+        File database = new File(databasePath + File.separator + DATABASE_NAME_TEMPLATE);
         boolean isCreated = database.createNewFile();
         file = new RandomAccessFile(database, "rw");
         if (!isCreated) {
@@ -61,11 +72,11 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
                 long shift = longS.read(file, file.getFilePointer());
 
                 setKeys.add(key);
-                file_map.put(key, new key_place(id, shift));
+                fileMap.put(key, new keyPlace(id, shift));
             }
 
-            for (int id = 0; id < countFiles; id++) {
-                File currentFile = new File(database_path + File.separator + DATABASE_NAME_TEMPLATE + "." + id);
+            for (int i = 0; i < countFiles; i++) {
+                File currentFile = new File(databasePath + File.separator + DATABASE_NAME_TEMPLATE + "." + i);
                 currentFile.createNewFile();
                 filesTable.add(currentFile);
             }
@@ -74,11 +85,11 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
 
     @Override
     public V read(K key) {
-        if (value_map.keySet().contains(key)) {
-            return value_map.get(key);
-        } else if (file_map.containsKey(key)) {
-            int id = file_map.get(key).id;
-            long shift = file_map.get(key).position;
+        if (valueMap.keySet().contains(key)) {
+            return valueMap.get(key);
+        } else if (fileMap.containsKey(key)) {
+            int id = fileMap.get(key).getId();
+            long shift = fileMap.get(key).getPosition();
             try {
                 RandomAccessFile file = new RandomAccessFile(filesTable.get(id), "rw");
                 V value = valueSerializer.read(file, shift);
@@ -96,22 +107,22 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
     @Override
     public void write(K key, V value) {
         setKeys.add(key);
-        value_map.put(key, value);
-        if (value_map.size() >= DATA_CAPACITY) {
+        valueMap.put(key, value);
+        if (valueMap.size() >= DATA_CAPACITY) {
             int id = filesTable.size();
-            File tmp = new File(database_path + File.separator + DATABASE_NAME_TEMPLATE + "." + id);
+            File tmp = new File(databasePath + File.separator + DATABASE_NAME_TEMPLATE + "." + id);
             try {
                 tmp.createNewFile();
                 filesTable.add(tmp);
                 RandomAccessFile current = new RandomAccessFile(tmp, "rw");
                 current.setLength(0);
                 current.seek(0);
-                for (Map.Entry<K, V> entry : value_map.entrySet()) {
-                    key_place place = new key_place(id, current.getFilePointer());
-                    file_map.put(entry.getKey(), place);
+                for (Map.Entry<K, V> entry : valueMap.entrySet()) {
+                    keyPlace place = new keyPlace(id, current.getFilePointer());
+                    fileMap.put(entry.getKey(), place);
                     valueSerializer.write(current, entry.getValue(), current.getFilePointer());
                 }
-                value_map.clear();
+                valueMap.clear();
                 current.close();
             } catch (IOException error) {
                 error.printStackTrace();
@@ -128,7 +139,7 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
     @Override
     public void delete(K key) {
         setKeys.remove(key);
-        file_map.remove(key);
+        fileMap.remove(key);
     }
 
     @Override
@@ -144,19 +155,19 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
     @Override
     public void close() throws IOException {
         int id = filesTable.size();
-        File tmp = new File(database_path + File.separator + DATABASE_NAME_TEMPLATE + "." + id);
+        File tmp = new File(databasePath + File.separator + DATABASE_NAME_TEMPLATE + "." + id);
         try {
             tmp.createNewFile();
             filesTable.add(tmp);
             RandomAccessFile current = new RandomAccessFile(tmp, "rw");
             current.setLength(0);
             current.seek(0);
-            for (Map.Entry<K, V> entry : value_map.entrySet()) {
-                key_place place = new key_place(id, current.getFilePointer());
-                file_map.put(entry.getKey(), place);
+            for (Map.Entry<K, V> entry : valueMap.entrySet()) {
+                keyPlace place = new keyPlace(id, current.getFilePointer());
+                fileMap.put(entry.getKey(), place);
                 valueSerializer.write(current, entry.getValue(), current.getFilePointer());
             }
-            value_map.clear();
+            valueMap.clear();
             current.close();
         } catch (IOException error) {
             error.printStackTrace();
@@ -166,13 +177,13 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
         IntegerSerializer integerSerializer = new IntegerSerializer();
         LLongSerializer longSerializer = new LLongSerializer();
         integerSerializer.write(file, filesTable.size(), file.getFilePointer());
-        integerSerializer.write(file, file_map.size(), file.getFilePointer());
-        for (Map.Entry<K, key_place> entry : file_map.entrySet()) {
+        integerSerializer.write(file, fileMap.size(), file.getFilePointer());
+        for (Map.Entry<K, keyPlace> entry : fileMap.entrySet()) {
             K key = entry.getKey();
-            key_place place = entry.getValue();
+            keyPlace place = entry.getValue();
             keySerializer.write(file, key, file.getFilePointer());
-            integerSerializer.write(file, place.id, file.getFilePointer());
-            longSerializer.write(file, place.position, file.getFilePointer());
+            integerSerializer.write(file, place.getId(), file.getFilePointer());
+            longSerializer.write(file, place.getPosition(), file.getFilePointer());
         }
         file.close();
         Files.delete(ifopen.toPath());
