@@ -23,7 +23,7 @@ public class LargeKeyValueStorage<K, V> extends GrishutinKeyValueStorage<K, V> {
     /*protected static final int MAX_CACHED_ENTRIES = 1_000_000 /
             (MAX_KEY_BYTE_SIZE + MAX_VALUE_BYTE_SIZE); // 1 Mb RAM for cache
     */
-    protected static final int MAX_CACHED_ENTRIES = 100;
+    protected static final int MAX_CACHED_ENTRIES = 10;
 
     private static final double MAX_DELETED_RATIO = (double) 1 / 2;
     private static final double DEFAULT_CACHE_DROP_RATIO = (double) 1;

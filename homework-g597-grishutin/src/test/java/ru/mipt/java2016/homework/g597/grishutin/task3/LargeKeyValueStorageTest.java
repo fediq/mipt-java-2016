@@ -12,7 +12,7 @@ import java.io.IOException;
 
 public class LargeKeyValueStorageTest extends KeyValueStoragePerformanceTest {
     @Override
-    protected KeyValueStorage<String, String> buildStringsStorage(String path) throws MalformedDataException {
+    protected KeyValueStorage<String, String> buildStringsStorage(String path) {
         try {
             return new LargeKeyValueStorage<>(path,
                     new StringSerializationStrategy(),
@@ -24,7 +24,7 @@ public class LargeKeyValueStorageTest extends KeyValueStoragePerformanceTest {
     }
 
     @Override
-    protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) throws MalformedDataException {
+    protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) {
         try {
             return new LargeKeyValueStorage<>(path,
                     new IntegerSerializationStrategy(),
@@ -36,7 +36,7 @@ public class LargeKeyValueStorageTest extends KeyValueStoragePerformanceTest {
     }
 
     @Override
-    protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) throws MalformedDataException {
+    protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) {
         try {
             return new LargeKeyValueStorage<>(path,
                     new StudentKeySerializationStrategy(),
