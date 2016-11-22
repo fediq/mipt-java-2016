@@ -1,7 +1,5 @@
 package ru.mipt.java2016.homework.g597.spirin.task3;
 
-import ru.mipt.java2016.homework.g597.spirin.task3.SerializationStrategy;
-
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
