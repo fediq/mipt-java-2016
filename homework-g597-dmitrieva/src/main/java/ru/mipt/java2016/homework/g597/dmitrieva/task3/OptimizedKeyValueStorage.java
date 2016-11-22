@@ -7,7 +7,10 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.channels.OverlappingFileLockException;
 import java.util.*;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Created by irinadmitrieva on 19.11.16.
@@ -26,6 +29,8 @@ public class OptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             this.offset = offset;
         }
     }
+
+    private ReadWriteLock lock = new ReentrantReadWriteLock();
 
     private LinkedHashMap<K, V> cacheMap;
     private HashMap<K, Position> keyAndPositionMap;
@@ -75,6 +80,11 @@ public class OptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             if (file.createNewFile()) {
                 RandomAccessFile randAccFile = new RandomAccessFile(file, mode);
                 try {
+                    randAccFile.getChannel().lock();
+                } catch (OverlappingFileLockException e) {
+                    throw new IllegalStateException("Storage is already being used");
+                }
+                try {
                     randAccFile.writeInt(0);
                     randAccFile.writeInt(0);
                 } catch (IOException e) {
@@ -110,20 +120,22 @@ public class OptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public V read(K key) {
-        checkStorageNotClosed();
-        if (cacheMap.containsKey(key)) {
-            return cacheMap.get(key);
-        }
-        if (keyAndValueMap.containsKey(key)) {
-            return keyAndValueMap.get(key);
-        }
-        if (!keyAndPositionMap.containsKey(key)) {
-            return null;
-        }
-        int fileNumber = keyAndPositionMap.get(key).fileNumber;
-        long offset = keyAndPositionMap.get(key).offset;
-        RandomAccessFile currentFile = randAccFilesArray.get(fileNumber);
+        lock.readLock().lock();
         try {
+            checkStorageNotClosed();
+            if (cacheMap.containsKey(key)) {
+                return cacheMap.get(key);
+            }
+            if (keyAndValueMap.containsKey(key)) {
+                return keyAndValueMap.get(key);
+            }
+            if (!keyAndPositionMap.containsKey(key)) {
+                return null;
+            }
+            int fileNumber = keyAndPositionMap.get(key).fileNumber;
+            long offset = keyAndPositionMap.get(key).offset;
+            RandomAccessFile currentFile = randAccFilesArray.get(fileNumber);
+
             currentFile.seek(offset);
             V value = valueStrategy.read(currentFile);
             cacheMap.put(key, value);
@@ -137,84 +149,121 @@ public class OptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             return value;
         } catch (IOException e) {
             throw new IllegalStateException("Couldn't find needed data in file");
+        } finally {
+            lock.readLock().unlock();
         }
     }
 
     private void dropKeyAndValueMapOnDisk() throws IOException {
-        int newFileNumber = randAccFilesArray.size();
-        File newFile = new File(getFileName(baseName, newFileNumber));
+        lock.writeLock().lock();
         try {
-            newFile.createNewFile();
-        } catch (IOException e) {
-            throw new IOException("Couldn't create file during dropping map with keys and values");
-        }
-        randAccFilesArray.add(new RandomAccessFile(newFile, mode));
-        RandomAccessFile currentFile = randAccFilesArray.get(newFileNumber);
-        currentFile.setLength(0);
-        currentFile.seek(0);
-        for (Map.Entry<K, V> entry: keyAndValueMap.entrySet()) {
-            if (null == entry.getValue()) {
-                keyAndPositionMap.remove(entry.getKey());
-                continue;
-            }
-            Position newPosition = new Position(newFileNumber, currentFile.getFilePointer());
-            keyAndPositionMap.put(entry.getKey(), newPosition);
+            int newFileNumber = randAccFilesArray.size();
+            File newFile = new File(getFileName(baseName, newFileNumber));
             try {
-                this.valueStrategy.write(currentFile, entry.getValue());
+                newFile.createNewFile();
             } catch (IOException e) {
-                throw new IOException("Couldn't wrote during dropping map with keys and values");
+                throw new IOException("Couldn't create file during dropping map with keys and values");
             }
+            randAccFilesArray.add(new RandomAccessFile(newFile, mode));
+            RandomAccessFile currentFile = randAccFilesArray.get(newFileNumber);
+            currentFile.setLength(0);
+            currentFile.seek(0);
+            for (Map.Entry<K, V> entry : keyAndValueMap.entrySet()) {
+                if (null == entry.getValue()) {
+                    keyAndPositionMap.remove(entry.getKey());
+                    continue;
+                }
+                Position newPosition = new Position(newFileNumber, currentFile.getFilePointer());
+                keyAndPositionMap.put(entry.getKey(), newPosition);
+                try {
+                    this.valueStrategy.write(currentFile, entry.getValue());
+                } catch (IOException e) {
+                    throw new IOException("Couldn't wrote during dropping map with keys and values");
+                }
+            }
+            keyAndValueMap.clear();
+        } finally {
+            lock.writeLock().unlock();
         }
-        keyAndValueMap.clear();
     }
 
     @Override
     public void write(K key, V value) {
-        checkStorageNotClosed();
-        keyAndValueMap.put(key, value);
-        presenceSet.add(key);
-        if (keyAndValueMap.size() > MAX_SIZE_OF_KEY_AND_VALUE_MAP) {
-            try {
-                dropKeyAndValueMapOnDisk();
-            } catch (IOException e) {
-                throw new IllegalStateException("Failed during dropping map with keys and values");
+        lock.writeLock().lock();
+        try {
+            checkStorageNotClosed();
+            keyAndValueMap.put(key, value);
+            presenceSet.add(key);
+            if (keyAndValueMap.size() > MAX_SIZE_OF_KEY_AND_VALUE_MAP) {
+                try {
+                    dropKeyAndValueMapOnDisk();
+                } catch (IOException e) {
+                    throw new IllegalStateException("Failed during dropping map with keys and values");
+                }
             }
+        } finally {
+            lock.writeLock().unlock();
         }
     }
 
     @Override
     public boolean exists(K key) {
-        checkStorageNotClosed();
-        return presenceSet.contains(key);
+        lock.readLock().lock();
+
+        try {
+            checkStorageNotClosed();
+            return presenceSet.contains(key);
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     @Override
     public void delete(K key) {
-        checkStorageNotClosed();
-        if (exists(key)) {
-            cacheMap.remove(key);
-            keyAndPositionMap.remove(key);
-            presenceSet.remove(key);
+        lock.readLock().lock();
+
+        try {
+            checkStorageNotClosed();
+            if (exists(key)) {
+                cacheMap.remove(key);
+                keyAndPositionMap.remove(key);
+                presenceSet.remove(key);
+            }
+        } finally {
+            lock.readLock().unlock();
         }
     }
 
     @Override
     public Iterator<K> readKeys() {
-        checkStorageNotClosed();
-        return presenceSet.iterator();
+        lock.readLock().lock();
+
+        try {
+            checkStorageNotClosed();
+            return presenceSet.iterator();
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     @Override
     public int size() {
-        checkStorageNotClosed();
-        return presenceSet.size();
+        lock.readLock().lock();
+        try {
+            checkStorageNotClosed();
+            return presenceSet.size();
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     @Override
     public void close() throws IOException {
+        lock.writeLock().lock();
+
         isStorageOpened = false;
-        dropKeyAndValueMapOnDisk();
         try {
+            dropKeyAndValueMapOnDisk();
             RandomAccessFile randAccFile = new RandomAccessFile(this.fileWithPositionsPathname, mode);
             randAccFile.writeInt(randAccFilesArray.size());
             randAccFile.writeInt(keyAndPositionMap.size());
@@ -225,6 +274,8 @@ public class OptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             }
         } catch (IOException e) {
             throw new IOException("Random access file wasn't created");
+        } finally {
+            lock.writeLock().unlock();
         }
     }
 }
