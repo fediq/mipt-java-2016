@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.io.*;
 import java.io.IOException;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class UpdatedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private String fileNameKey;
@@ -17,15 +18,10 @@ public class UpdatedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private RandomAccessFile valuesStorage;
     private HashMap<K, Long> bufferShufts;
     private Boolean closedStreem;
-    private File security;
+    private ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
     public UpdatedKeyValueStorage(String nameDirectory, Identification<K> key, Identification<V> value)
             throws IOException {
-
-        security = new File(nameDirectory, "security.db");
-        if (!security.createNewFile()) {
-            throw new IOException("File exists!");
-        }
 
         closedStreem = false;
         bufferShufts = new HashMap<K, Long>();
@@ -67,89 +63,116 @@ public class UpdatedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void write() throws IOException {
-        try {
-            keysStorage.seek(0);
-            IntegerIdentification.get().write(keysStorage, bufferShufts.size());
-            for (Map.Entry<K, Long> entry : bufferShufts.entrySet()) {
-                keyIdentification.write(keysStorage, entry.getKey());
-                LongIdentification.get().write(keysStorage, entry.getValue());
-            }
-            keysStorage.close();
-            valuesStorage.close();
-        } finally {
-            security.delete();
+        keysStorage.seek(0);
+        IntegerIdentification.get().write(keysStorage, bufferShufts.size());
+        for (Map.Entry<K, Long> entry : bufferShufts.entrySet()) {
+            keyIdentification.write(keysStorage, entry.getKey());
+            LongIdentification.get().write(keysStorage, entry.getValue());
         }
+        keysStorage.close();
+        valuesStorage.close();
     }
 
     @Override
     public Iterator<K> readKeys() {
-        if (closedStreem) {
-            throw new IllegalStateException("Streem closed");
+        lock.readLock().lock();
+        try {
+            if (closedStreem) {
+                throw new IllegalStateException("Streem closed");
+            }
+            return bufferShufts.keySet().iterator();
+        } finally {
+            lock.readLock().unlock();
         }
-        return bufferShufts.keySet().iterator();
     }
 
     @Override
     public boolean exists(K key) {
-        if (closedStreem) {
-            throw new IllegalStateException("Streem closed");
+        lock.readLock().lock();
+        try {
+            if (closedStreem) {
+                throw new IllegalStateException("Streem closed");
+            }
+            return bufferShufts.keySet().contains(key);
+        } finally {
+            lock.readLock().unlock();
         }
-        return bufferShufts.keySet().contains(key);
     }
 
     @Override
     public void close() throws IOException {
-        if (closedStreem) {
-            throw new IllegalStateException("Streem closed");
+        lock.writeLock().lock();
+        try {
+            if (closedStreem) {
+                throw new IllegalStateException("Streem closed");
+            }
+            write();
+            closedStreem = true;
+        } finally {
+            lock.writeLock().unlock();
         }
-        write();
-        closedStreem = true;
     }
 
     @Override
     public int size() {
-        if (closedStreem) {
-            throw new IllegalStateException("Streem closed");
+        lock.readLock().lock();
+        try {
+            if (closedStreem) {
+                throw new IllegalStateException("Streem closed");
+            }
+            return bufferShufts.size();
+        } finally {
+            lock.readLock().unlock();
         }
-        return bufferShufts.size();
     }
 
     @Override
     public void delete(K key) {
-        if (closedStreem) {
-            throw new IllegalStateException("Streem closed");
+        lock.writeLock().lock();
+        try {
+            if (closedStreem) {
+                throw new IllegalStateException("Streem closed");
+            }
+            bufferShufts.remove(key);
+        } finally {
+            lock.writeLock().unlock();
         }
-        bufferShufts.remove(key);
     }
 
     @Override
     public void write(K key, V value) {
-        if (closedStreem) {
-            throw new IllegalStateException("Streem closed");
-        }
+        lock.writeLock().lock();
         try {
+            if (closedStreem) {
+                throw new IllegalStateException("Streem closed");
+            }
             bufferShufts.put(key, valuesStorage.length());
             valuesStorage.seek(valuesStorage.length());
             valueIdentification.write(valuesStorage, value);
         } catch (IOException e) {
             throw new RuntimeException("Error write");
+        } finally {
+            lock.writeLock().unlock();
         }
     }
 
     @Override
     public V read(K key) {
-        if (closedStreem) {
-            throw new IllegalStateException("Streem closed");
-        }
-        if (!exists(key)) {
-            return null;
-        }
-        Long vallue = bufferShufts.get(key);
+        lock.readLock().lock();
         try {
+            if (closedStreem) {
+                throw new IllegalStateException("Streem closed");
+            }
+            if (!exists(key)) {
+                return null;
+            }
+            Long vallue = bufferShufts.get(key);
             valuesStorage.seek(vallue);
             return valueIdentification.read(valuesStorage);
         } catch (IOException e) {
             throw new RuntimeException("Error read");
+        } finally {
+            lock.readLock().unlock();
         }
     }
 }
