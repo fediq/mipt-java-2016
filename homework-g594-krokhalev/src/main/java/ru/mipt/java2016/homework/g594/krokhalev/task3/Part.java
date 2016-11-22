@@ -1,6 +1,7 @@
 package ru.mipt.java2016.homework.g594.krokhalev.task3;
 
 import java.io.*;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -11,7 +12,7 @@ class Part<K, V> implements Closeable {
     private final File mStorageFile;
     private final File mStorageTable;
 
-    private Map<K, Long> mKeysPositions = new LinkedHashMap<K, Long>();
+    private Map<K, Long> mKeysPositions = new HashMap<K, Long>();
     private RandomAccessFile mRAFile;
 
     Part(File storageFile,
@@ -24,14 +25,14 @@ class Part<K, V> implements Closeable {
         mStorageTable = storageTable;
 
         if (restore) {
-            BufferedInputStream tableStream = new BufferedInputStream(new FileInputStream(storageTable));
-            while (tableStream.available() > 0) {
-                K key = mStorageReader.readKey(tableStream);
-                Long pos = mStorageReader.readLong(tableStream);
+            try (BufferedInputStream tableStream = new BufferedInputStream(new FileInputStream(storageTable))) {
+                while (tableStream.available() > 0) {
+                    K key = mStorageReader.readKey(tableStream);
+                    Long pos = mStorageReader.readLong(tableStream);
 
-                mKeysPositions.put(key, pos);
+                    mKeysPositions.put(key, pos);
+                }
             }
-            tableStream.close();
         }
         mRAFile = new RandomAccessFile(storageFile, "rw");
     }
