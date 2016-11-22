@@ -21,7 +21,7 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
     private static final String STORAGE_FILE_NAME = "KlabertancStorage";
     private static final String KEYS_FILE_NAME = STORAGE_FILE_NAME + "Keys";
     private static final String VALUES_FILE_NAME = STORAGE_FILE_NAME + "Values";
-    private static final Integer MAGIC_NUMBER = 474;
+    private static final Integer MAGIC_NUMBER = 1;
 
     private HashMap<K, Long> keyAndOffset = new HashMap<>();
     private HashMap<K, V> cache = new HashMap<>();
