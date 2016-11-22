@@ -30,6 +30,8 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
     private ReadWriteLock lock;
     private boolean isOpen;
 
+    private Cache<K, V> cache;
+
     /**
      *  Suppose that name is a template for name of file storage
      */
@@ -48,6 +50,7 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
         offsetStorage.getChannel().lock();
 
         offsets = new HashMap<>();
+        cache = new Cache<>();
 
         lock = new ReentrantReadWriteLock();
 
@@ -85,6 +88,11 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
         try {
             checkIfStorageIsOpen();
 
+            V value = cache.get(key);
+            if (value != null) {
+                return value;
+            }
+
             Long offset = offsets.get(key);
 
             if (offset == null) {
@@ -105,6 +113,8 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
         lock.writeLock().lock();
         try {
             checkIfStorageIsOpen();
+
+            cache.put(key, value);
 
             dataStorage.seek(dataStorage.length());
             long offset = dataStorage.getFilePointer();
@@ -174,6 +184,7 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
 
             offsetStorage.close();
         } finally {
+
             lock.writeLock().unlock();
         }
     }
