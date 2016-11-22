@@ -5,7 +5,6 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.nio.ByteBuffer;
 import java.util.Date;
 
 class Serializer<T> implements SerializationStrategy<T> {
@@ -15,20 +14,7 @@ class Serializer<T> implements SerializationStrategy<T> {
         mClassT = classT;
     }
 
-    private static boolean isPrimitive(Class c) {
-        return c.isPrimitive() ||
-                c.equals(Boolean.class) ||
-                c.equals(Byte.class) ||
-                c.equals(Character.class) ||
-                c.equals(Short.class) ||
-                c.equals(Integer.class) ||
-                c.equals(Long.class) ||
-                c.equals(Float.class) ||
-                c.equals(Double.class) ||
-                c.equals(Date.class) ||
-                c.equals(String.class);
-    }
-
+    @Override
     public void serialize(DataOutput dos, Object object) throws IOException {
         Class oClass = object.getClass();
         if (oClass.isArray()) {
@@ -39,29 +25,27 @@ class Serializer<T> implements SerializationStrategy<T> {
                 serialize(dos, Array.get(object, i));
             }
 
-        } else if (isPrimitive(oClass)) {
-            if (object.getClass().equals(boolean.class) || object.getClass().equals(Boolean.class)) {
-                dos.writeBoolean((boolean) object);
-            } else if (object.getClass().equals(byte.class) || object.getClass().equals(Byte.class)) {
-                dos.write(new byte[]{(byte) object});
-            } else if (object.getClass().equals(char.class) || object.getClass().equals(Character.class)) {
-                dos.writeChar((char) object);
-            } else if (object.getClass().equals(short.class) || object.getClass().equals(Short.class)) {
-                dos.writeShort((short) object);
-            } else if (object.getClass().equals(int.class) || object.getClass().equals(Integer.class)) {
-                dos.writeInt((int) object);
-            } else if (object.getClass().equals(long.class) || object.getClass().equals(Long.class)) {
-                dos.writeLong((long) object);
-            } else if (object.getClass().equals(float.class) || object.getClass().equals(Float.class)) {
-                dos.writeFloat((float) object);
-            } else if (object.getClass().equals(double.class) || object.getClass().equals(Double.class)) {
-                dos.writeDouble((double) object);
-            } else if (object.getClass().equals(String.class)) {
-                dos.writeUTF((String) object);
-            } else if (object.getClass().equals(Date.class)) {
-                Date dObject = (Date) object;
-                serialize(dos, dObject.getTime());
-            }
+        } else if (object.getClass().equals(boolean.class) || object.getClass().equals(Boolean.class)) {
+            dos.writeBoolean((boolean) object);
+        } else if (object.getClass().equals(byte.class) || object.getClass().equals(Byte.class)) {
+            dos.write(new byte[]{(byte) object});
+        } else if (object.getClass().equals(char.class) || object.getClass().equals(Character.class)) {
+            dos.writeChar((char) object);
+        } else if (object.getClass().equals(short.class) || object.getClass().equals(Short.class)) {
+            dos.writeShort((short) object);
+        } else if (object.getClass().equals(int.class) || object.getClass().equals(Integer.class)) {
+            dos.writeInt((int) object);
+        } else if (object.getClass().equals(long.class) || object.getClass().equals(Long.class)) {
+            dos.writeLong((long) object);
+        } else if (object.getClass().equals(float.class) || object.getClass().equals(Float.class)) {
+            dos.writeFloat((float) object);
+        } else if (object.getClass().equals(double.class) || object.getClass().equals(Double.class)) {
+            dos.writeDouble((double) object);
+        } else if (object.getClass().equals(String.class)) {
+            dos.writeUTF((String) object);
+        } else if (object.getClass().equals(Date.class)) {
+            Date dObject = (Date) object;
+            serialize(dos, dObject.getTime());
         } else {
             try {
                 if (!oClass.getSuperclass().equals(Object.class)) {
@@ -91,30 +75,28 @@ class Serializer<T> implements SerializationStrategy<T> {
             for (int i = 0; i < length; ++i) {
                 Array.set(object, i, deserialize(oClass.getComponentType(), dis));
             }
-        } else if (isPrimitive(oClass)) {
-            if (oClass.equals(boolean.class) || oClass.equals(Boolean.class)) {
-                object = dis.readBoolean();
-            } else if (oClass.equals(byte.class) || oClass.equals(Byte.class)) {
-                object = dis.readByte();
-            } else if (oClass.equals(char.class) || oClass.equals(Character.class)) {
-                object = dis.readChar();
-            } else if (oClass.equals(short.class) || oClass.equals(Short.class)) {
-                object = dis.readShort();
-            } else if (oClass.equals(int.class) || oClass.equals(Integer.class)) {
-                object = dis.readInt();
-            } else if (oClass.equals(long.class) || oClass.equals(Long.class)) {
-                object = dis.readLong();
-            } else if (oClass.equals(float.class) || oClass.equals(Float.class)) {
-                object = dis.readFloat();
-            } else if (oClass.equals(double.class) || oClass.equals(Double.class)) {
-                object = dis.readDouble();
-            } else if (oClass.equals(String.class)) {
-                object = dis.readUTF();
-            } else if (oClass.equals(Date.class)) {
-                long time = dis.readLong();
+        } else if (oClass.equals(boolean.class) || oClass.equals(Boolean.class)) {
+            object = dis.readBoolean();
+        } else if (oClass.equals(byte.class) || oClass.equals(Byte.class)) {
+            object = dis.readByte();
+        } else if (oClass.equals(char.class) || oClass.equals(Character.class)) {
+            object = dis.readChar();
+        } else if (oClass.equals(short.class) || oClass.equals(Short.class)) {
+            object = dis.readShort();
+        } else if (oClass.equals(int.class) || oClass.equals(Integer.class)) {
+            object = dis.readInt();
+        } else if (oClass.equals(long.class) || oClass.equals(Long.class)) {
+            object = dis.readLong();
+        } else if (oClass.equals(float.class) || oClass.equals(Float.class)) {
+            object = dis.readFloat();
+        } else if (oClass.equals(double.class) || oClass.equals(Double.class)) {
+            object = dis.readDouble();
+        } else if (oClass.equals(String.class)) {
+            object = dis.readUTF();
+        } else if (oClass.equals(Date.class)) {
+            long time = dis.readLong();
 
-                object = new Date(time);
-            }
+            object = new Date(time);
         } else {
             try {
                 Field[] fields = new Field[oClass.getSuperclass().getDeclaredFields().length +
@@ -137,6 +119,7 @@ class Serializer<T> implements SerializationStrategy<T> {
         return object;
     }
 
+    @Override
     public T deserialize(DataInput dis) throws IOException {
         return (T) deserialize(mClassT, dis);
     }
