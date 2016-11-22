@@ -16,7 +16,7 @@ import java.util.Queue;
  */
 public class Cache<K, V> {
 
-    private int DEFAULT_MAX_CACHE_SIZE = 100;
+    private static final int DEFAULT_MAX_CACHE_SIZE = 100;
 
     private int maxCacheSize;
     private Map<K, V> cache;
