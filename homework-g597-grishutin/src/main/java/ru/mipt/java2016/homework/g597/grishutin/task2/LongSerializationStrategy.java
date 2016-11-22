@@ -3,7 +3,7 @@ package ru.mipt.java2016.homework.g597.grishutin.task2;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
-class LongSerializationStrategy implements SerializationStrategy<Long> {
+public class LongSerializationStrategy implements SerializationStrategy<Long> {
     private static LongSerializationStrategy instance = new LongSerializationStrategy();
 
     public static LongSerializationStrategy getInstance() {

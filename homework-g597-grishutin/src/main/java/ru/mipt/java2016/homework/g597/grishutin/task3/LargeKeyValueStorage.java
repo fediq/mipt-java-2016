@@ -1,7 +1,9 @@
 package ru.mipt.java2016.homework.g597.grishutin.task3;
 
 import ru.mipt.java2016.homework.g597.grishutin.task2.GrishutinKeyValueStorage;
+import ru.mipt.java2016.homework.g597.grishutin.task2.LongSerializationStrategy;
 import ru.mipt.java2016.homework.g597.grishutin.task2.SerializationStrategy;
+import ru.mipt.java2016.homework.g597.grishutin.task3.utils.Pair;
 
 import java.io.File;
 import java.io.IOException;
@@ -9,71 +11,117 @@ import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
+import java.util.*;
 
 public class LargeKeyValueStorage<K, V> extends GrishutinKeyValueStorage<K, V> {
     private static final Long CACHED = -1L;
 
     protected HashMap<K, Long> valueOffset = new HashMap<>();
-    protected HashSet<K> obsolete;
 
     protected static final int MAX_KEY_BYTE_SIZE = 50;
     protected static final int MAX_VALUE_BYTE_SIZE = 10_000;
-    protected static final int MAX_CACHED_ENTRIES = 15_000_000 /
-            (MAX_KEY_BYTE_SIZE + MAX_VALUE_BYTE_SIZE); // 15 Mb RAM for cache
+    /*protected static final int MAX_CACHED_ENTRIES = 1_000_000 /
+            (MAX_KEY_BYTE_SIZE + MAX_VALUE_BYTE_SIZE); // 1 Mb RAM for cache
+    */
+    protected static final int MAX_CACHED_ENTRIES = 100;
 
-    private static double maxDeletedPart = (double) 4 / 5;
-    private static double cacheDropPart = (double) 1 / 10;
+    private static final double MAX_DELETED_RATIO = (double) 1 / 2;
+    private static final double DEFAULT_CACHE_DROP_RATIO = (double) 1;
+
+    protected RandomAccessFile offsetsFile;
+    protected RandomAccessFile valuesFile;
+
+    protected LongSerializationStrategy longSerializationStrategy = LongSerializationStrategy.getInstance();
+
+    protected Integer obsoleteSize;
+
+
+    protected final String lockFilename = storageFilename + ".lock";
+    protected final String valuesFilename = storageFilename + ".values";
+    protected final String offsetsFilename = storageFilename + ".offsets";
+    protected final String valuesSwapFilename = storageFilename + ".values.tmp";
 
     public LargeKeyValueStorage(String directoryPathInit,
                                 SerializationStrategy<K> keyStrat,
                                 SerializationStrategy<V> valueStrat) throws IOException, IllegalAccessException {
         valueOffset = new HashMap<>();
-        obsolete = new HashSet<>();
+        obsoleteSize = 0;
         directoryPath = directoryPathInit;
         keySerializationStrategy = keyStrat;
         valueSerializationStrategy = valueStrat;
-        Path filePath = Paths.get(directoryPath, storageFilename);
-        Path lockFilePath = Paths.get(directoryPath, storageFilename + ".lock");
+        Path valuesFilePath = Paths.get(directoryPath, valuesFilename);
+        Path offsetsFilePath = Paths.get(directoryPath, offsetsFilename);
+        Path lockFilePath = Paths.get(directoryPath, lockFilename);
+
+        Files.createDirectories(valuesFilePath.getParent());
 
         lock = lockFilePath.toFile();
         if (!lock.createNewFile()) { // if lock is hold by other kvStorage
             throw new IllegalAccessException("Database is already opened");
         }
 
-        Files.createDirectories(filePath.getParent());
-        if (!(Files.exists(filePath))) {
-            Files.createFile(filePath);
+
+        if (!(Files.exists(valuesFilePath))) {
+            Files.createFile(valuesFilePath);
+        }
+        if (!(Files.exists(offsetsFilePath))) {
+            Files.createFile(offsetsFilePath);
         }
 
-        storageFile = new RandomAccessFile(filePath.toFile(), "rw");
-        if (storageFile.length() != 0) {
+        valuesFile = new RandomAccessFile(valuesFilePath.toFile(), "rw");
+        offsetsFile = new RandomAccessFile(offsetsFilePath.toFile(), "rw");
+
+        if (valuesFile.length() != 0) {
             readEntriesFromDisk();
         }
     }
 
     /*
-        file looks like:
-        (key, value, boolean) | (key, value, boolean) | ...
+        files look like:
+        offsetsFile: (key, offset) | (key, offset) | ...
+                             __|
+                            |
+        valuesFile: (value) | (value) | ...
      */
     @Override
     protected void readEntriesFromDisk() throws IOException {
-        Long curOffset = 0L;
-        Long fileSize = storageFile.length();
-        while (curOffset < fileSize) {
-            K key = keySerializationStrategy.deserialize(storageFile);
-            V value = valueSerializationStrategy.deserialize(storageFile);
-            Long curValueOffset = curOffset + keySerializationStrategy.bytesSize(key);
-            if (cached.size() < MAX_CACHED_ENTRIES) {
-                cached.put(key, value);
-            }
-
-            valueOffset.put(key, curValueOffset);
-            numRecords++;
-            curOffset = curValueOffset + valueSerializationStrategy.bytesSize(value);
+        offsetsFile.seek(0);
+        Long fileSize = offsetsFile.length();
+        Integer curCached = 0;
+        List<Pair<K, Long>> offsets = new ArrayList<>();
+        while (offsetsFile.getFilePointer() < fileSize) {
+            K key = keySerializationStrategy.deserialize(offsetsFile);
+            Long offset = longSerializationStrategy.deserialize(offsetsFile);
+            offsets.add(new Pair<>(key, offset));
         }
+        Collections.sort(offsets, (lhs, rhs) -> {
+            //     return 1 if rhs should be before lhs
+            //     return -1 if lhs should be before rhs
+            //     return 0 otherwise
+            if (lhs.getSecond() < rhs.getSecond()) {
+                return -1;
+            } else if (lhs.getSecond() > rhs.getSecond()) {
+                return 1;
+            } else {
+                return 0;
+            }
+        });
+
+        for (Pair<K, Long> p: offsets) {
+            K key = p.getFirst();
+            Long offset = p.getSecond();
+            valuesFile.seek(offset);
+            V value = valueSerializationStrategy.deserialize(valuesFile);
+            if (curCached < MAX_CACHED_ENTRIES) {
+                cached.put(key, value);
+                valueOffset.put(key, CACHED);
+                curCached++;
+            } else {
+                valueOffset.put(key, offset);
+            }
+            numRecords++;
+        }
+
     }
 
     @Override
@@ -89,8 +137,8 @@ public class LargeKeyValueStorage<K, V> extends GrishutinKeyValueStorage<K, V> {
             return cached.get(key);
         } else if (valueOffset.containsKey(key)) {
             try {
-                storageFile.seek(valueOffset.get(key));
-                return valueSerializationStrategy.deserialize(storageFile);
+                valuesFile.seek(valueOffset.get(key));
+                return valueSerializationStrategy.deserialize(valuesFile);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -109,7 +157,7 @@ public class LargeKeyValueStorage<K, V> extends GrishutinKeyValueStorage<K, V> {
         valueOffset.put(key, CACHED);
         if (cached.size() > MAX_CACHED_ENTRIES) {
             try {
-                dropCacheOnDisk(cacheDropPart);
+                dropCacheOnDisk(DEFAULT_CACHE_DROP_RATIO);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -124,12 +172,13 @@ public class LargeKeyValueStorage<K, V> extends GrishutinKeyValueStorage<K, V> {
 
         if (cached.containsKey(key)) {
             cached.remove(key);
+        } else {
+            obsoleteSize++;
         }
         if (valueOffset.containsKey(key)) {
             valueOffset.remove(key);
         }
-        obsolete.add(key);
-        if ((double) obsolete.size() >= numRecords * maxDeletedPart) {
+        if ((double) obsoleteSize >= numRecords * MAX_DELETED_RATIO) {
             try {
                 refreshSSTable();
             } catch (IOException e) {
@@ -153,27 +202,35 @@ public class LargeKeyValueStorage<K, V> extends GrishutinKeyValueStorage<K, V> {
             isClosed = true;
         }
 
+        offsetsFile.seek(0);
+        offsetsFile.setLength(0);
+        for (Map.Entry<K, Long> entry: valueOffset.entrySet()) {
+            keySerializationStrategy.serialize(entry.getKey(), offsetsFile);
+            longSerializationStrategy.serialize(entry.getValue(), offsetsFile);
+        }
+
         cached.clear();
         valueOffset.clear();
+        offsetsFile.seek(0);
+        valuesFile.seek(0);
 
-        storageFile.close();
+        offsetsFile.close();
+        valuesFile.close();
         Files.delete(lock.toPath());
     }
 
     private void dropCacheOnDisk(double part) throws IOException {
-        Long curOffset = storageFile.length();
-        storageFile.seek(curOffset);
+        valuesFile.seek(valuesFile.getFilePointer());
+
         Integer dropped = 0;
         HashSet<K> droppedKeys = new HashSet<>();
+
         for (K key : cached.keySet()) {
             if (dropped < cached.size() * part) {
-                keySerializationStrategy.serialize(key, storageFile);
-                valueSerializationStrategy.serialize(cached.get(key), storageFile);
-                valueOffset.put(key, curOffset + keySerializationStrategy.bytesSize(key));
+                valueOffset.put(key, valuesFile.getFilePointer());
+                valueSerializationStrategy.serialize(cached.get(key), valuesFile);
                 droppedKeys.add(key);
                 dropped++;
-                curOffset += keySerializationStrategy.bytesSize(key) +
-                        valueSerializationStrategy.bytesSize(cached.get(key));
             }
         }
 
@@ -182,27 +239,39 @@ public class LargeKeyValueStorage<K, V> extends GrishutinKeyValueStorage<K, V> {
         }
     }
 
-    private void refreshSSTable() throws IOException {
-        Path tmpFilePath = Paths.get(directoryPath, storageFilename + ".tmp");
-        RandomAccessFile tmpFile = new RandomAccessFile(tmpFilePath.toFile(), "rw");
+    private synchronized void refreshSSTable() throws IOException {
+        Path tmpValuesFilePath = Paths.get(directoryPath, valuesSwapFilename);
+
+        RandomAccessFile tmpValuesFile = new RandomAccessFile(tmpValuesFilePath.toFile(), "rw");
+
+        HashMap<K, Long> newValueOffsets = new HashMap<>();
         for (K key : valueOffset.keySet()) {
             if (valueOffset.get(key).equals(CACHED)) {
                 continue;
             }
-            keySerializationStrategy.serialize(key, tmpFile);
-            storageFile.seek(valueOffset.get(key));
-            valueSerializationStrategy.serialize(
-                    valueSerializationStrategy.deserialize(storageFile), tmpFile);
+            Long offset = valueOffset.get(key);
+            valuesFile.seek(offset);
+            V value = valueSerializationStrategy.deserialize(valuesFile);
+
+            newValueOffsets.put(key, tmpValuesFile.getFilePointer());
+            valueSerializationStrategy.serialize(value, tmpValuesFile);
+
         }
 
-        Files.deleteIfExists(Paths.get(directoryPath, storageFilename));
-        tmpFile.close();
-        File extraTmpFile = tmpFilePath.toFile();
-        File databaseFile = Paths.get(directoryPath, storageFilename).toFile();
-        if (!extraTmpFile.renameTo(databaseFile)) {
+        Files.deleteIfExists(Paths.get(directoryPath, valuesFilename));
+        tmpValuesFile.close();
+
+        File extraTmpValuesFile = tmpValuesFilePath.toFile();
+
+        File valuesFileRenamer = Paths.get(directoryPath, valuesFilename).toFile();
+        if (!extraTmpValuesFile.renameTo(valuesFileRenamer)) {
             throw new IOException("Unable to rename file");
         }
-        storageFile = new RandomAccessFile(extraTmpFile, "rw");
-        obsolete.clear();
+
+        valuesFile = new RandomAccessFile(extraTmpValuesFile, "rw");
+        valueOffset = newValueOffsets;
+        obsoleteSize = 0;
     }
 }
+
+

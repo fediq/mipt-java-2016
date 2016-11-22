@@ -5,13 +5,17 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 public class StringSerializationStrategy implements SerializationStrategy<String> {
-    private static StringSerializationStrategy instance = new StringSerializationStrategy();
-    private IntegerSerializationStrategy integerSerializationStrategy = IntegerSerializationStrategy.getInstance();
-
-    public static StringSerializationStrategy getInstance() {
-        return instance;
+    private static class SingletonHolder {
+        static final StringSerializationStrategy HOLDER_INSTANCE = new StringSerializationStrategy();
     }
 
+    public static StringSerializationStrategy getInstance() {
+        return SingletonHolder.HOLDER_INSTANCE;
+    }
+
+    private final IntegerSerializationStrategy integerSerializationStrategy =
+            IntegerSerializationStrategy.getInstance();
+    
     @Override
     public void serialize(String value, RandomAccessFile raf) throws IOException {
         byte[] bytes = value.getBytes();
@@ -23,7 +27,7 @@ public class StringSerializationStrategy implements SerializationStrategy<String
     public String deserialize(RandomAccessFile raf) throws IOException {
         int numBytes = integerSerializationStrategy.deserialize(raf);
         byte[] bytes = new byte[numBytes];
-        raf.read(bytes);
+        raf.readFully(bytes);
         return new String(bytes);
     }
 
