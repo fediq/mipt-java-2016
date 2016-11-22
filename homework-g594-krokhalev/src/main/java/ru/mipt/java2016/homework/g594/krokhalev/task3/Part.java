@@ -62,15 +62,15 @@ class Part<K, V> implements Closeable {
 
     @Override
     public void close() throws IOException {
-        BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(mStorageTable));
+        try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(mStorageTable))) {
 
-        for (Map.Entry<K, Long> iKeyPosition : mKeysPositions.entrySet()) {
-            mStorageReader.writeKey(iKeyPosition.getKey(), bos);
-            mStorageReader.writeLong(iKeyPosition.getValue(), bos);
+            for (Map.Entry<K, Long> iKeyPosition : mKeysPositions.entrySet()) {
+                mStorageReader.writeKey(iKeyPosition.getKey(), bos);
+                mStorageReader.writeLong(iKeyPosition.getValue(), bos);
+            }
+            mRAFile.close();
+
         }
-
-        bos.close();
-        mRAFile.close();
     }
 
     Set<K> getKeys() {
