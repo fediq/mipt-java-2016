@@ -121,7 +121,7 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     @Override
-    public V read(K key) {
+    public synchronized V read(K key) {
         isStorageClosed();
 
         if (!keyAndOffset.containsKey(key)) {
@@ -138,14 +138,14 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     @Override
-    public boolean exists(K key) {
+    public synchronized boolean exists(K key) {
         isStorageClosed();
 
         return keyAndOffset.containsKey(key);
     }
 
     @Override
-    public void write(K key, V value) {
+    public synchronized void write(K key, V value) {
         isStorageClosed();
 
         try {
@@ -158,7 +158,7 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     @Override
-    public void delete(K key) {
+    public synchronized void delete(K key) {
         isStorageClosed();
 
         keyAndOffset.remove(key);
@@ -166,19 +166,19 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
 
 
     @Override
-    public Iterator<K> readKeys() {
+    public synchronized Iterator<K> readKeys() {
         isStorageClosed();
 
         return keyAndOffset.keySet().iterator();
     }
 
     @Override
-    public int size() {
+    public synchronized int size() {
         return keyAndOffset.size();
     }
 
     @Override
-    public void close() throws IOException {
+    public synchronized void close() throws IOException {
         isStorageClosed();
 
         putStorageOnDisk();
