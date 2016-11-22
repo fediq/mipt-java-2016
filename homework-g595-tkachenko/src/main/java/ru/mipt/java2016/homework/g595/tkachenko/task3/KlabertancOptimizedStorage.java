@@ -21,8 +21,10 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
     private static final String STORAGE_FILE_NAME = "KlabertancStorage";
     private static final String KEYS_FILE_NAME = STORAGE_FILE_NAME + "Keys";
     private static final String VALUES_FILE_NAME = STORAGE_FILE_NAME + "Values";
+    private static final Integer MAGIC_NUMBER = 474;
 
     private HashMap<K, Long> keyAndOffset = new HashMap<>();
+    private HashMap<K, V> cache = new HashMap<>();
     private String directory;
     private Serialization<K> keySerialization;
     private Serialization<V> valueSerialization;
@@ -107,6 +109,7 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
         }
 
         keyAndOffset.clear();
+        cache.clear();
 
         keys.close();
         values.close();
@@ -120,9 +123,19 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
+    private void checkCache() {
+        if (cache.size() > MAGIC_NUMBER) {
+            cache.clear();
+        }
+    }
+
     @Override
     public synchronized V read(K key) {
         isStorageClosed();
+
+        if (cache.containsKey(key)) {
+            return cache.get(key);
+        }
 
         if (!keyAndOffset.containsKey(key)) {
             return null;
@@ -140,7 +153,9 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public synchronized boolean exists(K key) {
         isStorageClosed();
-
+        if (cache.containsKey(key)) {
+            return true;
+        }
         return keyAndOffset.containsKey(key);
     }
 
@@ -148,7 +163,10 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
     public synchronized void write(K key, V value) {
         isStorageClosed();
 
+        checkCache();
+
         try {
+            cache.put(key, value);
             keyAndOffset.put(key, values.length());
             values.seek(values.length());
             valueSerialization.write(values, value);
@@ -160,7 +178,7 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public synchronized void delete(K key) {
         isStorageClosed();
-
+        cache.remove(key);
         keyAndOffset.remove(key);
     }
 
@@ -180,7 +198,6 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public synchronized void close() throws IOException {
         isStorageClosed();
-
         putStorageOnDisk();
         lockAccess.delete();
     }
