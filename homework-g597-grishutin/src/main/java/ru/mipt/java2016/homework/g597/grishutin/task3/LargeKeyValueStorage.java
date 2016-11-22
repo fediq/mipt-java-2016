@@ -19,13 +19,14 @@ public class LargeKeyValueStorage<K, V> extends GrishutinKeyValueStorage<K, V> {
     protected HashMap<K, Long> valueOffset = new HashMap<>();
     protected HashSet<K> obsolete;
 
-    protected static final int maxKeyByteSize = 50;
-    protected static final int maxValueByteSize = 10_000;
-    protected static final int maxCachedEntries = 15_000_000 / (maxKeyByteSize + maxValueByteSize); // 30 Mb RAM for cache
-    protected static final int BUFFER_SIZE = 1024;
+    protected static final int MAX_KEY_BYTE_SIZE = 50;
+    protected static final int MAX_VALUE_BYTE_SIZE = 10_000;
+    protected static final int MAX_CACHED_ENTRIES = 15_000_000 /
+            (MAX_KEY_BYTE_SIZE + MAX_VALUE_BYTE_SIZE); // 15 Mb RAM for cache
 
-    private static double maxDeletedPart = (double)4 / 5;
+    private static double maxDeletedPart = (double) 4 / 5;
     private static double cacheDropPart = (double) 1 / 10;
+
     public LargeKeyValueStorage(String directoryPathInit,
                                 SerializationStrategy<K> keyStrat,
                                 SerializationStrategy<V> valueStrat) throws IOException, IllegalAccessException {
@@ -65,7 +66,7 @@ public class LargeKeyValueStorage<K, V> extends GrishutinKeyValueStorage<K, V> {
             K key = keySerializationStrategy.deserialize(storageFile);
             V value = valueSerializationStrategy.deserialize(storageFile);
             Long curValueOffset = curOffset + keySerializationStrategy.bytesSize(key);
-            if (cached.size() < maxCachedEntries) {
+            if (cached.size() < MAX_CACHED_ENTRIES) {
                 cached.put(key, value);
             }
 
@@ -106,9 +107,9 @@ public class LargeKeyValueStorage<K, V> extends GrishutinKeyValueStorage<K, V> {
         }
         cached.put(key, value);
         valueOffset.put(key, CACHED);
-        if (cached.size() > maxCachedEntries) {
+        if (cached.size() > MAX_CACHED_ENTRIES) {
             try {
-                DropCacheOnDisk(cacheDropPart);
+                dropCacheOnDisk(cacheDropPart);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -130,7 +131,7 @@ public class LargeKeyValueStorage<K, V> extends GrishutinKeyValueStorage<K, V> {
         obsolete.add(key);
         if ((double) obsolete.size() >= numRecords * maxDeletedPart) {
             try {
-                RefreshSSTable();
+                refreshSSTable();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -147,8 +148,8 @@ public class LargeKeyValueStorage<K, V> extends GrishutinKeyValueStorage<K, V> {
     @Override
     public synchronized void close() throws IOException {
         if (!isClosed) {
-            DropCacheOnDisk(1.0);
-            RefreshSSTable();
+            dropCacheOnDisk(1.0);
+            refreshSSTable();
             isClosed = true;
         }
 
@@ -159,7 +160,7 @@ public class LargeKeyValueStorage<K, V> extends GrishutinKeyValueStorage<K, V> {
         Files.delete(lock.toPath());
     }
 
-    private void DropCacheOnDisk(double part) throws IOException {
+    private void dropCacheOnDisk(double part) throws IOException {
         Long curOffset = storageFile.length();
         storageFile.seek(curOffset);
         Integer dropped = 0;
@@ -181,7 +182,7 @@ public class LargeKeyValueStorage<K, V> extends GrishutinKeyValueStorage<K, V> {
         }
     }
 
-    private void RefreshSSTable() throws IOException {
+    private void refreshSSTable() throws IOException {
         Path tmpFilePath = Paths.get(directoryPath, storageFilename + ".tmp");
         RandomAccessFile tmpFile = new RandomAccessFile(tmpFilePath.toFile(), "rw");
         for (K key : valueOffset.keySet()) {

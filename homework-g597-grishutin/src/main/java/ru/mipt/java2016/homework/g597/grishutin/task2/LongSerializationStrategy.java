@@ -22,6 +22,6 @@ class LongSerializationStrategy implements SerializationStrategy<Long> {
 
     @Override
     public Long bytesSize(Long value) {
-        return (long)8;
+        return (long) 8;
     }
 }

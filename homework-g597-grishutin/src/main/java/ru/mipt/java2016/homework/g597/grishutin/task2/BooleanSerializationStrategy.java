@@ -22,6 +22,6 @@ public class BooleanSerializationStrategy implements SerializationStrategy<Boole
 
     @Override
     public Long bytesSize(Boolean value) {
-        return (long)1;
+        return (long) 1;
     }
 }
