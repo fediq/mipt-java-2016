@@ -21,10 +21,12 @@ public class KrokhalevsKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private File workDirectory;
     private File runFile;
 
-    KrokhalevsKeyValueStorage(String workDirectoryName, Class<K> keyClass, Class<V> valueClass) {
-        super();
+    KrokhalevsKeyValueStorage(String workDirectoryName,
+                              SerializationStrategy<K> keySerializer,
+                              SerializationStrategy<V> valueSerializer) {
 
         workDirectory = new File(workDirectoryName);
+        StorageReader<K, V> storageReader = new StorageReader<K, V>(keySerializer, valueSerializer);
 
         if (!workDirectory.exists() || !workDirectory.isDirectory()) {
             throw new RuntimeException("Bad directory \"" + workDirectory.getAbsolutePath() + "\"");
@@ -35,7 +37,7 @@ public class KrokhalevsKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 throw new RuntimeException("Can not run again in directory \"" + workDirectoryName + "\"");
             }
 
-            partsController = new PartsController<>(findStorage(), findStorageTable(), keyClass, valueClass);
+            partsController = new PartsController<K, V>(findStorage(), findStorageTable(), storageReader);
 
         } catch (IOException e) {
             throw new RuntimeException("Bad directory \"" + workDirectory.getAbsolutePath() + "\"");

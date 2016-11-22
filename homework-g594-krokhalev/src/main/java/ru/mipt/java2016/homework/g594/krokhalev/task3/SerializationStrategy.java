@@ -1,7 +1,11 @@
 package ru.mipt.java2016.homework.g594.krokhalev.task3;
 
-public interface SerializationStrategy<T> {
-    T deserialize(byte[] buff);
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 
-    byte[] serialize(T value);
+public interface SerializationStrategy<T> {
+    T deserialize(DataInput dis) throws IOException;
+
+    void serialize(DataOutput dos, Object object) throws IOException;
 }

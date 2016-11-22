@@ -6,78 +6,60 @@ import java.util.*;
 public class StoragePart<K, V> implements Closeable {
     private File mFile;
 
-    private Class<K> mKeyClass;
-    private Class<V> mValueClass;
+    private StorageReader<K, V> mStorageReader;
 
-    private Map<K, Long> mKeys = new HashMap<>();
+    private Map<K, Long> mKeys = new LinkedHashMap<K, Long>();
 
-    StoragePart(File file, File tableFile, Class<K> keyClass, Class<V> valueClass) throws IOException {
+    StoragePart(File file, File tableFile, StorageReader<K, V> storageReader) throws IOException {
         mFile = file;
-        mKeyClass = keyClass;
-        mValueClass = valueClass;
+        mStorageReader = storageReader;
 
-        StorageReader<K, V> storageReader = new StorageReader<>(mKeyClass, mValueClass);
-        BufferedInputStream tableStream = new BufferedInputStream(new FileInputStream(tableFile));
-
-        while (tableStream.available() > 0) {
-            K key = storageReader.readKey(tableStream);
-            mKeys.put(key, storageReader.readLong(tableStream));
+        try (BufferedInputStream tableStream = new BufferedInputStream(new FileInputStream(tableFile))) {
+            while (tableStream.available() > 0) {
+                K key = storageReader.readKey(tableStream);
+                mKeys.put(key, storageReader.readLong(tableStream));
+            }
         }
-
-        tableStream.close();
     }
 
-    StoragePart(Map<K, V> memTable, File file, Class<K> keyClass, Class<V> valueClass) throws IOException {
+    StoragePart(Map<K, V> memTable, File file, StorageReader<K, V> storageReader) throws IOException {
         mFile = file;
-        mKeyClass = keyClass;
-        mValueClass = valueClass;
+        mStorageReader = storageReader;
 
-        PositionBufferedOutputStream thisStream = new PositionBufferedOutputStream(new FileOutputStream(file));
+        try (PositionBufferedOutputStream thisStream = new PositionBufferedOutputStream(new FileOutputStream(file))) {
+            for (Map.Entry<K, V> iMem : memTable.entrySet()) {
+                mKeys.put(iMem.getKey(), thisStream.getPosition());
 
-        byte[] buff;
-        for (Map.Entry<K, V> iMem : memTable.entrySet()) {
+                try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                    storageReader.writeValue(iMem.getValue(), baos);
 
-            buff = Serializer.serialize(iMem.getKey());
-            thisStream.write(Serializer.serialize(buff.length));
-            thisStream.write(buff);
-
-            mKeys.put(iMem.getKey(), thisStream.getPosition());
-
-            buff = Serializer.serialize(iMem.getValue());
-            thisStream.write(Serializer.serialize(buff.length));
-            thisStream.write(buff);
+                    storageReader.writeInt(baos.size(), thisStream);
+                    thisStream.write(baos.toByteArray());
+                }
+            }
         }
-
-        thisStream.close();
     }
 
     public void copyTo(PositionBufferedOutputStream storage, OutputStream storageTable) throws IOException {
-        StorageReader<K, V> storageReader = new StorageReader<>(mKeyClass, mValueClass);
 
-        InputStream partStream = new BufferedInputStream(new FileInputStream(mFile));
+        try (PositionBufferedInputStream partStream = new PositionBufferedInputStream(new FileInputStream(mFile))) {
 
-        byte[] buff;
-        while (partStream.available() > 0) {
-            buff = storageReader.readBlockItem(partStream);
-            InputStream keyBlockStream = new ByteArrayInputStream(buff);
-            K key = storageReader.readKey(keyBlockStream);
-            keyBlockStream.close();
+            for (Map.Entry<K, Long> iKey : mKeys.entrySet()) {
+                mStorageReader.skip(iKey.getValue() - partStream.getPosition(), partStream);
 
-            if (containsKey(key)) {
+                iKey.setValue(storage.getPosition());
 
+                int size = mStorageReader.readInt(partStream);
+                byte[] buff = new byte[size];
+                mStorageReader.read(buff, partStream);
+
+                mStorageReader.writeInt(size, storage);
                 storage.write(buff);
 
-                storageTable.write(buff);
-                storageTable.write(Serializer.serialize(storage.getPosition()));
-
-                storage.write(storageReader.readBlockItem(partStream));
-
-            } else {
-                storageReader.missNext(partStream);
+                mStorageReader.writeKey(iKey.getKey(), storageTable);
+                mStorageReader.writeLong(iKey.getValue(), storageTable);
             }
         }
-
-        partStream.close();
     }
 
     public Set<K> getKeys() {
@@ -92,13 +74,15 @@ public class StoragePart<K, V> implements Closeable {
         Long offset = mKeys.get(key);
         V value = null;
         if (offset != null) {
-            BufferedInputStream thisStream = new BufferedInputStream(new FileInputStream(mFile));
-            StorageReader<K, V> storageReader = new StorageReader<K, V>(mKeyClass, mValueClass);
+            try (FileInputStream fis = new FileInputStream(mFile)) {
+                mStorageReader.skip(offset + 4, fis);
 
-            storageReader.miss(thisStream, offset);
-            value = storageReader.readValue(thisStream);
+                try (BufferedInputStream thisStream = new BufferedInputStream(fis)) {
 
-            thisStream.close();
+                    value = mStorageReader.readValue(thisStream);
+
+                }
+            }
         }
 
         return value;

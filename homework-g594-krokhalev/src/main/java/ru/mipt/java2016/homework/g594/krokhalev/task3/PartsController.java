@@ -9,8 +9,7 @@ public class PartsController<K, V> implements Closeable {
     private File mStorageTableFile;
     private File mPartsDirectory;
 
-    private Class<K> mKeyClass;
-    private Class<V> mValueClass;
+    private StorageReader<K, V> mStorageReader;
 
     private ArrayList<StoragePart<K, V>> mParts  = new ArrayList<>();
 
@@ -25,12 +24,11 @@ public class PartsController<K, V> implements Closeable {
         return new File(mPartsDirectory.getAbsolutePath() + File.separator + name);
     }
 
-    public PartsController(File storageFile, File storageTableFile, Class<K> keyClass, Class<V> valueClass)
+    public PartsController(File storageFile, File storageTableFile, StorageReader<K, V> storageReader)
             throws IOException {
 
         this.mStorageFile = storageFile;
-        this.mKeyClass = keyClass;
-        this.mValueClass = valueClass;
+        mStorageReader = storageReader;
         this.mStorageTableFile = storageTableFile;
 
         mPartsDirectory = new File(mStorageFile.getParentFile().getAbsolutePath() + File.separator + "Parts");
@@ -44,14 +42,14 @@ public class PartsController<K, V> implements Closeable {
             throw new RuntimeException("Bad directory");
         }
 
-        mParts.add(new StoragePart<>(part, storageTableFile, keyClass, valueClass));
+        mParts.add(new StoragePart<K, V>(part, storageTableFile, mStorageReader));
         for (K iKey : mParts.get(0).getKeys()) {
             mKeys.put(iKey, 0);
         }
     }
 
     public void flush() throws IOException {
-        mParts.add(new StoragePart<>(mCache, getPartFileName(mParts.size()), mKeyClass, mValueClass));
+        mParts.add(new StoragePart<K, V>(mCache, getPartFileName(mParts.size()), mStorageReader));
         mCache.clear();
     }
 
