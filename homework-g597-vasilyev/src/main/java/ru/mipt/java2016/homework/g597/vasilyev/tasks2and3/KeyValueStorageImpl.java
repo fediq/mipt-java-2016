@@ -2,11 +2,10 @@ package ru.mipt.java2016.homework.g597.vasilyev.tasks2and3;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.nio.channels.OverlappingFileLockException;
 import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -19,13 +18,14 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public class KeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
 
-    private Map<K, Long> offsets;
-    private RandomAccessFile db;
-    private RandomAccessFile valuesFiles;
+    private Map<K, Long> offsets = new HashMap<>();
+    private ReadWriteLock lock = new ReentrantReadWriteLock();
     private Serializer<K> keySerializer;
     private Serializer<V> valueSerializer;
     private boolean open;
-    private ReadWriteLock lock;
+    private RandomAccessFile db;
+    private RandomAccessFile valuesFile;
+    private long valuesSize;
 
     public KeyValueStorageImpl(String path,
                                Serializer<K> keySerializer,
@@ -33,32 +33,21 @@ public class KeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
         this.keySerializer = keySerializer;
         this.valueSerializer = valueSerializer;
 
-        lock = new ReentrantReadWriteLock();
-
         Path dbPath = FileSystems.getDefault().getPath(path, "db");
-        Path valuesPath = FileSystems.getDefault().getPath(path, "values");
-        try {
-            db = new RandomAccessFile(dbPath.toString(), "rw");
-            valuesFiles = new RandomAccessFile(valuesPath.toString(), "rw");
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException("RandomAccessFile(path, \"rw\") throwed FileNotFoundException");
-        }
-
-        try {
-            db.getChannel().tryLock();
-        } catch (OverlappingFileLockException e) {
-            throw new ConcurrentStorageAccessException();
-        }
-
-        offsets = new HashMap<>();
-
+        db = openRandomAccessFile(dbPath);
+        lockDB();
         if (db.length() > 0) {
-            while (db.getFilePointer() < db.length()) {
-                K key = keySerializer.read(db);
-                long offset = db.readLong();
-                offsets.put(key, offset);
-            }
+            readDB();
         }
+
+        Path valuesPath = FileSystems.getDefault().getPath(path, "values");
+        if (Files.exists(valuesPath) && Files.size(valuesPath) > 2 * valuesSize) {
+            Path oldValuesPath = FileSystems.getDefault().getPath(path, "values.old");
+            Files.move(valuesPath, oldValuesPath);
+            trimStorage(oldValuesPath, valuesPath);
+            Files.delete(oldValuesPath);
+        }
+        valuesFile = openRandomAccessFile(valuesPath);
 
         open = true;
     }
@@ -99,9 +88,15 @@ public class KeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
 
         checkOpen();
         try {
-            valuesFiles.seek(valuesFiles.length());
-            offsets.put(key, valuesFiles.getFilePointer());
-            valueSerializer.write(value, valuesFiles);
+            V old = read(key);
+            if (old != null) {
+                valuesSize -= valueSerializer.size(old);
+            }
+
+            valuesFile.seek(valuesFile.length());
+            offsets.put(key, valuesFile.getFilePointer());
+            valueSerializer.write(value, valuesFile);
+            valuesSize += valueSerializer.size(value);
         } catch (IOException e) {
             throw new RuntimeException("Этого не может быть, потому что не может быть никогда!", e);
         } finally {
@@ -150,6 +145,7 @@ public class KeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
         try {
             db.seek(0);
             db.setLength(0);
+            db.writeLong(valuesSize);
             for (Map.Entry<K, Long> entry : offsets.entrySet()) {
                 keySerializer.write(entry.getKey(), db);
                 db.writeLong(entry.getValue());
@@ -166,8 +162,50 @@ public class KeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
+    private void trimStorage(Path oldPath, Path newPath) throws IOException {
+        valuesFile = openRandomAccessFile(oldPath);
+        DataOutputStream newValues = new DataOutputStream(
+                new BufferedOutputStream(new FileOutputStream(newPath.toString())));
+
+        long newOffset = 0;
+        for (Map.Entry<K, Long> key : offsets.entrySet()) {
+            V value = readValue(key.getValue());
+            offsets.put(key.getKey(), newOffset);
+            valueSerializer.write(value, newValues);
+            newOffset += valueSerializer.size(value);
+        }
+
+        valuesFile.close();
+        newValues.close();
+    }
+
     private V readValue(long offset) throws IOException {
-        valuesFiles.seek(offset);
-        return valueSerializer.read(valuesFiles);
+        valuesFile.seek(offset);
+        return valueSerializer.read(valuesFile);
+    }
+
+    private RandomAccessFile openRandomAccessFile(Path path) {
+        try {
+            return new RandomAccessFile(path.toString(), "rw");
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException("RandomAccessFile(path, \"rw\") throwed FileNotFoundException");
+        }
+    }
+
+    private void lockDB() throws ConcurrentStorageAccessException, IOException {
+        try {
+            db.getChannel().tryLock();
+        } catch (OverlappingFileLockException e) {
+            throw new ConcurrentStorageAccessException();
+        }
+    }
+
+    private void readDB() throws IOException {
+        valuesSize = db.readLong();
+        while (db.getFilePointer() < db.length()) {
+            K key = keySerializer.read(db);
+            long offset = db.readLong();
+            offsets.put(key, offset);
+        }
     }
 }

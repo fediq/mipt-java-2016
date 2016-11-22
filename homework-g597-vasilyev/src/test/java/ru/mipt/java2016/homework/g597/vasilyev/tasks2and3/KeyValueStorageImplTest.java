@@ -20,7 +20,7 @@ public class KeyValueStorageImplTest extends KeyValueStoragePerformanceTest {
         try {
             return new KeyValueStorageImpl<>(path, serializer, serializer);
         } catch (Exception e) {
-            return null;
+            throw new RuntimeException("Could not build storage", e);
         }
     }
 
@@ -30,7 +30,7 @@ public class KeyValueStorageImplTest extends KeyValueStoragePerformanceTest {
             return new KeyValueStorageImpl<>(path,
                     new IntegerSerializer(), new DoubleSerializer());
         } catch (Exception e) {
-            return null;
+            throw new RuntimeException("Could not build storage", e);
         }
     }
 
@@ -40,7 +40,7 @@ public class KeyValueStorageImplTest extends KeyValueStoragePerformanceTest {
             return new KeyValueStorageImpl<>(path,
                     new StudentKeySerializer(), new StudentSerializer());
         } catch (Exception e) {
-            return null;
+            throw new RuntimeException("Could not build storage", e);
         }
     }
 
