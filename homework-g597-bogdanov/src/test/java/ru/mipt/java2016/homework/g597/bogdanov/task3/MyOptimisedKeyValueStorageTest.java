@@ -7,10 +7,11 @@ import ru.mipt.java2016.homework.g597.bogdanov.task2.StudentKeyStudentSerializat
 import ru.mipt.java2016.homework.tests.task2.AbstractSingleFileStorageTest;
 import ru.mipt.java2016.homework.tests.task2.Student;
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
+import ru.mipt.java2016.homework.tests.task3.KeyValueStoragePerformanceTest;
 
 import java.io.IOException;
 
-public class MyOptimisedKeyValueStorageTest extends AbstractSingleFileStorageTest {
+public class MyOptimisedKeyValueStorageTest extends KeyValueStoragePerformanceTest {
 
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String path) {
