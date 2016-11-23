@@ -1,5 +1,8 @@
 package ru.mipt.java2016.homework.g597.spirin.task3;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 
 import java.io.File;
@@ -11,6 +14,7 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -30,7 +34,7 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
     private ReadWriteLock lock;
     private boolean isOpen;
 
-    private Cache<K, V> cache;
+    private LoadingCache<K, V> cache;
 
     /**
      *  Suppose that name is a template for name of file storage
@@ -50,7 +54,18 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
         offsetStorage.getChannel().lock();
 
         offsets = new HashMap<>();
-        cache = new Cache<>();
+        cache = CacheBuilder.newBuilder().maximumSize(100).build(new CacheLoader<K, V>() {
+            @Override
+            public V load(K key) throws Exception {
+                Long offset = offsets.get(key);
+                if (offset == null) {
+                    return null;
+                }
+
+                dataStorage.seek(offset);
+                return valueSerializer.read(dataStorage);
+            }
+        });
 
         lock = new ReentrantReadWriteLock();
 
@@ -74,6 +89,7 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
     private void loadData() throws IOException {
         offsets.clear();
         offsetStorage.seek(0);
+        cache.cleanUp();
 
         while (offsetStorage.getFilePointer() < offsetStorage.length()) {
             K key = keySerializer.read(offsetStorage);
@@ -87,21 +103,11 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
         lock.readLock().lock();
         try {
             checkIfStorageIsOpen();
-
-            V value = cache.get(key);
-            if (value != null) {
-                return value;
-            }
-
-            Long offset = offsets.get(key);
-
-            if (offset == null) {
+            if (!offsets.containsKey(key)) {
                 return null;
             }
-
-            dataStorage.seek(offset);
-            return valueSerializer.read(dataStorage);
-        } catch (IOException e) {
+            return cache.get(key);
+        } catch (ExecutionException e) {
             throw new RuntimeException("File operation error");
         } finally {
             lock.readLock().unlock();
@@ -113,15 +119,9 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
         lock.writeLock().lock();
         try {
             checkIfStorageIsOpen();
-
-            cache.put(key, value);
-
             dataStorage.seek(dataStorage.length());
-            long offset = dataStorage.getFilePointer();
-
+            offsets.put(key, dataStorage.getFilePointer());
             valueSerializer.write(dataStorage, value);
-
-            offsets.put(key, offset);
         } catch (IOException e) {
             throw new RuntimeException("File operation error");
         } finally {
