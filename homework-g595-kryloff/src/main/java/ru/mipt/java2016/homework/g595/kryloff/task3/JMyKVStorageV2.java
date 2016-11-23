@@ -5,12 +5,9 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -152,7 +149,7 @@ public class JMyKVStorageV2<K, V> implements KeyValueStorage<K, V> {
     @Override
     public void write(K key, V value) {
         checkNotClosed();
-        offsets.put(key,(long) -1);
+        offsets.put(key, (long) -1);
         cacheWrote.put(key, value);
 
         if (cacheWrote.size() >= MAX_CACHE_SIZE) {

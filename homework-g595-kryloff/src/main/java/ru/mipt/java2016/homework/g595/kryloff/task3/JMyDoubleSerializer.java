@@ -6,9 +6,6 @@
 
 package ru.mipt.java2016.homework.g595.kryloff.task3;
 
-import ru.mipt.java2016.homework.g595.kryloff.task2.*;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
