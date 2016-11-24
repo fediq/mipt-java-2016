@@ -4,7 +4,6 @@ package ru.mipt.java2016.homework.g594.petrov.task3;
  * Created by philipp on 14.11.16.
  */
 
-import com.sun.org.apache.bcel.internal.generic.ILOAD;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import java.io.*;
 import java.util.*;
@@ -30,7 +29,7 @@ class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                         InterfaceSerialization<V> valueSerialization) throws IllegalStateException {
         isOpen = true;
         directory = path + File.separator + "storage.db";
-        assistDirectory= path + File.separator + "storage_tmp.db";
+        assistDirectory = path + File.separator + "storage_tmp.db";
         pathToDir = path;
         cacheMap = new LinkedHashMap<>();
         typeOfData = dataType;
