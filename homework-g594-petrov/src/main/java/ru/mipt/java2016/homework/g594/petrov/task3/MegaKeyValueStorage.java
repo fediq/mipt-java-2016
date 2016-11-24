@@ -11,7 +11,7 @@ import java.util.*;
 
 class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private static final int CACHE_SIZE = 0;
-    private static final int MEM_TREE_SIZE = 1300;
+    private static final int MEM_TREE_SIZE = 100;
     private final String directory;
     private final String assistDirectory;
     private final String pathToDir;
