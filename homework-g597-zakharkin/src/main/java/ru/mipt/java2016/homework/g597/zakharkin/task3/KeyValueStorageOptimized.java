@@ -7,29 +7,31 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.channels.FileChannel;
-import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Created by ilya on 17.11.16.
  */
-public class KeyValueStorageOptimized<K, V> implements KeyValueStorage<K, V> {
-    private final int maxCacheSize = 10;
-    private final int maxBufSize = 1000;
-    private final String dbName = "key_value_storage";
-    private final String offsetName = "offsets";
+public class KeyValueStorageOptimized<K, V> implements KeyValueStorage<K, V>, AutoCloseable {
+    private static final int maxCacheSize = 10;
+    private static final int maxBufSize = 1000;
+    private static final String dbName = "key_value_storage";
+    private static final String offsetName = "offsets";
+    private String dbPath;
+    private Boolean is_open = false;
     private Map<K, V> lruCache;
-    private HashMap<K, Long> offsets;
+    private Map<K, Long> offsets = new HashMap<>();
     private HashMap<K, V> buffer;
     private final Serializer<K> keySerializer;
     private final Serializer<V> valueSerializer;
     private RandomAccessFile dbFile;
     private RandomAccessFile offsetsFile;
-    private FileLock lock;
+    private ReadWriteLock lock;
 
     public KeyValueStorageOptimized(String path,
                                     Serializer<K> keySerializerArg,
@@ -40,28 +42,30 @@ public class KeyValueStorageOptimized<K, V> implements KeyValueStorage<K, V> {
                 return size() > maxCacheSize;
             }
         };
-        lruCache = (Map) Collections.synchronizedMap(lruCache);
-        offsets = new HashMap<>();
+        dbPath = path;
+        lruCache = Collections.synchronizedMap(lruCache);
         buffer = new HashMap<>();
         keySerializer = keySerializerArg;
         valueSerializer = valueSerializerArg;
+        lock = new ReentrantReadWriteLock();
         try {
             Boolean alreadyExists = initializeFiles(path);
+            offsetsFile.getChannel().lock();
+            dbFile.getChannel().lock();
             if (alreadyExists) {
                 loadExistingKVDB();
             }
-            FileChannel dbFileChannel = dbFile.getChannel();
-            lock = dbFileChannel.tryLock();
         } catch (IOException e) {
             System.out.println("Can`t create/open the DB file.");
         }
+        is_open = true;
     }
 
-    private Boolean initializeFiles(String path) throws FileNotFoundException, IOException {
+    private Boolean initializeFiles(String path) throws IOException {
         if (Files.notExists(Paths.get(path))) {
             throw new FileNotFoundException("Incorrect directory");
         }
-        String commonPath = path + File.separator;
+        String commonPath = dbPath + File.separator;
         File file = new File(commonPath + dbName);
         dbFile = new RandomAccessFile(file, "rw");
         File file1 = new File(commonPath + offsetName);
@@ -72,7 +76,7 @@ public class KeyValueStorageOptimized<K, V> implements KeyValueStorage<K, V> {
         return false;
     }
 
-    void loadExistingKVDB() throws IOException {
+    private void loadExistingKVDB() throws IOException {
         buffer.clear();
         offsets.clear();
         lruCache.clear();
@@ -84,30 +88,40 @@ public class KeyValueStorageOptimized<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
+    void checkStorageIsOpen() throws RuntimeException {
+        if (!is_open) {
+            throw new RuntimeException("Storage is not opened!");
+        }
+    }
+
     /**
      * Возвращает значение для данного ключа, если оно есть в хранилище.
      * Иначе возвращает null.
      */
     @Override
     public V read(K key) {
+        checkStorageIsOpen();
+        lock.readLock().lock();
         V value = lruCache.get(key);
-        if (value != null) {
-            return value;
-        }
-        Long offset = offsets.get(key);
-        if (offset == null) {
-            return null;
-        }
-        if (offset == -1) {
-            value = buffer.get(key);
-        } else {
-            try {
+        try {
+            if (value != null) {
+                return value;
+            }
+            Long offset = offsets.get(key);
+            if (offset == null) {
+                return null;
+            }
+            if (offset == -1) {
+                value = buffer.get(key);
+            } else {
                 dbFile.seek(offset);
                 value = valueSerializer.read(dbFile);
                 lruCache.put(key, value);
-            } catch (IOException e) {
-                System.out.println("Can`t read the data from the DB file.");
             }
+        } catch (IOException e) {
+            System.out.println("Can`t read the data from the DB file.");
+        } finally {
+            lock.readLock().unlock();
         }
         return value;
     }
@@ -117,7 +131,12 @@ public class KeyValueStorageOptimized<K, V> implements KeyValueStorage<K, V> {
      */
     @Override
     public boolean exists(K key) {
-        return offsets.containsKey(key);
+        lock.readLock().lock();
+        try {
+            return offsets.containsKey(key);
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     /**
@@ -125,16 +144,20 @@ public class KeyValueStorageOptimized<K, V> implements KeyValueStorage<K, V> {
      */
     @Override
     public void write(K key, V value) {
-        if (buffer.size() >= maxBufSize) {
-            try {
+        checkStorageIsOpen();
+        lock.writeLock().lock();
+        try {
+            if (buffer.size() >= maxBufSize) {
                 dumpToFile();
-            } catch (IOException e) {
-                System.out.println("Can`t write the data to the DB file.");
             }
+            offsets.put(key, new Long(-1));
+            buffer.put(key, value);
+            lruCache.put(key, value);
+        } catch (IOException e) {
+            System.out.println("Can`t write the data to the DB file.");
+        } finally {
+            lock.writeLock().unlock();
         }
-        offsets.put(key, new Long(-1));
-        buffer.put(key, value);
-        lruCache.put(key, value);
     }
 
     private void dumpToFile() throws IOException {
@@ -164,6 +187,7 @@ public class KeyValueStorageOptimized<K, V> implements KeyValueStorage<K, V> {
      */
     @Override
     public Iterator<K> readKeys() throws ConcurrentModificationException {
+        checkStorageIsOpen();
         return offsets.keySet().iterator();
     }
 
@@ -175,17 +199,47 @@ public class KeyValueStorageOptimized<K, V> implements KeyValueStorage<K, V> {
         return offsets.size();
     }
 
-    @Override
-    public void close() throws IOException, OverlappingFileLockException {
-        dumpToFile();
-        dbFile.close();
+    private void refreshStorageFile() throws IOException {
+        File newStorageFile = new File(dbPath + File.separator + dbName + "__tmp");
+        RandomAccessFile newDBFile = new RandomAccessFile(newStorageFile, "rw");
+        newDBFile.seek(0);
         offsetsFile.setLength(0);
         offsetsFile.seek(0);
         for (Map.Entry<K, Long> entry : offsets.entrySet()) {
+            Long offset = entry.getValue();
+            dbFile.seek(offset);
+            V value = valueSerializer.read(dbFile);
             keySerializer.write(offsetsFile, entry.getKey());
-            offsetsFile.writeLong(entry.getValue());
+            offsetsFile.writeLong(newDBFile.getFilePointer());
+            valueSerializer.write(newDBFile, value);
         }
-        offsets.clear();
-        offsetsFile.close();
+        dbFile.close();
+        File oldStorageFile = new File(dbPath + File.separator + dbName);
+        oldStorageFile.delete();
+        newStorageFile.renameTo(new File(dbPath + File.separator + dbName));
+        newDBFile.close();
+    }
+
+    @Override
+    public void close() throws IOException, OverlappingFileLockException {
+        if (!is_open) {
+            return;
+        }
+        lock.writeLock().lock();
+        try {
+            dumpToFile();
+            offsetsFile.setLength(0);
+            offsetsFile.seek(0);
+            for (Map.Entry<K, Long> entry : offsets.entrySet()) {
+                keySerializer.write(offsetsFile, entry.getKey());
+                offsetsFile.writeLong(entry.getValue());
+            }
+            refreshStorageFile();
+        } finally {
+            offsets.clear();
+            offsetsFile.close();
+            is_open = false;
+            lock.writeLock().unlock();
+        }
     }
 }
