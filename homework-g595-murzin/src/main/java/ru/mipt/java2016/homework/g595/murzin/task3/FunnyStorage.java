@@ -260,8 +260,11 @@ public class FunnyStorage<Key, Value> implements KeyValueStorage<Key, Value> {
 
     private long signFile(File file, byte[] buffer) throws IOException {
         try (CheckedInputStream input = new CheckedInputStream(new FileInputStream(file), new Adler32())) {
-            while (input.read(buffer) != -1)
-                ;
+            while (true) {
+                if (input.read(buffer) == -1) {
+                    break;
+                }
+            }
             return input.getChecksum().getValue();
         }
     }
