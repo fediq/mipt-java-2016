@@ -88,7 +88,8 @@ public class FunnyStorage<Key, Value> implements KeyValueStorage<Key, Value> {
 
     private ArrayList<Long> readChecksums() throws IOException {
         ArrayList<Long> hashes = new ArrayList<>();
-        try (DataInputStream input = new DataInputStream(new FileInputStream(new File(storageDirectory, CHECKSUMS_FILE_NAME)))) {
+        try (DataInputStream input = new DataInputStream(new FileInputStream(
+                new File(storageDirectory, CHECKSUMS_FILE_NAME)))) {
             while (input.available() > 0) {
                 hashes.add(input.readLong());
             }
@@ -259,8 +260,8 @@ public class FunnyStorage<Key, Value> implements KeyValueStorage<Key, Value> {
 
     private long signFile(File file, byte[] buffer) throws IOException {
         try (CheckedInputStream input = new CheckedInputStream(new FileInputStream(file), new Adler32())) {
-            while (input.read(buffer) != -1) {
-            }
+            while (input.read(buffer) != -1)
+                ;
             return input.getChecksum().getValue();
         }
     }
