@@ -1,12 +1,12 @@
 package ru.mipt.java2016.homework.g595.tkachenko.task3;
 
-import java.io.DataInputStream;
 import java.io.File;
-import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 
@@ -16,116 +16,136 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 
 public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
 
+    private static final Integer MAX_CACHE_SIZE = 100;
 
-    private static final String TRY_LOCK = "trylock";
-    private static final String STORAGE_FILE_NAME = "KlabertancStorage";
-    private static final String KEYS_FILE_NAME = STORAGE_FILE_NAME + "Keys";
-    private static final String VALUES_FILE_NAME = STORAGE_FILE_NAME + "Values";
-    private static final Integer MAGIC_NUMBER = 1;
-
-    private HashMap<K, Long> keyAndOffset = new HashMap<>();
-    private HashMap<K, V> cache = new HashMap<>();
-    private String directory;
+    private final Map<K, Long> offsets = new HashMap<>();
+    private Map<K, V> readCache = new HashMap<>();
+    private Map<K, V> writeCache = new HashMap<>();
     private Serialization<K> keySerialization;
     private Serialization<V> valueSerialization;
     private RandomAccessFile keys;
     private RandomAccessFile values;
     private File lockAccess;
-    private File storageFile;
     private boolean flagForClose;
+    private Integer closeCounter;
 
-    public void almostInitStorage() throws IOException {
-        File keyFile = new File(KEYS_FILE_NAME);
-        File valFile = new File(VALUES_FILE_NAME);
+    public KlabertancOptimizedStorage(String path, Serialization<K> k, Serialization<V> v) {
 
-        keyFile.createNewFile();
-        valFile.createNewFile();
-
-        keys = new RandomAccessFile(keyFile, "rw");
-        values = new RandomAccessFile(valFile, "rw");
-    }
-
-    public void openStorage() throws IOException {
-        File keyFile = new File(KEYS_FILE_NAME);
-        File valFile = new File(VALUES_FILE_NAME);
-
-        if (!keyFile.exists() || !valFile.exists()) {
-            throw new IOException("Some files are missing!");
-        }
-
-        keys = new RandomAccessFile(keyFile, "rw");
-        values = new RandomAccessFile(valFile, "rw");
-
-        getKeyOffset();
-    }
-
-    public void getKeyOffset() throws IOException {
-        int keysNumber = keys.readInt();
-        for (int i = 0; i < keysNumber; ++i) {
-            K key = keySerialization.read(keys);
-            Long offset = keys.readLong();
-            keyAndOffset.put(key, offset);
-        }
-    }
-
-    public KlabertancOptimizedStorage(String path, Serialization<K> k, Serialization<V> v) throws
-            IOException {
-
-        directory = path;
+        closeCounter = 0;
         keySerialization = k;
         valueSerialization = v;
 
-        lockAccess = new File(directory, TRY_LOCK);
-        if (lockAccess.exists()) {
-            throw new RuntimeException("Another process is already running!");
-        }
-        lockAccess.mkdir();
-
-        File receivedFile = new File(directory);
-        if (receivedFile.exists() && receivedFile.isDirectory()) {
-            storageFile = new File(directory + File.separator + storageFile);
-        } else {
-            throw new RuntimeException("path" + directory + " is not valid!");
+        File dir = new File(path);
+        if (!dir.isDirectory() || !dir.exists()) {
+            throw new RuntimeException("Invalid path!");
         }
 
-        if (storageFile.exists()) {
-            DataInputStream input = new DataInputStream(new FileInputStream(storageFile));
-            openStorage();
-        } else {
-            storageFile.createNewFile();
-            almostInitStorage();
+        File keysFile = new File(dir, "keys.db");
+        File valuesFile = new File(dir, "values.db");
+
+        try {
+            keys = new RandomAccessFile(keysFile, "rws");
+            values = new RandomAccessFile(valuesFile, "rws");
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException("Files not found!");
+        }
+
+        if (keysFile.exists() && valuesFile.exists()) {
+            try {
+                if (keys.length() > 0 && values.length() > 0) {
+                    getStorageFromDisk();
+                }
+            } catch (IOException e) {
+                throw new RuntimeException("PLOHA OTKRIL FAILI");
+            }
         }
 
         flagForClose = false;
     }
 
-    private void putStorageOnDisk() throws IOException {
+    private void getStorageFromDisk() {
 
-        keys.seek(0);
-        keys.writeInt(keyAndOffset.size());
-        for (K key : keyAndOffset.keySet()) {
-            keySerialization.write(keys, key);
-            keys.writeLong(keyAndOffset.get(key));
+        int size;
+
+        try {
+            keys.seek(0);
+            size = keys.readInt();
+        } catch (IOException e) {
+            throw new RuntimeException("read size error");
+        }
+        for (int i = 0; i < size; ++i) {
+            K key;
+            Long offset = new Long(0);
+            try {
+                key = keySerialization.read(keys);
+            } catch (IOException e) {
+                throw new RuntimeException("key read error!");
+            }
+            try {
+                offset = keys.readLong();
+            } catch (IOException e) {
+                throw new RuntimeException("offset read error error!");
+            }
+            offsets.put(key, offset);
         }
 
-        keyAndOffset.clear();
-        cache.clear();
+    }
 
-        keys.close();
-        values.close();
+    private void putStorageOnDisk() {
+
+        pushCache();
+
+        try {
+            keys.close();
+            values.close();
+        } catch (IOException e) {
+            throw new RuntimeException("close errors!");
+        }
+
+        offsets.clear();
+        writeCache.clear();
+        readCache.clear();
 
         flagForClose = true;
     }
 
-    private void isStorageClosed() {
-        if (flagForClose) {
-            throw new RuntimeException("You're a bad guy. Don't try to access the closed storage!");
+    private void pushCache() {
+        try {
+            keys.seek(0);
+            keys.writeInt(offsets.size());
+            values.seek(values.length());
+            keys.seek(keys.length());
+            for (K key : writeCache.keySet()) {
+                keySerialization.write(keys, key);
+
+                keys.writeLong(values.length());
+                if (offsets.containsKey(key)) {
+                    if (offsets.get(key) == -1) {
+                        offsets.remove(key);
+                    }
+                }
+                offsets.put(key, values.length());
+
+                valueSerialization.write(values, writeCache.get(key));
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Cache pushing error!");
         }
     }
 
-    private void checkCache() {
-        if (cache.size() > MAGIC_NUMBER) {
-            cache.clear();
+    private void isStorageClosed() {
+        if (flagForClose) {
+            throw new RuntimeException("Trying reach storage in closed state!");
+        }
+    }
+
+    private void checkCache() throws IOException {
+        if (writeCache.size() >= MAX_CACHE_SIZE) {
+            pushCache();
+            writeCache.clear();
+        }
+        if (readCache.size() >= MAX_CACHE_SIZE) {
+            readCache.clear();
         }
     }
 
@@ -133,18 +153,28 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
     public synchronized V read(K key) {
         isStorageClosed();
 
-        if (cache.containsKey(key)) {
-            return cache.get(key);
-        }
-
-        if (!keyAndOffset.containsKey(key)) {
+        if (!offsets.containsKey(key)) {
             return null;
         }
 
-        Long offset = keyAndOffset.get(key);
+        if (readCache.containsKey(key)) {
+            return readCache.get(key);
+        }
+
+        if (writeCache.containsKey(key)) {
+            readCache.put(key, writeCache.get(key));
+            return writeCache.get(key);
+        }
+
+
+
+        Long offset = offsets.get(key);
         try {
             values.seek(offset);
-            return valueSerialization.read(values);
+            V value = valueSerialization.read(values);
+            readCache.put(key, value);
+            checkCache();
+            return value;
         } catch (IOException e) {
             return null;
         }
@@ -153,52 +183,52 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public synchronized boolean exists(K key) {
         isStorageClosed();
-        if (cache.containsKey(key)) {
-            return true;
-        }
-        return keyAndOffset.containsKey(key);
+        return offsets.containsKey(key);
     }
 
     @Override
     public synchronized void write(K key, V value) {
         isStorageClosed();
 
-        checkCache();
-
         try {
-            cache.put(key, value);
-            keyAndOffset.put(key, values.length());
-            values.seek(values.length());
-            valueSerialization.write(values, value);
+            checkCache();
         } catch (IOException e) {
-            System.out.println(e.getMessage());
+            System.out.println("Error with cache checking!");
         }
+
+        writeCache.put(key, value);
+        offsets.put(key, new Long(-1));
     }
 
     @Override
     public synchronized void delete(K key) {
         isStorageClosed();
-        cache.remove(key);
-        keyAndOffset.remove(key);
+        if (offsets.containsKey(key)) {
+            readCache.remove(key);
+            writeCache.remove(key);
+            offsets.remove(key);
+        }
     }
 
 
     @Override
     public synchronized Iterator<K> readKeys() {
         isStorageClosed();
-
-        return keyAndOffset.keySet().iterator();
+        return offsets.keySet().iterator();
     }
 
     @Override
     public synchronized int size() {
-        return keyAndOffset.size();
+        return offsets.size() + writeCache.size();
     }
 
     @Override
     public synchronized void close() throws IOException {
-        isStorageClosed();
-        putStorageOnDisk();
-        lockAccess.delete();
+        closeCounter++;
+        if (closeCounter == 1) {
+            isStorageClosed();
+            putStorageOnDisk();
+        }
     }
+
 }

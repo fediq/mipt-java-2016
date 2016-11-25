@@ -51,12 +51,8 @@ public class KlabertancOptimizedStorageTest extends KeyValueStoragePerformanceTe
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String path) {
         KlabertancOptimizedStorage<String, String> res = null;
-        try {
-            res = new KlabertancOptimizedStorage<>(path, new StringSerialization(),
-                    new StringSerialization());
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-        }
+        res = new KlabertancOptimizedStorage<>(path, new StringSerialization(),
+                new StringSerialization());
         return res;
     }
 
@@ -64,24 +60,17 @@ public class KlabertancOptimizedStorageTest extends KeyValueStoragePerformanceTe
     @Override
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) {
         KlabertancOptimizedStorage<Integer, Double> res = null;
-        try {
-            res = new KlabertancOptimizedStorage<>(path, new IntSerialization(),
-                    new DoubleSerialization());
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-        }
+        res = new KlabertancOptimizedStorage<>(path, new IntSerialization(),
+                new DoubleSerialization());
         return res;
     }
 
     @Override
     protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) {
         KlabertancOptimizedStorage<StudentKey, Student> res = null;
-        try {
-            res = new KlabertancOptimizedStorage<>(path, new StudentKeySerialization(),
-                    new StudentSerialization());
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-        }
+        res = new KlabertancOptimizedStorage<>(path, new StudentKeySerialization(),
+                new StudentSerialization());
+
         return res;
     }
 }
