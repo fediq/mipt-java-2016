@@ -14,9 +14,12 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.zip.Adler32;
+import java.util.zip.CheckedInputStream;
 
 import static java.awt.SystemColor.info;
 
@@ -25,6 +28,7 @@ import static java.awt.SystemColor.info;
  */
 public class FunnyStorage<Key, Value> implements KeyValueStorage<Key, Value> {
     private static final String KEYS_FILE_NAME = "keys.dat";
+    public static final String CHECKSUMS_FILE_NAME = "checksums.dat";
 
     private static boolean isPowerOfTwo(String s) {
         try {
@@ -205,7 +209,34 @@ public class FunnyStorage<Key, Value> implements KeyValueStorage<Key, Value> {
         for (RandomAccessFile file : files.values()) {
             file.close();
         }
+        signFiles();
         writeAllKeys();
         isClosed = true;
+    }
+
+    private void signFiles() throws IOException {
+        ArrayList<Long> hashes = new ArrayList<>();
+        byte[] buffer = new byte[getBufferSize()];
+        for (int fileNameInt : files.keySet().stream().sorted().toArray(Integer[]::new)) {
+            String fileName = String.valueOf(fileNameInt);
+            CheckedInputStream input = new CheckedInputStream(new FileInputStream(new File(storageDirectory, fileName)), new Adler32());
+            while (input.read(buffer) != -1) {
+            }
+            hashes.add(input.getChecksum().getValue());
+        }
+        DataOutputStream output = new DataOutputStream(new FileOutputStream(new File(CHECKSUMS_FILE_NAME)));
+        for (long hash : hashes) {
+            output.writeLong(hash);
+        }
+        output.close();
+    }
+
+    private int getBufferSize() {
+        int bufferSize = 0;
+        for (int fileNameInt : files.keySet()) {
+            bufferSize = Math.max(bufferSize, (int) new File(storageDirectory, String.valueOf(fileNameInt)).length());
+        }
+        bufferSize = Math.min(bufferSize, 16 * 1024 * 1024);
+        return bufferSize;
     }
 }
