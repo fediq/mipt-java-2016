@@ -1,4 +1,4 @@
-package ru.mipt.java2016.homework.g595.murzin.task3;
+package ru.mipt.java2016.homework.g595.murzin.task3slow;
 
 import java.io.BufferedInputStream;
 import java.io.InputStream;

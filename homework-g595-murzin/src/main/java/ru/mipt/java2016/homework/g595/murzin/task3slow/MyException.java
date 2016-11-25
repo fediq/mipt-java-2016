@@ -1,4 +1,4 @@
-package ru.mipt.java2016.homework.g595.murzin.task3;
+package ru.mipt.java2016.homework.g595.murzin.task3slow;
 
 /**
  * Created by dima on 15.11.16.

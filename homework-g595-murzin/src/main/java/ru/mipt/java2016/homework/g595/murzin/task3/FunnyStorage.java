@@ -1,7 +1,7 @@
-package ru.mipt.java2016.homework.g595.murzin.task3fast;
+package ru.mipt.java2016.homework.g595.murzin.task3;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
-import ru.mipt.java2016.homework.g595.murzin.task3.MyException;
+import ru.mipt.java2016.homework.g595.murzin.task3slow.MyException;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
