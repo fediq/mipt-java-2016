@@ -149,7 +149,9 @@ public abstract class KeyValueStoragePerformanceTest extends AbstractSingleFileS
     }
 
     // Вы можете пометить этот тест как @Ignored во время отладки, если он занимает у вас слишком много времени
-    @Test
+    
+    /*
+    @Test 
     public void measure100kWDump100kR() {
         AtomicLong summaryWriteTime = new AtomicLong(0L);
         AtomicLong summaryReadTime = new AtomicLong(0L);
@@ -190,7 +192,7 @@ public abstract class KeyValueStoragePerformanceTest extends AbstractSingleFileS
         print("%5d Reads per second from 100k", readsPerSecond);
         print("%5d millis for single 100kW 100kR iteration", iterationTimeMillis);
     }
-
+    */
 
     @Test
     public void measure10W20Rx1k() {
