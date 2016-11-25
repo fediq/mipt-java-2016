@@ -3,7 +3,7 @@ package ru.mipt.java2016.homework.g597.mashurin.task3;
 import java.io.RandomAccessFile;
 import java.io.IOException;
 
-public class IntegerIdentification extends Identification<Integer> {
+public class IntegerIdentification implements Identification<Integer> {
 
     public static IntegerIdentification get() {
         return new IntegerIdentification();

@@ -3,7 +3,7 @@ package ru.mipt.java2016.homework.g597.mashurin.task3;
 import java.io.RandomAccessFile;
 import java.io.IOException;
 
-public class StringIdentification extends Identification<String> {
+public class StringIdentification implements Identification<String> {
 
     public static StringIdentification get() {
         return new StringIdentification();

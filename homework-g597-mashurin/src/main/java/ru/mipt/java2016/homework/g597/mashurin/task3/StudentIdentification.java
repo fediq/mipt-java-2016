@@ -6,7 +6,7 @@ import java.io.RandomAccessFile;
 import java.io.IOException;
 import java.util.Date;
 
-public class StudentIdentification extends Identification<Student> {
+public class StudentIdentification implements Identification<Student> {
 
     public static StudentIdentification get() {
         return new StudentIdentification();

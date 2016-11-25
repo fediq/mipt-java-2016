@@ -4,7 +4,7 @@ import java.util.Date;
 import java.io.RandomAccessFile;
 import java.io.IOException;
 
-public class DateIdentification extends Identification<Date> {
+public class DateIdentification implements Identification<Date> {
 
     public static DateIdentification get() {
         return new DateIdentification();

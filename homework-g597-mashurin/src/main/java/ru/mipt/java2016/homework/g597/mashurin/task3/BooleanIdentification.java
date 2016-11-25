@@ -3,7 +3,7 @@ package ru.mipt.java2016.homework.g597.mashurin.task3;
 import java.io.RandomAccessFile;
 import java.io.IOException;
 
-public class BooleanIdentification extends Identification<Boolean> {
+public class BooleanIdentification implements Identification<Boolean> {
 
     public static BooleanIdentification get() {
         return new BooleanIdentification();

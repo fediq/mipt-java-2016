@@ -3,7 +3,7 @@ package ru.mipt.java2016.homework.g597.mashurin.task3;
 import java.io.RandomAccessFile;
 import java.io.IOException;
 
-public class LongIdentification extends Identification<Long> {
+public class LongIdentification implements Identification<Long> {
 
     public static LongIdentification get() {
         return new LongIdentification();

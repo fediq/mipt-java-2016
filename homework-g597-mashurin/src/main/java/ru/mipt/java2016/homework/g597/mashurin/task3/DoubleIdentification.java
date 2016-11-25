@@ -3,7 +3,7 @@ package ru.mipt.java2016.homework.g597.mashurin.task3;
 import java.io.RandomAccessFile;
 import java.io.IOException;
 
-public class DoubleIdentification extends Identification<Double> {
+public class DoubleIdentification implements Identification<Double> {
 
     public static DoubleIdentification get() {
         return new DoubleIdentification();

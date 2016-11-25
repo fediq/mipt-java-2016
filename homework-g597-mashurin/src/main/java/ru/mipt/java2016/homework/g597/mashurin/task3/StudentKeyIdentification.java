@@ -5,7 +5,7 @@ import ru.mipt.java2016.homework.tests.task2.StudentKey;
 import java.io.RandomAccessFile;
 import java.io.IOException;
 
-public class StudentKeyIdentification extends Identification<StudentKey> {
+public class StudentKeyIdentification implements Identification<StudentKey> {
 
     public static StudentKeyIdentification get() {
         return new StudentKeyIdentification();

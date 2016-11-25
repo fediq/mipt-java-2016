@@ -10,77 +10,75 @@ import java.io.IOException;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class UpdatedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
-    private String fileNameKey;
-    private String fileMameValue;
     private Identification<K> keyIdentification;
     private Identification<V> valueIdentification;
     private RandomAccessFile keysStorage;
     private RandomAccessFile valuesStorage;
-    private HashMap<K, Long> bufferShufts;
-    private Boolean closedStreem;
+    private Map<K, Long> bufferOffsets;
+    private Boolean closed = false;
     private ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
     public UpdatedKeyValueStorage(String nameDirectory, Identification<K> key, Identification<V> value)
             throws IOException {
 
-        closedStreem = false;
-        bufferShufts = new HashMap<K, Long>();
+        bufferOffsets = new HashMap<K, Long>();
         File directory = new File(nameDirectory);
         keyIdentification = key;
         valueIdentification = value;
         if (!directory.isDirectory()) {
-            throw new IOException("Isnt directory");
+            throw new IOException("Isn't directory");
         }
-        fileNameKey = nameDirectory + File.separator + "key.db";
-        fileMameValue = nameDirectory + File.separator + "value.db";
 
-        File keysFile = new File(fileNameKey);
-        File valuesFile = new File(fileMameValue);
+        File keysFile = new File(nameDirectory + File.separator + "key.db");
+        File valuesFile = new File(nameDirectory + File.separator + "value.db");
 
         if (keysFile.exists() && valuesFile.exists()) {
             keysStorage = new RandomAccessFile(keysFile, "rw");
             valuesStorage = new RandomAccessFile(valuesFile, "rw");
-            read();
+            load();
         } else {
-            try {
-                keysFile.createNewFile();
-                valuesFile.createNewFile();
-            } catch (IOException e) {
-                throw new RuntimeException("Error");
-            }
+            keysFile.createNewFile();
+            valuesFile.createNewFile();
             keysStorage = new RandomAccessFile(keysFile, "rw");
             valuesStorage = new RandomAccessFile(valuesFile, "rw");
         }
     }
 
-    private  void read() throws IOException {
-        bufferShufts.clear();
+    private void load() throws IOException {
+        bufferOffsets.clear();
 
         int readSize = IntegerIdentification.get().read(keysStorage);
         for (int i = 0; i < readSize; i++) {
-            bufferShufts.put(keyIdentification.read(keysStorage), LongIdentification.get().read(keysStorage));
+            bufferOffsets.put(keyIdentification.read(keysStorage), LongIdentification.get().read(keysStorage));
         }
     }
 
-    private void write() throws IOException {
-        keysStorage.seek(0);
-        IntegerIdentification.get().write(keysStorage, bufferShufts.size());
-        for (Map.Entry<K, Long> entry : bufferShufts.entrySet()) {
-            keyIdentification.write(keysStorage, entry.getKey());
-            LongIdentification.get().write(keysStorage, entry.getValue());
+    private void save() throws IOException {
+        try {
+            keysStorage.seek(0);
+            IntegerIdentification.get().write(keysStorage, bufferOffsets.size());
+            for (Map.Entry<K, Long> entry : bufferOffsets.entrySet()) {
+                keyIdentification.write(keysStorage, entry.getKey());
+                LongIdentification.get().write(keysStorage, entry.getValue());
+            }
+        } finally {
+            keysStorage.close();
+            valuesStorage.close();
         }
-        keysStorage.close();
-        valuesStorage.close();
+    }
+
+    private void checkClosing() {
+        if (closed) {
+            throw new IllegalStateException("Stream closed");
+        }
     }
 
     @Override
     public Iterator<K> readKeys() {
         lock.readLock().lock();
         try {
-            if (closedStreem) {
-                throw new IllegalStateException("Streem closed");
-            }
-            return bufferShufts.keySet().iterator();
+            checkClosing();
+            return bufferOffsets.keySet().iterator();
         } finally {
             lock.readLock().unlock();
         }
@@ -90,10 +88,8 @@ public class UpdatedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     public boolean exists(K key) {
         lock.readLock().lock();
         try {
-            if (closedStreem) {
-                throw new IllegalStateException("Streem closed");
-            }
-            return bufferShufts.keySet().contains(key);
+            checkClosing();
+            return bufferOffsets.keySet().contains(key);
         } finally {
             lock.readLock().unlock();
         }
@@ -103,11 +99,8 @@ public class UpdatedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     public void close() throws IOException {
         lock.writeLock().lock();
         try {
-            if (closedStreem) {
-                throw new IllegalStateException("Streem closed");
-            }
-            write();
-            closedStreem = true;
+            save();
+            closed = true;
         } finally {
             lock.writeLock().unlock();
         }
@@ -117,10 +110,8 @@ public class UpdatedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     public int size() {
         lock.readLock().lock();
         try {
-            if (closedStreem) {
-                throw new IllegalStateException("Streem closed");
-            }
-            return bufferShufts.size();
+            checkClosing();
+            return bufferOffsets.size();
         } finally {
             lock.readLock().unlock();
         }
@@ -130,10 +121,8 @@ public class UpdatedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     public void delete(K key) {
         lock.writeLock().lock();
         try {
-            if (closedStreem) {
-                throw new IllegalStateException("Streem closed");
-            }
-            bufferShufts.remove(key);
+            checkClosing();
+            bufferOffsets.remove(key);
         } finally {
             lock.writeLock().unlock();
         }
@@ -143,14 +132,12 @@ public class UpdatedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     public void write(K key, V value) {
         lock.writeLock().lock();
         try {
-            if (closedStreem) {
-                throw new IllegalStateException("Streem closed");
-            }
-            bufferShufts.put(key, valuesStorage.length());
+            checkClosing();
+            bufferOffsets.put(key, valuesStorage.length());
             valuesStorage.seek(valuesStorage.length());
             valueIdentification.write(valuesStorage, value);
         } catch (IOException e) {
-            throw new RuntimeException("Error write");
+            throw new RuntimeException(e);
         } finally {
             lock.writeLock().unlock();
         }
@@ -160,14 +147,12 @@ public class UpdatedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     public V read(K key) {
         lock.readLock().lock();
         try {
-            if (closedStreem) {
-                throw new IllegalStateException("Streem closed");
-            }
+            checkClosing();
             if (!exists(key)) {
                 return null;
             }
-            Long vallue = bufferShufts.get(key);
-            valuesStorage.seek(vallue);
+            Long value = bufferOffsets.get(key);
+            valuesStorage.seek(value);
             return valueIdentification.read(valuesStorage);
         } catch (IOException e) {
             throw new RuntimeException("Error read");
