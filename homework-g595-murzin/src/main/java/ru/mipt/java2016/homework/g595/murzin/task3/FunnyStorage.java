@@ -73,9 +73,27 @@ public class FunnyStorage<Key, Value> implements KeyValueStorage<Key, Value> {
                 }
             }
             readAllKeys();
+
+            if (!keys.isEmpty()) {
+                ArrayList<Long> checksums = getChecksums();
+                ArrayList<Long> checksumsInFile = readChecksums();
+                if (!checksums.equals(checksumsInFile)) {
+                    throw new MyException("TODO");
+                }
+            }
         } catch (IOException e) {
-            throw new MyException("");
+            throw new MyException("TODO");
         }
+    }
+
+    private ArrayList<Long> readChecksums() throws IOException {
+        ArrayList<Long> hashes = new ArrayList<>();
+        try (DataInputStream input = new DataInputStream(new FileInputStream(new File(storageDirectory, CHECKSUMS_FILE_NAME)))) {
+            while (input.available() > 0) {
+                hashes.add(input.readLong());
+            }
+        }
+        return hashes;
     }
 
     private void readAllKeys() {
@@ -149,7 +167,7 @@ public class FunnyStorage<Key, Value> implements KeyValueStorage<Key, Value> {
         try (DataOutputStream dataOutputStream = new DataOutputStream(byteArrayOutputStream)) {
             valueSerializationStrategy.serializeToStream(value, dataOutputStream);
         } catch (IOException e) {
-            throw new MyException("");
+            throw new MyException("TODO");
         }
         byte[] bytes = byteArrayOutputStream.toByteArray();
         int x = lowerboundPowerOfTwo(bytes.length);
@@ -209,26 +227,42 @@ public class FunnyStorage<Key, Value> implements KeyValueStorage<Key, Value> {
         for (RandomAccessFile file : files.values()) {
             file.close();
         }
-        signFiles();
         writeAllKeys();
+        writeChecksums();
         isClosed = true;
     }
 
-    private void signFiles() throws IOException {
+    private void writeChecksums() throws IOException {
+        File checksumsFile = new File(storageDirectory, CHECKSUMS_FILE_NAME);
+        if (keys.isEmpty()) {
+            Files.deleteIfExists(checksumsFile.toPath());
+            return;
+        }
+        ArrayList<Long> hashes = getChecksums();
+        try (DataOutputStream output = new DataOutputStream(new FileOutputStream(checksumsFile))) {
+            for (long hash : hashes) {
+                output.writeLong(hash);
+            }
+        }
+    }
+
+    private ArrayList<Long> getChecksums() throws IOException {
         ArrayList<Long> hashes = new ArrayList<>();
         byte[] buffer = new byte[getBufferSize()];
+
+        hashes.add(signFile(new File(storageDirectory, KEYS_FILE_NAME), buffer));
         for (int fileNameInt : files.keySet().stream().sorted().toArray(Integer[]::new)) {
-            String fileName = String.valueOf(fileNameInt);
-            CheckedInputStream input = new CheckedInputStream(new FileInputStream(new File(storageDirectory, fileName)), new Adler32());
+            hashes.add(signFile(new File(storageDirectory, String.valueOf(fileNameInt)), buffer));
+        }
+        return hashes;
+    }
+
+    private long signFile(File file, byte[] buffer) throws IOException {
+        try (CheckedInputStream input = new CheckedInputStream(new FileInputStream(file), new Adler32())) {
             while (input.read(buffer) != -1) {
             }
-            hashes.add(input.getChecksum().getValue());
+            return input.getChecksum().getValue();
         }
-        DataOutputStream output = new DataOutputStream(new FileOutputStream(new File(CHECKSUMS_FILE_NAME)));
-        for (long hash : hashes) {
-            output.writeLong(hash);
-        }
-        output.close();
     }
 
     private int getBufferSize() {
