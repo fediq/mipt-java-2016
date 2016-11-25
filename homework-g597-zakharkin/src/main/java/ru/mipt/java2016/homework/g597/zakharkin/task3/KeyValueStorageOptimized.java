@@ -18,10 +18,10 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * Created by ilya on 17.11.16.
  */
 public class KeyValueStorageOptimized<K, V> implements KeyValueStorage<K, V>, AutoCloseable {
-    private static final int maxCacheSize = 10;
-    private static final int maxBufSize = 1000;
-    private static final String dbName = "key_value_storage";
-    private static final String offsetName = "offsets";
+    private static final int MAX_CACHE_SIZE = 10;
+    private static final int MAX_BUF_SIZE = 1000;
+    private static final String DB_NAME = "key_value_storage";
+    private static final String OFFSET_NAME = "offsets";
     private String dbPath;
     private Boolean is_open = false;
     private Map<K, V> lruCache;
@@ -36,10 +36,10 @@ public class KeyValueStorageOptimized<K, V> implements KeyValueStorage<K, V>, Au
     public KeyValueStorageOptimized(String path,
                                     Serializer<K> keySerializerArg,
                                     Serializer<V> valueSerializerArg) throws OverlappingFileLockException {
-        lruCache = new LinkedHashMap<K, V>(maxCacheSize, 0.75f, true) {
+        lruCache = new LinkedHashMap<K, V>(MAX_CACHE_SIZE, 0.75f, true) {
             @Override
             protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
-                return size() > maxCacheSize;
+                return size() > MAX_CACHE_SIZE;
             }
         };
         dbPath = path;
@@ -66,9 +66,9 @@ public class KeyValueStorageOptimized<K, V> implements KeyValueStorage<K, V>, Au
             throw new FileNotFoundException("Incorrect directory");
         }
         String commonPath = dbPath + File.separator;
-        File file = new File(commonPath + dbName);
+        File file = new File(commonPath + DB_NAME);
         dbFile = new RandomAccessFile(file, "rw");
-        File file1 = new File(commonPath + offsetName);
+        File file1 = new File(commonPath + OFFSET_NAME);
         offsetsFile = new RandomAccessFile(file1, "rw");
         if (file.exists() && file1.exists()) {
             return true;
@@ -88,9 +88,13 @@ public class KeyValueStorageOptimized<K, V> implements KeyValueStorage<K, V>, Au
         }
     }
 
-    void checkStorageIsOpen() throws RuntimeException {
-        if (!is_open) {
-            throw new RuntimeException("Storage is not opened!");
+    private void checkStorageIsOpen() {
+        try {
+            if (!is_open) {
+                throw new RuntimeException("Storage is not opened!");
+            }
+        } catch (RuntimeException e) {
+            System.out.println("Storage is closed");
         }
     }
 
@@ -147,7 +151,7 @@ public class KeyValueStorageOptimized<K, V> implements KeyValueStorage<K, V>, Au
         checkStorageIsOpen();
         lock.writeLock().lock();
         try {
-            if (buffer.size() >= maxBufSize) {
+            if (buffer.size() >= MAX_BUF_SIZE) {
                 dumpToFile();
             }
             offsets.put(key, new Long(-1));
@@ -200,7 +204,7 @@ public class KeyValueStorageOptimized<K, V> implements KeyValueStorage<K, V>, Au
     }
 
     private void refreshStorageFile() throws IOException {
-        File newStorageFile = new File(dbPath + File.separator + dbName + "__tmp");
+        File newStorageFile = new File(dbPath + File.separator + DB_NAME + "__tmp");
         RandomAccessFile newDBFile = new RandomAccessFile(newStorageFile, "rw");
         newDBFile.seek(0);
         offsetsFile.setLength(0);
@@ -214,9 +218,9 @@ public class KeyValueStorageOptimized<K, V> implements KeyValueStorage<K, V>, Au
             valueSerializer.write(newDBFile, value);
         }
         dbFile.close();
-        File oldStorageFile = new File(dbPath + File.separator + dbName);
+        File oldStorageFile = new File(dbPath + File.separator + DB_NAME);
         oldStorageFile.delete();
-        newStorageFile.renameTo(new File(dbPath + File.separator + dbName));
+        newStorageFile.renameTo(new File(dbPath + File.separator + DB_NAME));
         newDBFile.close();
     }
 
