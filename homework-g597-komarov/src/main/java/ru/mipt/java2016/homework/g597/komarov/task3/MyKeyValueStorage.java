@@ -14,8 +14,8 @@ import  ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.g597.komarov.task2.Serializer;
 
 public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
-    private RandomAccessFile SSTable;
-    private RandomAccessFile memTable;
+    private RandomAccessFile valueTable;
+    private RandomAccessFile keyOffsetTable;
     private String pathToStorage;
     private File flag;
     private Serializer<K> keySerializer;
@@ -45,7 +45,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             throw new RuntimeException("Cannot create the file");
         }
         try {
-            SSTable = new RandomAccessFile(pathToFile, "rw");
+            valueTable = new RandomAccessFile(pathToFile, "rw");
         } catch (FileNotFoundException e) {
             throw new IOException("File not found");
         }
@@ -57,7 +57,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             throw new RuntimeException("Cannot create the file");
         }
         try {
-            memTable = new RandomAccessFile(pathToFile, "rw");
+            keyOffsetTable = new RandomAccessFile(pathToFile, "rw");
             dataBase = readMapFromFile();
         } catch (FileNotFoundException e) {
             throw new IOException("File not found");
@@ -76,8 +76,8 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             return written.get(key);
         }
         try {
-            SSTable.seek(offset);
-            return valueSerializer.read(SSTable);
+            valueTable.seek(offset);
+            return valueSerializer.read(valueTable);
         } catch (IOException e) {
             return null;
         }
@@ -92,7 +92,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public void write(K key, V value) {
         checkState();
-        dataBase.put(key, (long)-1);
+        dataBase.put(key, (long) -1);
         written.put(key, value);
         if (written.size() >= 100) {
             try {
@@ -144,8 +144,8 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         dataBase = null;
         written = null;
         deletedCount = 0;
-        SSTable.close();
-        memTable.close();
+        valueTable.close();
+        keyOffsetTable.close();
         flag.delete();
     }
 
@@ -159,33 +159,33 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         Map<K, Long> bufMap = new HashMap<>();
         K key;
         long offset;
-        memTable.seek(0);
-        while (memTable.getFilePointer() < memTable.length()) {
-            key = keySerializer.read(memTable);
-            offset = memTable.readLong();
+        keyOffsetTable.seek(0);
+        while (keyOffsetTable.getFilePointer() < keyOffsetTable.length()) {
+            key = keySerializer.read(keyOffsetTable);
+            offset = keyOffsetTable.readLong();
             bufMap.put(key, offset);
         }
         return bufMap;
     }
 
     private void merge() throws IOException {
-        long offset = SSTable.length();
-        SSTable.seek(offset);
-        memTable.seek(memTable.length());
+        long offset = valueTable.length();
+        valueTable.seek(offset);
+        keyOffsetTable.seek(keyOffsetTable.length());
         for (Map.Entry<K, V> entry : written.entrySet()) {
-            keySerializer.write(memTable, entry.getKey());
-            memTable.writeLong(offset);
+            keySerializer.write(keyOffsetTable, entry.getKey());
+            keyOffsetTable.writeLong(offset);
             dataBase.remove(entry.getKey());
             dataBase.put(entry.getKey(), offset);
-            valueSerializer.write(SSTable, entry.getValue());
-            offset = SSTable.length();
+            valueSerializer.write(valueTable, entry.getValue());
+            offset = valueTable.length();
         }
         written = new HashMap<>();
     }
 
     private void rewriteFile() throws IOException {
-        memTable.setLength(0);
-        memTable.seek(0);
+        keyOffsetTable.setLength(0);
+        keyOffsetTable.seek(0);
 
         RandomAccessFile bufFile;
         File pathToFile = Paths.get(pathToStorage, "storageCopy.db").toFile();
@@ -206,10 +206,10 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
         for (Map.Entry<K, Long> entry : dataBase.entrySet()) {
             if (entry.getValue() >= 0) {
-                keySerializer.write(memTable, entry.getKey());
-                memTable.writeLong(offset);
-                SSTable.seek(entry.getValue());
-                bufValue = valueSerializer.read(SSTable);
+                keySerializer.write(keyOffsetTable, entry.getKey());
+                keyOffsetTable.writeLong(offset);
+                valueTable.seek(entry.getValue());
+                bufValue = valueSerializer.read(valueTable);
                 valueSerializer.write(bufFile, bufValue);
                 offset += bufFile.length();
             }
@@ -219,6 +219,6 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         oldFile.delete();
         File newFile = Paths.get(pathToStorage, "storageCopy.db").toFile();
         newFile.renameTo(oldFile);
-        SSTable = bufFile;
+        valueTable = bufFile;
     }
 }
