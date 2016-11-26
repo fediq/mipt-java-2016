@@ -7,9 +7,7 @@ import ru.mipt.java2016.homework.g597.kirilenko.task3.MySerialization.Serializat
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by Natak on 27.10.2016.
@@ -19,15 +17,14 @@ import java.util.Set;
 
 public class MyOptimisedStorage<K, V> implements KeyValueStorage<K, V> {
     private static boolean close = false;
-    private String keysFullPath;
-    private String valueFullPath;
-    private RandomAccessFile keysRwFile;
-    private RandomAccessFile valueRwFile;
+    private final RandomAccessFile keysRwFile;
+    private final RandomAccessFile valueRwFile;
     private HashMap<K, Long> keysStorage = new HashMap<>();
-    private MySerialization<K> keySerialization;
-    private MySerialization<V> valueSerialization;
-    private File f;
-    
+    private final MySerialization<K> keySerialization;
+    private final MySerialization<V> valueSerialization;
+    private final File f;
+    private ArrayList<Long> unusedOffsets = new ArrayList<>();
+
     public MyOptimisedStorage(String path, MySerialization<K> serializeK,
                               MySerialization<V> serializeV) throws IOException {
         File dir = new File(path);
@@ -35,15 +32,15 @@ public class MyOptimisedStorage<K, V> implements KeyValueStorage<K, V> {
             throw new IOException("There is no such directory");
         }
 
-        String check = path + File.separator + "checkProcesses";
+        String check = path + File.separator + "checkProcesses";//file for thread safety
         f = new File(check);
-        if (!f.createNewFile()) {
+        if (!f.createNewFile()) {//thread safety
             throw new IOException("Error");
         }
 
         close = false;
-        keysFullPath = path + File.separator + "keysStorage";
-        valueFullPath = path + File.separator + "valueStorage";
+        String keysFullPath = path + File.separator + "keysStorage";
+        String valueFullPath = path + File.separator + "valueStorage";
         keySerialization = serializeK;
         valueSerialization = serializeV;
         File kFile = new File(keysFullPath);
@@ -55,8 +52,8 @@ public class MyOptimisedStorage<K, V> implements KeyValueStorage<K, V> {
             int size = SerializationType.SerializationInteger.getSerialization().read(keysRwFile);
             for (int i = 0; i < size; ++i) {
                 K key = keySerialization.read(keysRwFile);
-                Long displacement = SerializationType.SerializationLong.getSerialization().read(keysRwFile);
-                keysStorage.put(key, displacement);
+                Long offset = SerializationType.SerializationLong.getSerialization().read(keysRwFile);
+                keysStorage.put(key, offset);
             }
         } else {
             kFile.createNewFile();
@@ -79,8 +76,8 @@ public class MyOptimisedStorage<K, V> implements KeyValueStorage<K, V> {
             return null;
         }
         try {
-            Long displacement = keysStorage.get(key);
-            valueRwFile.seek(displacement);
+            Long offset = keysStorage.get(key);
+            valueRwFile.seek(offset);
             V value = valueSerialization.read(valueRwFile);
             return value;
         } catch (IOException e) {
@@ -98,10 +95,18 @@ public class MyOptimisedStorage<K, V> implements KeyValueStorage<K, V> {
     public void write(K key, V value) {
         isClose();
         try {
-            Long displacement = valueRwFile.length();
-            valueRwFile.seek(displacement);
+            Long offset;
+            offset = valueRwFile.length();
+            if (unusedOffsets.size() == 0) {
+                offset = valueRwFile.length();
+            }
+            else {
+                offset = unusedOffsets.get(0);
+                unusedOffsets.remove(0);
+            }
+            valueRwFile.seek(offset);
             valueSerialization.write(valueRwFile, value);
-            keysStorage.put(key, displacement);
+            keysStorage.put(key, offset);
         } catch (IOException e) {
             throw new RuntimeException("Error");
         }
@@ -110,6 +115,10 @@ public class MyOptimisedStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public void delete(Object key) {
         isClose();
+        if (!keysStorage.containsKey(key)) {
+            return;
+        }
+        unusedOffsets.add(keysStorage.get(key));
         keysStorage.remove(key);
     }
 
@@ -127,18 +136,23 @@ public class MyOptimisedStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public void close() throws IOException {
-        isClose();
-        close = true;
-        f.delete();
-        keysRwFile.seek(0);
-        keysRwFile.setLength(0);
-        SerializationType.SerializationInteger.getSerialization().write(keysRwFile, keysStorage.size());
-        Set<K> keys = keysStorage.keySet();
-        for (K k : keys) {
-            keySerialization.write(keysRwFile, k);
-            SerializationType.SerializationLong.getSerialization().write(keysRwFile, keysStorage.get(k));
+        if(close) {
+            return;
         }
-        keysRwFile.close();
-        valueRwFile.close();
+        close = true;
+        try {
+            f.delete();
+            keysRwFile.seek(0);
+            keysRwFile.setLength(0);
+            SerializationType.SerializationInteger.getSerialization().write(keysRwFile, keysStorage.size());
+            Set<K> keys = keysStorage.keySet();
+            for (K k : keys) {
+                keySerialization.write(keysRwFile, k);
+                SerializationType.SerializationLong.getSerialization().write(keysRwFile, keysStorage.get(k));
+            }
+        } finally {
+            keysRwFile.close();
+            valueRwFile.close();
+        }
     }
 }
