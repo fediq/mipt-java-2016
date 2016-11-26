@@ -7,7 +7,7 @@ import java.util.Date;
 /**
  * Created by whoami on 11/21/16.
  */
-class DateSerializer implements SerializationStrategy<Date> {
+public class DateSerializer implements SerializationStrategy<Date> {
 
     private static class SingletonHolder {
         static final DateSerializer HOLDER_INSTANCE = new DateSerializer();

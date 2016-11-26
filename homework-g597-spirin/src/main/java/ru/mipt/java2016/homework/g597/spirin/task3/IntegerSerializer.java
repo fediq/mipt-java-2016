@@ -6,7 +6,7 @@ import java.io.RandomAccessFile;
 /**
  * Created by whoami on 11/21/16.
  */
-class IntegerSerializer implements SerializationStrategy<Integer> {
+public class IntegerSerializer implements SerializationStrategy<Integer> {
 
     private static class SingletonHolder {
         static final IntegerSerializer HOLDER_INSTANCE = new IntegerSerializer();

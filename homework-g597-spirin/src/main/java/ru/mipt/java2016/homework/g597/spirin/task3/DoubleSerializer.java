@@ -6,7 +6,7 @@ import java.io.RandomAccessFile;
 /**
  * Created by whoami on 11/21/16.
  */
-class DoubleSerializer implements SerializationStrategy<Double> {
+public class DoubleSerializer implements SerializationStrategy<Double> {
 
     private static class SingletonHolder {
         static final DoubleSerializer HOLDER_INSTANCE = new DoubleSerializer();
