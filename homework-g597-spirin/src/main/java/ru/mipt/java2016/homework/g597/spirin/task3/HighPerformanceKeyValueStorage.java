@@ -32,7 +32,7 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
     private final Map<K, Long> offsets = new HashMap<>();
 
     private ReadWriteLock lock;
-    private boolean isOpen;
+    private boolean isOpen = false;
 
     private LoadingCache<K, V> cache = CacheBuilder.newBuilder().maximumSize(100).build(new CacheLoader<K, V>() {
         @Override
@@ -131,6 +131,7 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
     public void delete(K key) {
         lock.writeLock().lock();
         try {
+            checkIfStorageIsOpen();
             offsets.remove(key);
         } finally {
             lock.writeLock().unlock();
@@ -141,6 +142,7 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
     public boolean exists(K key) {
         lock.readLock().lock();
         try {
+            checkIfStorageIsOpen();
             return offsets.containsKey(key);
         } finally {
             lock.readLock().unlock();
@@ -151,6 +153,7 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
     public int size() {
         lock.readLock().lock();
         try {
+            checkIfStorageIsOpen();
             return offsets.size();
         } finally {
             lock.readLock().unlock();
@@ -161,6 +164,7 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
     public Iterator<K> readKeys() {
         lock.readLock().lock();
         try {
+            checkIfStorageIsOpen();
             return offsets.keySet().iterator();
         } finally {
             lock.readLock().unlock();
@@ -187,7 +191,6 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
 
             offsetStorage.close();
         } finally {
-
             lock.writeLock().unlock();
         }
     }
