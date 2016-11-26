@@ -11,10 +11,17 @@ import java.util.Iterator;
  */
 
 public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
+    private final HashMap<K, V> keyValueStorage;
+    private final String directory;
+    private final InterfaceSerialization<K> keySerialization;
+    private final InterfaceSerialization<V> valueSerialization;
+    private final String typeOfData;
+    private boolean isOpen;
+
     public MegaKeyValueStorage(String path, String dataType, InterfaceSerialization<K> keySerialization,
                                InterfaceSerialization<V> valueSerialization) throws IllegalStateException {
         isOpen = true;
-        directory = path + "/storage.db";
+        directory = path + File.separator + "storage.db";
         keyValueStorage = new HashMap<>();
         typeOfData = dataType;
         this.keySerialization = keySerialization;
@@ -23,7 +30,7 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         if (!storage.exists()) {
             try {
                 storage.createNewFile();
-            } catch (Exception e) {
+            } catch (IOException | SecurityException e) {
                 throw new IllegalStateException(e.getMessage(), e.getCause());
             }
         } else {
@@ -39,7 +46,7 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                     keyValueStorage.put(key, value);
                 }
                 storageInput.close();
-            } catch (Exception e) {
+            } catch (IllegalStateException | IOException e) {
                 throw new IllegalStateException("Invalid storage format", e.getCause());
             }
 
@@ -113,11 +120,4 @@ public class MegaKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
-
-    private final HashMap<K, V> keyValueStorage;
-    private final String directory;
-    private final InterfaceSerialization<K> keySerialization;
-    private final InterfaceSerialization<V> valueSerialization;
-    private final String typeOfData;
-    private boolean isOpen;
 }
