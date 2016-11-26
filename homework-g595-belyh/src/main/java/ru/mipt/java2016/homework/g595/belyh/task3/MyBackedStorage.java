@@ -179,6 +179,7 @@ public class MyBackedStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public V read(K key) {
         isClosed();
+
         if (!exists(key)) {
             return null;
         }
