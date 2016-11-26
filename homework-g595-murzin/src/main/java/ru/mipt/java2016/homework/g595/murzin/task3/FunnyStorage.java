@@ -1,6 +1,7 @@
 package ru.mipt.java2016.homework.g595.murzin.task3;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
+import ru.mipt.java2016.homework.g595.murzin.task3slow.LSMStorage;
 import ru.mipt.java2016.homework.g595.murzin.task3slow.MyException;
 
 import java.io.BufferedOutputStream;
@@ -12,6 +13,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.channels.FileLock;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -28,7 +30,7 @@ import static java.awt.SystemColor.info;
  */
 public class FunnyStorage<Key, Value> implements KeyValueStorage<Key, Value> {
     private static final String KEYS_FILE_NAME = "keys.dat";
-    public static final String CHECKSUMS_FILE_NAME = "checksums.dat";
+    private static final String CHECKSUMS_FILE_NAME = "checksums.dat";
 
     private static boolean isPowerOfTwo(String s) {
         try {
@@ -50,11 +52,34 @@ public class FunnyStorage<Key, Value> implements KeyValueStorage<Key, Value> {
         return x;
     }
 
+    /*
+    Структура хранилища:
+        * Для обеспечения синхронизации существует файл .lock
+        * Все ключи хранятся в файле keys.dat
+        * значения хранятся в нескольких файлах, в зависимости от их размера
+            если число x --- степень двойки, то в файле с именем x хранятся значения, размер которых лежит в полуинтервале [x/2 ... x),
+            причём если значений размера [x/2 ... x) всего n штук, то i-ое из них (0 <= i < n) лежит по смещению i * x
+        * Формат keys.dat:
+            * первые 4 байта --- общее число ключей
+            * Далее идут записи ключей следующего формата
+                * сам ключ (вычислением его размера занимается SerializationStrategy)
+                * 4 байта --- размер значения для этого ключа (на основании этого размера однозначно определяется файл, в котором лежит значение)
+                * 4 байта --- смещение в файле, по которому лежит значение
+     */
+
+    // File задающий папку хранилища
     private File storageDirectory;
+    // FileLock для обеспечения между процессорной синхронизации
+    private FileLock lock;
+    // стратегия сериализация ключей
     private SerializationStrategy<Key> keySerializationStrategy;
+    // стратегия сериализация значений
     private SerializationStrategy<Value> valueSerializationStrategy;
+    // HashMap для получения по размеру значений x (x --- степень двойки) файла, в котором лежат все значения размера [x/2 ... x)
     private HashMap<Integer, RandomAccessFile> files = new HashMap<>();
+    // HashMap для быстрого получения по ключу информации о нём
     private HashMap<Key, KeyWrapper> keys = new HashMap<>();
+    // флаг, определющий, был ли уже вызван метод close()
     private volatile boolean isClosed;
 
     public FunnyStorage(String path,
@@ -63,6 +88,15 @@ public class FunnyStorage<Key, Value> implements KeyValueStorage<Key, Value> {
         storageDirectory = new File(path);
         this.keySerializationStrategy = keySerializationStrategy;
         this.valueSerializationStrategy = valueSerializationStrategy;
+
+        synchronized (LSMStorage.class) {
+            try {
+                // It is between processes lock!!!
+                lock = new RandomAccessFile(new File(path, ".lock"), "rw").getChannel().lock();
+            } catch (IOException e) {
+                throw new MyException("Can't create lock file", e);
+            }
+        }
 
         try {
             File[] allFiles = Files.list(storageDirectory.toPath()).map(Path::toFile).toArray(File[]::new);
@@ -234,6 +268,7 @@ public class FunnyStorage<Key, Value> implements KeyValueStorage<Key, Value> {
         }
         writeAllKeys();
         writeChecksums();
+        lock.release();
         isClosed = true;
     }
 
