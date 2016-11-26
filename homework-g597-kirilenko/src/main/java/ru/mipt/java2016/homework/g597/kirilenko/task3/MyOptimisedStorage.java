@@ -32,9 +32,9 @@ public class MyOptimisedStorage<K, V> implements KeyValueStorage<K, V> {
             throw new IOException("There is no such directory");
         }
 
-        String check = path + File.separator + "checkProcesses";//file for thread safety
+        String check = path + File.separator + "checkProcesses"; //file for thread safety
         f = new File(check);
-        if (!f.createNewFile()) {//thread safety
+        if (!f.createNewFile()) { //thread safety
             throw new IOException("Error");
         }
 
@@ -99,8 +99,7 @@ public class MyOptimisedStorage<K, V> implements KeyValueStorage<K, V> {
             offset = valueRwFile.length();
             if (unusedOffsets.size() == 0) {
                 offset = valueRwFile.length();
-            }
-            else {
+            } else {
                 offset = unusedOffsets.get(0);
                 unusedOffsets.remove(0);
             }
@@ -136,7 +135,7 @@ public class MyOptimisedStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public void close() throws IOException {
-        if(close) {
+        if (close) {
             return;
         }
         close = true;
