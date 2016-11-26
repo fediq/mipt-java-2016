@@ -78,11 +78,11 @@ public class FunnyStorage<Key, Value> implements KeyValueStorage<Key, Value> {
                 ArrayList<Long> checksums = getChecksums();
                 ArrayList<Long> checksumsInFile = readChecksums();
                 if (!checksums.equals(checksumsInFile)) {
-                    throw new MyException("TODO");
+                    throw new MyException("Checksums don't equals");
                 }
             }
         } catch (IOException e) {
-            throw new MyException("TODO");
+            throw new MyException("Can't read from storage files", e);
         }
     }
 
@@ -131,9 +131,13 @@ public class FunnyStorage<Key, Value> implements KeyValueStorage<Key, Value> {
         }
     }
 
+    private File getStorageFile(int x) {
+        return new File(storageDirectory, String.valueOf(x));
+    }
+
     private void checkForClosed() {
         if (isClosed) {
-            throw new RuntimeException("Access to closed storage");
+            throw new MyException("Access to closed storage");
         }
     }
 
@@ -151,7 +155,7 @@ public class FunnyStorage<Key, Value> implements KeyValueStorage<Key, Value> {
             file.seek(wrapper.getOffsetInFile());
             return valueSerializationStrategy.deserializeFromStream(file);
         } catch (IOException e) {
-            throw new MyException("", e);
+            throw new MyException("Can't read from storage file " + getStorageFile(x).getAbsolutePath(), e);
         }
     }
 
@@ -168,14 +172,14 @@ public class FunnyStorage<Key, Value> implements KeyValueStorage<Key, Value> {
         try (DataOutputStream dataOutputStream = new DataOutputStream(byteArrayOutputStream)) {
             valueSerializationStrategy.serializeToStream(value, dataOutputStream);
         } catch (IOException e) {
-            throw new MyException("TODO");
+            throw new MyException("Can't write with DataOutputStream to ByteArrayOutputStream", e);
         }
         byte[] bytes = byteArrayOutputStream.toByteArray();
         int x = lowerboundPowerOfTwo(bytes.length);
         RandomAccessFile file = files.get(x);
         try {
             if (file == null) {
-                file = new RandomAccessFile(new File(storageDirectory, String.valueOf(x)), "rw");
+                file = new RandomAccessFile(getStorageFile(x), "rw");
                 files.put(x, file);
             }
             long fileLength = file.length();
@@ -183,7 +187,7 @@ public class FunnyStorage<Key, Value> implements KeyValueStorage<Key, Value> {
             file.write(bytes);
             keys.put(key, new KeyWrapper(bytes.length, fileLength));
         } catch (IOException e) {
-            throw new MyException("");
+            throw new MyException("Can't write to storage file " + getStorageFile(x).getAbsolutePath(), e);
         }
     }
 
@@ -205,7 +209,7 @@ public class FunnyStorage<Key, Value> implements KeyValueStorage<Key, Value> {
             }
             file.setLength(fileLength - x);
         } catch (IOException e) {
-            throw new MyException("");
+            throw new MyException("Can't delete from file " + getStorageFile(x).getAbsolutePath(), e);
         }
         keys.remove(key);
     }
@@ -253,7 +257,7 @@ public class FunnyStorage<Key, Value> implements KeyValueStorage<Key, Value> {
 
         hashes.add(signFile(new File(storageDirectory, KEYS_FILE_NAME), buffer));
         for (int fileNameInt : files.keySet().stream().sorted().toArray(Integer[]::new)) {
-            hashes.add(signFile(new File(storageDirectory, String.valueOf(fileNameInt)), buffer));
+            hashes.add(signFile(getStorageFile(fileNameInt), buffer));
         }
         return hashes;
     }
@@ -272,7 +276,7 @@ public class FunnyStorage<Key, Value> implements KeyValueStorage<Key, Value> {
     private int getBufferSize() {
         int bufferSize = 0;
         for (int fileNameInt : files.keySet()) {
-            bufferSize = Math.max(bufferSize, (int) new File(storageDirectory, String.valueOf(fileNameInt)).length());
+            bufferSize = Math.max(bufferSize, (int) getStorageFile(fileNameInt).length());
         }
         bufferSize = Math.min(bufferSize, 16 * 1024 * 1024);
         return bufferSize;

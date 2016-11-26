@@ -186,12 +186,11 @@ public abstract class KeyValueStoragePerformanceTest extends AbstractSingleFileS
         long readsPerSecond = 10 * 100000 * 1000 / summaryReadTime.get();
         long writesPerSecond = 10 * 100000 * 1000 / summaryWriteTime.get();
 
-        System.out.println(summaryReadTime);
-        System.out.println(summaryWriteTime);
         print("%5d Writes per second up to 100k", writesPerSecond);
         print("%5d Reads per second from 100k", readsPerSecond);
         print("%5d millis for single 100kW 100kR iteration", iterationTimeMillis);
     }
+
 
     @Test
     public void measure10W20Rx1k() {
