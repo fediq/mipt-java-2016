@@ -16,21 +16,22 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 
-public class MyOptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V>, AutoCloseable {
+public class MyOptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private static final int MAX_MEMTABLE_SIZE = 1000;
     private static final double MAX_DELETED_RATIO = 0.1;
+    private static final int MIN_SIZE_TO_CLEAR = 100;
 
     private int numberOfDeletedElements;
-    private HashMap<K, V> memtable;
-    private HashMap<K, Long> offsets;
+    private final Map<K, V> memtable = new HashMap<>();
+    private Map<K, Long> offsets = new HashMap<>();
     private final SerializationStrategy<K, V> serializationStrategy;
     private final RandomAccessFile fileForKeys;
     private RandomAccessFile fileForValues;
     private final String fileName;
     private final String path;
     private final File lock;
-    private ReentrantReadWriteLock readWriteLock = new ReentrantReadWriteLock();
-    private ReentrantLock fileLock = new ReentrantLock();
+    private final ReentrantReadWriteLock readWriteLock = new ReentrantReadWriteLock();
+    private final ReentrantLock fileLock = new ReentrantLock();
 
     public MyOptimisedKeyValueStorage(String path,
                                       SerializationStrategy<K, V> serializationStrategy) throws IOException {
@@ -44,8 +45,6 @@ public class MyOptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V>, 
             throw new IOException("Database is already open");
         }
 
-        memtable = new HashMap<>();
-        offsets = new HashMap<>();
         this.serializationStrategy = serializationStrategy;
 
         File tmpFileForValues = new File(path + File.separator + this.fileName + "_values");
@@ -56,9 +55,9 @@ public class MyOptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V>, 
 
         numberOfDeletedElements = 0;
 
-        if (!tmpFileForValues.createNewFile() || !tmpFileForKeys.createNewFile()) {
-            initializeFromFile();
-        }
+        tmpFileForValues.createNewFile();
+        tmpFileForKeys.createNewFile();
+        initializeFromFile();
     }
 
     private void initializeFromFile() throws IOException {
@@ -109,7 +108,7 @@ public class MyOptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V>, 
     }
 
     private void confirmNotClosed() {
-        if (fileForKeys == null || fileForValues == null) {
+        if (fileForValues == null) {
             throw new IllegalStateException("Storage was closed");
         }
     }
@@ -175,23 +174,26 @@ public class MyOptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V>, 
 
     @Override
     public void close() throws IOException {
-        try {
-            dumpMemtable();
-            readWriteLock.writeLock().lock();
-            fileForKeys.seek(0);
-            fileForKeys.setLength(0);
-            fileForKeys.writeInt(numberOfDeletedElements);
-            for (HashMap.Entry<K, Long> entry : offsets.entrySet()) {
-                serializationStrategy.writeKey(fileForKeys, entry.getKey());
-                fileForKeys.writeLong(entry.getValue());
+        if (fileForValues != null) {
+            try {
+                dumpMemtable();
+                readWriteLock.writeLock().lock();
+                fileForKeys.seek(0);
+                fileForKeys.setLength(0);
+                fileForKeys.writeInt(numberOfDeletedElements);
+                for (HashMap.Entry<K, Long> entry : offsets.entrySet()) {
+                    serializationStrategy.writeKey(fileForKeys, entry.getKey());
+                    fileForKeys.writeLong(entry.getValue());
+                }
+            } finally {
+                Files.delete(lock.toPath());
+                memtable.clear();
+                offsets.clear();
+                fileForKeys.close();
+                fileForValues.close();
+                fileForValues = null;
+                readWriteLock.writeLock().unlock();
             }
-        } finally {
-            Files.delete(lock.toPath());
-            memtable.clear();
-            offsets.clear();
-            fileForKeys.close();
-            fileForValues.close();
-            readWriteLock.writeLock().unlock();
         }
     }
 
@@ -230,18 +232,18 @@ public class MyOptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V>, 
                 throw new IllegalStateException("Unable to create necessary file");
             }
             RandomAccessFile newFileForValues = new RandomAccessFile(tmpNewFileForValues, "rw");
-            for (Map.Entry<K, Long> entry : offsets.entrySet()) {
-                readWriteLock.readLock().lock();
-                fileLock.lock();
-                try {
+            fileLock.lock();
+            try {
+                for (Map.Entry<K, Long> entry : offsets.entrySet()) {
+                    fileLock.lock();
                     fileForValues.seek(entry.getValue());
                     V value = serializationStrategy.readValue(fileForValues);
                     updatedOffsets.put(entry.getKey(), newFileForValues.length());
                     serializationStrategy.writeValue(newFileForValues, value);
-                } finally {
-                    readWriteLock.readLock().unlock();
                     fileLock.unlock();
                 }
+            } finally {
+                fileLock.unlock();
             }
             numberOfDeletedElements = 0;
             offsets = updatedOffsets;
@@ -255,7 +257,7 @@ public class MyOptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V>, 
     }
 
     private void dumpOrClearDeletedElementsIfNecessary() {
-        if (numberOfDeletedElements > MAX_DELETED_RATIO * size() && size() > MAX_MEMTABLE_SIZE / 10) {
+        if (numberOfDeletedElements > MAX_DELETED_RATIO * size() && size() > MIN_SIZE_TO_CLEAR) {
             clearDeletedElements();
         }
         if (memtable.size() > MAX_MEMTABLE_SIZE) {
