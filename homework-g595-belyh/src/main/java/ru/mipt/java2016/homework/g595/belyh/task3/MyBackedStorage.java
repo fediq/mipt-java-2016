@@ -15,13 +15,14 @@ import javafx.util.Pair;
 public class MyBackedStorage<K, V> implements KeyValueStorage<K, V> {
     private static final Integer SZ = 10;
     boolean closed;
-    HashMap<K, Integer> map = new HashMap<>();
-    HashMap<K, V> cache = new HashMap<>();
-    RandomAccessFile file, info;
-    Serializer<K> keySerializer;
-    Serializer<V> valueSerializer;
-    Serializer<Integer> in;
-    String realPath;
+    private HashMap<K, Integer> map = new HashMap<>();
+    private HashMap<K, V> cache = new HashMap<>();
+    private RandomAccessFile file;
+    private RandomAccessFile info;
+    private Serializer<K> keySerializer;
+    private Serializer<V> valueSerializer;
+    private Serializer<Integer> in;
+    private String realPath;
     private Integer maxSize;
 
     public MyBackedStorage(String path, Serializer<K> serializerK, Serializer<V> serializerV) throws IOException {
@@ -94,7 +95,7 @@ public class MyBackedStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void rebuild() {
-        ArrayList<Pair<Integer, K> > list = new ArrayList<>();
+        ArrayList<Pair<Integer, K> > list = new ArrayList <> ();
         for (HashMap.Entry<K, Integer> it : map.entrySet()) {
             list.add(new Pair<>(it.getValue(), it.getKey()));
         }
@@ -111,14 +112,14 @@ public class MyBackedStorage<K, V> implements KeyValueStorage<K, V> {
 
         for (int i = 0; i < list.size(); i++) {
             map.put(list.get(i).getValue(), pos);
-            mySeek(info, (long)list.get(i).getKey());
+            mySeek(info, (long) list.get(i).getKey());
 
             try {
                 V value = valueSerializer.deserialize(info);
-                mySeek(info, (long)pos);
+                mySeek(info, (long) pos);
                 valueSerializer.serialize(value, info);
             } catch (IOException error) {
-
+                System.out.println("Error");
             }
         }
     }
@@ -153,7 +154,7 @@ public class MyBackedStorage<K, V> implements KeyValueStorage<K, V> {
             }
             f.seek(pos);
         } catch(IOException error) {
-
+            System.out.println("Error");
         }
     }
 
@@ -171,7 +172,7 @@ public class MyBackedStorage<K, V> implements KeyValueStorage<K, V> {
                 maxSize++;
             }
         } catch (IOException error) {
-
+            System.out.println("Error");
         }
     }
 
@@ -189,12 +190,12 @@ public class MyBackedStorage<K, V> implements KeyValueStorage<K, V> {
         Integer shift = map.get(key);
 
         try {
-            mySeek(info, (long)shift);
+            mySeek(info, (long) shift);
             V tmp = valueSerializer.deserialize(info);
             addToCache(key, tmp);
             return tmp;
         } catch (IOException error){
-
+            System.out.println("Error");
         }
 
         return null;
