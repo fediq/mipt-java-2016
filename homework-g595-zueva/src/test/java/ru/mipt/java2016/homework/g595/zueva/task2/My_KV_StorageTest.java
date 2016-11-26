@@ -13,11 +13,11 @@ public class My_KV_StorageTest extends AbstractSingleFileStorageTest {
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String path) {
         MyKVStorage result = null;
-        Serializers.SerializerString a;
-        Serializers.SerializerString b;
+        Serializers.SerializerStorageString a;
+        Serializers.SerializerStorageString b;
         try {
-            result = new MyKVStorage(path, new Serializers.SerializerString(),
-                    new Serializers.SerializerString());
+            result = new MyKVStorage(path, new Serializers.SerializerStorageString(),
+                    new Serializers.SerializerStorageString());
         } catch (Exception except) {
             System.out.println(except.getMessage());
         }
@@ -30,7 +30,7 @@ public class My_KV_StorageTest extends AbstractSingleFileStorageTest {
         MyKVStorage<Integer, Double> result = null;
         try {
             result = new MyKVStorage(path, new Serializers.SerialiserInt(),
-                    new Serializers.SerializerDouble());
+                    new Serializers.SerializerStorageDouble());
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
@@ -41,15 +41,15 @@ public class My_KV_StorageTest extends AbstractSingleFileStorageTest {
     public KeyValueStorage<ru.mipt.java2016.homework.tests.task2.StudentKey, ru.mipt.java2016.homework.tests.task2.Student> buildPojoStorage(String path) {
         MyKVStorage result = null;
         try {
-            result = new MyKVStorage(path, new SerializerStudentKey(),
-                    new SerializerStudent());
+            result = new MyKVStorage(path, new SerializerStorageStudentKey(),
+                    new SerializerStorageStudent());
         } catch (Exception ex) {
             System.out.println(ex.getMessage());
         }
         return result;
     }
 }
-class SerializerStudentKey implements Serializer<StudentKey> {
+class SerializerStorageStudentKey implements SerializerStorage<StudentKey> {
 
     public void writeToStream(DataOutputStream out, StudentKey value) throws IOException {
         out.writeInt(value.getGroupId());
@@ -61,7 +61,7 @@ class SerializerStudentKey implements Serializer<StudentKey> {
     }
 }
 
-class SerializerStudent implements Serializer<Student> {
+class SerializerStorageStudent implements SerializerStorage<Student> {
 
     public void writeToStream(DataOutputStream out, Student value) throws IOException {
         out.writeInt(value.getGroupId());

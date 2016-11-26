@@ -17,17 +17,17 @@ public class MyKVStorage<K, V>
 
     private String filename;
     private HashMap<K, V> currentstorage;
-    private Serializer<K> keySerializer;
-    private Serializer<V> valueSerializer;
+    private SerializerStorage<K> keySerializerStorage;
+    private SerializerStorage<V> valueSerializerStorage;
     private boolean ifOpen = false;
 
     /*Конструктор класса хранилища*/
 
     public MyKVStorage(String newFileName,
-                       Serializer newKeySerialisation,
-                       Serializer newValueSerialisation) throws IOException, Exception {
-        keySerializer = newKeySerialisation;
-        valueSerializer = newValueSerialisation;
+                       SerializerStorage newKeySerialisation,
+                       SerializerStorage newValueSerialisation) throws IOException, Exception {
+        keySerializerStorage = newKeySerialisation;
+        valueSerializerStorage = newValueSerialisation;
         filename = newFileName + "/note.txt";
         currentstorage = new HashMap<K, V>();
         ifOpen = true;
@@ -54,8 +54,8 @@ public class MyKVStorage<K, V>
             int quantity = in.readInt();
             for (int i = 0; i < quantity; ++i) {
 
-                K keyToInsert = keySerializer.readFromStream(in);
-                V valueToInsert = valueSerializer.readFromStream(in);
+                K keyToInsert = keySerializerStorage.readFromStream(in);
+                V valueToInsert = valueSerializerStorage.readFromStream(in);
                 currentstorage.put(keyToInsert, valueToInsert);
             }
         }
@@ -69,8 +69,8 @@ public class MyKVStorage<K, V>
             out.writeInt(currentstorage.size());
             for (Map.Entry<K, V> i : currentstorage.entrySet()) {
 
-                keySerializer.writeToStream(out, i.getKey());
-                valueSerializer.writeToStream(out, i.getValue());
+                keySerializerStorage.writeToStream(out, i.getKey());
+                valueSerializerStorage.writeToStream(out, i.getValue());
 
             }
             ifOpen = false;

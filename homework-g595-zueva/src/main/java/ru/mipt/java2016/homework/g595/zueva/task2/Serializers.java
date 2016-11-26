@@ -9,7 +9,7 @@ import java.io.*;
 
 public class Serializers {
 
-    public static class SerialiserInt implements Serializer<Integer> {
+    public static class SerialiserInt implements SerializerStorage<Integer> {
 
 
         public void writeToStream(DataOutputStream out, Integer value) throws IOException {
@@ -25,7 +25,7 @@ public class Serializers {
     }
 
 
-    public static class SerializerString implements Serializer<String> {
+    public static class SerializerStorageString implements SerializerStorage<String> {
 
         public void writeToStream(DataOutputStream out, String value) throws IOException {
             out.writeUTF(value);
@@ -36,7 +36,7 @@ public class Serializers {
         }
     }
 
-    public static class SerializerDouble implements Serializer<Double> {
+    public static class SerializerStorageDouble implements SerializerStorage<Double> {
 
         public void writeToStream(DataOutputStream out, Double value) throws IOException {
             out.writeDouble(value);
