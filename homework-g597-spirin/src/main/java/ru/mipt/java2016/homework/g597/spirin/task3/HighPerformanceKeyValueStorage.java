@@ -29,12 +29,23 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
     private final RandomAccessFile offsetStorage;
     private final RandomAccessFile dataStorage;
 
-    private Map<K, Long> offsets;
+    private final Map<K, Long> offsets = new HashMap<>();
 
     private ReadWriteLock lock;
     private boolean isOpen;
 
-    private LoadingCache<K, V> cache;
+    private LoadingCache<K, V> cache = CacheBuilder.newBuilder().maximumSize(100).build(new CacheLoader<K, V>() {
+        @Override
+        public V load(K key) throws Exception {
+            Long offset = offsets.get(key);
+            if (offset == null) {
+                return null;
+            }
+
+            dataStorage.seek(offset);
+            return valueSerializer.read(dataStorage);
+        }
+    });
 
     /**
      *  Suppose that name is a template for name of file storage
@@ -52,20 +63,6 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
         dataStorage = new RandomAccessFile(path + File.separator + name + ".data", "rw");
 
         offsetStorage.getChannel().lock();
-
-        offsets = new HashMap<>();
-        cache = CacheBuilder.newBuilder().maximumSize(100).build(new CacheLoader<K, V>() {
-            @Override
-            public V load(K key) throws Exception {
-                Long offset = offsets.get(key);
-                if (offset == null) {
-                    return null;
-                }
-
-                dataStorage.seek(offset);
-                return valueSerializer.read(dataStorage);
-            }
-        });
 
         lock = new ReentrantReadWriteLock();
 
@@ -119,6 +116,7 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
         lock.writeLock().lock();
         try {
             checkIfStorageIsOpen();
+
             dataStorage.seek(dataStorage.length());
             offsets.put(key, dataStorage.getFilePointer());
             valueSerializer.write(dataStorage, value);
@@ -172,6 +170,11 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
     @Override
     public void close() throws IOException {
         lock.writeLock().lock();
+
+        if (!isOpen) {
+            return;
+        }
+
         isOpen = false;
         try {
             offsetStorage.setLength(0);

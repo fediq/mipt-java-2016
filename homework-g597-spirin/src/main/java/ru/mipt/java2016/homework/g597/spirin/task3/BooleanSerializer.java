@@ -6,7 +6,7 @@ import java.io.RandomAccessFile;
 /**
  * Created by whoami on 11/21/16.
  */
-class BooleanSerializer implements SerializationStrategy<Boolean> {
+public class BooleanSerializer implements SerializationStrategy<Boolean> {
 
     private static class SingletonHolder {
         static final BooleanSerializer HOLDER_INSTANCE = new BooleanSerializer();
