@@ -12,7 +12,7 @@ import java.util.HashMap;
 
 public class MyKVStorage<K, V>
         implements KeyValueStorage<K, V> {
-    private static final String VALIDATION_STRING = "My strange storage";
+    private static final String VALIDATION_STRING = "My storage";
 
 
     private String filename;
