@@ -1,11 +1,10 @@
 package ru.mipt.java2016.homework.g595.proskurin.task3;
+
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
-import ru.mipt.java2016.homework.g595.proskurin.task3.MySerializer;
 
 import java.io.IOException;
 import java.util.Iterator;
 import javafx.util.Pair;
-import sun.misc.Cache;
 
 import java.io.*;
 import java.util.HashMap;
@@ -25,7 +24,7 @@ public class MapBackedStorage<K, V> implements KeyValueStorage<K, V> {
     private RandomAccessFile inout;
     private RandomAccessFile temp;
     private String theirPath;
-    private ArrayList<Pair<K, V> > cache = new ArrayList<Pair<K, V>>();
+    private ArrayList<Pair<K, V>> cache = new ArrayList<Pair<K, V>>();
     private int maxSize = 0;
 
     private void isClosed() {
