@@ -1,7 +1,5 @@
 package ru.mipt.java2016.homework.g595.proskurin.task3;
 
-import ru.mipt.java2016.homework.g595.proskurin.task3.MySerializer;
-
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
