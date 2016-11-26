@@ -63,7 +63,8 @@ public class FunnyStorage<Key, Value> implements KeyValueStorage<Key, Value> {
     private SerializationStrategy<Key> keySerializationStrategy;
     // стратегия сериализация значений
     private SerializationStrategy<Value> valueSerializationStrategy;
-    // HashMap для получения по размеру значений x (x --- степень двойки) файла, в котором лежат все значения размера [x/2 ... x)
+    // HashMap для получения по размеру значений x (x --- степень двойки) файла,
+    // в котором лежат все значения размера [x/2 ... x)
     private HashMap<Integer, RandomAccessFile> files = new HashMap<>();
     // HashMap для быстрого получения по ключу информации о нём
     private HashMap<Key, KeyWrapper> keys = new HashMap<>();
