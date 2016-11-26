@@ -32,7 +32,9 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             return;
         }
 
-        DataInputStream in = new DataInputStream(new FileInputStream((f)));
+        BufferedInputStream inn = new BufferedInputStream(new FileInputStream((f)));
+
+        DataInputStream in = new DataInputStream(inn);
         String check = in.readUTF();
 
         if (!check.equals("MyDataBase")) {
@@ -76,7 +78,9 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             f.createNewFile();
         }
 
-        DataOutputStream out = new DataOutputStream(new FileOutputStream(f));
+        BufferedOutputStream outp = new BufferedOutputStream(new FileOutputStream((f)));
+
+        DataOutputStream out = new DataOutputStream(outp);
 
         out.writeUTF("MyDataBase");
         out.writeInt(map.size());
