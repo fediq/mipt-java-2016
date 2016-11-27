@@ -19,7 +19,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 
-public class LargeKeyValueStorage<K, V> implements KeyValueStorage<K, V>, Closeable {
+public class LargeKeyValueStorage<K, V> implements KeyValueStorage<K, V>, AutoCloseable {
 
     private static final double MAX_OBSOLETE_RATIO = 1.0 / 5;
     private static final int MAX_CACHED_ENTRIES = 2 ^ 10;
@@ -153,10 +153,6 @@ public class LargeKeyValueStorage<K, V> implements KeyValueStorage<K, V>, Closea
         try {
             checkOpened();
             valueOffsets.remove(key);
-            numObsoleteEntries--;
-            if (numObsoleteEntries >= size() * MAX_OBSOLETE_RATIO) {
-                refreshSSTable();
-            }
         } finally {
             lock.writeLock().unlock();
         }
@@ -198,71 +194,24 @@ public class LargeKeyValueStorage<K, V> implements KeyValueStorage<K, V>, Closea
 
     @Override
     public void close() throws IOException {
-        lock.writeLock().lock();
-
         if (!isOpen) {
             return;
         }
 
+        lock.writeLock().lock();
         isOpen = false;
         try {
-            refreshSSTable();
-            offsetsFile.close();
-        } finally {
-            lock.writeLock().unlock();
-        }
-    }
-
-    private void refreshSSTable() {
-        lock.readLock().lock();
-        lock.writeLock().lock();
-
-        try {
-            Map<K, Long> newOffsets = new HashMap<>();
-
             offsetsFile.seek(0);
             offsetsFile.setLength(0);
 
-
-            Path newValuesPath = Paths.get(path, VALUES_SWAP_FILENAME);
-            Files.createDirectories(newValuesPath.getParent());
-
-
-            if (!(Files.exists(newValuesPath))) {
-                Files.createFile(newValuesPath);
-            }
-
-            RandomAccessFile newValuesFile = new RandomAccessFile(newValuesPath.toFile(), "rw");
-
             for (Map.Entry<K, Long> entry : valueOffsets.entrySet()) {
-
-                Long offset = entry.getValue();
-                valuesFile.seek(offset);
-                V value = valueSerializer.deserialize(valuesFile);
-
-                newOffsets.put(entry.getKey(), offset);
-
                 keySerializer.serialize(entry.getKey(), offsetsFile);
-                longSerializer.serialize(newValuesFile.getFilePointer(), offsetsFile);
-                valueSerializer.serialize(value, newValuesFile);
+                longSerializer.serialize(entry.getValue(), offsetsFile);
             }
 
-            File extraTmpValuesFile = newValuesPath.toFile();
-            Files.deleteIfExists(Paths.get(path, VALUES_FILENAME));
-            File valuesFileRenamer = Paths.get(path, VALUES_FILENAME).toFile();
-
-            if (!extraTmpValuesFile.renameTo(valuesFileRenamer)) {
-                throw new IOException("Unable to rename file");
-            }
-
-            valuesFile = new RandomAccessFile(extraTmpValuesFile, "rw");
-            valueOffsets = newOffsets;
-            numObsoleteEntries = 0;
-            cached.cleanUp();
-        } catch (IOException e) {
-            e.printStackTrace();
+            offsetsFile.close();
+            valuesFile.close();
         } finally {
-            lock.readLock().unlock();
             lock.writeLock().unlock();
         }
     }
