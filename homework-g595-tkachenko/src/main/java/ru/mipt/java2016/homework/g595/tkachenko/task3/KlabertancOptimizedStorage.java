@@ -8,7 +8,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -22,18 +21,18 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
 
     private static final Integer MAX_CACHE_SIZE = 100;
-    private static final String TRY_LOCK = "trylock";
 
-    private final Map<K, KeyPosition> offsets = new HashMap<>();
+    private final Map<K, Long> offsets = new HashMap<>();
     private final Map<K, V> readCache = new HashMap<>();
     private final Map<K, V> writeCache = new HashMap<>();
-    private final ArrayList<RandomAccessFile> files = new ArrayList<>();
     private final Serialization<K> keySerialization;
     private final Serialization<V> valueSerialization;
-    private final String storageFileName;
-    private static String directory;
-    private final File storage;
-    private File lockAccess;
+    private final File keys;
+    private final File values;
+    private final RandomAccessFile valuesRandomAccess;
+    private final String keysFileName;
+    private final String valuesFileName;
+    private final String directory;
     private boolean flagForClose;
     private Integer closeCounter;
 
@@ -44,39 +43,39 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
         keySerialization = k;
         valueSerialization = v;
         directory = path;
-        storageFileName = directory + File.separator + "storage.db";
-        storage = new File(storageFileName);
+        keysFileName = directory + File.separator + "keys.db";
+        valuesFileName = directory + File.separator + "values.db";
 
-        lockAccess = new File(directory, TRY_LOCK);
-        if (lockAccess.exists()) {
-            throw new RuntimeException("Another process is already running!");
+        keys = new File(keysFileName);
+        values = new File(valuesFileName);
+
+        if ( (keys.exists() && !values.exists()) || (!keys.exists() && values.exists())) {
+            throw new RuntimeException("Invalid storage architecture!");
         }
-        lockAccess.mkdir();
 
-        if (storage.exists()) {
+        if (keys.exists() && values.exists()) {
             try {
-                DataInputStream dataInputStream = new DataInputStream(new FileInputStream(storage));
-                int filesCount = dataInputStream.readInt();
-                for (int i = 0; i < filesCount; ++i) {
-                    File newFile = new File(directory + File.separator + Integer.toString(i) + ".db");
-                    if (!newFile.exists()) {
-                        throw new RuntimeException("Can't find file\n");
-                    }
-                    files.add(new RandomAccessFile(newFile, "rw"));
-                }
+                DataInputStream dataInputStream = new DataInputStream(new FileInputStream(keys));
                 int keysCount = dataInputStream.readInt();
                 for (int i = 0; i < keysCount; ++i) {
                     K key = keySerialization.read(dataInputStream);
-                    offsets.put(key, new KeyPosition(dataInputStream.readLong(), dataInputStream.readLong()));
+                    offsets.put(key, dataInputStream.readLong());
                 }
             } catch (FileNotFoundException e) {
-                throw new RuntimeException("File not found");
+                throw new RuntimeException("File not found!");
             } catch (IOException e) {
-                throw new RuntimeException("Can't read from file");
+                throw new RuntimeException("Can't read from file!");
+            }
+            try {
+                valuesRandomAccess = new RandomAccessFile(values, "rws");
+            } catch (IOException e) {
+                throw new RuntimeException("Can't create RA file!");
             }
         } else {
             try {
-                storage.createNewFile();
+                keys.createNewFile();
+                values.createNewFile();
+                valuesRandomAccess = new RandomAccessFile(values, "rws");
             } catch (IOException e) {
                 throw new RuntimeException("Can't create file for storage!");
             }
@@ -86,25 +85,14 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private synchronized void putWriteCacheAsDatabaseOnDisk() {
-        String newFileName = directory + File.separator + Integer.toString(files.size()) + ".db";
-        File newFile = new File(newFileName);
-        if (newFile.exists()) {
-            throw new RuntimeException("Unexpected file!");
-        }
         try {
-            newFile.createNewFile();
-            RandomAccessFile newRandomAccessFile = new RandomAccessFile(newFile, "rws");
-            newRandomAccessFile.setLength(0);
-            newRandomAccessFile.seek(0);
+            valuesRandomAccess.seek(valuesRandomAccess.length());
             for (Map.Entry<K, V> entry : writeCache.entrySet()) {
-                KeyPosition keyPosition = new KeyPosition(files.size(),
-                        newRandomAccessFile.getFilePointer());
                 offsets.remove(entry.getKey());
-                offsets.put(entry.getKey(), keyPosition);
-                valueSerialization.write(newRandomAccessFile, entry.getValue());
+                offsets.put(entry.getKey(), valuesRandomAccess.length());
+                valueSerialization.write(valuesRandomAccess, entry.getValue());
             }
             writeCache.clear();
-            files.add(newRandomAccessFile);
         } catch (IOException e) {
             throw new RuntimeException("Can't access new file!");
         }
@@ -113,15 +101,14 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
     private synchronized void shutdownTheDatabase() {
         try {
             DataOutputStream dataOutputStream =
-                    new DataOutputStream(new FileOutputStream(storageFileName));
-            dataOutputStream.writeInt(files.size());
+                    new DataOutputStream(new FileOutputStream(keysFileName));
             dataOutputStream.writeInt(this.size());
-            for (Map.Entry<K, KeyPosition> entry : offsets.entrySet()) {
+            for (Map.Entry<K, Long> entry : offsets.entrySet()) {
                 keySerialization.write(dataOutputStream, entry.getKey());
-                dataOutputStream.writeLong(entry.getValue().getFileNumber());
-                dataOutputStream.writeLong(entry.getValue().getPositionInFile());
+                dataOutputStream.writeLong(entry.getValue());
             }
             dataOutputStream.close();
+            valuesRandomAccess.close();
         } catch (IOException e) {
             throw new RuntimeException("Can't write to storage!");
         }
@@ -149,11 +136,11 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
             return writeCache.get(key);
         }
 
-        KeyPosition keyPosition = offsets.get(key);
-        RandomAccessFile dbPartFile = files.get((int) keyPosition.getFileNumber());
+        Long position = offsets.get(key);
+
         try {
-            dbPartFile.seek(keyPosition.getPositionInFile());
-            V value = valueSerialization.read(dbPartFile);
+            valuesRandomAccess.seek(position);
+            V value = valueSerialization.read(valuesRandomAccess);
             if (readCache.size() >= MAX_CACHE_SIZE) {
                 readCache.clear();
             }
@@ -177,7 +164,7 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
             putWriteCacheAsDatabaseOnDisk();
         }
         writeCache.put(key, value);
-        offsets.put(key, new KeyPosition(-1, -1));
+        offsets.put(key, new Long(-1));
     }
 
 
@@ -210,10 +197,6 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
             isStorageClosed();
             putWriteCacheAsDatabaseOnDisk();
             shutdownTheDatabase();
-            for (int i = 0; i < files.size(); ++i) {
-                files.get(i).close();
-            }
-            lockAccess.delete();
             flagForClose = true;
         }
     }
