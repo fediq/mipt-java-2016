@@ -12,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
@@ -41,6 +42,7 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
     private ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private Lock writeLock = lock.writeLock();
     private Lock readLock = lock.readLock();
+    private ReentrantLock fileAccessLock = new ReentrantLock();
     private boolean isOpened = true;
 
     public MyBigDataStorage(String path, String name, SerializationStrategy<K> keySerializationStrategy,
@@ -115,8 +117,13 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
                 return null;
             }
             if (offset != IS_NOT_IN_FILE) {
-                valuesFile.seek(offset);
-                return valueSerializationStrategy.read(valuesFile);
+                fileAccessLock.lock();
+                try {
+                    valuesFile.seek(offset);
+                    return valueSerializationStrategy.read(valuesFile);
+                } finally {
+                    fileAccessLock.unlock();
+                }
             } else {
                 return memTable.get(key);
             }
@@ -233,7 +240,6 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
         long offset = valuesFile.length();
         for (Map.Entry<K, V> entry : memTable.entrySet()) {
             offsets.put(entry.getKey(), offset);
-            valuesFile.seek(offset);
             valueSerializationStrategy.write(valuesFile, entry.getValue());
             offset = valuesFile.getFilePointer();
         }
