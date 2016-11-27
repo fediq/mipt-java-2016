@@ -17,7 +17,7 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private static final long MAX_CACHE_SIZE = 100L;
     private static final double FILLING_PERCENTAGE = 0.5; //when we need clean storage from deleted values
-    private static long deletedCount;//number of deleted elements
+    private static long deletedCount; //number of deleted elements
 
     private final SerializationStrategyRandomAccess<K> keySerializationStrategy;
     private final SerializationStrategyRandomAccess<V> valueSerializationStrategy;
@@ -133,7 +133,7 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         deletedCount++;
 
         //if (deletedCount / size() > FILLING_PERCENTAGE) {
-            reorganiseStorage();
+        reorganiseStorage();
         //}
     }
 
