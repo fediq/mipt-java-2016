@@ -18,35 +18,20 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public class OptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
-    //private static final int MAX_SIZE_OF_CACHE = 0;
-    private static final int MAX_SIZE_OF_KEY_AND_VALUE_MAP = 100;
-/*
-    private class Position {
-        private int fileNumber;
-        private long offset;
-
-        Position(int fileNumber, long offset) {
-            this.fileNumber = fileNumber;
-            this.offset = offset;
-        }
-    }*/
+    private static final int MAX_SIZE_OF_KEY_AND_VALUE_MAP = 500;
 
     private ReadWriteLock lock = new ReentrantReadWriteLock();
 
-   // private LinkedHashMap<K, V> cacheMap;
     private HashMap<K, Long> keyAndOffsetMap;
     private Map<K, V> keyAndValueMap;
     private HashSet<K> presenceSet;
-   // private RandomAccessFile randAccFileWithOffsets;
     private RandomAccessFile randAccFileStorage;
-    //private ArrayList<RandomAccessFile> randAccFilesArray;
 
     private SerializationStrategy<K> keyStrategy;
     private SerializationStrategy<V> valueStrategy;
 
     private String fileWithOffsetsPathname;
     private String fileStoragePathname;
-    private String baseName;
     private final String mode = "rw"; // По умолчанию выставили чтение/запись
     private boolean isStorageOpened = true;
     private FileLock storageLock;
@@ -55,10 +40,6 @@ public class OptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         if (!isStorageOpened) {
             throw new IllegalStateException("The storage is closed");
         }
-    }
-
-    private String getFileName(String mainFileName, Integer i) {
-        return mainFileName + i.toString() + ".txt";
     }
 
     public OptimizedKeyValueStorage(String path, SerializationStrategy<K> keyStrategy,
@@ -72,13 +53,10 @@ public class OptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         this.valueStrategy = valueStrategy;
         fileWithOffsetsPathname = path + File.separator + "offsets.txt";
         fileStoragePathname = path + File.separator + "storage.txt";
-        //baseName = path + File.separator + "storage";
 
-        //cacheMap = new LinkedHashMap<K, V>();
         keyAndOffsetMap = new HashMap<K, Long>();
         keyAndValueMap = new HashMap<K, V>();
         presenceSet = new HashSet<K>();
-        //randAccFilesArray = new ArrayList<RandomAccessFile>();
 
         try {
             File fileWithOffsets = new File(fileWithOffsetsPathname);
@@ -95,8 +73,6 @@ public class OptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 }
                 try {
                     randAccFileWithOffsets.writeInt(0);
-                    //randAccFileWithOffsets.close();
-                    //randAccFile.writeInt(0);
                 } catch (IOException e) {
                     throw new IOException("Couldn't write during initialization of files");
                 }
@@ -110,20 +86,10 @@ public class OptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                     throw new IllegalStateException("Storage is already being used");
                 }
 
-                /*
-                int numberOfFiles = randAccFileWithOffsets.readInt();
-                for (int i = 0; i < numberOfFiles; i++) {
-                    File currentFile = new File(getFileName(baseName, i));
-                    if (!currentFile.exists()) {
-                        throw new IllegalStateException("No such file");
-                    }
-                    randAccFilesArray.add(new RandomAccessFile(currentFile, mode));
-                }*/
                 int sizeOfKeyAndOffsetMap = randAccFileWithOffsets.readInt();
                 for (int i = 0; i < sizeOfKeyAndOffsetMap; i++) {
                     try {
                         K key = this.keyStrategy.read(randAccFileWithOffsets);
-                        //int fileNumber = randAccFile.readInt();
                         long offset = randAccFileWithOffsets.readLong();
                         keyAndOffsetMap.put(key, offset);
                         presenceSet.add(key);
@@ -131,7 +97,7 @@ public class OptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                         throw new IOException("Couldn't read from file during opening of the storage");
                     }
                 }
-                //randAccFileWithOffsets.close();
+                randAccFileWithOffsets.close();
 
             }
         } catch (FileNotFoundException e) {
@@ -144,32 +110,16 @@ public class OptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         lock.readLock().lock();
         try {
             checkStorageNotClosed();
-            /*if (cacheMap.containsKey(key)) {
-                return cacheMap.get(key);
-            }*/
+
             if (keyAndValueMap.containsKey(key)) {
                 return keyAndValueMap.get(key);
             }
             if (!keyAndOffsetMap.containsKey(key)) {
                 return null;
             }
-            //int fileNumber = keyAndOffsetMap.get(key).fileNumber;
             long offset = keyAndOffsetMap.get(key);
-
-            //RandomAccessFile currentFile = randAccFilesArray.get(fileNumber);
-
             randAccFileStorage.seek(offset);
             V value = valueStrategy.read(randAccFileStorage);
-
-            /*
-            cacheMap.put(key, value);
-            if (cacheMap.size() > MAX_SIZE_OF_CACHE) {
-                Iterator<Map.Entry<K, V>> iterator = cacheMap.entrySet().iterator();
-                while (cacheMap.size() > MAX_SIZE_OF_CACHE) {
-                    iterator.next();
-                    iterator.remove();
-                }
-            }*/
             return value;
         } catch (IOException e) {
             throw new IllegalStateException("Couldn't find needed data in file");
@@ -181,25 +131,12 @@ public class OptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private void dropKeyAndValueMapOnDisk() throws IOException {
         lock.writeLock().lock();
         try {
-            /*
-            int newFileNumber = randAccFilesArray.size();
-            File newFile = new File(getFileName(baseName, newFileNumber));
-            try {
-                newFile.createNewFile();
-            } catch (IOException e) {
-                throw new IOException("Couldn't create file during dropping map with keys and values");
-            }*/
-
-            //randAccFilesArray.add(new RandomAccessFile(newFile, mode));
-            //RandomAccessFile currentFile = randAccFilesArray.get(newFileNumber);
-            //currentFile.setLength(0);
-            //randAccFileStorage.seek(0);
+            randAccFileStorage.seek(randAccFileStorage.length());
             for (Map.Entry<K, V> entry : keyAndValueMap.entrySet()) {
                 if (null == entry.getValue()) {
                     keyAndOffsetMap.remove(entry.getKey());
                     continue;
                 }
-                //Position newPosition = new Position(newFileNumber, currentFile.getFilePointer());
                 keyAndOffsetMap.put(entry.getKey(), randAccFileStorage.getFilePointer());
                 try {
                     this.valueStrategy.write(randAccFileStorage, entry.getValue());
@@ -251,7 +188,6 @@ public class OptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         try {
             checkStorageNotClosed();
             if (exists(key)) {
-                //cacheMap.remove(key);
                 keyAndOffsetMap.remove(key);
                 presenceSet.remove(key);
             }
@@ -291,16 +227,14 @@ public class OptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         try {
             dropKeyAndValueMapOnDisk();
             RandomAccessFile randAccFile = new RandomAccessFile(this.fileWithOffsetsPathname, mode);
-            //randAccFile.writeInt(randAccFilesArray.size());
             randAccFile.writeInt(keyAndOffsetMap.size());
             for (Map.Entry<K, Long> entry : keyAndOffsetMap.entrySet()) {
                 keyStrategy.write(randAccFile, entry.getKey());
-                //randAccFile.writeInt(entry.getValue().fileNumber);
                 randAccFile.writeLong(entry.getValue());
             }
             storageLock.release();
             randAccFile.close();
-            //randAccFileStorage.close();
+            randAccFileStorage.close();
 
         } catch (IOException e) {
             throw new IllegalStateException("Random access file wasn't created");

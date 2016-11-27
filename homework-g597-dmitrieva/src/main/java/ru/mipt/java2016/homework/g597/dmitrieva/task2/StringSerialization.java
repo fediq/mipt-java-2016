@@ -7,16 +7,11 @@ import java.io.RandomAccessFile;
 /**
  * Created by macbook on 30.10.16.
  */
-public class StringSerialization extends SerializationStrategy<String> {
+public class StringSerialization implements SerializationStrategy<String> {
 
     @Override
     public String read(RandomAccessFile file) throws IOException {
         try {
-            /*
-            int numberOfBytes = file.readInt();
-            byte[] bytes = new byte[numberOfBytes];
-            file.read(bytes);
-            return new String(bytes, StandardCharsets.UTF_8);*/
             return file.readUTF();
         } catch (IOException e) {
             throw new IOException("Couldn't read during the String deserialization");
@@ -26,11 +21,6 @@ public class StringSerialization extends SerializationStrategy<String> {
     @Override
     public void write(RandomAccessFile file, String value) throws  IOException {
         try {
-            /*
-            byte[] bytes = value.getBytes();
-            file.writeInt(bytes.length);
-            file.write(bytes);
-            */
             file.writeUTF(value);
         } catch (IOException e) {
             throw new IOException("Couldn't write during the String serialization");
