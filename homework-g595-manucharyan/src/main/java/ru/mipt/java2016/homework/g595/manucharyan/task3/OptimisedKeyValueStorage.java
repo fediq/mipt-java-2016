@@ -132,9 +132,9 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         base.remove(key);
         deletedCount++;
 
-        if (deletedCount / size() > FILLING_PERCENTAGE) {
+        //if (deletedCount / size() > FILLING_PERCENTAGE) {
             reorganiseStorage();
-        }
+        //}
     }
 
     /**
