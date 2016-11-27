@@ -22,6 +22,7 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
 
     private static final Integer MAX_CACHE_SIZE = 100;
+    private static final String TRY_LOCK = "trylock";
 
     private final Map<K, KeyPosition> offsets = new HashMap<>();
     private final Map<K, V> readCache = new HashMap<>();
@@ -32,6 +33,7 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
     private final String storageFileName;
     private static String directory;
     private final File storage;
+    private File lockAccess;
     private boolean flagForClose;
     private Integer closeCounter;
 
@@ -45,8 +47,33 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
         storageFileName = directory + File.separator + "storage.db";
         storage = new File(storageFileName);
 
+        lockAccess = new File(directory, TRY_LOCK);
+        if (lockAccess.exists()) {
+            throw new RuntimeException("Another process is already running!");
+        }
+        lockAccess.mkdir();
+
         if (storage.exists()) {
-            getStorageFromDisk();
+            try {
+                DataInputStream dataInputStream = new DataInputStream(new FileInputStream(storage));
+                int filesCount = dataInputStream.readInt();
+                for (int i = 0; i < filesCount; ++i) {
+                    File newFile = new File(directory + File.separator + Integer.toString(i) + ".db");
+                    if (!newFile.exists()) {
+                        throw new RuntimeException("Can't find file\n");
+                    }
+                    files.add(new RandomAccessFile(newFile, "rw"));
+                }
+                int keysCount = dataInputStream.readInt();
+                for (int i = 0; i < keysCount; ++i) {
+                    K key = keySerialization.read(dataInputStream);
+                    offsets.put(key, new KeyPosition(dataInputStream.readLong(), dataInputStream.readLong()));
+                }
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException("File not found");
+            } catch (IOException e) {
+                throw new RuntimeException("Can't read from file");
+            }
         } else {
             try {
                 storage.createNewFile();
@@ -58,32 +85,8 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
         flagForClose = false;
     }
 
-    private void getStorageFromDisk() {
-        try {
-            DataInputStream dataInputStream = new DataInputStream(new FileInputStream(storage));
-            int filesCount = dataInputStream.readInt();
-            for (int i = 0; i < filesCount; ++i) {
-                File newFile = new File(directory + File.separator + Integer.toString(i) + ".pdb");
-                if (!newFile.exists()) {
-                    throw new RuntimeException("Part of the database is missing!");
-                }
-                files.add(new RandomAccessFile(newFile, "rws"));
-            }
-            int keysCount = dataInputStream.readInt();
-            for (int i = 0; i < keysCount; ++i) {
-                K key = keySerialization.read(dataInputStream);
-                offsets.put(key, new KeyPosition(dataInputStream.readLong(),
-                        dataInputStream.readLong()));
-            }
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException("File not found!");
-        } catch (IOException e) {
-            throw new RuntimeException("Can't read from file!");
-        }
-    }
-
     private synchronized void putWriteCacheAsDatabaseOnDisk() {
-        String newFileName = directory + File.separator + Integer.toString(files.size()) + ".pdb";
+        String newFileName = directory + File.separator + Integer.toString(files.size()) + ".db";
         File newFile = new File(newFileName);
         if (newFile.exists()) {
             throw new RuntimeException("Unexpected file!");
@@ -130,12 +133,6 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
-    private void checkCache(Map<K, V> map) {
-        if (map.size() >= MAX_CACHE_SIZE) {
-            map.clear();
-        }
-    }
-
     @Override
     public synchronized V read(K key) {
         isStorageClosed();
@@ -149,7 +146,6 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
         }
 
         if (writeCache.containsKey(key)) {
-            readCache.put(key, writeCache.get(key));
             return writeCache.get(key);
         }
 
@@ -158,7 +154,9 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
         try {
             dbPartFile.seek(keyPosition.getPositionInFile());
             V value = valueSerialization.read(dbPartFile);
-            checkCache(readCache);
+            if (readCache.size() >= MAX_CACHE_SIZE) {
+                readCache.clear();
+            }
             readCache.put(key, value);
             return value;
         } catch (IOException exception) {
@@ -215,6 +213,7 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
             for (int i = 0; i < files.size(); ++i) {
                 files.get(i).close();
             }
+            lockAccess.delete();
             flagForClose = true;
         }
     }
