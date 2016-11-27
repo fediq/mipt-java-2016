@@ -62,7 +62,7 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             mapStorage = new RandomAccessFile(file2, "rw");
 
             downloadDataFromStorage();
-        }catch(IOException exception) {
+        } catch (IOException exception) {
             throw new RuntimeException("Can't create a storage!");
         }
     }
@@ -156,7 +156,7 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public synchronized void close() {
-        if(isClosed) {
+        if (isClosed) {
             return;
         }
 
