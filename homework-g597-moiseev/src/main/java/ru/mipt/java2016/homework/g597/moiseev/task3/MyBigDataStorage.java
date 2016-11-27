@@ -238,6 +238,7 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
 
     private void dumpMemTable() throws IOException {
         long offset = valuesFile.length();
+        valuesFile.seek(offset);
         for (Map.Entry<K, V> entry : memTable.entrySet()) {
             offsets.put(entry.getKey(), offset);
             valueSerializationStrategy.write(valuesFile, entry.getValue());
