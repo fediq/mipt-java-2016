@@ -6,24 +6,24 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 public class StudentKeySerializationStrategy implements SerializationStrategy<StudentKey> {
-    private IntegerSerializationStrategy integerSerializationStrategy = IntegerSerializationStrategy.getInstance();
-    private StringSerializationStrategy stringSerializationStrategy = StringSerializationStrategy.getInstance();
+    private IntegerSerializer integerSerializer = IntegerSerializer.getInstance();
+    private StringSerializer stringSerializer = StringSerializer.getInstance();
 
     @Override
     public void serialize(StudentKey studentKey, RandomAccessFile raf) throws IOException {
-        integerSerializationStrategy.serialize(studentKey.getGroupId(), raf);
-        stringSerializationStrategy.serialize(studentKey.getName(), raf);
+        integerSerializer.serialize(studentKey.getGroupId(), raf);
+        stringSerializer.serialize(studentKey.getName(), raf);
     }
 
     @Override
     public StudentKey deserialize(RandomAccessFile raf) throws IOException {
-        return new StudentKey(integerSerializationStrategy.deserialize(raf),
-                stringSerializationStrategy.deserialize(raf));
+        return new StudentKey(integerSerializer.deserialize(raf),
+                stringSerializer.deserialize(raf));
     }
 
     @Override
     public Long bytesSize(StudentKey value) {
-        return integerSerializationStrategy.bytesSize(value.getGroupId()) +
-                stringSerializationStrategy.bytesSize(value.getName());
+        return integerSerializer.bytesSize(value.getGroupId()) +
+                stringSerializer.bytesSize(value.getName());
     }
 }

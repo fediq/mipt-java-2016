@@ -4,28 +4,28 @@ package ru.mipt.java2016.homework.g597.grishutin.task2;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
-public class StringSerializationStrategy implements SerializationStrategy<String> {
+public class StringSerializer implements SerializationStrategy<String> {
     private static class SingletonHolder {
-        static final StringSerializationStrategy HOLDER_INSTANCE = new StringSerializationStrategy();
+        static final StringSerializer HOLDER_INSTANCE = new StringSerializer();
     }
 
-    public static StringSerializationStrategy getInstance() {
+    public static StringSerializer getInstance() {
         return SingletonHolder.HOLDER_INSTANCE;
     }
 
-    private final IntegerSerializationStrategy integerSerializationStrategy =
-            IntegerSerializationStrategy.getInstance();
+    private final IntegerSerializer integerSerializer =
+            IntegerSerializer.getInstance();
     
     @Override
     public void serialize(String value, RandomAccessFile raf) throws IOException {
         byte[] bytes = value.getBytes();
-        integerSerializationStrategy.serialize(bytes.length, raf);
+        integerSerializer.serialize(bytes.length, raf);
         raf.write(bytes);
     }
 
     @Override
     public String deserialize(RandomAccessFile raf) throws IOException {
-        int numBytes = integerSerializationStrategy.deserialize(raf);
+        int numBytes = integerSerializer.deserialize(raf);
         byte[] bytes = new byte[numBytes];
         raf.readFully(bytes);
         return new String(bytes);
@@ -33,6 +33,6 @@ public class StringSerializationStrategy implements SerializationStrategy<String
 
     @Override
     public Long bytesSize(String value) {
-        return (long) 4 + value.getBytes().length; // string length + string itself
+        return (long) Long.BYTES + value.getBytes().length; // string length + string itself
     }
 }

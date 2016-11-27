@@ -3,10 +3,10 @@ package ru.mipt.java2016.homework.g597.grishutin.task2;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
-public class DoubleSerializationStrategy implements SerializationStrategy<Double> {
-    private static DoubleSerializationStrategy instance = new DoubleSerializationStrategy();
+public class DoubleSerializer implements SerializationStrategy<Double> {
+    private static DoubleSerializer instance = new DoubleSerializer();
 
-    public static DoubleSerializationStrategy getInstance() {
+    public static DoubleSerializer getInstance() {
         return instance;
     }
 
@@ -22,6 +22,6 @@ public class DoubleSerializationStrategy implements SerializationStrategy<Double
 
     @Override
     public Long bytesSize(Double value) {
-        return (long) 8;
+        return (long) Double.BYTES;
     }
 }

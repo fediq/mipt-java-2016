@@ -3,10 +3,10 @@ package ru.mipt.java2016.homework.g597.grishutin.task2;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
-public class IntegerSerializationStrategy implements SerializationStrategy<Integer> {
-    private static IntegerSerializationStrategy instance = new IntegerSerializationStrategy();
+public class IntegerSerializer implements SerializationStrategy<Integer> {
+    private static IntegerSerializer instance = new IntegerSerializer();
 
-    public static IntegerSerializationStrategy getInstance() {
+    public static IntegerSerializer getInstance() {
         return instance;
     }
 
@@ -22,6 +22,6 @@ public class IntegerSerializationStrategy implements SerializationStrategy<Integ
 
     @Override
     public Long bytesSize(Integer value) {
-        return (long) 4;
+        return (long) Integer.BYTES;
     }
 }

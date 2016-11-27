@@ -15,9 +15,9 @@ public class LargeKeyValueStorageTest extends KeyValueStoragePerformanceTest {
     protected KeyValueStorage<String, String> buildStringsStorage(String path) throws MalformedDataException {
         try {
             return new LargeKeyValueStorage<>(path,
-                    new StringSerializationStrategy(),
-                    new StringSerializationStrategy());
-        } catch (IOException | IllegalAccessException e) {
+                    new StringSerializer(),
+                    new StringSerializer());
+        } catch (IOException e) {
             e.printStackTrace();
         }
         return null;
@@ -27,9 +27,9 @@ public class LargeKeyValueStorageTest extends KeyValueStoragePerformanceTest {
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) throws MalformedDataException {
         try {
             return new LargeKeyValueStorage<>(path,
-                    new IntegerSerializationStrategy(),
-                    new DoubleSerializationStrategy());
-        } catch (IOException | IllegalAccessException e) {
+                    new IntegerSerializer(),
+                    new DoubleSerializer());
+        } catch (IOException e) {
             e.printStackTrace();
         }
         return null;
@@ -41,7 +41,7 @@ public class LargeKeyValueStorageTest extends KeyValueStoragePerformanceTest {
             return new LargeKeyValueStorage<>(path,
                     new StudentKeySerializationStrategy(),
                     new StudentSerializationStrategy());
-        } catch (IOException | IllegalAccessException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
         return null;

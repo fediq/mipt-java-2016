@@ -3,10 +3,10 @@ package ru.mipt.java2016.homework.g597.grishutin.task2;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
-public class BooleanSerializationStrategy implements SerializationStrategy<Boolean> {
-    private static BooleanSerializationStrategy instance = new BooleanSerializationStrategy();
+public class BooleanSerializer implements SerializationStrategy<Boolean> {
+    private static BooleanSerializer instance = new BooleanSerializer();
 
-    public static BooleanSerializationStrategy getInstance() {
+    public static BooleanSerializer getInstance() {
         return instance;
     }
 

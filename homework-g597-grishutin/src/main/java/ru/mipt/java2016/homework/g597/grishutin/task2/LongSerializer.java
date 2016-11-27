@@ -3,10 +3,10 @@ package ru.mipt.java2016.homework.g597.grishutin.task2;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
-public class LongSerializationStrategy implements SerializationStrategy<Long> {
-    private static LongSerializationStrategy instance = new LongSerializationStrategy();
+public class LongSerializer implements SerializationStrategy<Long> {
+    private static LongSerializer instance = new LongSerializer();
 
-    public static LongSerializationStrategy getInstance() {
+    public static LongSerializer getInstance() {
         return instance;
     }
 
@@ -22,6 +22,6 @@ public class LongSerializationStrategy implements SerializationStrategy<Long> {
 
     @Override
     public Long bytesSize(Long value) {
-        return (long) 8;
+        return (long) Long.BYTES;
     }
 }
