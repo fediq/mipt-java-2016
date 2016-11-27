@@ -6,7 +6,7 @@ package ru.mipt.java2016.homework.tests.task2;
  * @author Fedor S. Lavrentyev
  * @since 13.10.16
  */
-public class StudentKey {
+public class StudentKey implements Comparable<StudentKey> {
     private final int groupId;
     private final String name;
 
@@ -24,6 +24,21 @@ public class StudentKey {
 
     public String getName() {
         return name;
+    }
+
+    @Override
+    public int compareTo(StudentKey other) {
+        if (other == null) {
+            throw new IllegalArgumentException("Compare with null");
+        }
+
+        int compareGroupId = Integer.compare(this.groupId, other.groupId);
+
+        if (compareGroupId != 0) {
+            return compareGroupId;
+        } else {
+            return this.name.compareTo(other.name);
+        }
     }
 
     @Override

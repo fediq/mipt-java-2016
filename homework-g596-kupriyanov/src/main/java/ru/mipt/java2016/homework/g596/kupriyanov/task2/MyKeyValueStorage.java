@@ -33,16 +33,17 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             throw new RuntimeException("NO DIRECTORY");
         }
         dbOpen = true;
-        try {
-            FileInputStream fin = new FileInputStream(file);
-            DataInputStream in = new DataInputStream(fin);
-            int cntElems = in.readInt();
-            for (int i = 0; i < cntElems; ++i) {
-                db.put(keySerializer.read(in), valueSerializer.read(in));
+        if (file.exists()) {
+            try (DataInputStream in = new DataInputStream(new FileInputStream(file))) {
+                int cntElems = in.readInt();
+                for (int i = 0; i < cntElems; ++i) {
+                    db.put(keySerializer.read(in), valueSerializer.read(in));
+                }
+            } catch (IOException e) {
+                throw new RuntimeException("CAN'T PUT IN DB");
             }
-            in.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+        } else {
+            file.createNewFile();
         }
     }
 
@@ -91,16 +92,13 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public void close() throws IOException {
         checkOpened();
-        try {
-            FileOutputStream fout = new FileOutputStream(file);
-            DataOutputStream out = new DataOutputStream(fout);
+        try (DataOutputStream out = new DataOutputStream(new FileOutputStream(file))) {
             out.writeInt(db.size());
             for (HashMap.Entry<K, V> pair: db.entrySet()) {
                 keySerializer.write(pair.getKey(), out);
                 valueSerializer.write(pair.getValue(), out);
             }
             dbOpen = false;
-            out.close();
             db.clear();
         } catch (IOException exp) {
             throw new RuntimeException("COULDN'T CLOSE DB");
