@@ -20,7 +20,7 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 
 public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
 
-    private static final Integer MAX_CACHE_SIZE = 100;
+    private static final Integer MAX_CACHE_SIZE = 20000;
 
     private final Map<K, Long> offsets = new HashMap<>();
     private final Map<K, V> readCache = new HashMap<>();
