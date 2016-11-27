@@ -49,7 +49,7 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
         keys = new File(keysFileName);
         values = new File(valuesFileName);
 
-        if ( (keys.exists() && !values.exists()) || (!keys.exists() && values.exists())) {
+        if ((keys.exists() && !values.exists()) || (!keys.exists() && values.exists())) {
             throw new RuntimeException("Invalid storage architecture!");
         }
 
