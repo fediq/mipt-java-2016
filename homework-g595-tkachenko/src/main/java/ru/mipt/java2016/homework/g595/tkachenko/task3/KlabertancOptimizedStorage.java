@@ -191,7 +191,7 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     @Override
-    public synchronized void close() throws IOException {
+    public synchronized void close()  {
         closeCounter++;
         if (closeCounter == 1) {
             isStorageClosed();
