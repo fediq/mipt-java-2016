@@ -10,8 +10,8 @@ import java.io.IOException;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class UpdatedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
-    private Identification<K> keyIdentification;
-    private Identification<V> valueIdentification;
+    private final Identification<K> keyIdentification;
+    private final Identification<V> valueIdentification;
     private RandomAccessFile keysStorage;
     private RandomAccessFile valuesStorage;
     private Map<K, Long> bufferOffsets;
@@ -99,8 +99,10 @@ public class UpdatedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     public void close() throws IOException {
         lock.writeLock().lock();
         try {
-            save();
-            closed = true;
+            if (!closed) {
+                save();
+                closed = true;
+            }
         } finally {
             lock.writeLock().unlock();
         }

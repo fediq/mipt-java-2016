@@ -281,5 +281,4 @@ public abstract class KeyValueStoragePerformanceTest extends AbstractSingleFileS
         print("%5d Reads per second in 100-positions cycle", readsPerSecond);
         print("%5d millis for single 10kW 100Rx100", iterationTimeMillis);
     }
-
 }
