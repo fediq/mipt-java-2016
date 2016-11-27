@@ -1,5 +1,7 @@
 package ru.mipt.java2016.homework.g595.manucharyan.task3;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
@@ -9,12 +11,12 @@ import java.io.RandomAccessFile;
  */
 public class ConcreteStrategyDoubleRandomAccess implements SerializationStrategyRandomAccess<Double> {
     @Override
-    public void serializeToFile(Double value, RandomAccessFile output) throws IOException {
+    public void serializeToFile(Double value, DataOutput output) throws IOException {
         output.writeDouble(value);
     }
 
     @Override
-    public Double deserializeFromFile(RandomAccessFile input) throws IOException {
+    public Double deserializeFromFile(DataInput input) throws IOException {
         return input.readDouble();
     }
 }

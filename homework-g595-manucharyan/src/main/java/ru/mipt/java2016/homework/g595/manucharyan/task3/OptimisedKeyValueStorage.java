@@ -5,10 +5,9 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
-
-import static java.lang.Math.max;
 
 /**
  * @author Vardan Manucharyan
@@ -18,12 +17,12 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private static final long MAX_CACHE_SIZE = 100L;
 
-    private SerializationStrategyRandomAccess<K> keySerializationStrategy;
-    private SerializationStrategyRandomAccess<V> valueSerializationStrategy;
+    private final SerializationStrategyRandomAccess<K> keySerializationStrategy;
+    private final SerializationStrategyRandomAccess<V> valueSerializationStrategy;
 
     //consist keys and offsets(the pair of begin and length)
-    private HashMap<K, Long> base = new HashMap<>();
-    private HashMap<K, V> cache = new HashMap<>();
+    private Map<K, Long> base = new HashMap<>();
+    private Map<K, V> cache = new HashMap<>();
 
     private long maxOffset;
     private final String pathname;
@@ -43,6 +42,7 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         this.valueSerializationStrategy = valueSerializaionStrategy;
         maxOffset = 0L;
         pathname = path;
+        isClosed = false;
 
         mutexFile = new File(pathname, "Mutex");
         if (!mutexFile.createNewFile()) {
@@ -54,19 +54,17 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             throw new RuntimeException("wrong path");
         }
 
-        File file = new File(pathname, storageName);
-        storage = new RandomAccessFile(file, "rw");
+        try {
+            File file = new File(pathname, storageName);
+            storage = new RandomAccessFile(file, "rw");
 
-        File file2 = new File(path, mapStorageName);
-        mapStorage = new RandomAccessFile(file2, "rw");
+            File file2 = new File(path, mapStorageName);
+            mapStorage = new RandomAccessFile(file2, "rw");
 
-        if (file.exists() && file2.exists()) {
-            uploadDataFromStorage();
-        } else if (!file.createNewFile() || file2.createNewFile()) {
+            downloadDataFromStorage();
+        }catch(IOException exception) {
             throw new RuntimeException("Can't create a storage!");
         }
-
-        isClosed = false;
     }
 
     /**
@@ -97,9 +95,8 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
      */
     @Override
     public boolean exists(K key) {
-        if (isClosed) {
-            return false;
-        }
+        isClose();
+
         if (cache.containsKey(key)) {
             return true;
         }
@@ -111,15 +108,13 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
      */
     @Override
     public synchronized void write(K key, V value) {
-        if (isClosed) {
-            throw new RuntimeException("Can't write: storage is closed");
-        } else {
-            cache.put(key, value);
-            base.put(key, 0L);
+        isClose();
 
-            if (cache.size() > MAX_CACHE_SIZE) {
-                writeCacheToStorage();
-            }
+        cache.put(key, value);
+        base.put(key, 0L);
+
+        if (cache.size() > MAX_CACHE_SIZE) {
+            writeCacheToStorage();
         }
     }
 
@@ -128,12 +123,11 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
      */
     @Override
     public synchronized void delete(K key) {
-        if (isClosed) {
-            throw new RuntimeException("Can't delete: storage is closed");
-        } else {
-            cache.remove(key);
-            base.remove(key);
-        }
+        isClose();
+
+        cache.remove(key);
+        base.remove(key);
+
     }
 
     /**
@@ -144,11 +138,10 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
      */
     @Override
     public Iterator<K> readKeys() {
-        if (isClosed) {
-            throw new RuntimeException("Can't iterate: storage is closed");
-        } else {
-            return base.keySet().iterator();
-        }
+        isClose();
+
+        return base.keySet().iterator();
+
     }
 
     /**
@@ -156,31 +149,35 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
      */
     @Override
     public int size() {
-        if (isClosed) {
-            throw new RuntimeException("Can't know size: storage is closed");
-        } else {
-            return base.size();
-        }
+        isClose();
+
+        return base.size();
     }
 
     @Override
     public synchronized void close() {
+        if(isClosed) {
+            return;
+        }
+
         writeCacheToStorage();
         reorganiseStorage();
-        downnloadDataToStorage();
+        uploadDataToStorage();
+
         try {
             mapStorage.close();
             storage.close();
         } catch (IOException excetion) {
             throw new RuntimeException("Can't close storage");
+        } finally {
+            isClosed = true;
+            cache.clear();
+            base.clear();
+            mutexFile.delete();
         }
-        isClosed = true;
-        cache.clear();
-        base.clear();
-        mutexFile.delete();
     }
 
-    private void uploadDataFromStorage() {
+    private void downloadDataFromStorage() {
         try {
 
             int count = -1;
@@ -190,7 +187,7 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 K key = keySerializationStrategy.deserializeFromFile(mapStorage);
                 Long tmp = mapStorage.readLong();
                 base.put(key, tmp);
-                maxOffset = max(maxOffset, tmp);
+                maxOffset = Math.max(maxOffset, tmp);
             }
         } catch (IOException exception) {
             base.clear();
@@ -198,7 +195,7 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
-    private void downnloadDataToStorage() {
+    private void uploadDataToStorage() {
         try {
             mapStorage.close();
             File file = new File(pathname, mapStorageName);
@@ -217,23 +214,21 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void writeCacheToStorage() {
-        if (isClosed) {
-            throw new RuntimeException("Can't write: storage is closed");
-        } else {
-            try {
-                for (HashMap.Entry<K, V> entry : cache.entrySet()) {
-                    storage.seek(maxOffset);
-                    valueSerializationStrategy.serializeToFile(entry.getValue(), storage);
-                    long curOffset = storage.getFilePointer();
-                    base.put(entry.getKey(), maxOffset);
-                    maxOffset = curOffset;
-                }
-                cache.clear();
-
-            } catch (IOException exception) {
-                throw new RuntimeException("Can't write cache on the disk");
+        isClose();
+        try {
+            for (HashMap.Entry<K, V> entry : cache.entrySet()) {
+                storage.seek(maxOffset);
+                valueSerializationStrategy.serializeToFile(entry.getValue(), storage);
+                long curOffset = storage.getFilePointer();
+                base.put(entry.getKey(), maxOffset);
+                maxOffset = curOffset;
             }
+            cache.clear();
+
+        } catch (IOException exception) {
+            throw new RuntimeException("Can't write cache on the disk");
         }
+
     }
 
     private void reorganiseStorage() {
@@ -259,6 +254,12 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
         } catch (IOException exception) {
             throw new RuntimeException("Can't reorganise storage!");
+        }
+    }
+
+    private void isClose() {
+        if (isClosed) {
+            throw new IllegalStateException("Can't write: storage is closed");
         }
     }
 }
