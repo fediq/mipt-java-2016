@@ -1,5 +1,7 @@
 package ru.mipt.java2016.homework.g595.tkachenko.task3;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -34,12 +36,10 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
     private final String valuesFileName;
     private final String directory;
     private boolean flagForClose;
-    private Integer closeCounter;
 
 
     public KlabertancOptimizedStorage(String path, Serialization<K> k, Serialization<V> v) {
 
-        closeCounter = 0;
         keySerialization = k;
         valueSerialization = v;
         directory = path;
@@ -49,13 +49,13 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
         keys = new File(keysFileName);
         values = new File(valuesFileName);
 
-        if ((keys.exists() && !values.exists()) || (!keys.exists() && values.exists())) {
+        if (keys.exists() ^ values.exists()) {
             throw new RuntimeException("Invalid storage architecture!");
         }
 
         if (keys.exists() && values.exists()) {
-            try {
-                DataInputStream dataInputStream = new DataInputStream(new FileInputStream(keys));
+            try (DataInputStream dataInputStream = new DataInputStream(
+                    new BufferedInputStream(new FileInputStream(keys)))) {
                 int keysCount = dataInputStream.readInt();
                 for (int i = 0; i < keysCount; ++i) {
                     K key = keySerialization.read(dataInputStream);
@@ -99,18 +99,22 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private synchronized void shutdownTheDatabase() {
-        try {
-            DataOutputStream dataOutputStream =
-                    new DataOutputStream(new FileOutputStream(keysFileName));
+        try (DataOutputStream dataOutputStream =
+                     new DataOutputStream(new BufferedOutputStream(
+                             new FileOutputStream(keysFileName)))) {
             dataOutputStream.writeInt(this.size());
             for (Map.Entry<K, Long> entry : offsets.entrySet()) {
                 keySerialization.write(dataOutputStream, entry.getKey());
                 dataOutputStream.writeLong(entry.getValue());
             }
-            dataOutputStream.close();
-            valuesRandomAccess.close();
         } catch (IOException e) {
             throw new RuntimeException("Can't write to storage!");
+        } finally {
+            try {
+                valuesRandomAccess.close();
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to close values RAFile!");
+            }
         }
     }
 
@@ -191,10 +195,8 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     @Override
-    public synchronized void close()  {
-        closeCounter++;
-        if (closeCounter == 1) {
-            isStorageClosed();
+    public synchronized void close() {
+        if (!flagForClose) {
             putWriteCacheAsDatabaseOnDisk();
             shutdownTheDatabase();
             flagForClose = true;
