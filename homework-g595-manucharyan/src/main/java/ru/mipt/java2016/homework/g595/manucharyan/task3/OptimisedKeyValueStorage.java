@@ -28,7 +28,6 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private long maxOffset;
     private final String pathname;
-    private RandomAccessFile storage;
     private final String storageName = "storage.txt";
     private RandomAccessFile mapStorage;
     private final String mapStorageName = "mapStorage.txt";
@@ -58,9 +57,6 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
 
         try {
-            File file = new File(pathname, storageName);
-            storage = new RandomAccessFile(file, "rw");
-
             File file2 = new File(path, mapStorageName);
             mapStorage = new RandomAccessFile(file2, "rw");
 
@@ -83,10 +79,14 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 if (cache.get(key) != null) {
                     return cache.get(key);
                 }
+                File file = new File(pathname, storageName);
+                RandomAccessFile storage = new RandomAccessFile(file, "rw");
 
                 Long offset = base.get(key);
                 storage.seek(offset);
-                return valueSerializationStrategy.deserializeFromFile(storage);
+                V res = valueSerializationStrategy.deserializeFromFile(storage);
+                storage.close();
+                return res;
             } catch (Exception exception) {
                 throw new RuntimeException("Can't read from storage");
             }
@@ -132,9 +132,9 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         base.remove(key);
         deletedCount++;
 
-        //if (deletedCount / size() > FILLING_PERCENTAGE) {
-        reorganiseStorage();
-        //}
+        if (deletedCount / size() > FILLING_PERCENTAGE) {
+            reorganiseStorage();
+        }
     }
 
     /**
@@ -172,7 +172,6 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
         try {
             mapStorage.close();
-            storage.close();
         } catch (IOException excetion) {
             throw new RuntimeException("Can't close storage");
         } finally {
@@ -222,6 +221,9 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private void writeCacheToStorage() {
         isClose();
         try {
+            File file = new File(pathname, storageName);
+            RandomAccessFile storage = new RandomAccessFile(file, "rw");
+
             for (HashMap.Entry<K, V> entry : cache.entrySet()) {
                 storage.seek(maxOffset);
                 valueSerializationStrategy.serializeToFile(entry.getValue(), storage);
@@ -229,6 +231,7 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 base.put(entry.getKey(), maxOffset);
                 maxOffset = curOffset;
             }
+            storage.close();
             cache.clear();
 
         } catch (IOException exception) {
@@ -239,6 +242,9 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private void reorganiseStorage() {
         try {
+            File file1 = new File(pathname, storageName);
+            RandomAccessFile storage = new RandomAccessFile(file1, "rw");
+
             File file = new File(pathname, "newStorage.txt");
             RandomAccessFile newStorage = new RandomAccessFile(file, "rw");
 
@@ -253,7 +259,6 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             deletedCount = 0;
 
             storage.close();
-            File file1 = new File(pathname, storageName);
             assert (file1.delete());
 
             newStorage.close();
