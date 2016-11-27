@@ -53,7 +53,11 @@ public class StorageTestUtils {
     }
 
     public static <T> void assertFullyMatch(Iterator<T> iterator, T... items) {
-        assertFullyMatch(iterator, new HashSet<T>(Arrays.<T>asList(items)));
+        assertFullyMatch(iterator, new HashSet<T>(Arrays.asList(items)));
+    }
+
+    public static <T> void assertFullyMatch(List<T> variables, List<T> strings) {
+        StorageTestUtils.assertFullyMatch(variables.iterator(), new HashSet<>(strings));
     }
 
     public static <T> void assertFullyMatch(Iterator<T> iterator, Set<T> set) {

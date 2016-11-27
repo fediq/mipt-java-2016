@@ -1,5 +1,6 @@
 package ru.mipt.java2016.homework.g595.romanenko.task1;
 
+
 /**
  * ru.mipt.java2016.homework.g595.romanenko.task1
  *
@@ -7,29 +8,44 @@ package ru.mipt.java2016.homework.g595.romanenko.task1;
  * @since 12.10.2016
  **/
 
-class Token {
+public class Token {
 
-    enum ExpressionToken {
-        MUL, MINUS, NUMBER, LEFT_BRACES, RIGHT_BRACES, PLUS, DIVIDE
+    public enum TokenType {
+        MUL, MINUS, NUMBER, LEFT_BRACES, RIGHT_BRACES, PLUS, DIVIDE, NAME, UNKNOWN, COMMA
     }
 
-    private final ExpressionToken type;
+    private final TokenType type;
     private Double number = null;
+    private String name = null;
 
-    Token(ExpressionToken type) {
+    public Token(TokenType type) {
         this.type = type;
     }
 
-    Token(Double number) {
-        this.number = number;
-        this.type = ExpressionToken.NUMBER;
+    public Token(String str) {
+        this.name = str;
+        this.type = TokenType.NAME;
     }
 
-    ExpressionToken getType() {
+    public Token(Double number) {
+        this.number = number;
+        this.type = TokenType.NUMBER;
+    }
+
+    public TokenType getType() {
         return type;
     }
 
-    Double getNumber() {
+    public Double getNumber() {
         return number;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Type : %s, Number : %s, Name : %s", type, number, name);
     }
 }
