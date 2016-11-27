@@ -43,7 +43,6 @@ public class LargeKeyValueStorage<K, V> implements KeyValueStorage<K, V>, Closea
     private static final String OFFSETS_FILENAME = FILENAME_PREFIX + ".valueOffsets";
 
     private static final String VALUES_SWAP_FILENAME = VALUES_FILENAME + ".tmp";
-    private static final String OFFSETS_SWAP_FILENAME = OFFSETS_FILENAME + ".tmp";
 
     private LoadingCache<K, V> cached;
     private LongSerializer longSerializer = LongSerializer.getInstance();
@@ -126,7 +125,8 @@ public class LargeKeyValueStorage<K, V> implements KeyValueStorage<K, V>, Closea
             }
             return cached.get(key);
         } catch (ExecutionException e) {
-            throw new RuntimeException("File operation error");
+            e.printStackTrace();
+            return null;
         } finally {
             lock.readLock().unlock();
         }
@@ -141,7 +141,7 @@ public class LargeKeyValueStorage<K, V> implements KeyValueStorage<K, V>, Closea
             valueOffsets.put(key, valuesFile.getFilePointer());
             valueSerializer.serialize(value, valuesFile);
         } catch (IOException e) {
-            throw new RuntimeException("File operation error");
+            e.printStackTrace();
         } finally {
             lock.writeLock().unlock();
         }
@@ -258,8 +258,12 @@ public class LargeKeyValueStorage<K, V> implements KeyValueStorage<K, V>, Closea
             valuesFile = new RandomAccessFile(extraTmpValuesFile, "rw");
             valueOffsets = newOffsets;
             numObsoleteEntries = 0;
+            cached.cleanUp();
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            lock.readLock().unlock();
+            lock.writeLock().unlock();
         }
     }
 }
