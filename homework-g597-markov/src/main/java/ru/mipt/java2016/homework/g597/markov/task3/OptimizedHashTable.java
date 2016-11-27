@@ -1,7 +1,7 @@
 package ru.mipt.java2016.homework.g597.markov.task3;
 
 /**
- * Created by Alexander on 23.11.2016.
+ * Created by Alexander on 24.11.2016.
  */
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;

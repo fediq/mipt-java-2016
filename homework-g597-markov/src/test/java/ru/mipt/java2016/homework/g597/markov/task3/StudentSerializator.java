@@ -1,8 +1,7 @@
 package ru.mipt.java2016.homework.g597.markov.task3;
 
-
 /**
- * Created by Alexander on 30.10.2016.
+ * Created by Alexander on 25.11.2016.
  */
 
 import ru.mipt.java2016.homework.tests.task2.Student;
