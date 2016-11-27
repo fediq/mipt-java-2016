@@ -97,8 +97,6 @@ public class OptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                         throw new IOException("Couldn't read from file during opening of the storage");
                     }
                 }
-                randAccFileWithOffsets.close();
-
             }
         } catch (FileNotFoundException e) {
             throw new FileNotFoundException("The given string does not denote an existing file");
