@@ -224,13 +224,14 @@ class FsOptimizedKvs<K, V> implements
      */
     public void close() throws IOException {
         synchronized (this) {
-            checkOpen();
-            dumpDatabaseToFile();
-            validator.writeHash();
-            if (!lockFile.delete()) {
-                throw new IOException("Can't delete lock file");
+            if (isOpen) {
+                dumpDatabaseToFile();
+                validator.writeHash();
+                if (!lockFile.delete()) {
+                    throw new IOException("Can't delete lock file");
+                }
+                isOpen = false;
             }
-            isOpen = false;
         }
     }
 
