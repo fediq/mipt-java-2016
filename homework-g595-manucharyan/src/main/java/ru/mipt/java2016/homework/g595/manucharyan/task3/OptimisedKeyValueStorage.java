@@ -16,6 +16,8 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private static final long MAX_CACHE_SIZE = 100L;
+    private static final double FILLING_PERCENTAGE = 0.5; //when we need clean storage from deleted values
+    private static long deletedCount;//number of deleted elements
 
     private final SerializationStrategyRandomAccess<K> keySerializationStrategy;
     private final SerializationStrategyRandomAccess<V> valueSerializationStrategy;
@@ -41,6 +43,7 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         this.keySerializationStrategy = keySerializationStrategy;
         this.valueSerializationStrategy = valueSerializaionStrategy;
         maxOffset = 0L;
+        deletedCount = 0L;
         pathname = path;
         isClosed = false;
 
@@ -127,7 +130,11 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
         cache.remove(key);
         base.remove(key);
+        deletedCount++;
 
+        if (deletedCount / size() > FILLING_PERCENTAGE) {
+            reorganiseStorage();
+        }
     }
 
     /**
@@ -160,7 +167,6 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             return;
         }
 
-        writeCacheToStorage();
         reorganiseStorage();
         uploadDataToStorage();
 
@@ -236,7 +242,7 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             File file = new File(pathname, "newStorage.txt");
             RandomAccessFile newStorage = new RandomAccessFile(file, "rw");
 
-            assert (cache.isEmpty());
+            writeCacheToStorage();
 
             for (HashMap.Entry<K, Long> entry : base.entrySet()) {
                 storage.seek(entry.getValue());
@@ -244,6 +250,7 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 valueSerializationStrategy.serializeToFile(read(entry.getKey()), newStorage);
                 base.put(entry.getKey(), tmp);
             }
+            deletedCount = 0;
 
             storage.close();
             File file1 = new File(pathname, storageName);
