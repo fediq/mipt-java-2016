@@ -9,7 +9,7 @@
     <artifactId>mipt-java-2016</artifactId>
     <version>1.0.0</version>
 
-    <packaging>jar</packaging>
+    <packaging>pom</packaging>
 
     <modules>
         <module>homework-base</module>
