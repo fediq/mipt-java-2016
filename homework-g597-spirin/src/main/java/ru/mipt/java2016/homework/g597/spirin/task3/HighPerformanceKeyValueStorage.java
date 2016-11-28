@@ -101,25 +101,25 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
     }
 
     private void updateStorage() throws IOException {
-        RandomAccessFile buffer = new RandomAccessFile(path + File.separator + name + ".buffer", "rw");
-        Map<K, Long> updatedOffsets = new HashMap<>();
+        try (RandomAccessFile buffer = new RandomAccessFile(path + File.separator + name + ".buffer", "rw")) {
+            Map<K, Long> updatedOffsets = new HashMap<>();
 
-        dataStorage.seek(0);
-        while (dataStorage.getFilePointer() < dataStorage.length()) {
-            V value = valueSerializer.read(dataStorage);
-            K key = keySerializer.read(dataStorage);
+            dataStorage.seek(0);
+            while (dataStorage.getFilePointer() < dataStorage.length()) {
+                V value = valueSerializer.read(dataStorage);
+                K key = keySerializer.read(dataStorage);
 
-            if (offsets.containsKey(key)) {
-                updatedOffsets.put(key, buffer.getFilePointer());
-                valueSerializer.write(buffer, value);
-                keySerializer.write(buffer, key);
+                if (offsets.containsKey(key)) {
+                    updatedOffsets.put(key, buffer.getFilePointer());
+                    valueSerializer.write(buffer, value);
+                    keySerializer.write(buffer, key);
+                }
             }
+
+            offsets.clear();
+            offsets = updatedOffsets;
         }
         dataStorage.close();
-        buffer.close();
-        offsets.clear();
-
-        offsets = updatedOffsets;
 
         File bufferFile = new File(path + File.separator + name + ".buffer");
         File dataFile = new File(path + File.separator + name + ".data");
@@ -130,7 +130,7 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
 
     @Override
     public V read(K key) {
-        lock.readLock().lock();
+        lock.writeLock().lock();
         try {
             checkIfStorageIsOpen();
             if (!offsets.containsKey(key)) {
@@ -138,7 +138,7 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
             }
             return cache.get(key);
         } catch (ExecutionException e) {
-            throw new RuntimeException("File operation error");
+            throw new RuntimeException(e);
         } finally {
             lock.readLock().unlock();
         }
@@ -167,7 +167,7 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
                 countModifyOperations = 0;
             }
         } catch (IOException e) {
-            throw new RuntimeException("File operation error");
+            throw new RuntimeException(e);
         } finally {
             lock.writeLock().unlock();
         }
@@ -190,7 +190,7 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
                 countModifyOperations = 0;
             }
         } catch (IOException e) {
-            throw new RuntimeException("File operation error");
+            throw new RuntimeException(e);
         } finally {
             lock.writeLock().unlock();
         }
@@ -242,6 +242,7 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
         try {
             if (countModifyOperations >= MAX_MODIFY_OPERATIONS) {
                 updateStorage();
+                countModifyOperations = 0;
             }
 
             offsetStorage.setLength(0);
