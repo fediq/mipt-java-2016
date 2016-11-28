@@ -1,5 +1,7 @@
 package ru.mipt.java2016.homework.g597.spirin.task3;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Date;
@@ -18,12 +20,12 @@ public class DateSerializer implements SerializationStrategy<Date> {
     }
 
     @Override
-    public Date read(RandomAccessFile file) throws IOException {
+    public Date read(DataInput file) throws IOException {
         return new Date(file.readLong());
     }
 
     @Override
-    public void write(RandomAccessFile file, Date object) throws IOException {
+    public void write(DataOutput file, Date object) throws IOException {
         file.writeLong(object.getTime());
     }
 }

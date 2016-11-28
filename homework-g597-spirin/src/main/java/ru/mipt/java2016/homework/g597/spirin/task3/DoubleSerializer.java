@@ -1,5 +1,7 @@
 package ru.mipt.java2016.homework.g597.spirin.task3;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
@@ -17,12 +19,12 @@ public class DoubleSerializer implements SerializationStrategy<Double> {
     }
 
     @Override
-    public Double read(RandomAccessFile file) throws IOException {
+    public Double read(DataInput file) throws IOException {
         return file.readDouble();
     }
 
     @Override
-    public void write(RandomAccessFile file, Double object) throws IOException {
+    public void write(DataOutput file, Double object) throws IOException {
         file.writeDouble(object);
     }
 }

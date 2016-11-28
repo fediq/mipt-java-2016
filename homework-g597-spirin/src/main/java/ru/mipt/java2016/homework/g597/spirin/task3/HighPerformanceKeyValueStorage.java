@@ -5,10 +5,7 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -26,13 +23,19 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
     private final SerializationStrategy<K> keySerializer;
     private final SerializationStrategy<V> valueSerializer;
 
-    private final RandomAccessFile offsetStorage;
-    private final RandomAccessFile dataStorage;
+    private RandomAccessFile offsetStorage;
+    private RandomAccessFile dataStorage;
 
-    private final Map<K, Long> offsets = new HashMap<>();
+    private final String path;
+    private final String name;
 
-    private ReadWriteLock lock;
+    private Map<K, Long> offsets = new HashMap<>();
+
+    private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private boolean isOpen = false;
+
+    private int countModifyOperations;
+    private static final int MAX_MODIFY_OPERATIONS = 500;
 
     private LoadingCache<K, V> cache = CacheBuilder.newBuilder().maximumSize(100).build(new CacheLoader<K, V>() {
         @Override
@@ -56,6 +59,9 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
 
         handleFileExistence(path);
 
+        this.path = path;
+        this.name = name;
+
         this.keySerializer = keySerializer;
         this.valueSerializer = valueSerializer;
 
@@ -64,11 +70,10 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
 
         offsetStorage.getChannel().lock();
 
-        lock = new ReentrantReadWriteLock();
-
         loadData();
 
         isOpen = true;
+        countModifyOperations = 0;
     }
 
     private void handleFileExistence(String path) throws FileNotFoundException {
@@ -95,6 +100,33 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
         }
     }
 
+    private void updateStorage() throws IOException {
+        RandomAccessFile buffer = new RandomAccessFile(path + File.separator + name + ".buffer", "rw");
+        Map<K, Long> updatedOffsets = new HashMap<>();
+
+        dataStorage.seek(0);
+        while (dataStorage.getFilePointer() < dataStorage.length()) {
+            V value = valueSerializer.read(dataStorage);
+            K key = keySerializer.read(dataStorage);
+
+            if (offsets.containsKey(key)) {
+                updatedOffsets.put(key, buffer.getFilePointer());
+                valueSerializer.write(buffer, value);
+                keySerializer.write(buffer, key);
+            }
+        }
+        dataStorage.close();
+        buffer.close();
+
+        offsets = updatedOffsets;
+
+        File bufferFile = new File(path + File.separator + name + ".buffer");
+        File dataFile = new File(path + File.separator + name + ".data");
+
+        bufferFile.renameTo(dataFile);
+        dataStorage = new RandomAccessFile(path + File.separator + name + ".data", "rw");
+    }
+
     @Override
     public V read(K key) {
         lock.readLock().lock();
@@ -117,9 +149,22 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
         try {
             checkIfStorageIsOpen();
 
+            if (offsets.containsKey(key)) {
+                countModifyOperations += 1;
+            }
+
+            if (countModifyOperations >= MAX_MODIFY_OPERATIONS) {
+                updateStorage();
+                countModifyOperations = 0;
+            }
+
             dataStorage.seek(dataStorage.length());
-            offsets.put(key, dataStorage.getFilePointer());
+            Long offset = dataStorage.getFilePointer();
+
+            offsets.put(key, offset);
+
             valueSerializer.write(dataStorage, value);
+            keySerializer.write(dataStorage, key);
         } catch (IOException e) {
             throw new RuntimeException("File operation error");
         } finally {
@@ -132,7 +177,19 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
         lock.writeLock().lock();
         try {
             checkIfStorageIsOpen();
+
+            if (offsets.containsKey(key)) {
+                countModifyOperations += 1;
+            }
+
+            if (countModifyOperations >= MAX_MODIFY_OPERATIONS) {
+                updateStorage();
+                countModifyOperations = 0;
+            }
+
             offsets.remove(key);
+        } catch (IOException e) {
+            throw new RuntimeException("File operation error");
         } finally {
             lock.writeLock().unlock();
         }
@@ -171,6 +228,7 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
         }
     }
 
+
     @Override
     public void close() throws IOException {
         lock.writeLock().lock();
@@ -181,6 +239,8 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
 
         isOpen = false;
         try {
+            updateStorage();
+
             offsetStorage.setLength(0);
             offsetStorage.seek(0);
 
