@@ -1,6 +1,9 @@
 package ru.mipt.java2016.homework.g595.manucharyan.task3;
 
+import java.io.BufferedOutputStream;
+import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.HashMap;
@@ -72,6 +75,8 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
      */
     @Override
     public synchronized V read(K key) {
+        isClose();
+
         if (!exists(key)) {
             return null;
         } else {
@@ -241,18 +246,18 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void reorganiseStorage() {
-        try {
-            File file1 = new File(pathname, storageName);
-            RandomAccessFile storage = new RandomAccessFile(file1, "rw");
 
-            File file = new File(pathname, "newStorage.txt");
-            RandomAccessFile newStorage = new RandomAccessFile(file, "rw");
+        File file1 = new File(pathname, storageName);
+        File file = new File(pathname, "newStorage.txt");
+
+        try (DataOutputStream newStorage = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(file)));
+             RandomAccessFile storage = new RandomAccessFile(file1, "rw");) {
 
             writeCacheToStorage();
 
             for (HashMap.Entry<K, Long> entry : base.entrySet()) {
                 storage.seek(entry.getValue());
-                Long tmp = newStorage.getFilePointer();
+                Long tmp = (long) newStorage.size();
                 valueSerializationStrategy.serializeToFile(read(entry.getKey()), newStorage);
                 base.put(entry.getKey(), tmp);
             }
