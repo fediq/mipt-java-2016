@@ -245,7 +245,7 @@ public class MyAwesomeUpdatedKeyValueStorage<K, V> implements KeyValueStorage<K,
                 mergeIdFiles(id, id + 1);
             }
         } catch (IOException error) {
-            error.printStackTrace();
+            throw new RuntimeException("Something got wrong", error);
         }
 
     }
@@ -281,7 +281,7 @@ public class MyAwesomeUpdatedKeyValueStorage<K, V> implements KeyValueStorage<K,
                 currentFile.close();
 
             } catch (IOException error) {
-                error.printStackTrace();
+                throw new RuntimeException("Something got wrong", error);
             }
         }
     }
@@ -301,8 +301,7 @@ public class MyAwesomeUpdatedKeyValueStorage<K, V> implements KeyValueStorage<K,
                 file.close();
                 return value;
             } catch (IOException error) {
-                error.printStackTrace();
-                return null;
+                throw new RuntimeException("Something got wrong", error);
             }
         } else {
             return null;
