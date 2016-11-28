@@ -32,6 +32,11 @@ public class FileWorker implements Closeable {
         }
     }
 
+    public void rename(String str) {
+        File newf = new File(str);
+        file.renameTo(newf);
+    }
+
     public long getCheckSum() {
         if (!mustCalc) {
             return 0;
