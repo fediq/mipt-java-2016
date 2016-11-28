@@ -42,7 +42,6 @@ import java.util.Iterator;
 import java.util.HashSet;
 import java.util.ArrayList;
 import java.util.List;
-import java.lang.Math;
 
 public class MyAwesomeUpdatedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private static final String DB_NAME = "storage.db";  // название всей базы в целом
@@ -57,11 +56,11 @@ public class MyAwesomeUpdatedKeyValueStorage<K, V> implements KeyValueStorage<K,
             this.shift = shift;
         }
 
-        int GetId() {
+        int getId() {
             return id;
         }
 
-        long GetShift() {
+        long getShift() {
             return shift;
         }
     }
@@ -155,7 +154,7 @@ public class MyAwesomeUpdatedKeyValueStorage<K, V> implements KeyValueStorage<K,
 
             if (deletedMapKeyFile.containsKey(key)) {
                 PlaceOfKey place = deletedMapKeyFile.get(key);
-                if (place.GetId() == newid1 && place.GetShift() == currentKeyShift) {
+                if (place.getId() == newid1 && place.getShift() == currentKeyShift) {
                     continue;
                 }
             }
@@ -174,7 +173,7 @@ public class MyAwesomeUpdatedKeyValueStorage<K, V> implements KeyValueStorage<K,
             currentShift = idFileRAM2.getFilePointer();
             if (deletedMapKeyFile.containsKey(key)) {
                 PlaceOfKey place = deletedMapKeyFile.get(key);
-                if (place.GetId() == newid2 && place.GetShift() == currentKeyShift) {
+                if (place.getId() == newid2 && place.getShift() == currentKeyShift) {
                     continue;
                 }
             }
@@ -201,7 +200,7 @@ public class MyAwesomeUpdatedKeyValueStorage<K, V> implements KeyValueStorage<K,
                 currentShift = idFileRAM2.getFilePointer();
                 if (deletedMapKeyFile.containsKey(key)) {
                     PlaceOfKey place = deletedMapKeyFile.get(key);
-                    if (place.GetId() == newid2 && place.GetShift() == currentKeyShift) {
+                    if (place.getId() == newid2 && place.getShift() == currentKeyShift) {
                         continue;
                     }
                 }
@@ -223,8 +222,8 @@ public class MyAwesomeUpdatedKeyValueStorage<K, V> implements KeyValueStorage<K,
                 File oldfile = filesTable.get(oldid);
 
                 for (Map.Entry<K, PlaceOfKey> entry : newMapKeyFile.entrySet()) {  // обновляем новые ключи
-                    if (entry.getValue().GetId() == oldid) {
-                        entry.setValue(new PlaceOfKey(newid, entry.getValue().GetShift()));
+                    if (entry.getValue().getId() == oldid) {
+                        entry.setValue(new PlaceOfKey(newid, entry.getValue().getShift()));
                     }
                 }
 
@@ -255,7 +254,7 @@ public class MyAwesomeUpdatedKeyValueStorage<K, V> implements KeyValueStorage<K,
         if (checkClose) {
             isFileDBopened();
         }
-        if ((checkClose && deletedMapKeyFile.size() > 0) || deletedMapKeyFile.size() >= 2*MAX_SIZE_OF_KEYS) {
+        if ((checkClose && deletedMapKeyFile.size() > 0) || deletedMapKeyFile.size() >= 2 * MAX_SIZE_OF_KEYS) {
             compactIdFiles();
             deletedMapKeyFile.clear();
         }
@@ -294,8 +293,8 @@ public class MyAwesomeUpdatedKeyValueStorage<K, V> implements KeyValueStorage<K,
         if (mapKeyValueCache.keySet().contains(key)) {  // дает чтение по времени за О(1) для одного и того же ключа.
             return mapKeyValueCache.get(key);
         } else if (mapKeyFile.containsKey(key)) {  // O(log(n))
-            int id = mapKeyFile.get(key).GetId();
-            long shift = mapKeyFile.get(key).GetShift();
+            int id = mapKeyFile.get(key).getId();
+            long shift = mapKeyFile.get(key).getShift();
             try {
                 RandomAccessFile file = new RandomAccessFile(filesTable.get(id), "rw");
                 V value = valueSerialization.read(file, shift);
@@ -366,8 +365,8 @@ public class MyAwesomeUpdatedKeyValueStorage<K, V> implements KeyValueStorage<K,
                 K key = entry.getKey();
                 PlaceOfKey place = entry.getValue();
                 keySerialization.write(fileDB, key, fileDB.getFilePointer());
-                intS.write(fileDB, place.GetId(), fileDB.getFilePointer());
-                longS.write(fileDB, place.GetShift(), fileDB.getFilePointer());
+                intS.write(fileDB, place.getId(), fileDB.getFilePointer());
+                longS.write(fileDB, place.getShift(), fileDB.getFilePointer());
             }
         } finally {
             fileDB.close();
