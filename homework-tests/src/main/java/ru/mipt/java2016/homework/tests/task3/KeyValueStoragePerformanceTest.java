@@ -21,7 +21,7 @@ public abstract class KeyValueStoragePerformanceTest extends AbstractSingleFileS
             new HashSet<>(Arrays.asList(1, 3, 7, 15, 31, 63, 127, 255, 511, 1023)));
 
     protected final void print(String s, Object... args) {
-        System.out.println(String.format("PERFORMANCE: " + s + " (for [" + getClass().getName() + "])", args));
+        System.out.println(String.format("PERFORMANCE: " + s + " @ " + getClass().getName() + "", args));
     }
 
     protected void innerMeasureWriteDumpRead(int size, int iterations) {
@@ -61,21 +61,13 @@ public abstract class KeyValueStoragePerformanceTest extends AbstractSingleFileS
         }
         long endTime = System.currentTimeMillis();
 
+        long fullTime = endTime - beginTime;
         int readsCount = iterations * size;
         int writesCount = iterations * size;
-        long iterationTimeMillis = (endTime - beginTime) / iterations;
-        long readsPerSecond = readsCount * 1000 / summaryReadTime.get();
-        long writesPerSecond = writesCount * 1000 / summaryWriteTime.get();
-        long averageOpsPerSecond = (writesCount + readsCount) * 1000 / iterationTimeMillis;
-
-        long closeTimeMillis = summaryCloseTime.get() / iterations;
+        long averageOpsPerSecond = (writesCount + readsCount) * 1000 / fullTime;
 
         String label = String.format("WriteDumpRead-%d", size);
-        print("%s: %5d reads per second", label, readsPerSecond);
-        print("%s: %5d writes per second", label, writesPerSecond);
         print("%s: %5d average ops per second", label, averageOpsPerSecond);
-        print("%s: %5d millis for iteration", label, iterationTimeMillis);
-        print("%s: %5d millis for close", label, closeTimeMillis);
     }
 
     protected void innerMeasureWriteReadChain(int batchSize, int loops, int iterations) {
@@ -116,18 +108,13 @@ public abstract class KeyValueStoragePerformanceTest extends AbstractSingleFileS
         }
         long endTime = System.currentTimeMillis();
 
+        long fullTime = endTime - beginTime;
         int readsCount = iterations * (loops - 1) * 2 * batchSize;
         int writesCount = iterations * loops * batchSize;
-        long iterationTimeMillis = (endTime - beginTime) / iterations;
-        long readsPerSecond =  readsCount * 1000 / summaryReadTime.get();
-        long writesPerSecond = writesCount * 1000 / summaryWriteTime.get();
-        long averageOpsPerSecond = (writesCount + readsCount) * 1000 / iterationTimeMillis;
+        long averageOpsPerSecond = (writesCount + readsCount) * 1000 / fullTime;
 
         String label = String.format("WriteReadChain-%dW%dRx%d", batchSize, 2 * batchSize, loops);
-        print("%s: %5d reads per second", label, readsPerSecond);
-        print("%s: %5d writes per second", label, writesPerSecond);
         print("%s: %5d average ops per second", label, averageOpsPerSecond);
-        print("%s: %5d millis for iteration", label, iterationTimeMillis);
     }
 
     public void innerMeasureWriteAndReadBack(int writeSize, int readSize, int readLoops, int iterations) {
@@ -164,18 +151,13 @@ public abstract class KeyValueStoragePerformanceTest extends AbstractSingleFileS
         }
         long endTime = System.currentTimeMillis();
 
+        long fullTime = endTime - beginTime;
         int readsCount = iterations * readSize * readLoops;
         int writesCount = iterations * writeSize;
-        long iterationTimeMillis = (endTime - beginTime) / iterations;
-        long readsPerSecond =  readsCount * 1000 / summaryReadTime.get();
-        long writesPerSecond = writesCount * 1000 / summaryWriteTime.get();
-        long averageOpsPerSecond = (writesCount + readsCount) * 1000 / iterationTimeMillis;
+        long averageOpsPerSecond = (writesCount + readsCount) * 1000 / fullTime;
 
         String label = String.format("WriteReadLoop-%dW %dRx%d", writeSize, readSize, readLoops);
-        print("%s: %5d reads per second", label, readsPerSecond);
-        print("%s: %5d writes per second", label, writesPerSecond);
         print("%s: %5d average ops per second", label, averageOpsPerSecond);
-        print("%s: %5d millis for iteration", label, iterationTimeMillis);
     }
 
     @Test
