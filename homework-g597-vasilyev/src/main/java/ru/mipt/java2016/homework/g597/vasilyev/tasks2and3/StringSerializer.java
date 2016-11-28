@@ -14,7 +14,7 @@ public class StringSerializer implements Serializer<String> {
         byte[] buffer = value.getBytes(StandardCharsets.UTF_8);
         destination.writeInt(buffer.length);
         destination.write(buffer);
-        return buffer.length;
+        return 4 + buffer.length;
     }
 
     @Override

@@ -28,26 +28,24 @@ public class KeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
     private long valuesCount;
     private boolean readyToWrite = false;
 
+    private Path valuesPath;
+    private Path basePath;
+
     public KeyValueStorageImpl(String path,
                                Serializer<K> keySerializer,
                                Serializer<V> valueSerializer) throws IOException, ConcurrentStorageAccessException {
         this.keySerializer = keySerializer;
         this.valueSerializer = valueSerializer;
+        basePath = Paths.get(path);
 
-        Path dbPath = Paths.get(path, "db");
+        Path dbPath = basePath.resolve("db");
         db = openRandomAccessFile(dbPath);
         lockDB();
         if (db.length() > 0) {
             readDB();
         }
 
-        Path valuesPath = Paths.get(path, "values");
-        if (Files.exists(valuesPath) && offsets.size() > 2 * valuesCount) {
-            Path oldValuesPath = Paths.get(path, "values.old");
-            Files.move(valuesPath, oldValuesPath);
-            trimStorage(oldValuesPath, valuesPath);
-            Files.delete(oldValuesPath);
-        }
+        valuesPath = basePath.resolve("values");
         valuesFile = openRandomAccessFile(valuesPath);
 
         open = true;
@@ -91,6 +89,7 @@ public class KeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
 
         try {
             checkOpen();
+            trimStorage();
 
             if (!readyToWrite) {
                 valuesFile.seek(valuesFile.length());
@@ -173,18 +172,27 @@ public class KeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
-    private void trimStorage(Path oldPath, Path newPath) throws IOException {
-        try (RandomAccessFile valuesFile = openRandomAccessFile(oldPath);
-             DataOutputStream newValues = new DataOutputStream(
+    private void trimStorage() throws IOException {
+        if (offsets.size() <= 2 * valuesCount) {
+            return;
+        }
+
+        Path newPath = basePath.resolve("values.new");
+        try (DataOutputStream newValues = new DataOutputStream(
                      new BufferedOutputStream(new FileOutputStream(newPath.toString())))) {
             long newOffset = 0;
             valuesFile.getFilePointer();
             for (Map.Entry<K, Long> key : offsets.entrySet()) {
                 V value = readValue(key.getValue());
-                offsets.put(key.getKey(), newOffset);
+                key.setValue(newOffset);
                 newOffset += valueSerializer.write(value, newValues);
             }
         }
+
+        valuesFile.close();
+        Files.delete(valuesPath);
+        Files.move(newPath, valuesPath);
+        valuesFile = openRandomAccessFile(valuesPath);
     }
 
     private V readValue(long offset) throws IOException {
