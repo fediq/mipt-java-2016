@@ -253,6 +253,7 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
                 offsetStorage.writeLong(entry.getValue());
             }
 
+            dataStorage.close();
             offsetStorage.close();
         } finally {
             lock.writeLock().unlock();
