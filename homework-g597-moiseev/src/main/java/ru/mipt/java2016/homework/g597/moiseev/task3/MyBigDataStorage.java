@@ -37,13 +37,13 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
     private final String path;
     private RandomAccessFile valuesFile;
     private RandomAccessFile keysFile;
-    private HashMap<K, V> memTable = new HashMap<>();
-    private HashMap<K, Long> offsets = new HashMap<>();
+    private Map<K, V> memTable = new HashMap<>();
+    private Map<K, Long> offsets = new HashMap<>();
     private int numberOfDeletedElements = 0;
     private ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private Lock writeLock = lock.writeLock();
     private Lock readLock = lock.readLock();
-    private ReentrantLock fileAccessLock = new ReentrantLock();
+    private Lock fileAccessLock = new ReentrantLock();
     private boolean isOpened = true;
 
     public MyBigDataStorage(String path, String name, SerializationStrategy<K> keySerializationStrategy,
@@ -250,7 +250,7 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
 
     private void optimizeMemory() {
         try {
-            HashMap<K, Long> newOffsets = new HashMap<>();
+            Map<K, Long> newOffsets = new HashMap<>();
             String newValuesPath = path + File.separator + "new_" + this.name + "_values.db";
             String valuesPath = path + File.separator + this.name + "_values.db";
             File newValues = new File(newValuesPath);
