@@ -317,6 +317,10 @@ public class MyAwesomeUpdatedKeyValueStorage<K, V> implements KeyValueStorage<K,
     @Override
     public synchronized void write(K key, V value) {  // O(log(n))
         isFileDBopened();
+        if (mapKeyValueCache.containsKey(key) || mapKeyFile.containsKey(key)) {
+            PlaceOfKey place = mapKeyFile.get(key);
+            deletedMapKeyFile.put(key, place);
+        }
         keySet.add(key);
         mapKeyValueCache.put(key, value);
         updateData(false);
