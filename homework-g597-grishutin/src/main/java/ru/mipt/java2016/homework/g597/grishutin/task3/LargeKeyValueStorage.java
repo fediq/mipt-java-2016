@@ -4,6 +4,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
+import ru.mipt.java2016.homework.g597.grishutin.task2.IntegerSerializer;
 import ru.mipt.java2016.homework.g597.grishutin.task2.LongSerializer;
 import ru.mipt.java2016.homework.g597.grishutin.task2.SerializationStrategy;
 
@@ -34,6 +35,7 @@ public class LargeKeyValueStorage<K, V> implements KeyValueStorage<K, V>, AutoCl
     private final SerializationStrategy<K> keySerializer;
     private final SerializationStrategy<V> valueSerializer;
     private final SerializationStrategy<Long> longSerializer = LongSerializer.getInstance();
+    private final SerializationStrategy<Integer> intSerializer = IntegerSerializer.getInstance();
 
     private final RandomAccessFile offsetsFile;
     private RandomAccessFile valuesFile;
@@ -96,11 +98,17 @@ public class LargeKeyValueStorage<K, V> implements KeyValueStorage<K, V>, AutoCl
         }
     }
 
+    /*
+           file looks like: #obsolete : Integer | (key, offset) | (key, offset) | ...
+     */
     private void readEntriesFromDisk() throws IOException {
+        if (offsetsFile.length() == 0) {
+            return;
+        }
         valueOffsets.clear();
         offsetsFile.seek(0);
         cached.cleanUp();
-
+        numObsoleteEntries = intSerializer.deserialize(offsetsFile);
         while (offsetsFile.getFilePointer() < offsetsFile.length()) {
             K key = keySerializer.deserialize(offsetsFile);
             Long offset = offsetsFile.readLong();
@@ -200,6 +208,8 @@ public class LargeKeyValueStorage<K, V> implements KeyValueStorage<K, V>, AutoCl
             offsetsFile.seek(0);
             offsetsFile.setLength(0);
 
+            intSerializer.serialize(numObsoleteEntries, offsetsFile);
+
             for (Map.Entry<K, Long> entry : valueOffsets.entrySet()) {
                 keySerializer.serialize(entry.getKey(), offsetsFile);
                 longSerializer.serialize(entry.getValue(), offsetsFile);
@@ -233,6 +243,7 @@ public class LargeKeyValueStorage<K, V> implements KeyValueStorage<K, V>, AutoCl
 
             RandomAccessFile newValuesFile = new RandomAccessFile(newValuesPath.toFile(), "rw");
 
+            intSerializer.serialize(0, offsetsFile);
             for (Map.Entry<K, Long> entry : valueOffsets.entrySet()) {
 
                 Long offset = entry.getValue();
