@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.NotDirectoryException;
 import java.util.HashMap;
-import java.util.PriorityQueue;
 import java.util.Iterator;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -21,10 +20,6 @@ abstract class SolidStorageAbstract<K, V> implements KeyValueStorage<K, V> {
     protected RandomAccessFile file;
     // Таблица координат value по key.
     private HashMap<K, Long> indexTable = new HashMap<>();
-    // Хранилище удалённых позиций.
-    private PriorityQueue<Long> removed = new PriorityQueue<>();
-    // Кэш для быстрого чтения.
-    private HashMap<K, V> cache = new HashMap<>();
     // Путь хранилища.
     private String pathName;
     // Состояние хранилища.
@@ -59,9 +54,9 @@ abstract class SolidStorageAbstract<K, V> implements KeyValueStorage<K, V> {
                 file = new RandomAccessFile(f, "rw");
                 int n = file.readInt();
                 for (int i = 0; i < n; ++i) {
-                    K key = readSolidKey(file);
+                    K key = readKey(file);
                     indexTable.put(key, file.getFilePointer());
-                    readSolidValue(file);
+                    readValue(file);
                 }
                 if (file.read() >= 0) {
                     throw new IOException("Invalid storage file: unexpected file size.");
@@ -78,14 +73,6 @@ abstract class SolidStorageAbstract<K, V> implements KeyValueStorage<K, V> {
     public V read(K key) {
         readLock.lock();
         try {
-            checkClosedState();
-            V value = cache.get(key);
-
-            // Достаём значение из кэша.
-            if (value != null) {
-                return value;
-            }
-
             // Достаём значение с диска.
             Long pos = indexTable.get(key);
             if (pos == null) {
@@ -93,17 +80,10 @@ abstract class SolidStorageAbstract<K, V> implements KeyValueStorage<K, V> {
             }
             try {
                 file.seek(pos);
-                value = readSolidValue(file);
+                return readValue(file);
             } catch (Exception e) {
                 throw new RuntimeException("Error occurred while reading.", e);
             }
-
-            // Добавляем значение в кэш.
-            if (cache.size() > 1600) {  // < 48 МБ
-                cache.clear();
-            }
-            cache.put(key, value);
-            return value;
         } finally {
             readLock.unlock();
         }
@@ -128,23 +108,10 @@ abstract class SolidStorageAbstract<K, V> implements KeyValueStorage<K, V> {
             if ((key == null) || (value == null)) {
                 throw new RuntimeException("Null key or value are not supported.");
             }
-            if (cache.containsKey(key)) {
-                cache.put(key, value);
-            }
             try {
-                if (indexTable.containsKey(key)) {
-                    file.seek(indexTable.get(key));
-                    writeSolidValue(value);
-                } else {
-                    if (removed.isEmpty()) {
-                        file.seek(file.length());
-                    } else {
-                        file.seek(removed.poll());
-                    }
-                    writeSolidKey(key);
-                    indexTable.put(key, file.getFilePointer());
-                    writeSolidValue(value);
-                }
+                file.seek(file.getFilePointer());
+                indexTable.put(key, file.getFilePointer());
+                writeValue(value);
             } catch (Exception e) {
                 throw new RuntimeException("Writing issue.", e);
             }
@@ -158,12 +125,7 @@ abstract class SolidStorageAbstract<K, V> implements KeyValueStorage<K, V> {
         writeLock.lock();
         try {
             checkClosedState();
-            if (indexTable.containsKey(key)) {
-                Long pos = indexTable.get(key);
-                removed.add(pos - 64 - 4);
-                indexTable.remove(key);
-                cache.remove(key);
-            }
+            indexTable.remove(key);
         } finally {
             writeLock.unlock();
         }
@@ -199,35 +161,24 @@ abstract class SolidStorageAbstract<K, V> implements KeyValueStorage<K, V> {
                 return;
             }
 
-            // Избавляемся от удаленных позиций.
+            // Пересобираем хранилище.
             try {
-                if (removed.isEmpty()) {
-                    file.seek(0);
-                    file.writeInt(indexTable.size());
-                } else {
-                    file.close();
-                    File f0 = new File(pathName + ".db");
-                    File f1 = new File(pathName + ".dbe");
-                    f0.renameTo(f1);
-                    file = new RandomAccessFile(pathName + ".db", "rw");
-                    RandomAccessFile fileOld = new RandomAccessFile(pathName + ".dbe", "rw");
-                    file.writeInt(indexTable.size());
-                    fileOld.readInt();
-                    for (int i = 0; i < indexTable.size(); ++i) {
-                        Long pos = fileOld.getFilePointer();
-                        while (!removed.isEmpty() && pos.equals(removed.peek())) {
-                            pos += 4 + 64 + 4 + 20 * 1024;
-                            removed.poll();
-                        }
-                        fileOld.seek(pos);
-                        K key = readSolidKey(fileOld);
-                        V value = readSolidValue(fileOld);
-                        writeSolidKey(key);
-                        writeSolidValue(value);
-                    }
-                    fileOld.close();
-                    f1.delete();
+                file.close();
+                File f0 = new File(pathName + ".db");
+                File f1 = new File(pathName + ".dbe");
+                f0.renameTo(f1);
+                file = new RandomAccessFile(pathName + ".db", "rw");
+                RandomAccessFile fileOld = new RandomAccessFile(pathName + ".dbe", "rw");
+                file.writeInt(indexTable.size());
+                fileOld.readInt();
+                for (K key : indexTable.keySet()) {
+                    fileOld.seek(indexTable.get(key));
+                    V value = readValue(fileOld);
+                    writeKey(key);
+                    writeValue(value);
                 }
+                fileOld.close();
+                f1.delete();
                 file.close();
             } catch (Exception e) {
                 throw new RuntimeException("Closing issue.", e);
@@ -235,8 +186,6 @@ abstract class SolidStorageAbstract<K, V> implements KeyValueStorage<K, V> {
 
             // Очищаем всё не нужное.
             indexTable.clear();
-            removed.clear();
-            cache.clear();
 
             // Окончательно закрываем хранилище.
             File controller = new File(pathName);
@@ -251,34 +200,6 @@ abstract class SolidStorageAbstract<K, V> implements KeyValueStorage<K, V> {
         if (isClosed) {
             throw new RuntimeException("Storage is closed.");
         }
-    }
-
-    private K readSolidKey(RandomAccessFile f) throws IOException {
-        long pos = f.getFilePointer();
-        K key = readKey(f);
-        f.seek(pos + 4 + 64);
-        return key;
-    }
-
-    private V readSolidValue(RandomAccessFile f) throws IOException {
-        long pos = f.getFilePointer();
-        V value = readValue(f);
-        f.seek(pos + 4 + 20 * 1024);
-        return value;
-    }
-
-    private void writeSolidKey(K key) throws IOException {
-        long pos = file.getFilePointer();
-        writeKey(key);
-        int count = (int) (file.getFilePointer() - pos);
-        file.write(new byte[4 + 64 - count]);
-    }
-
-    private void writeSolidValue(V value) throws IOException {
-        long pos = file.getFilePointer();
-        writeValue(value);
-        int count = (int) (file.getFilePointer() - pos);
-        file.write(new byte[4 + 20 * 1024 - count]);
     }
 
     protected abstract K readKey(RandomAccessFile f) throws IOException;
