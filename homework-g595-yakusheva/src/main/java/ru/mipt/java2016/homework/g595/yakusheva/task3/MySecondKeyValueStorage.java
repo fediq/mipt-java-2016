@@ -9,6 +9,9 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.zip.Adler32;
+import java.util.zip.CheckedInputStream;
+import java.util.zip.CheckedOutputStream;
 
 /**
  * Created by Софья on 16.11.2016.
@@ -29,6 +32,8 @@ public class MySecondKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private RandomAccessFile valueFile;
     private File keyf;
     private File valf;
+    private File hashFile;
+    private File lockf;
     private String way;
     private int reallyStored;
 
@@ -41,8 +46,15 @@ public class MySecondKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         keySerializer = newKeySerializerArg;
         valueSerializer = newValueSerializerArg;
         biasSerializer = new MyLongSerializer();
-        reallyStored = 0;
+
         try {
+            lockf = new File(Paths.get(path, "storage_lock.db").toString());
+            if (lockf.createNewFile() == false) {
+                throw new RuntimeException("Somebody already opened a storage");
+            }
+
+            reallyStored = 0;
+
             boolean readFromOldFileFlag = true;
             keyf = new File(Paths.get(path, "storage_keys.db").toString());
             valf = new File(Paths.get(path, "storage_values.db").toString());
@@ -67,7 +79,13 @@ public class MySecondKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
             if (readFromOldFileFlag) {
                 isClosedFlag = false;
-                readKeysFromFile();
+                hashFile = new File((Paths.get(way, "storage_hash.db").toString()));
+                DataInputStream hashDataInputStream = new DataInputStream(new FileInputStream(hashFile));
+                Long hash = hashDataInputStream.readLong();
+                Long readenHash = readFromFile();
+                if (hash != readenHash) {
+                    throw new MalformedDataException("File was changed");
+                }
             }
         } catch (IOException e) {
             throw new MalformedDataException("error!");
@@ -146,19 +164,37 @@ public class MySecondKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public void close() throws IOException {
-        closedCheck();
-        writePieToFile();
-        writeKeysToFile();
-        valueFile.close();
-        keyFile.close();
-        isClosedFlag = true;
+        if (!isClosedFlag) {
+            writePieToFile();
+            Adler32 checksum = new Adler32();
+            writeKeysToFile(checksum);
+            valueFile.seek(0);
+            // проверяем хеш файла значений
+            byte[] buffer = new byte[BIG_BUFFER_SIZE];
+            InputStream valuesDataInputStream = new CheckedInputStream(new BufferedInputStream(
+                    Channels.newInputStream(valueFile.getChannel()), BIG_BUFFER_SIZE), checksum);
+            while (valuesDataInputStream.read(buffer) != -1) {
+            }
+            valueFile.close();
+            long hash = checksum.getValue();
+            hashFile = new File((Paths.get(way, "storage_hash.db").toString()));
+            DataOutputStream hashDataOutputStream = new DataOutputStream(new FileOutputStream(hashFile));
+            hashDataOutputStream.writeLong(hash);
+            hashDataOutputStream.close();
+            keyFile.close();
+            if (lockf.delete() == false) {
+                throw new IOException("Can't delete lock file");
+            }
+            isClosedFlag = true;
+        }
     }
 
-    private void readKeysFromFile() {
+    private long readFromFile() {
 
         try {
-            DataInputStream keysDataInputStream = new DataInputStream(new BufferedInputStream(
-                    Channels.newInputStream(keyFile.getChannel()), BIG_BUFFER_SIZE));
+            Adler32 checksum = new Adler32();
+            DataInputStream keysDataInputStream = new DataInputStream(new CheckedInputStream(new BufferedInputStream(
+                    Channels.newInputStream(keyFile.getChannel()), BIG_BUFFER_SIZE), checksum));
             int count = keysDataInputStream.readInt();
             reallyStored = keysDataInputStream.readInt();
             for (int i = 0; i < count; i++) {
@@ -166,7 +202,18 @@ public class MySecondKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 Long newBias = biasSerializer.deserializeFromStream(keysDataInputStream);
                 bigMap.put(newKey, newBias);
             }
+            keysDataInputStream.close();
+            keyFile = new RandomAccessFile(keyf, "rw");
             keyFile.setLength(0);
+
+            byte[] buffer = new byte[BIG_BUFFER_SIZE];
+            InputStream valuesDataInputStream = new CheckedInputStream(new BufferedInputStream(
+                    Channels.newInputStream(valueFile.getChannel()), BIG_BUFFER_SIZE), checksum);
+            while (valuesDataInputStream.read(buffer) != -1) {
+            }
+            valuesDataInputStream.close();
+
+            return checksum.getValue();
         } catch (IOException e) {
             throw new RuntimeException("error!");
         }
@@ -224,10 +271,10 @@ public class MySecondKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         valueFile = new RandomAccessFile(valf, "rw");
     }
 
-    private void writeKeysToFile() throws IOException {
+    private void writeKeysToFile(Adler32 checksum) throws IOException {
         keyFile.seek(0);
-        DataOutputStream keysDataOutputStream = new DataOutputStream(new BufferedOutputStream(
-                Channels.newOutputStream(keyFile.getChannel()), BIG_BUFFER_SIZE));
+        DataOutputStream keysDataOutputStream = new DataOutputStream(new CheckedOutputStream(new BufferedOutputStream(
+                Channels.newOutputStream(keyFile.getChannel()), BIG_BUFFER_SIZE), checksum));
         keyFile.writeInt(bigMap.size());
         keyFile.writeInt(reallyStored);
 
