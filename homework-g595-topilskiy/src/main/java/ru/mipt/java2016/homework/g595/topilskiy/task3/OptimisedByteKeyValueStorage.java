@@ -58,7 +58,9 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
     /* The filename of the file of the hashes for storage */
     private static final String HASH_FILENAME = "storage_hash.db";
     /* Maximum size of buffer before the need for a Buffer Flush */
-    private static final int MAX_BUFFER_SIZE = 1000;
+    private static final int MAX_BUFFER_SIZE = 128;
+    /* Maximum number of bytes stored on a file before the need for a new file */
+    private static final int MAX_FILE_BYTE_SIZE = 1024 * 1024 * 1024;  /* 1GB */
 
 
     /**
@@ -283,6 +285,27 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
         }
     }
 
+    private int getIndexOfRAFToWrite() throws IOException {
+        if (rafStorageFiles.size() != 0) {
+            RandomAccessFile currRAF = rafStorageFiles.get(rafStorageFiles.size() - 1);
+            if (currRAF.length() <= MAX_FILE_BYTE_SIZE) {
+                return rafStorageFiles.size() - 1;
+            }
+        }
+
+        Integer newFileIndex = rafStorageFiles.size();
+        String  newFileName  = getPathToStorageFileOfIndex(newFileIndex);
+        File newFile = new File(newFileName);
+
+        createNewFileWrapper(newFile);
+
+        rafStorageFiles.add(new RandomAccessFile(newFileName, "rw"));
+        RandomAccessFile newRAF = rafStorageFiles.get(newFileIndex);
+        newRAF.setLength(0);
+
+        return newFileIndex;
+    }
+
     /**
      *  Flush bufferKeyVal to a new disk file if:
      *  - The Storage is in the process of closing
@@ -293,19 +316,13 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
             return;
         }
 
-        Integer newFileIndex = rafStorageFiles.size();
-        String  newFileName  = getPathToStorageFileOfIndex(newFileIndex);
-        File newFile = new File(newFileName);
-
-        createNewFileWrapper(newFile);
-
         try {
-            rafStorageFiles.add(new RandomAccessFile(newFileName, "rw"));
-            RandomAccessFile newRAF = rafStorageFiles.get(newFileIndex);
+            int indexRAFToWrite = getIndexOfRAFToWrite();
+            RandomAccessFile usedRAF = rafStorageFiles.get(indexRAFToWrite);
 
-            newRAF.setLength(0);
-            newRAF.seek(0);
-            OutputStream inStream = Channels.newOutputStream(newRAF.getChannel());
+            usedRAF.seek(usedRAF.length());
+
+            OutputStream inStream = Channels.newOutputStream(usedRAF.getChannel());
 
             for (Map.Entry<KeyType, ValueType> entry: bufferKeyVal.entrySet()) {
 
@@ -315,7 +332,7 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
                 }
 
                 ValueFileAndOffset valueLocation =
-                        new ValueFileAndOffset(newFileIndex, newRAF.getFilePointer());
+                        new ValueFileAndOffset(indexRAFToWrite, usedRAF.getFilePointer());
 
                 mapKeyValueLocation.put(entry.getKey(), valueLocation);
                 RWStreamSerializer.serialize(entry.getValue(), valueTypeSerializer, inStream);
