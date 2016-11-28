@@ -11,7 +11,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.zip.Adler32;
 import java.util.zip.CheckedInputStream;
-import java.util.zip.CheckedOutputStream;
 
 /**
  * Created by Софья on 16.11.2016.
@@ -49,7 +48,7 @@ public class MySecondKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
         try {
             lockf = new File(Paths.get(path, "storage_lock.db").toString());
-            if (lockf.createNewFile() == false) {
+            if (!lockf.createNewFile()) {
                 throw new RuntimeException("Somebody already opened a storage");
             }
 
@@ -81,11 +80,12 @@ public class MySecondKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 isClosedFlag = false;
                 hashFile = new File((Paths.get(way, "storage_hash.db").toString()));
                 DataInputStream hashDataInputStream = new DataInputStream(new FileInputStream(hashFile));
-                Long hash = hashDataInputStream.readLong();
-                Long readenHash = readFromFile();
+                long hash = hashDataInputStream.readLong();
+                long readenHash = readFromFile();
                 if (hash != readenHash) {
                     throw new MalformedDataException("File was changed");
                 }
+                hashDataInputStream.close();
             }
         } catch (IOException e) {
             throw new MalformedDataException("error!");
@@ -100,92 +100,123 @@ public class MySecondKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public V read(K key) {
-        closedCheck();
-        try {
-            Long addr = bigMap.get(key);
-            V value;
-            if (addr == null) {
-                return null;
-            } else if (addr == NOT_WRITED) {
-                value = map.get(key);
-            } else {
-                valueFile.seek(addr);
-                DataInputStream valuesDataInputStream = new DataInputStream(new BufferedInputStream(
-                        Channels.newInputStream(valueFile.getChannel()), BUFFER_SIZE));
-                value = valueSerializer.deserializeFromStream(valuesDataInputStream);
+        synchronized (this) {
+            closedCheck();
+            try {
+                Long addr = bigMap.get(key);
+                V value;
+                if (addr == null) {
+                    return null;
+                } else if (addr == NOT_WRITED) {
+                    value = map.get(key);
+                } else {
+                    valueFile.seek(addr);
+                    DataInputStream valuesDataInputStream = new DataInputStream(new BufferedInputStream(
+                            Channels.newInputStream(valueFile.getChannel()), BUFFER_SIZE));
+                    value = valueSerializer.deserializeFromStream(valuesDataInputStream);
+                }
+                return value;
+            } catch (IOException e) {
+                throw new RuntimeException("error!");
             }
-            return value;
-        } catch (IOException e) {
-            throw new RuntimeException("error!");
         }
     }
 
     @Override
     public boolean exists(K key) {
-        closedCheck();
-        return bigMap.containsKey(key);
+        synchronized (this) {
+            closedCheck();
+
+            return bigMap.containsKey(key);
+        }
     }
 
     @Override
     public void write(K key, V value) {
-        closedCheck();
-        ++reallyStored;
-        map.put(key, value);
-        bigMap.put(key, NOT_WRITED);
-        if (map.size() > 1023) {
-            writePieToFile();
-        }
-        if (reallyStored > REBUILD_COEFFICIENT * bigMap.size()) {
-            try {
-                rebuildStorage();
-            } catch (IOException e) {
-                throw new RuntimeException("Can't rebuild storage");
+        synchronized (this) {
+            closedCheck();
+            ++reallyStored;
+            map.put(key, value);
+            bigMap.put(key, NOT_WRITED);
+            if (map.size() > 1023) {
+                writePieToFile();
+            }
+            if (reallyStored > REBUILD_COEFFICIENT * bigMap.size()) {
+                try {
+                    rebuildStorage();
+                } catch (IOException e) {
+                    throw new RuntimeException("Can't rebuild storage");
+                }
             }
         }
     }
 
     @Override
     public void delete(K key) {
-        closedCheck();
-        bigMap.remove(key);
+        synchronized (this) {
+            closedCheck();
+            bigMap.remove(key);
+        }
     }
 
     @Override
     public Iterator<K> readKeys() {
-        closedCheck();
-        return bigMap.keySet().iterator();
+        synchronized (this) {
+            closedCheck();
+            return bigMap.keySet().iterator();
+        }
     }
 
     @Override
     public int size() {
-        closedCheck();
-        return bigMap.size();
+        synchronized (this) {
+            closedCheck();
+            return bigMap.size();
+        }
     }
 
     @Override
     public void close() throws IOException {
-        if (!isClosedFlag) {
-            writePieToFile();
-            Adler32 checksum = new Adler32();
-            writeKeysToFile(checksum);
-            valueFile.seek(0);
-            // проверяем хеш файла значений
-            byte[] buffer = new byte[BIG_BUFFER_SIZE];
-            InputStream valuesDataInputStream = new CheckedInputStream(new BufferedInputStream(
-                    Channels.newInputStream(valueFile.getChannel()), BIG_BUFFER_SIZE), checksum);
-            while (valuesDataInputStream.read(buffer) != -1) {
+        synchronized (this) {
+            if (!isClosedFlag) {
+                writePieToFile();
+                Adler32 checksum = new Adler32();
+                writeKeysToFile();
+                valueFile.seek(0);
+
+                valueFile.close();
+                keyFile.close();
+
+                // проверяем хеш файла
+                byte[] buffer = new byte[BIG_BUFFER_SIZE];
+                InputStream valuesDataInputStream = new CheckedInputStream(new BufferedInputStream(
+                        new FileInputStream(valf), BIG_BUFFER_SIZE), checksum);
+                while (true) {
+                    if (valuesDataInputStream.read(buffer) == -1) {
+                        break;
+                    }
+                }
+                InputStream keyDataInputStream = new CheckedInputStream(new BufferedInputStream(
+                        new FileInputStream(keyf), BIG_BUFFER_SIZE), checksum);
+                while (true) {
+                    if (keyDataInputStream.read(buffer) == -1) {
+                        break;
+                    }
+                }
+                keyDataInputStream.close();
+                valuesDataInputStream.close();
+
+                long hash = checksum.getValue();
+                hashFile = new File((Paths.get(way, "storage_hash.db").toString()));
+                DataOutputStream hashDataOutputStream = new DataOutputStream(new FileOutputStream(hashFile));
+                hashDataOutputStream.writeLong(hash);
+                hashDataOutputStream.close();
+
+                if (!lockf.delete()) {
+                    throw new IOException("Can't delete lock file");
+                }
+                isClosedFlag = true;
             }
-            valueFile.close();
-            long hash = checksum.getValue();
-            hashFile = new File((Paths.get(way, "storage_hash.db").toString()));
-            DataOutputStream hashDataOutputStream = new DataOutputStream(new FileOutputStream(hashFile));
-            hashDataOutputStream.writeLong(hash);
-            hashDataOutputStream.close();
-            keyFile.close();
-            if (lockf.delete() == false) {
-                throw new IOException("Can't delete lock file");
-            }
-            isClosedFlag = true;
         }
     }
 
@@ -193,8 +224,27 @@ public class MySecondKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
         try {
             Adler32 checksum = new Adler32();
-            DataInputStream keysDataInputStream = new DataInputStream(new CheckedInputStream(new BufferedInputStream(
-                    Channels.newInputStream(keyFile.getChannel()), BIG_BUFFER_SIZE), checksum));
+            byte[] buffer = new byte[BIG_BUFFER_SIZE];
+            InputStream valuesDataInputStream = new CheckedInputStream(new BufferedInputStream(
+                    Channels.newInputStream(valueFile.getChannel()), BIG_BUFFER_SIZE), checksum);
+            while (true) {
+                if (valuesDataInputStream.read(buffer) == -1) {
+                    break;
+                }
+            }
+            InputStream keyDataInputStream = new CheckedInputStream(new BufferedInputStream(
+                    Channels.newInputStream(keyFile.getChannel()), BIG_BUFFER_SIZE), checksum);
+            while (true) {
+                if (keyDataInputStream.read(buffer) == -1) {
+                    break;
+                }
+            }
+
+            keyFile.seek(0);
+            valueFile.seek(0);
+
+            DataInputStream keysDataInputStream = new DataInputStream(new BufferedInputStream(
+                    Channels.newInputStream(keyFile.getChannel()), BIG_BUFFER_SIZE));
             int count = keysDataInputStream.readInt();
             reallyStored = keysDataInputStream.readInt();
             for (int i = 0; i < count; i++) {
@@ -202,16 +252,8 @@ public class MySecondKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 Long newBias = biasSerializer.deserializeFromStream(keysDataInputStream);
                 bigMap.put(newKey, newBias);
             }
-            keysDataInputStream.close();
-            keyFile = new RandomAccessFile(keyf, "rw");
-            keyFile.setLength(0);
 
-            byte[] buffer = new byte[BIG_BUFFER_SIZE];
-            InputStream valuesDataInputStream = new CheckedInputStream(new BufferedInputStream(
-                    Channels.newInputStream(valueFile.getChannel()), BIG_BUFFER_SIZE), checksum);
-            while (valuesDataInputStream.read(buffer) != -1) {
-            }
-            valuesDataInputStream.close();
+            keyFile.setLength(0);
 
             return checksum.getValue();
         } catch (IOException e) {
@@ -271,10 +313,10 @@ public class MySecondKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         valueFile = new RandomAccessFile(valf, "rw");
     }
 
-    private void writeKeysToFile(Adler32 checksum) throws IOException {
+    private void writeKeysToFile() throws IOException {
         keyFile.seek(0);
-        DataOutputStream keysDataOutputStream = new DataOutputStream(new CheckedOutputStream(new BufferedOutputStream(
-                Channels.newOutputStream(keyFile.getChannel()), BIG_BUFFER_SIZE), checksum));
+        DataOutputStream keysDataOutputStream = new DataOutputStream(new BufferedOutputStream(
+                Channels.newOutputStream(keyFile.getChannel()), BIG_BUFFER_SIZE));
         keyFile.writeInt(bigMap.size());
         keyFile.writeInt(reallyStored);
 
