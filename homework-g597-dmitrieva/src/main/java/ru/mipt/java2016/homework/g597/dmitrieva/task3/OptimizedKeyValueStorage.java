@@ -228,7 +228,7 @@ public class OptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         File clearedStorage = new File(fileClearedStoragePathname);
         try {
 
-            if (randAccFileStorage.length() <= 100000000) {
+            if (randAccFileStorage.length() <= 500000000) {
                 return;
             }
             if (!clearedStorage.createNewFile()) {
