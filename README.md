@@ -17,7 +17,10 @@
 
 1. [Калькулятор](tasks/01-Calculator.md) - дедлайн 14.10.2016 23:59 MSK
 2. [Key-value storage](tasks/02-KeyValueStorage.md) - дедлайн 31.10.2016 23:59 MSK
-3. [Оптимизация производительности](tasks/03-Performance.md) - дедлайн 31.11.2016 23:59 MSK (**ЧЕРНОВИК!**)
+3. [Оптимизация производительности](tasks/03-Performance.md)
+  * мягкий дедлайн: 21.11.2016 23:59 MSK (после его наступления можно получить максимум 1 балл)  
+  * жесткий дедлайн: 28.11.2016 23:59 MSK
+4. [REST API калькулятор](tasks/04-Rest.md) - **черновик!**, дедлайна нет
 
 #### Как оценивается
 
@@ -35,6 +38,36 @@
 4. [Обобщения и лямбды](http://www.slideshare.net/FedorLavrentyev/programmning-java-lection-04-generics-and-lambdas-lavrentyev-fedor)
 5. [Проектирование](http://www.slideshare.net/FedorLavrentyev/programmning-java-lection-05-software-design-lavrentyev-fedor)
 6. [Многопоточность](http://www.slideshare.net/FedorLavrentyev/programming-java-lection-06-multithreading-lavrentyev-fedor)
+
+#### Семинары 596-ой группы
+Стараемся придерживаться [google-кодстайла](https://google.github.io/styleguide/javaguide.html).  
+Проще всего этого можно добиться, скачав [настройки для кодстайла](https://github.com/DanAnastasyev/mipt-java-2016/blob/master/seminars/src/ru/mipt/java2016/seminars/idea-codestyle.xml). Посмотреть, как их устанавливать, можно [здесь](https://github.com/HPI-Information-Systems/Metanome/wiki/Installing-the-google-styleguide-settings-in-intellij-and-eclipse).  
+После этого не забываем использовать кнопку Code/Reformat Code, хотя бы перед коммитом.
+
+Обязательным является прохождение проверки Maven Checkstyle. Она происходит при запуске всех тестов (например, с помощью `mvn test` или по клавише test во вкладке Maven Projects).
+
+1. [Java vs C++; Работа с исключениям и I/O](https://yadi.sk/d/meyw4Nv1wUrzc)  
+[Примеры кода](https://github.com/DanAnastasyev/mipt-java-2016/tree/master/seminars/src/ru/mipt/java2016/seminars/seminar1)  
+[Доп семинар](https://github.com/DanAnastasyev/mipt-java-2016/blob/master/seminars/src/ru/mipt/java2016/seminars/Seminar%201.5%20Notes.md)
+Доп. литература: [Head First Изучаем Java](http://www.ozon.ru/context/detail/id/7821666/)
+
+2. [Паттерны проектирования](https://yadi.sk/d/Clpl7NfhwuYod)  
+Доп. литература: [Head First Паттерны проектирования](https://www.ozon.ru/context/detail/id/20216992/)
+
+3. [Строки и обёртки над примитивными типами в Java. Антипаттерны](https://yadi.sk/d/nhdo_dFsx7JnZ)  
+Доп. литература: [Чистый код](http://www.ozon.ru/context/detail/id/21916535/)
+
+4. [Повторное использование кода в Java. Многопоточность в Java](https://yadi.sk/d/nitO2OJuxcMAw)
+
+5. [Средства синхронизации в Java](https://yadi.sk/d/2YAOFlpSxx73h)  
+[Примеры кода](https://github.com/DanAnastasyev/mipt-java-2016/tree/master/seminars/src/ru/mipt/java2016/seminars/seminar5)
+
+6. [Рефлексия и сборка мусора в Java](https://yadi.sk/d/1cpd_baDyHELV)  
+[Примеры кода](https://github.com/DanAnastasyev/mipt-java-2016/tree/master/seminars/src/ru/mipt/java2016/seminars/seminar6)  
+[Хорошая статья про ссылки в Java](http://www.kdgregory.com/?page=java.refobj)
+
+7. [Lambdas & Streams](https://yadi.sk/d/uJ4A7PrRyhL2e)  
+[Примеры кода](https://github.com/DanAnastasyev/mipt-java-2016/tree/master/seminars/src/ru/mipt/java2016/seminars/seminar7)
 
 #### Рекомендуемая литература
 
@@ -74,15 +107,15 @@
 * Поведенческие шаблоны проектирования
 * Потоки в JVM
 * Критические секции, synchronized
-* Java Memory Model
+* ~~Java Memory Model~~
 * Паттерны организации многопоточного кода
 * Проблемы многопоточности
-* Сборщик мусора
-* Стратегии сборки мусора
-* Слабые ссылки
+* ~~Сборщик мусора~~
+* ~~Стратегии сборки мусора~~
+* ~~Слабые ссылки~~
 * Пределы нагрузки JVM
 * Оптимизация кода
-* Профайлинг
+* ~~Профайлинг~~
 * Тюнинг параметров JVM
 * Reflection API
 * Aspect-Oriented Programming
