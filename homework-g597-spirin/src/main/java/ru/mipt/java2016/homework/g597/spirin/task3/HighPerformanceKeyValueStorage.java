@@ -242,7 +242,6 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
         try {
             if (countModifyOperations >= MAX_MODIFY_OPERATIONS) {
                 updateStorage();
-                countModifyOperations = 0;
             }
 
             offsetStorage.setLength(0);
