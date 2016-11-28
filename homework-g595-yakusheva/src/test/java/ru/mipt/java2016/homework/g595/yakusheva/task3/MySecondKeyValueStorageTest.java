@@ -13,16 +13,16 @@ public class MySecondKeyValueStorageTest extends AbstractSingleFileStorageTest
 {
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String path) {
-        return new MySecondKeyValueStorage<String, String>(path, new MyStringSerializer(), new MyStringSerializer());
+        return new MySecondKeyValueStorage<String, String>(path, new MyStringSerializer(), new MyStringSerializer(), 0);
     }
 
     @Override
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) {
-        return new MySecondKeyValueStorage<Integer, Double>(path, new MyIntegerSerializer(), new MyDoubleSerializer());
+        return new MySecondKeyValueStorage<Integer, Double>(path, new MyIntegerSerializer(), new MyDoubleSerializer(), 0);
     }
 
     @Override
     protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) {
-        return new MySecondKeyValueStorage<StudentKey, Student>(path, new MyStudentKeySerializer(), new MyStudentValueSerializer());
+        return new MySecondKeyValueStorage<StudentKey, Student>(path, new MyStudentKeySerializer(), new MyStudentValueSerializer(), 0);
     }
 }

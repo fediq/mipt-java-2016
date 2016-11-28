@@ -11,6 +11,9 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.zip.Adler32;
 import java.util.zip.CheckedInputStream;
+import com.google.common.cache.LoadingCache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
 
 /**
  * Created by Софья on 16.11.2016.
@@ -35,10 +38,12 @@ public class MySecondKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private File lockf;
     private String way;
     private int reallyStored;
+    private LoadingCache<K, V> cache;
 
     public MySecondKeyValueStorage(String path,
                                    MySecondSerializerInterface<K> newKeySerializerArg,
-                                   MySecondSerializerInterface<V> newValueSerializerArg)
+                                   MySecondSerializerInterface<V> newValueSerializerArg,
+                                   int cacheSize)
             throws MalformedDataException {
 
         way = path;
@@ -90,6 +95,18 @@ public class MySecondKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         } catch (IOException e) {
             throw new MalformedDataException("error!");
         }
+
+        cache = CacheBuilder.newBuilder()
+                .maximumSize(cacheSize)
+                .build(
+                        new CacheLoader<K, V>() {
+                            public V load(K key) throws IOException {
+                                valueFile.seek(bigMap.get(key));
+                                DataInputStream valuesDataInputStream = new DataInputStream(new BufferedInputStream(
+                                        Channels.newInputStream(valueFile.getChannel()), BUFFER_SIZE));
+                                return valueSerializer.deserializeFromStream(valuesDataInputStream);
+                            }
+                        });
     }
 
     private void closedCheck() {
@@ -110,10 +127,8 @@ public class MySecondKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 } else if (addr == NOT_WRITED) {
                     value = map.get(key);
                 } else {
+                    value = cache.get(key);
                     valueFile.seek(addr);
-                    DataInputStream valuesDataInputStream = new DataInputStream(new BufferedInputStream(
-                            Channels.newInputStream(valueFile.getChannel()), BUFFER_SIZE));
-                    value = valueSerializer.deserializeFromStream(valuesDataInputStream);
                 }
                 return value;
             } catch (IOException e) {
