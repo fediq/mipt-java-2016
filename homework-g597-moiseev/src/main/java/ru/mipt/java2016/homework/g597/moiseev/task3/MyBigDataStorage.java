@@ -129,8 +129,7 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
                 return memTable.get(key);
             }
         } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+            throw new RuntimeException("Read error" + e.getMessage());
         } finally {
             readLock.unlock();
         }
@@ -162,7 +161,7 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
 
             checkSizeAndDumpOrOptimize();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Write error: " + e.getMessage());
         } finally {
             writeLock.unlock();
         }
@@ -221,7 +220,7 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
                 valuesFile.close();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new RuntimeException("Close error: " + e.getMessage());
         } finally {
             writeLock.unlock();
         }
@@ -278,19 +277,12 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
             valuesFile.close();
             valuesFile = newValuesFile;
             System.gc();
-            while (true) {
-                try {
-                    Files.delete(values.toPath());
-                    break;
-                } catch (FileSystemException e) {
-                    e.printStackTrace();
-                }
-            }
+            Files.delete(values.toPath());
             if (!newValues.renameTo(values)) {
                 throw new IOException("Can't rename values file");
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Optimize memory error: " + e.getMessage());
         }
     }
 }
