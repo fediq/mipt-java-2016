@@ -16,14 +16,14 @@ package ru.mipt.java2016.homework.g597.kozlov.task3;
  * <key, id файла, shift файла> - n раз.
  *
  * 2) storage.db.id, где id - некоторое число, хранит байты записанных значений ключей:
- * <значение ключа> - n раз.
+ * <key, value> - n раз.
+ *
  *
  *
  * Чтобы достать value по ключу key, нужно сначала вытащить id и shift (смещение относительно начала файла)
  * из storage.db, затем по этому смещению вытащить из storage.db.id значение value.
  *
- * В ходе выполнений моего кода старые данные в старых id-файлах НЕ удаляются (как в той статье про LSM-Tree
- * и было описано), но мы их никогда не сможем прочесть больше.
+ * Старые данные удаляются с помощью объединения и уплотнения id-файлов.
  *
  *
  */
@@ -41,42 +41,44 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.HashSet;
 import java.util.ArrayList;
+import java.util.List;
+import java.lang.Math;
 
 public class MyAwesomeUpdatedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private static final String DB_NAME = "storage.db";  // название всей базы в целом
-    private static String mainPath; // путь к базе
-    private RandomAccessFile fileDB;  // файл-база
-
-    private File ifopen;  // файл для проверки, что database уже открыта
-    private ArrayList<File> filesTable; // массив файлов-таблиц (SSTable)
-
-    private HashSet<K> setKeys;  // храним <ключ> в множестве здесь
-    private HashMap<K, V> mapKeyValue;  // храним пары <ключ, значение> здесь
+    private static final int MAX_SIZE_OF_KEYS = 500;  // максимальное количество данных в id-файле.
 
     private class PlaceOfKey {
         private int id;
         private long shift;
 
-        PlaceOfKey(int id, long row) {
+        PlaceOfKey(int id, long shift) {
             this.id = id;
-            this.shift = row;
+            this.shift = shift;
         }
 
-        int getid() {
+        int GetId() {
             return id;
         }
 
-        long getshift() {
+        long GetShift() {
             return shift;
         }
     }
 
-    private HashMap<K, PlaceOfKey> mapKeyFile;  // храним данные типа "ключ лежит в id файле" здесь
+    private final String mainPath; // путь к базе
+    private final RandomAccessFile fileDB;  // файл-база
+    private final File lockfile;  // файл для проверки, что database уже открыта
+    private boolean isLockFileExist = false;  // флаг для проверки, что database уже открыта
+
+    private final List<File> filesTable = new ArrayList<>(); // массив файлов-таблиц (SSTable)
+    private final HashSet<K> keySet = new HashSet<>();  // храним <ключ> в множестве здесь
+    private final HashMap<K, V> mapKeyValueCache = new HashMap<>();  // храним пары <ключ, значение> здесь
+    private final HashMap<K, PlaceOfKey> mapKeyFile = new HashMap<>();  // храним данные типа "ключ лежит в id файле"
+    private final HashMap<K, PlaceOfKey> deletedMapKeyFile = new HashMap<>();  // храним удаленные данные здесь
 
     private final Serialization<K> keySerialization;
     private final Serialization<V> valueSerialization;
-
-    private static final int MAX_SIZE_OF_DATA = 500;  // максимальное количество ключей в id-файле.
 
 
     MyAwesomeUpdatedKeyValueStorage(String path, Serialization<K> keyS, Serialization<V> valueS) throws IOException {
@@ -85,15 +87,12 @@ public class MyAwesomeUpdatedKeyValueStorage<K, V> implements KeyValueStorage<K,
             throw new IOException("Path is wrong.");
         }
 
-        ifopen = new File(path + File.separator + DB_NAME + ".check");
-        if (!ifopen.createNewFile()) {
+        lockfile = new File(path + File.separator + DB_NAME + ".check");
+        if (!lockfile.createNewFile()) {
             throw new IOException("DB is already open.");
         }
+        isLockFileExist = true;
 
-        setKeys = new HashSet<>();
-        mapKeyValue = new HashMap<>();
-        mapKeyFile = new HashMap<>();
-        filesTable = new ArrayList<>();
         keySerialization = keyS;
         valueSerialization = valueS;
         mainPath = path;
@@ -112,7 +111,7 @@ public class MyAwesomeUpdatedKeyValueStorage<K, V> implements KeyValueStorage<K,
                 int id = intS.read(fileDB, fileDB.getFilePointer());
                 long shift = longS.read(fileDB, fileDB.getFilePointer());
 
-                setKeys.add(key);
+                keySet.add(key);
                 mapKeyFile.put(key, new PlaceOfKey(id, shift));
             }
 
@@ -125,15 +124,142 @@ public class MyAwesomeUpdatedKeyValueStorage<K, V> implements KeyValueStorage<K,
     }
 
     private synchronized void isFileDBopened() throws IllegalStateException {
-        File checkFB = new File(mainPath + File.separator + DB_NAME + ".check");
-        if (!checkFB.exists()) {  // на случай если какой-то хитрец закроет базу до завершения всех потоков
+        if (!isLockFileExist) {  // на случай если какой-то хитрец закроет базу до завершения всех потоков
             throw new IllegalStateException("The storage is closed.");
         }
     }
 
+    private synchronized void mergeIdFiles(int id1, int id2) throws IOException {
+        int newid1 = Math.min(id1, id2);  // новый id первого смерженного файла
+        int newid2 = Math.max(id1, id2);  // новый id второго смерженного файла (на случай, если первый переполнен)
+
+        HashMap<K, PlaceOfKey> newMapKeyFile = new HashMap<>();  // для обновления исходного mapKeyFile
+
+        File idFile1 = filesTable.get(newid1);
+        File idFile2 = filesTable.get(newid2);
+
+        RandomAccessFile idFileRAM1 = new RandomAccessFile(idFile1, "rw");
+        RandomAccessFile idFileRAM2 = new RandomAccessFile(idFile2, "rw");
+        int currentKeys = 0; // количество записанных ключей в новом файле; их, очевидно, не больше 2*MAX_SIZE_OF_KEYS.
+        long currentShift = 0;
+
+        File currentFile = new File(mainPath + File.separator + DB_NAME + "." + "new1");
+        currentFile.createNewFile();
+        RandomAccessFile currentFileRAM = new RandomAccessFile(currentFile, "rw");
+
+        while (currentShift != idFileRAM1.length()) {  // читаем первый id-файл
+            K key = keySerialization.read(idFileRAM1, idFileRAM1.getFilePointer());
+            long currentKeyShift = idFileRAM1.getFilePointer();
+            V value = valueSerialization.read(idFileRAM1, idFileRAM1.getFilePointer());
+            currentShift = idFileRAM1.getFilePointer();
+
+            if (deletedMapKeyFile.containsKey(key)) {
+                PlaceOfKey place = deletedMapKeyFile.get(key);
+                if (place.GetId() == newid1 && place.GetShift() == currentKeyShift) {
+                    continue;
+                }
+            }
+            keySerialization.write(currentFileRAM, key, currentFileRAM.getFilePointer());
+            newMapKeyFile.put(key, new PlaceOfKey(newid1, currentFileRAM.getFilePointer()));
+            valueSerialization.write(currentFileRAM, value, currentFileRAM.getFilePointer());
+            currentKeys++;
+        }
+
+        currentShift = 0;
+
+        while (currentShift != idFileRAM2.length() && currentKeys < MAX_SIZE_OF_KEYS) {  // читаем второй id-файл
+            K key = keySerialization.read(idFileRAM2, idFileRAM2.getFilePointer());
+            long currentKeyShift = idFileRAM2.getFilePointer();
+            V value = valueSerialization.read(idFileRAM2, idFileRAM2.getFilePointer());
+            currentShift = idFileRAM2.getFilePointer();
+            if (deletedMapKeyFile.containsKey(key)) {
+                PlaceOfKey place = deletedMapKeyFile.get(key);
+                if (place.GetId() == newid2 && place.GetShift() == currentKeyShift) {
+                    continue;
+                }
+            }
+            keySerialization.write(currentFileRAM, key, currentFileRAM.getFilePointer());
+            newMapKeyFile.put(key, new PlaceOfKey(newid2, currentFileRAM.getFilePointer()));
+            valueSerialization.write(currentFileRAM, value, currentFileRAM.getFilePointer());
+            currentKeys++;
+        }
+
+        idFileRAM1.close();
+        Files.delete(filesTable.get(id1).toPath());
+        currentFileRAM.close();
+        currentFile.renameTo(idFile1);
+
+        if (currentKeys >= MAX_SIZE_OF_KEYS) {  // если первый смерженный файл переполнен.
+            currentFile = new File(mainPath + File.separator + DB_NAME + "." + "new2");
+            currentFile.createNewFile();
+            currentFileRAM = new RandomAccessFile(currentFile, "rw");
+
+            while (currentShift != idFileRAM2.length()) {
+                K key = keySerialization.read(idFileRAM2, idFileRAM2.getFilePointer());
+                long currentKeyShift = idFileRAM2.getFilePointer();
+                V value = valueSerialization.read(idFileRAM2, idFileRAM2.getFilePointer());
+                currentShift = idFileRAM2.getFilePointer();
+                if (deletedMapKeyFile.containsKey(key)) {
+                    PlaceOfKey place = deletedMapKeyFile.get(key);
+                    if (place.GetId() == newid2 && place.GetShift() == currentKeyShift) {
+                        continue;
+                    }
+                }
+                keySerialization.write(currentFileRAM, key, currentFileRAM.getFilePointer());
+                newMapKeyFile.put(key, new PlaceOfKey(newid2, currentFileRAM.getFilePointer()));
+                valueSerialization.write(currentFileRAM, value, currentFileRAM.getFilePointer());
+            }
+        }
+
+        idFileRAM2.close();
+        Files.delete(filesTable.get(id2).toPath());
+        if (currentKeys >= MAX_SIZE_OF_KEYS) {
+            currentFileRAM.close();
+            currentFile.renameTo(idFile2);
+        } else {  // в случае непереполнения остается один лишний файл, поэтому дальше
+            for (int id = newid2 + 1; id < filesTable.size(); id++) {  // меняем названия всех нужных id-файлов
+                int oldid = id;
+                int newid = id - 1;
+                File oldfile = filesTable.get(oldid);
+
+                for (Map.Entry<K, PlaceOfKey> entry : newMapKeyFile.entrySet()) {  // обновляем новые ключи
+                    if (entry.getValue().GetId() == oldid) {
+                        entry.setValue(new PlaceOfKey(newid, entry.getValue().GetShift()));
+                    }
+                }
+
+                File newfile = new File(mainPath + File.separator + DB_NAME + "." + newid);
+                oldfile.renameTo(newfile);
+            }
+        }
+
+        for (Map.Entry<K, PlaceOfKey> entry : newMapKeyFile.entrySet()) {  // обновляем сами исходные ключи
+            mapKeyFile.remove(entry.getKey());
+            mapKeyFile.put(entry.getKey(), entry.getValue());
+        }
+
+    }
+
+    private synchronized void compactIdFiles() {
+        try {
+            for (int id = 0; id < filesTable.size() - 1; id++) {
+                mergeIdFiles(id, id + 1);
+            }
+        } catch (IOException error) {
+            error.printStackTrace();
+        }
+
+    }
+
     private synchronized void updateData(boolean checkClose) {  // создаем новый id-файл данных
-        isFileDBopened();
-        if (checkClose || mapKeyValue.size() >= MAX_SIZE_OF_DATA) {
+        if (checkClose) {
+            isFileDBopened();
+        }
+        if ((checkClose && deletedMapKeyFile.size() > 0) || deletedMapKeyFile.size() >= 2*MAX_SIZE_OF_KEYS) {
+            compactIdFiles();
+            deletedMapKeyFile.clear();
+        }
+        if ((checkClose && mapKeyValueCache.size() > 0) || mapKeyValueCache.size() >= MAX_SIZE_OF_KEYS) {
             int id = filesTable.size();
             File file = new File(mainPath + File.separator + DB_NAME + "." + id);
             try {
@@ -144,12 +270,14 @@ public class MyAwesomeUpdatedKeyValueStorage<K, V> implements KeyValueStorage<K,
                 currentFile.setLength(0);  // удаляем содержимое файла, если там с номером id уже был
                 currentFile.seek(0);
 
-                for (Map.Entry<K, V> entry : mapKeyValue.entrySet()) {  // записываем id-файл
+                for (Map.Entry<K, V> entry : mapKeyValueCache.entrySet()) {  // записываем id-файл
+                    keySerialization.write(currentFile, entry.getKey(), currentFile.getFilePointer());
                     PlaceOfKey place = new PlaceOfKey(id, currentFile.getFilePointer());
+                    mapKeyFile.remove(entry.getKey());
                     mapKeyFile.put(entry.getKey(), place);
                     valueSerialization.write(currentFile, entry.getValue(), currentFile.getFilePointer());
                 }
-                mapKeyValue.clear();
+                mapKeyValueCache.clear();
 
                 currentFile.close();
 
@@ -163,11 +291,11 @@ public class MyAwesomeUpdatedKeyValueStorage<K, V> implements KeyValueStorage<K,
     @Override
     public synchronized V read(K key) {
         isFileDBopened();
-        if (mapKeyValue.keySet().contains(key)) {  // это дает чтение по времени за О(1) для одного и того же ключа.
-            return mapKeyValue.get(key);
+        if (mapKeyValueCache.keySet().contains(key)) {  // дает чтение по времени за О(1) для одного и того же ключа.
+            return mapKeyValueCache.get(key);
         } else if (mapKeyFile.containsKey(key)) {  // O(log(n))
-            int id = mapKeyFile.get(key).getid();
-            long shift = mapKeyFile.get(key).getshift();
+            int id = mapKeyFile.get(key).GetId();
+            long shift = mapKeyFile.get(key).GetShift();
             try {
                 RandomAccessFile file = new RandomAccessFile(filesTable.get(id), "rw");
                 V value = valueSerialization.read(file, shift);
@@ -185,58 +313,67 @@ public class MyAwesomeUpdatedKeyValueStorage<K, V> implements KeyValueStorage<K,
     @Override
     public synchronized boolean exists(K key) {  // O(log(n))
         isFileDBopened();
-        return setKeys.contains(key);
+        return keySet.contains(key);
     }
 
     @Override
     public synchronized void write(K key, V value) {  // O(log(n))
         isFileDBopened();
-        setKeys.add(key);
-        mapKeyValue.put(key, value);
+        keySet.add(key);
+        mapKeyValueCache.put(key, value);
         updateData(false);
     }
 
     @Override
     public synchronized void delete(K key) {  // O(log(n))
         isFileDBopened();
-        setKeys.remove(key);
+        if (mapKeyValueCache.containsKey(key) || mapKeyFile.containsKey(key)) {
+            PlaceOfKey place = mapKeyFile.get(key);
+            deletedMapKeyFile.put(key, place);
+        }
+        keySet.remove(key);
         mapKeyFile.remove(key);
+        mapKeyValueCache.remove(key);
+        updateData(false);
     }
 
     @Override
     public synchronized Iterator<K> readKeys() {
         isFileDBopened();
-        return setKeys.iterator();
+        return keySet.iterator();
     }
 
     @Override
     public synchronized int size() {
         isFileDBopened();
-        return setKeys.size();
+        return keySet.size();
     }
 
     @Override
     public synchronized void close() throws IOException {
-        updateData(true);
-        fileDB.setLength(0);  // удаляем содержимое базы
-        fileDB.seek(0);
+        try {
+            updateData(true);
+            fileDB.setLength(0);  // удаляем содержимое базы
+            fileDB.seek(0);
 
-        SerializationInteger intS = new SerializationInteger();
-        SerializationLong longS = new SerializationLong();
+            SerializationInteger intS = new SerializationInteger();
+            SerializationLong longS = new SerializationLong();
 
-        intS.write(fileDB, filesTable.size(), fileDB.getFilePointer());
-        intS.write(fileDB, mapKeyFile.size(), fileDB.getFilePointer());
+            intS.write(fileDB, filesTable.size(), fileDB.getFilePointer());
+            intS.write(fileDB, mapKeyFile.size(), fileDB.getFilePointer());
 
-        for (Map.Entry<K, PlaceOfKey> entry : mapKeyFile.entrySet()) {  // записываем основную базу
-            K key = entry.getKey();
-            PlaceOfKey place = entry.getValue();
-            keySerialization.write(fileDB, key, fileDB.getFilePointer());
-            intS.write(fileDB, place.getid(), fileDB.getFilePointer());
-            longS.write(fileDB, place.getshift(), fileDB.getFilePointer());
+            for (Map.Entry<K, PlaceOfKey> entry : mapKeyFile.entrySet()) {  // записываем основную базу
+                K key = entry.getKey();
+                PlaceOfKey place = entry.getValue();
+                keySerialization.write(fileDB, key, fileDB.getFilePointer());
+                intS.write(fileDB, place.GetId(), fileDB.getFilePointer());
+                longS.write(fileDB, place.GetShift(), fileDB.getFilePointer());
+            }
+        } finally {
+            fileDB.close();
+            Files.delete(lockfile.toPath());
+            isLockFileExist = false;
         }
-
-        fileDB.close();
-        Files.delete(ifopen.toPath());
     }
 
 }

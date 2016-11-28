@@ -11,32 +11,32 @@ import java.io.RandomAccessFile;
 import java.util.Date;
 
 public class SerializationStudent implements Serialization<Student> {
-    private final SerializationInteger sampleInteger = new SerializationInteger();
-    private final SerializationString sampleString = new SerializationString();
-    private final SerializationDate sampleDate = new SerializationDate();
-    private final SerializationBoolean sampleBoolean = new SerializationBoolean();
-    private final SerializationDouble sampleDouble = new SerializationDouble();
+    private static final SerializationInteger SAMPLE_INTEGER = new SerializationInteger();
+    private static final SerializationString SAMPLE_STRING = new SerializationString();
+    private static final SerializationDate SAMPLE_DATA = new SerializationDate();
+    private static final SerializationBoolean SAMPLE_BOOLEAN = new SerializationBoolean();
+    private static final SerializationDouble SAMPLE_DOUBLE = new SerializationDouble();
 
     @Override
     public Student read(RandomAccessFile file, long shift) throws IOException {
         file.seek(shift);
-        int groupId = sampleInteger.read(file, file.getFilePointer());
-        String name = sampleString.read(file, file.getFilePointer());
-        String hometown = sampleString.read(file, file.getFilePointer());
-        Date birthDate = sampleDate.read(file, file.getFilePointer());
-        boolean hasDormitory = sampleBoolean.read(file, file.getFilePointer());
-        double averageScore = sampleDouble.read(file, file.getFilePointer());
+        int groupId = SAMPLE_INTEGER.read(file, file.getFilePointer());
+        String name = SAMPLE_STRING.read(file, file.getFilePointer());
+        String hometown = SAMPLE_STRING.read(file, file.getFilePointer());
+        Date birthDate = SAMPLE_DATA.read(file, file.getFilePointer());
+        boolean hasDormitory = SAMPLE_BOOLEAN.read(file, file.getFilePointer());
+        double averageScore = SAMPLE_DOUBLE.read(file, file.getFilePointer());
         return new Student(groupId, name, hometown, birthDate, hasDormitory, averageScore);
     }
 
     @Override
     public void write(RandomAccessFile file, Student object, long shift) throws IOException {
         file.seek(shift);
-        sampleInteger.write(file, object.getGroupId(), file.getFilePointer());
-        sampleString.write(file, object.getName(), file.getFilePointer());
-        sampleString.write(file, object.getHometown(), file.getFilePointer());
-        sampleDate.write(file, object.getBirthDate(), file.getFilePointer());
-        sampleBoolean.write(file, object.isHasDormitory(), file.getFilePointer());
-        sampleDouble.write(file, object.getAverageScore(), file.getFilePointer());
+        SAMPLE_INTEGER.write(file, object.getGroupId(), file.getFilePointer());
+        SAMPLE_STRING.write(file, object.getName(), file.getFilePointer());
+        SAMPLE_STRING.write(file, object.getHometown(), file.getFilePointer());
+        SAMPLE_DATA.write(file, object.getBirthDate(), file.getFilePointer());
+        SAMPLE_BOOLEAN.write(file, object.isHasDormitory(), file.getFilePointer());
+        SAMPLE_DOUBLE.write(file, object.getAverageScore(), file.getFilePointer());
     }
 }
