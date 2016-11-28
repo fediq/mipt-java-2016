@@ -110,7 +110,7 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
     /**
      * @return the concatenated serializer class strings for improved verification
      */
-    public String getSerializerClassStringVerification() {
+    private String getSerializerClassStringVerification() {
         return keyTypeSerializer.getClass() + " " + valueTypeSerializer.getClass();
     }
 
@@ -119,17 +119,17 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
      *  Dynamic Data of Storage
      */
     /* Boolean whether Storage is Closed */
-    private Boolean isClosed;
+    private Boolean isClosed = false;
 
     /* A buffer for intermediate data storage */
-    private HashMap<KeyType, ValueType> bufferKeyVal;
+    private HashMap<KeyType, ValueType> bufferKeyVal = new HashMap<>();
     /* A set for storing all valid keys */
-    private HashSet<KeyType> validKeys;
+    private HashSet<KeyType> validKeys = new HashSet<>();
     /* A list of RAF of Storage in use for storing Values */
-    private ArrayList<RandomAccessFile> rafStorageFiles;
+    private ArrayList<RandomAccessFile> rafStorageFiles = new ArrayList<>();
 
     /* Map of Keys and the locations of Values in Storage */
-    private HashMap<KeyType, ValueFileAndOffset> mapKeyValueLocation;
+    private HashMap<KeyType, ValueFileAndOffset> mapKeyValueLocation = new HashMap<>();
 
     /* Class for keeping the file and offset of where the Value is stored */
     private class ValueFileAndOffset {
@@ -348,12 +348,6 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
         this.pathToStorageDirectory = pathToStorageDirectory;
         this.keyTypeSerializer = keyTypeSerializer;
         this.valueTypeSerializer = valueTypeSerializer;
-        isClosed = false;
-
-        mapKeyValueLocation = new HashMap<>();
-        bufferKeyVal    = new HashMap<>();
-        validKeys       = new HashSet<>();
-        rafStorageFiles = new ArrayList<>();
 
         initializeFilesOfStorage();
     }
@@ -472,7 +466,9 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
      */
     @Override
     public void close() throws MalformedDataException {
-        checkNotClosed();
+        if (isClosed) {
+            return;
+        }
 
         isClosed = true;
         flushBufferIfNeeded();

@@ -42,19 +42,19 @@ public class OptimisedByteKeyValueStoragePerformanceTest extends KeyValueStorage
 
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String path) throws MalformedDataException {
-        return new AggressivelyOptimisedByteKeyValueStorage<>(path, StringSerializerSingleton.getInstance(),
+        return new OptimisedByteKeyValueStorage<>(path, StringSerializerSingleton.getInstance(),
                                                         StringSerializerSingleton.getInstance());
     }
 
     @Override
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) throws MalformedDataException {
-        return new AggressivelyOptimisedByteKeyValueStorage<>(path, IntegerSerializerSingleton.getInstance(),
+        return new OptimisedByteKeyValueStorage<>(path, IntegerSerializerSingleton.getInstance(),
                                                         DoubleSerializerSingleton.getInstance());
     }
 
     @Override
     protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) throws MalformedDataException {
-        return new AggressivelyOptimisedByteKeyValueStorage<>(path, StudentKeySerializerSingleton.getInstance(),
+        return new OptimisedByteKeyValueStorage<>(path, StudentKeySerializerSingleton.getInstance(),
                                                         StudentSerializerSingleton.getInstance());
     }
 }
