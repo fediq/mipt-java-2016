@@ -17,15 +17,15 @@ public class SolidStorageStudents extends SolidStorageAbstract<StudentKey, Stude
     }
 
     @Override
-    protected StudentKey readKey(RandomAccessFile file) throws IOException {
+    protected StudentKey readKey(RandomAccessFile f) throws IOException {
         try {
-            int groupId = file.readInt();
-            int n = file.readInt();
+            int groupId = f.readInt();
+            int n = f.readInt();
             if (n < 0) {
                 throw new IOException("Invalid storage file.");
             }
             byte[] name = new byte[n];
-            file.read(name, 0, n);
+            f.read(name, 0, n);
             return new StudentKey(groupId, new String(name, StandardCharsets.UTF_8));
         } catch (IOException e) {
             throw new IOException(e);
@@ -33,27 +33,27 @@ public class SolidStorageStudents extends SolidStorageAbstract<StudentKey, Stude
     }
 
     @Override
-    protected Student readValue(RandomAccessFile file) throws IOException {
+    protected Student readValue(RandomAccessFile f) throws IOException {
         try {
             int n;
-            int groupId = file.readInt();
-            n = file.readInt();
+            int groupId = f.readInt();
+            n = f.readInt();
             if (n < 0) {
                 throw new IOException("Invalid storage file.");
             }
             byte[] name = new byte[n];
-            file.read(name, 0, n);
-            n = file.readInt();
+            f.read(name, 0, n);
+            n = f.readInt();
             if (n < 0) {
                 throw new IOException("Invalid storage file.");
             }
             byte[] hometown = new byte[n];
-            file.read(hometown, 0, n);
-            long time = file.readLong();
+            f.read(hometown, 0, n);
+            long time = f.readLong();
             Date birthDate = new Date();
             birthDate.setTime(time);
-            boolean hasDormitory = file.readBoolean();
-            double averageScore = file.readDouble();
+            boolean hasDormitory = f.readBoolean();
+            double averageScore = f.readDouble();
             return new Student(groupId, new String(name, StandardCharsets.UTF_8),
                     new String(hometown, StandardCharsets.UTF_8), birthDate,
                     hasDormitory, averageScore);

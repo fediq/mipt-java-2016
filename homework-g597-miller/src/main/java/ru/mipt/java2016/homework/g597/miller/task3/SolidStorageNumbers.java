@@ -13,18 +13,18 @@ public class SolidStorageNumbers extends SolidStorageAbstract<Integer, Double> {
     }
 
     @Override
-    protected Integer readKey(RandomAccessFile file) throws IOException {
+    protected Integer readKey(RandomAccessFile f) throws IOException {
         try {
-            return file.readInt();
+            return f.readInt();
         } catch (IOException e) {
             throw new IOException(e);
         }
     }
 
     @Override
-    protected Double readValue(RandomAccessFile file) throws IOException {
+    protected Double readValue(RandomAccessFile f) throws IOException {
         try {
-            return file.readDouble();
+            return f.readDouble();
         } catch (IOException e) {
             throw new IOException(e);
         }

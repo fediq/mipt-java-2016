@@ -14,40 +14,40 @@ public class SolidStorageStrings extends SolidStorageAbstract<String, String> {
     }
 
     @Override
-    protected String readKey(RandomAccessFile file) throws IOException {
-        return readString(file);
+    protected String readKey(RandomAccessFile f) throws IOException {
+        return readString(f);
     }
 
     @Override
-    protected String readValue(RandomAccessFile file) throws IOException {
-        return readString(file);
+    protected String readValue(RandomAccessFile f) throws IOException {
+        return readString(f);
     }
 
     @Override
     protected void writeKey(String key) throws IOException {
-        writeString(file, key);
+        writeString(key);
     }
 
     @Override
     protected void writeValue(String value) throws IOException {
-        writeString(file, value);
+        writeString(value);
     }
 
-    private String readString(RandomAccessFile file) throws IOException {
+    private String readString(RandomAccessFile f) throws IOException {
         try {
-            int n = file.readInt();
+            int n = f.readInt();
             if (n < 0) {
                 throw new IOException("Invalid storage file.");
             }
             byte[] b = new byte[n];
-            file.read(b, 0, n);
+            f.read(b, 0, n);
             return new String(b, StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new IOException(e);
         }
     }
 
-    private void writeString(RandomAccessFile file, String s) throws IOException {
+    private void writeString(String s) throws IOException {
         if (s == null) {
             throw new NullPointerException();
         }

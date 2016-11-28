@@ -18,7 +18,7 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 abstract class SolidStorageAbstract<K, V> implements KeyValueStorage<K, V> {
 
     // Файл хранилища.
-    RandomAccessFile file;
+    protected RandomAccessFile file;
     // Таблица координат value по key.
     private HashMap<K, Long> indexTable = new HashMap<>();
     // Хранилище удалённых позиций.
@@ -253,37 +253,37 @@ abstract class SolidStorageAbstract<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
-    private K readSolidKey(RandomAccessFile file) throws IOException {
-        long pos = file.getFilePointer();
-        K key = readKey(file);
-        file.seek(pos + 4 + 64);
+    private K readSolidKey(RandomAccessFile f) throws IOException {
+        long pos = f.getFilePointer();
+        K key = readKey(f);
+        f.seek(pos + 4 + 64);
         return key;
     }
 
-    private V readSolidValue(RandomAccessFile file) throws IOException {
-        long pos = file.getFilePointer();
-        V value = readValue(file);
-        file.seek(pos + 4 + 20 * 1024);
+    private V readSolidValue(RandomAccessFile f) throws IOException {
+        long pos = f.getFilePointer();
+        V value = readValue(f);
+        f.seek(pos + 4 + 20 * 1024);
         return value;
     }
 
     private void writeSolidKey(K key) throws IOException {
         long pos = file.getFilePointer();
         writeKey(key);
-        int count = (int)(file.getFilePointer() - pos);
+        int count = (int) (file.getFilePointer() - pos);
         file.write(new byte[4 + 64 - count]);
     }
 
     private void writeSolidValue(V value) throws IOException {
         long pos = file.getFilePointer();
         writeValue(value);
-        int count = (int)(file.getFilePointer() - pos);
+        int count = (int) (file.getFilePointer() - pos);
         file.write(new byte[4 + 20 * 1024 - count]);
     }
 
-    protected abstract K readKey(RandomAccessFile file) throws IOException;
+    protected abstract K readKey(RandomAccessFile f) throws IOException;
 
-    protected abstract V readValue(RandomAccessFile file) throws IOException;
+    protected abstract V readValue(RandomAccessFile f) throws IOException;
 
     protected abstract void writeKey(K key) throws IOException;
 
