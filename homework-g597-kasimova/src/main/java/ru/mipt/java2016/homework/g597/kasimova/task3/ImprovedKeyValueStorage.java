@@ -21,7 +21,7 @@ public class ImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private RandomAccessFile fileForValues;
     private final HashMap<K, Long> keysAndShiftTable = new HashMap<>();
     private boolean opened = true;
-    Long shift;
+    private Long shift;
 
     public ImprovedKeyValueStorage(String path, MSerialization<K> key, MSerialization<V> value) throws IOException {
         File file = new File(path);
@@ -45,6 +45,7 @@ public class ImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 keysAndShiftTable.put(curKey, curShift);
             }
         } catch (IOException e) {
+            System.out.println(e.getMessage());
         }
     }
 
