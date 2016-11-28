@@ -20,10 +20,10 @@ public class UpdatedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private int changesCounter = 0;
     private final String nameDirectory;
 
-    public UpdatedKeyValueStorage(String nameDirectory_, Identification<K> key, Identification<V> value)
+    public UpdatedKeyValueStorage(String name, Identification<K> key, Identification<V> value)
             throws IOException {
 
-        nameDirectory = nameDirectory_;
+        nameDirectory = name;
         bufferOffsets = new HashMap<K, Long>();
         File directory = new File(nameDirectory);
         keyIdentification = key;
@@ -158,7 +158,7 @@ public class UpdatedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 try {
                     update();
                     changesCounter = 0;
-                } catch(IOException e) {
+                } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
             }
