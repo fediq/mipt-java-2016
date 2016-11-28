@@ -100,7 +100,7 @@ public class MyOptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new IllegalStateException(e + "something went wrong");
         } finally {
             readWriteLock.readLock().unlock();
         }
@@ -214,7 +214,7 @@ public class MyOptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             }
             memtable.clear();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new IllegalStateException(e + "something went wrong");
         } finally {
             readWriteLock.writeLock().unlock();
         }
@@ -250,7 +250,7 @@ public class MyOptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             fileForValues = newFileForValues;
             Files.delete(tmpFileForValues.toPath());
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new IllegalStateException(e + "something went wrong");
         } finally {
             readWriteLock.writeLock().unlock();
         }
