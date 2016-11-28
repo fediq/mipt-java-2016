@@ -37,7 +37,6 @@ import java.util.Map;
  * Created by shevkunov on 22.10.16.
  */
 class LazyMergedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
-    private static final String LOCKER_NAME = File.separatorChar + "storage_lock.db";
     private static final String HEADER_NAME = File.separatorChar + "storage.db";
     private static final String DATA_NAME_PREFIX = File.separatorChar + "storage_";
     private static final String DATA_NAME_SUFFIX = ".db";
@@ -51,17 +50,12 @@ class LazyMergedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private final LazyMergedKeyValueStorageKeeper<V> keeper;
     private final Cache<K, V> cache;
 
-    private final File baseLock;
-
     LazyMergedKeyValueStorage(LazyMergedKeyValueStorageSerializator<K> keySerializator,
                               LazyMergedKeyValueStorageSerializator<V> valueSerializator,
                               String path, long cacheSize) throws Exception {
         this.cacheSize = cacheSize;
         this.path = path;
-        baseLock = new File(path + LOCKER_NAME);
-        if (!baseLock.createNewFile()) {
-            throw new RuntimeException("Base locked");
-        }
+
         cache = CacheBuilder.newBuilder().maximumSize(this.cacheSize).build();
 
         File dir = new File(path);
@@ -83,24 +77,25 @@ class LazyMergedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     public V read(K key) {
         synchronized (header) {
             V retValue;
-            try {
-                checkClosed();
-                Long pointer = header.getMap().get(key);
-                if (pointer != null) {
-                    V tryCache = cache.getIfPresent(key);
-                    if (tryCache == null) {
-                        V got = keeper.read(0, pointer);
-                        cache.put(key, got);
-                        retValue = got;
-                    } else {
-                        retValue = tryCache;
+            checkClosed();
+            Long pointer = header.getMap().get(key);
+            if (pointer != null) {
+                V tryCache = cache.getIfPresent(key);
+                if (tryCache == null) {
+                    V got;
+                    try {
+                        got = keeper.read(0, pointer);
+                    } catch (IOException e) {
+                        throw new RuntimeException("IO error during reading");
+                        // Interface doesn't allow us to throw IOException
                     }
+                    cache.put(key, got);
+                    retValue = got;
                 } else {
-                    retValue = null;
+                    retValue = tryCache;
                 }
-            } catch (IOException e) {
-                throw new RuntimeException("IO error during reading");
-                // Interface doesn't allow us to throw IOException
+            } else {
+                retValue = null;
             }
             return retValue;
         }
@@ -119,31 +114,31 @@ class LazyMergedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public void write(K key, V value) {
         synchronized (header) {
+            checkClosed();
             try {
-                checkClosed();
                 header.addKey(key, keeper.write(0, value));
-                cache.put(key, value);
             } catch (IOException e) {
                 throw new RuntimeException("IO error during writing");
                 // Interface doesn't allow us to throw IOException
             }
+            cache.put(key, value);
         }
     }
 
     @Override
     public void delete(K key) {
         synchronized (header) {
-            try {
-                checkClosed();
-                if (header.deleteKey(key)) {
-                    cache.invalidate(key);
-                    if (lazy()) {
+            checkClosed();
+            if (header.deleteKey(key)) {
+                cache.invalidate(key);
+                if (lazy()) {
+                    try {
                         rebuild();
+                    } catch (IOException e) {
+                        throw new RuntimeException("IO error during deleting");
+                        // Interface doesn't allow us to throw IOException
                     }
                 }
-            } catch (IOException e) {
-                throw new RuntimeException("IO error during deleting");
-                // Interface doesn't allow us to throw IOException
             }
         }
     }
@@ -175,7 +170,6 @@ class LazyMergedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             open = false;
             header.write();
             keeper.close();
-            baseLock.delete();
         }
     }
 
