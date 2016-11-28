@@ -6,7 +6,6 @@ package ru.mipt.java2016.homework.g594.petrov.task3;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import java.io.*;
-import java.nio.channels.FileLock;
 import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
