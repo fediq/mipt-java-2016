@@ -111,7 +111,7 @@ public class LargeKeyValueStorage<K, V> implements KeyValueStorage<K, V>, AutoCl
     @Override
     public V read(K key) {
         lock.readLock().lock();
-        try{
+        try {
             checkOpened();
             if (!valueOffsets.containsKey(key)) {
                 return null;
