@@ -240,10 +240,6 @@ public class OptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private void removeGarbage() {
         File clearedStorage = new File(fileClearedStoragePathname);
         try {
-            /*
-            if (randAccFileStorage.length() <= 500000000) {
-                return;
-            } */
             if (!clearedStorage.createNewFile()) {
                 throw new IllegalStateException("Couldn't create file during removing garbage");
             }
@@ -279,7 +275,6 @@ public class OptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         lock.writeLock().lock();
 
         isStorageOpened = false;
-        //removeGarbage();
         try {
             dropKeyAndValueMapOnDisk();
             if (keyAndOffsetMap.size() == garbageCounter) {
