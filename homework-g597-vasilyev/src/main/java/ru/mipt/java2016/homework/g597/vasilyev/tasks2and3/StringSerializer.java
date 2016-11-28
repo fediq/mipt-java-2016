@@ -12,19 +12,19 @@ public class StringSerializer implements Serializer<String> {
     @Override
     public void write(String value, DataOutput destination) throws IOException {
         destination.writeInt(value.length());
-        destination.write(value.getBytes(StandardCharsets.UTF_8));
+        destination.write(value.getBytes(StandardCharsets.UTF_16BE));
     }
 
     @Override
     public String read(DataInput source) throws IOException {
         int length = source.readInt();
-        byte[] buffer = new byte[length];
+        byte[] buffer = new byte[2 * length];
         source.readFully(buffer);
-        return new String(buffer, StandardCharsets.UTF_8);
+        return new String(buffer, StandardCharsets.UTF_16);
     }
 
     @Override
     public long size(String value) {
-        return 4 + value.length();
+        return 4 + 2 * value.length();
     }
 }
