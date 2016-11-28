@@ -70,40 +70,36 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public V read(K key) {
-        V result;
         lock.readLock().lock();
         try {
             checkState();
             if (!dataBase.containsKey(key)) {
-                result = null;
+                return null;
             }
             long offset = dataBase.get(key);
             if (offset < 0) {
-                result =  written.get(key);
+                return written.get(key);
             }
             try {
                 valueTable.seek(offset);
-                result = valueSerializer.read(valueTable);
+                return valueSerializer.read(valueTable);
             } catch (IOException e) {
-                result = null;
+                return null;
             }
         } finally {
             lock.readLock().unlock();
         }
-        return result;
     }
 
     @Override
     public boolean exists(K key) {
-        boolean result;
         lock.readLock().lock();
         try {
             checkState();
-            result = dataBase.containsKey(key);
+            return dataBase.containsKey(key);
         } finally {
             lock.readLock().unlock();
         }
-        return result;
     }
 
     @Override
@@ -149,28 +145,24 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public Iterator<K> readKeys() {
-        Iterator<K> result;
         lock.readLock().lock();
         try {
             checkState();
-            result = dataBase.keySet().iterator();
+            return dataBase.keySet().iterator();
         } finally {
             lock.readLock().unlock();
         }
-        return result;
     }
 
     @Override
     public int size() {
-        int result;
         lock.readLock().lock();
         try {
             checkState();
-            result = dataBase.size();
+            return dataBase.size();
         } finally {
             lock.readLock().unlock();
         }
-        return result;
     }
 
     @Override
