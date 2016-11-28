@@ -274,7 +274,9 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
 
             numberOfDeletedElements = 0;
             offsets = newOffsets;
+            valuesFile.close();
             valuesFile = newValuesFile;
+            System.gc();
             Files.delete(values.toPath());
             if (!newValues.renameTo(values)) {
                 throw new IOException("Can't rename values file");
