@@ -52,13 +52,15 @@ public class KeyValueStorageImplTest extends KeyValueStoragePerformanceTest {
         }
 
         @Override
-        public void write(Student value, DataOutput destination) throws IOException {
+        public int write(Student value, DataOutput destination) throws IOException {
+            int size = 21;
             destination.writeInt(value.getGroupId());
-            stringSerializer.write(value.getName(), destination);
+            size += stringSerializer.write(value.getName(), destination);
             destination.writeLong(value.getBirthDate().getTime());
-            stringSerializer.write(value.getHometown(), destination);
+            size += stringSerializer.write(value.getHometown(), destination);
             destination.writeBoolean(value.isHasDormitory());
             destination.writeDouble(value.getAverageScore());
+            return size;
         }
 
         @Override
@@ -72,12 +74,6 @@ public class KeyValueStorageImplTest extends KeyValueStoragePerformanceTest {
             return new Student(groupId, name, hometown, birthDate,
                     hasDormitory, averageScore);
         }
-
-        @Override
-        public long size(Student value) {
-            return 21 + stringSerializer.size(value.getName())
-                    + stringSerializer.size(value.getHometown());
-        }
     }
 
     private class StudentKeySerializer implements Serializer<StudentKey> {
@@ -88,9 +84,9 @@ public class KeyValueStorageImplTest extends KeyValueStoragePerformanceTest {
         }
 
         @Override
-        public void write(StudentKey value, DataOutput destination) throws IOException {
+        public int write(StudentKey value, DataOutput destination) throws IOException {
             destination.writeInt(value.getGroupId());
-            stringSerializer.write(value.getName(), destination);
+            return 4 + stringSerializer.write(value.getName(), destination);
         }
 
         @Override
@@ -98,11 +94,6 @@ public class KeyValueStorageImplTest extends KeyValueStoragePerformanceTest {
             int groupId = source.readInt();
             String name = stringSerializer.read(source);
             return new StudentKey(groupId, name);
-        }
-
-        @Override
-        public long size(StudentKey value) {
-            return 4 + stringSerializer.size(value.getName());
         }
     }
 }

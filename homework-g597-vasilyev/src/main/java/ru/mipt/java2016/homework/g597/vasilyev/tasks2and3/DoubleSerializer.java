@@ -9,17 +9,13 @@ import java.io.IOException;
  */
 public class DoubleSerializer implements Serializer<Double> {
     @Override
-    public void write(Double value, DataOutput destination) throws IOException {
+    public int write(Double value, DataOutput destination) throws IOException {
         destination.writeDouble(value);
+        return 8;
     }
 
     @Override
     public Double read(DataInput source) throws IOException {
         return source.readDouble();
-    }
-
-    @Override
-    public long size(Double value) {
-        return 8;
     }
 }

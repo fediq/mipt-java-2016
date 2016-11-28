@@ -9,17 +9,13 @@ import java.io.IOException;
  */
 public class IntegerSerializer implements Serializer<Integer> {
     @Override
-    public void write(Integer value, DataOutput destination) throws IOException {
+    public int write(Integer value, DataOutput destination) throws IOException {
         destination.writeInt(value);
+        return 4;
     }
 
     @Override
     public Integer read(DataInput source) throws IOException {
         return source.readInt();
-    }
-
-    @Override
-    public long size(Integer value) {
-        return 4;
     }
 }

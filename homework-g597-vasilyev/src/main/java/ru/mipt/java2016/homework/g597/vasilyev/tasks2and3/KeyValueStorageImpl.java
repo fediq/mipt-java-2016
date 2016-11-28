@@ -182,8 +182,7 @@ public class KeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
             for (Map.Entry<K, Long> key : offsets.entrySet()) {
                 V value = readValue(key.getValue());
                 offsets.put(key.getKey(), newOffset);
-                valueSerializer.write(value, newValues);
-                newOffset = valueSerializer.size(value);
+                newOffset += valueSerializer.write(value, newValues);
             }
         }
     }

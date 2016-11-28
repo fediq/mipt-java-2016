@@ -10,21 +10,18 @@ import java.nio.charset.StandardCharsets;
  */
 public class StringSerializer implements Serializer<String> {
     @Override
-    public void write(String value, DataOutput destination) throws IOException {
-        destination.writeInt(value.length());
-        destination.write(value.getBytes(StandardCharsets.UTF_16BE));
+    public int write(String value, DataOutput destination) throws IOException {
+        byte[] buffer = value.getBytes(StandardCharsets.UTF_8);
+        destination.writeInt(buffer.length);
+        destination.write(buffer);
+        return buffer.length;
     }
 
     @Override
     public String read(DataInput source) throws IOException {
         int length = source.readInt();
-        byte[] buffer = new byte[2 * length];
+        byte[] buffer = new byte[length];
         source.readFully(buffer);
-        return new String(buffer, StandardCharsets.UTF_16);
-    }
-
-    @Override
-    public long size(String value) {
-        return 4 + 2 * value.length();
+        return new String(buffer, StandardCharsets.UTF_8);
     }
 }

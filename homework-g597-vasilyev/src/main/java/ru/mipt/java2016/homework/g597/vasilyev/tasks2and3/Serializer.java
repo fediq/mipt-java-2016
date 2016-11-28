@@ -8,9 +8,7 @@ import java.io.IOException;
  * Saves or constructs object of type T
  */
 public interface Serializer<E> {
-    void write(E value, DataOutput destination) throws IOException;
+    int write(E value, DataOutput destination) throws IOException;
 
     E read(DataInput source) throws IOException;
-
-    long size(E value);
 }
