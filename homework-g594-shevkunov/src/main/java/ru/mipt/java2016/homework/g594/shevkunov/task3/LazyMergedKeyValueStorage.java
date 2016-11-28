@@ -76,33 +76,31 @@ class LazyMergedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public V read(K key) {
         synchronized (header) {
-            V retValue;
             checkClosed();
             Long pointer = header.getMap().get(key);
             if (pointer != null) {
                 V tryCache = cache.getIfPresent(key);
                 if (tryCache == null) {
                     try {
-                        retValue = keeper.read(0, pointer);
+                        V retValue = keeper.read(0, pointer);
+                        cache.put(key, retValue);
+                        return retValue;
                     } catch (IOException e) {
                         throw new RuntimeException("IO error during reading");
                         // Interface doesn't allow us to throw IOException
                     }
-                    cache.put(key, retValue);
                 } else {
-                    retValue = tryCache;
+                    return tryCache;
                 }
             } else {
-                retValue = null;
+                return null;
             }
-            return retValue;
         }
     }
 
     @Override
     public boolean exists(K key) {
         synchronized (header) {
-            boolean retValue;
             checkClosed();
             return header.getMap().containsKey(key);
         }
@@ -114,11 +112,11 @@ class LazyMergedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             checkClosed();
             try {
                 header.addKey(key, keeper.write(0, value));
+                cache.put(key, value);
             } catch (IOException e) {
                 throw new RuntimeException("IO error during writing");
                 // Interface doesn't allow us to throw IOException
             }
-            cache.put(key, value);
         }
     }
 
