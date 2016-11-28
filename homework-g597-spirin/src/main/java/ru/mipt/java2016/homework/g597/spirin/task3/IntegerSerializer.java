@@ -1,5 +1,7 @@
 package ru.mipt.java2016.homework.g597.spirin.task3;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
@@ -17,12 +19,12 @@ public class IntegerSerializer implements SerializationStrategy<Integer> {
     }
 
     @Override
-    public Integer read(RandomAccessFile file) throws IOException {
+    public Integer read(DataInput file) throws IOException {
         return file.readInt();
     }
 
     @Override
-    public void write(RandomAccessFile file, Integer object) throws IOException {
+    public void write(DataOutput file, Integer object) throws IOException {
         file.writeInt(object);
     }
 }

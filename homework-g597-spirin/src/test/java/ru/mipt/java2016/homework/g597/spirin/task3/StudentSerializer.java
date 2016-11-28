@@ -2,6 +2,9 @@ package ru.mipt.java2016.homework.g597.spirin.task3;
 
 import ru.mipt.java2016.homework.tests.task2.Student;
 
+import javax.xml.crypto.Data;
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Date;
@@ -26,7 +29,7 @@ public class StudentSerializer implements SerializationStrategy<Student> {
     private final DoubleSerializer doubleSerializer = DoubleSerializer.getInstance();
 
     @Override
-    public Student read(RandomAccessFile file) throws IOException {
+    public Student read(DataInput file) throws IOException {
         int groupID = integerSerializer.read(file);
         String name = stringSerializer.read(file);
         String hometown = stringSerializer.read(file);
@@ -37,7 +40,7 @@ public class StudentSerializer implements SerializationStrategy<Student> {
     }
 
     @Override
-    public void write(RandomAccessFile file, Student object) throws IOException {
+    public void write(DataOutput file, Student object) throws IOException {
         integerSerializer.write(file, object.getGroupId());
         stringSerializer.write(file, object.getName());
         stringSerializer.write(file, object.getHometown());
