@@ -10,9 +10,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 
 /**
@@ -40,6 +37,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * Created by shevkunov on 22.10.16.
  */
 class LazyMergedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
+    private static final String LOCKER_NAME = File.separatorChar + "storage_lock.db";
     private static final String HEADER_NAME = File.separatorChar + "storage.db";
     private static final String DATA_NAME_PREFIX = File.separatorChar + "storage_";
     private static final String DATA_NAME_SUFFIX = ".db";
@@ -53,15 +51,17 @@ class LazyMergedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private final LazyMergedKeyValueStorageKeeper<V> keeper;
     private final Cache<K, V> cache;
 
-    private final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
-    private final Lock writeLock = readWriteLock.writeLock();
-    private final Lock readLock = readWriteLock.readLock();
+    private final File baseLock;
 
     LazyMergedKeyValueStorage(LazyMergedKeyValueStorageSerializator<K> keySerializator,
                               LazyMergedKeyValueStorageSerializator<V> valueSerializator,
                               String path, long cacheSize) throws Exception {
         this.cacheSize = cacheSize;
         this.path = path;
+        baseLock = new File(path + LOCKER_NAME);
+        if (!baseLock.createNewFile()) {
+            throw new RuntimeException("Base locked");
+        }
         cache = CacheBuilder.newBuilder().maximumSize(this.cacheSize).build();
 
         File dir = new File(path);
@@ -81,114 +81,101 @@ class LazyMergedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public V read(K key) {
-        V retValue;
-        readLock.lock();
-        try {
-            checkClosed();
-            Long pointer = header.getMap().get(key);
-            if (pointer != null) {
-                V tryCache = cache.getIfPresent(key);
-                if (tryCache == null) {
-                    V got = keeper.read(0, pointer);
-                    cache.put(key, got);
-                    retValue = got;
+        synchronized (header) {
+            V retValue;
+            try {
+                checkClosed();
+                Long pointer = header.getMap().get(key);
+                if (pointer != null) {
+                    V tryCache = cache.getIfPresent(key);
+                    if (tryCache == null) {
+                        V got = keeper.read(0, pointer);
+                        cache.put(key, got);
+                        retValue = got;
+                    } else {
+                        retValue = tryCache;
+                    }
                 } else {
-                    retValue = tryCache;
+                    retValue = null;
                 }
-            } else {
-                retValue = null;
+            } catch (IOException e) {
+                throw new RuntimeException("IO error during reading");
+                // Interface doesn't allow us to throw IOException
             }
-        } catch (IOException e) {
-            throw new RuntimeException("IO error during reading");
-            // Interface doesn't allow us to throw IOException
-        } finally {
-            readLock.unlock();
+            return retValue;
         }
-        return retValue;
     }
 
     @Override
     public boolean exists(K key) {
-        boolean retValue;
-        readLock.lock();
-        try {
+        synchronized (header) {
+            boolean retValue;
             checkClosed();
             retValue = header.getMap().containsKey(key);
-        } finally {
-            readLock.unlock();
+            return retValue;
         }
-        return retValue;
     }
 
     @Override
     public void write(K key, V value) {
-        writeLock.lock();
-        try {
-            checkClosed();
-            header.addKey(key, keeper.write(0, value));
-            cache.put(key, value);
-        } catch (IOException e) {
-            throw new RuntimeException("IO error during writing");
-            // Interface doesn't allow us to throw IOException
-        } finally {
-            writeLock.unlock();
+        synchronized (header) {
+            try {
+                checkClosed();
+                header.addKey(key, keeper.write(0, value));
+                cache.put(key, value);
+            } catch (IOException e) {
+                throw new RuntimeException("IO error during writing");
+                // Interface doesn't allow us to throw IOException
+            }
         }
     }
 
     @Override
     public void delete(K key) {
-        writeLock.lock();
-        try {
-            checkClosed();
-            header.deleteKey(key);
-            cache.invalidate(key);
-            if (lazy()) {
-                rebuild();
+        synchronized (header) {
+            try {
+                checkClosed();
+                if (header.deleteKey(key)) {
+                    cache.invalidate(key);
+                    if (lazy()) {
+                        rebuild();
+                    }
+                }
+            } catch (IOException e) {
+                throw new RuntimeException("IO error during deleting");
+                // Interface doesn't allow us to throw IOException
             }
-        } catch (IOException e) {
-            throw new RuntimeException("IO error during deleting");
-            // Interface doesn't allow us to throw IOException
-        } finally {
-            writeLock.unlock();
         }
     }
 
     @Override
     public Iterator<K> readKeys() {
-        Iterator<K> retValue;
-        readLock.lock();
-        try {
+        synchronized (header) {
+            Iterator<K> retValue;
             checkClosed();
             retValue = header.getMap().keySet().iterator();
-        } finally {
-            readLock.unlock();
+            return retValue;
         }
-        return retValue;
     }
 
     @Override
     public int size() {
-        int retValue;
-        readLock.lock();
-        try {
+        synchronized (header) {
+            int retValue;
             checkClosed();
             retValue = header.getMap().size();
-        } finally {
-            readLock.unlock();
+            return retValue;
         }
-        return retValue;
     }
 
     @Override
     public void close() throws IOException {
-        writeLock.lock();
-        try {
+        synchronized (header) {
             checkClosed();
             open = false;
             header.write();
             keeper.close();
-        } finally {
-            writeLock.unlock();
+            baseLock.delete();
         }
     }
 
@@ -206,6 +193,7 @@ class LazyMergedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
         keeper.swap(chacheFile, 0);
         keeper.popBack();
+        header.setLazyPointers(0);
     }
 
     private void checkClosed() {

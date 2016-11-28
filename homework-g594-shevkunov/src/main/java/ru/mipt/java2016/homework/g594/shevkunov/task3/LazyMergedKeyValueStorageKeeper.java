@@ -103,12 +103,16 @@ class LazyMergedKeyValueStorageKeeper<V> {
         dataFiles.set(b, new RandomAccessFile(bFile, "rw"));
     }
 
-    void popBack() {
+    void popBack() throws IOException {
         if (dataFiles.isEmpty()) {
             throw new RuntimeException("Trying to delete unknown file");
         }
+
+        dataFiles.lastElement().close();
         File del = new File(getName(dataFiles.size() - 1));
-        del.delete();
+        if (!del.delete()) {
+            throw new RuntimeException("Can't delete file");
+        }
         dataFiles.setSize(dataFiles.size() - 1);
     }
 

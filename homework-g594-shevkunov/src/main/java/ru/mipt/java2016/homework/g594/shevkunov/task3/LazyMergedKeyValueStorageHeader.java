@@ -86,14 +86,22 @@ class LazyMergedKeyValueStorageHeader<K, V> {
         pointers.put(key, pointer);
     }
 
-    void deleteKey(K key) {
-        pointers.remove(key);
-        --dataFileSize;
-        ++lazyPointers;
+    boolean deleteKey(K key) {
+        if (pointers.remove(key) != null) {
+            --dataFileSize;
+            ++lazyPointers;
+            return true;
+        } else {
+            return false;
+        }
     }
 
     long getLazyPointers() {
         return lazyPointers;
+    }
+
+    public void setLazyPointers(long lazyPointers) {
+        this.lazyPointers = lazyPointers;
     }
 
     void write() throws IOException {
