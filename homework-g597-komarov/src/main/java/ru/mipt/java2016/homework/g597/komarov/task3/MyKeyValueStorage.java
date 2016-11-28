@@ -9,6 +9,7 @@ import java.io.File;
 import java.nio.file.Paths;
 import java.util.*;
 import java.io.RandomAccessFile;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import  ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.g597.komarov.task2.Serializer;
@@ -23,6 +24,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private Map<K, Long> dataBase;
     private int deletedCount;
     private Map<K, V> written;
+    private ReentrantReadWriteLock lock;
 
     public MyKeyValueStorage(String path, Serializer<K> keySerializerArg,
                              Serializer<V> valueSerializerArg) throws IOException {
@@ -31,6 +33,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             throw new RuntimeException("File has already been opened");
         }
 
+        lock = new ReentrantReadWriteLock();
         pathToStorage = path;
         keySerializer = keySerializerArg;
         valueSerializer = valueSerializerArg;
@@ -67,86 +70,129 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public V read(K key) {
-        checkState();
-        if (!dataBase.containsKey(key)) {
-            return null;
-        }
-        long offset = dataBase.get(key);
-        if (offset < 0) {
-            return written.get(key);
-        }
+        V result;
+        lock.readLock().lock();
         try {
-            valueTable.seek(offset);
-            return valueSerializer.read(valueTable);
-        } catch (IOException e) {
-            return null;
+            checkState();
+            if (!dataBase.containsKey(key)) {
+                result = null;
+            }
+            long offset = dataBase.get(key);
+            if (offset < 0) {
+                result =  written.get(key);
+            }
+            try {
+                valueTable.seek(offset);
+                result = valueSerializer.read(valueTable);
+            } catch (IOException e) {
+                result = null;
+            }
+        } finally {
+            lock.readLock().unlock();
         }
+        return result;
     }
 
     @Override
     public boolean exists(K key) {
-        checkState();
-        return dataBase.containsKey(key);
+        boolean result;
+        lock.readLock().lock();
+        try {
+            checkState();
+            result = dataBase.containsKey(key);
+        } finally {
+            lock.readLock().unlock();
+        }
+        return result;
     }
 
     @Override
     public void write(K key, V value) {
-        checkState();
-        dataBase.put(key, (long) -1);
-        written.put(key, value);
-        if (written.size() >= 100) {
-            try {
-                merge();
-            } catch (IOException e) {
-                return;
+        lock.writeLock().lock();
+        try {
+            checkState();
+            dataBase.put(key, (long) -1);
+            written.put(key, value);
+            if (written.size() >= 100) {
+                try {
+                    merge();
+                } catch (IOException e) {
+                    return;
+                }
             }
+        } finally {
+            lock.writeLock().unlock();
         }
     }
 
     @Override
     public void delete(K key) {
-        checkState();
-        if (exists(key)) {
-            deletedCount++;
-            dataBase.remove(key);
-        }
-        if (deletedCount >= 100) {
-            try {
-                rewriteFile();
-                deletedCount = 0;
-            } catch (IOException e) {
-                return;
+        lock.writeLock().lock();
+        try {
+            checkState();
+            if (exists(key)) {
+                deletedCount++;
+                dataBase.remove(key);
             }
+            if (deletedCount >= 100) {
+                try {
+                    rewriteFile();
+                    deletedCount = 0;
+                } catch (IOException e) {
+                    return;
+                }
+            }
+        } finally {
+            lock.writeLock().unlock();
         }
     }
 
     @Override
     public Iterator<K> readKeys() {
-        checkState();
-        return dataBase.keySet().iterator();
+        Iterator<K> result;
+        lock.readLock().lock();
+        try {
+            checkState();
+            result = dataBase.keySet().iterator();
+        } finally {
+            lock.readLock().unlock();
+        }
+        return result;
     }
 
     @Override
     public int size() {
-        checkState();
-        return dataBase.size();
+        int result;
+        lock.readLock().lock();
+        try {
+            checkState();
+            result = dataBase.size();
+        } finally {
+            lock.readLock().unlock();
+        }
+        return result;
     }
 
     @Override
     public void close() throws IOException {
-        checkState();
-        if (written.size() != 0) {
-            merge();
+        lock.writeLock().lock();
+        try {
+            checkState();
+            if (written.size() != 0) {
+                merge();
+            }
+            if (deletedCount != 0) {
+                rewriteFile();
+            }
+            dataBase = null;
+            written = null;
+            deletedCount = 0;
+            valueTable.close();
+            keyOffsetTable.close();
+            flag.delete();
+        } finally {
+            lock.writeLock().unlock();
         }
-        if (deletedCount != 0) {
-            rewriteFile();
-        }
-        dataBase = null;
-        written = null;
-        deletedCount = 0;
-        valueTable.close();
-        keyOffsetTable.close();
-        flag.delete();
     }
 
     private void checkState() {
