@@ -60,8 +60,8 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
         } else {
             path = "";
         }
-        configFile = new FileWorker(path + "mydbconfig.db");
-        keyMap = new HashMap<K, KeyInfo>();
+        configFile = new FileWorker(path + "mydbconfig.db", false);
+        keyMap = Collections.synchronizedMap(new HashMap<K, KeyInfo>());
         if (configFile.exists()) {
             if (!initKeySet()) {
                 throw new RuntimeException("Invalid File");
@@ -202,7 +202,7 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
 
     private void flushDeletions() {
         String fileName = path + "deletes.db";
-        FileWorker dfile = new FileWorker(fileName);
+        FileWorker dfile = new FileWorker(fileName, false);
         if (!dfile.exists()) {
             dfile.createFile();
         }
@@ -225,7 +225,7 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
                 for (K keys: storageChanges.keySet()) {
                     keyMap.put(keys, new KeyInfo(-1, null));
                 }
-                FileWorker dfile = new FileWorker(path + "deletes.db");
+                FileWorker dfile = new FileWorker(path + "deletes.db", false);
                 if (!dfile.exists()) {
                     return false;
                 }
@@ -248,7 +248,7 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
     }
 
     private Map<K, Long> loadKeysFrom(String fileName) {
-        FileWorker file = new FileWorker(fileName + ".ind");
+        FileWorker file = new FileWorker(fileName + ".ind", false);
         Map<K, Long> map = new TreeMap<K, Long>();
         String nextKey = file.readNextToken();
         while (nextKey != null) {
@@ -268,7 +268,7 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
         V result = null;
         synchronized (configFile) {
             KeyInfo inf = keyMap.get(key);
-            try (FileWorker file = new FileWorker(path + inf.filename + ".tab")) {
+            try (FileWorker file = new FileWorker(path + inf.filename + ".tab", false)) {
                 if (file.exists() && inf.filename != null) {
                     file.moveToOffset(inf.offset);
                     K thisKey = keySerializer.deserialize(file.readNextToken());
@@ -301,8 +301,8 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
 
     private void flushTemp() {
         String fileName = useCurrentFileName();
-        FileWorker valueFile = new FileWorker(path + fileName + ".tab");
-        FileWorker indFile = new FileWorker(path + fileName + ".ind");
+        FileWorker valueFile = new FileWorker(path + fileName + ".tab", false);
+        FileWorker indFile = new FileWorker(path + fileName + ".ind", false);
         Map<K, Long> offsetMap = new TreeMap<K, Long>();
         long currOffset = 0;
         valueFile.createFile();
@@ -362,14 +362,14 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void merge(FileNames latest, FileNames second) {
-        FileWorker latestFl = new FileWorker(path + latest.fileName + ".tab");
-        FileWorker secondFl = new FileWorker(path + second.fileName + ".tab");
+        FileWorker latestFl = new FileWorker(path + latest.fileName + ".tab", false);
+        FileWorker secondFl = new FileWorker(path + second.fileName + ".tab", false);
         BufferedQueue latestFile = new BufferedQueue(latestFl);
         BufferedQueue secondFile = new BufferedQueue(secondFl);
         String fileName = useCurrentFileName();
         //System.out.println("merging to " + fileName);
-        FileWorker valueFile = new FileWorker(path + fileName + ".tab");
-        FileWorker indFile = new FileWorker(path + fileName + ".ind");
+        FileWorker valueFile = new FileWorker(path + fileName + ".tab", false);
+        FileWorker indFile = new FileWorker(path + fileName + ".ind", false);
         Map<K, Long> offsetMap = new TreeMap<>();
         valueFile.createFile();
         indFile.createFile();
@@ -429,8 +429,8 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
             //System.out.println(latest.fileName + ' ' + second.fileName + " deleted");
             latestFl.delete();
             secondFl.delete();
-            latestFl = new FileWorker(path + latest.fileName + ".ind");
-            secondFl = new FileWorker(path + second.fileName + ".ind");
+            latestFl = new FileWorker(path + latest.fileName + ".ind", false);
+            secondFl = new FileWorker(path + second.fileName + ".ind", false);
             latestFl.delete();
             secondFl.delete();
         }

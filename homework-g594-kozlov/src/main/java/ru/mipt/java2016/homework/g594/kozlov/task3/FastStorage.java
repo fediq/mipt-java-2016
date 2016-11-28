@@ -16,38 +16,45 @@ public class FastStorage<K, V> implements KeyValueStorage<K, V> {
 
     private final SerializerInterface<K> keySerializer;
     private final SerializerInterface<V> valueSerializer;
-    private final Map<K, Long> keyMap = new HashMap<>();
+    private final Map<K, Long> keyMap;
     private final Set<K> deleteSet = new HashSet<>();
     private final String dirPath;
     private final FileWorker indexFile;
     private final FileWorker tabFile;
     private final FileWorker deleteFile;
+    private final FileWorker validFile;
     private Long currOffset = new Long(0);
     private boolean writing = true;
     private boolean isClosedFlag = false;
+    private final Integer lock = 42;
 
     public FastStorage(SerializerInterface<K> keySerializer, SerializerInterface<V> valueSerializer, String dirPath) {
         this.keySerializer = keySerializer;
         this.valueSerializer = valueSerializer;
+        keyMap = Collections.synchronizedMap(new HashMap<>());
         if (dirPath == null || dirPath.equals("")) {
             this.dirPath = "";
         } else {
             this.dirPath = dirPath + File.separator;
         }
-        indexFile = new FileWorker(this.dirPath + "indexfile.db");
-        tabFile = new FileWorker(this.dirPath + "tabfile.db");
-        deleteFile = new FileWorker(this.dirPath + "deletes.db");
+        indexFile = new FileWorker(this.dirPath + "indexfile.db", false);
+        tabFile = new FileWorker(this.dirPath + "tabfile.db", false);
+        deleteFile = new FileWorker(this.dirPath + "deletes.db", false);
+        validFile = new FileWorker(this.dirPath + "validfile.db", false);
         if (!indexFile.exists()) {
             indexFile.createFile();
             tabFile.createFile();
             deleteFile.createFile();
+            validFile.createFile();
+        } else {
+            currOffset = tabFile.fileLen();
+            initStorage();
         }
-        currOffset = tabFile.fileLen();
-        initStorage();
         tabFile.appMode();
     }
 
     private void initStorage() {
+        indexFile.close();
         String nextKey = indexFile.readNextToken();
         while (nextKey != null) {
             Long offset = Long.parseLong(indexFile.readNextToken());
@@ -58,7 +65,6 @@ public class FastStorage<K, V> implements KeyValueStorage<K, V> {
             }
             nextKey = indexFile.readNextToken();
         }
-        indexFile.close();
         nextKey = deleteFile.readNextToken();
         while (nextKey != null) {
             try {
@@ -70,7 +76,11 @@ public class FastStorage<K, V> implements KeyValueStorage<K, V> {
             }
             nextKey = deleteFile.readNextToken();
         }
-        indexFile.appMode();
+        /*long checksum = indexFile.getCheckSum();
+        if (checksum != Long.parseLong(validFile.readNextToken())) {
+            throw new RuntimeException("validation error");
+        }
+        indexFile.appMode();*/
         deleteFile.close();
     }
 
@@ -82,55 +92,76 @@ public class FastStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public V read(K key) {
-        isClosed();
-        Long offset = keyMap.get(key);
-        if (offset != null) {
-            return loadKey(offset);
-        } else {
-            return null;
+        synchronized (lock) {
+            isClosed();
+            Long offset = keyMap.get(key);
+            if (offset != null) {
+                return loadKey(offset);
+            } else {
+                return null;
+            }
         }
     }
 
     @Override
     public boolean exists(K key) {
-        isClosed();
-        return keyMap.get(key) != null;
+        synchronized (lock) {
+            isClosed();
+            return keyMap.get(key) != null;
+        }
     }
 
     @Override
     public void write(K key, V value) {
-        isClosed();
-        deleteSet.remove(key);
-        keyMap.put(key, currOffset);
-        flush(key, value);
+        synchronized (lock) {
+            isClosed();
+            deleteSet.remove(key);
+            keyMap.put(key, currOffset);
+            flush(key, value);
+        }
     }
 
     @Override
     public void delete(K key) {
-        isClosed();
-        deleteSet.add(key);
-        keyMap.remove(key);
+        synchronized (lock) {
+            isClosed();
+            deleteSet.add(key);
+            keyMap.remove(key);
+        }
     }
 
     @Override
     public Iterator<K> readKeys() {
-        isClosed();
-        return keyMap.keySet().iterator();
+        synchronized (lock) {
+            isClosed();
+            return keyMap.keySet().iterator();
+        }
     }
 
     @Override
     public int size() {
-        isClosed();
-        return keyMap.size();
+        synchronized (lock) {
+            isClosed();
+            return keyMap.size();
+        }
     }
 
     @Override
     public void close() throws IOException {
-        isClosedFlag = true;
-        flushDeletes();
-        deleteFile.close();
-        indexFile.close();
-        tabFile.close();
+        synchronized (lock) {
+            isClosedFlag = true;
+            flushDeletes();
+            deleteFile.close();
+            indexFile.close();
+            tabFile.close();
+            //writeChecksum();
+        }
+    }
+
+    private void writeChecksum() {
+        validFile.close();
+        validFile.bufferedWrite(Long.toString(indexFile.getCheckSum()));
+        validFile.bufferedWriteSubmit();
     }
 
     private V loadKey(long offset) {

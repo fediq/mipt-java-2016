@@ -15,7 +15,7 @@ import static org.junit.Assert.assertEquals;
 public class MyTests {
     @Test
     public void simpleWriteReadTest() {
-        FileWorker file = new FileWorker("temp/mytemp.txt");
+        FileWorker file = new FileWorker("temp/mytemp.txt", false);
         file.createFile();
         String testString = "testString";
         file.bufferedWrite(testString);

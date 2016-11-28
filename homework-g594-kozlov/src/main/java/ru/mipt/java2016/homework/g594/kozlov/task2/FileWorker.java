@@ -2,6 +2,7 @@ package ru.mipt.java2016.homework.g594.kozlov.task2;
 
 import java.io.*;
 import java.nio.ByteBuffer;
+import java.util.zip.Adler32;
 
 /**
  * Created by Anatoly on 26.10.2016.
@@ -9,18 +10,18 @@ import java.nio.ByteBuffer;
 public class FileWorker implements Closeable {
 
     private final File file;
-
     private final String fileName;
-
     private OutputStream buffWr = null;
-
     private InputStream buffRd = null;
-
     private long currOffset = 0;
+    private boolean mustCalc = false;
+    Adler32 adl = new Adler32();
 
-    public FileWorker(String fileName) {
+    public FileWorker(String fileName, boolean mc) {
         this.file = new File(fileName);
+        mustCalc = mc;
         this.fileName = fileName;
+        adl.reset();
     }
 
     public void createFile() {
@@ -29,6 +30,13 @@ public class FileWorker implements Closeable {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public long getCheckSum() {
+        if (!mustCalc) {
+            return 0;
+        }
+        return adl.getValue();
     }
 
     public void appMode() {
@@ -63,16 +71,25 @@ public class FileWorker implements Closeable {
         }
     }
 
+    private void addToCalc(byte[] bytes) {
+        if (mustCalc) {
+            adl.update(bytes);
+        }
+    }
+
     public long bufferedWrite(String text) {
         try {
             innerExists();
             if (buffWr == null) {
                 buffWr = new BufferedOutputStream(new FileOutputStream(file.getAbsoluteFile()));
             }
-            byte[] bytes = ByteBuffer.allocate(4).putInt(text.length()).array();
+            byte[] obj = text.getBytes();
+            byte[] bytes = ByteBuffer.allocate(4).putInt(obj.length).array();
             buffWr.write(bytes);
-            buffWr.write(text.getBytes());
-            return text.getBytes().length + 4;
+            addToCalc(bytes);
+            addToCalc(obj);
+            buffWr.write(obj);
+            return obj.length + 4;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -85,6 +102,7 @@ public class FileWorker implements Closeable {
                 buffWr = new BufferedOutputStream(new FileOutputStream(file.getAbsoluteFile()));
             }
             byte[] bytes = ByteBuffer.allocate(8).putLong(offset).array();
+            addToCalc(bytes);
             buffWr.write(bytes);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -96,6 +114,8 @@ public class FileWorker implements Closeable {
             byte[] bytes = ByteBuffer.allocate(4).putInt(str.getBytes().length).array();
             outputStr.write(bytes);
             outputStr.write(str.getBytes());
+            addToCalc(bytes);
+            addToCalc(str.getBytes());
             outputStr.close();
             return str.getBytes().length + 4;
         } catch (IOException e) {
@@ -117,6 +137,7 @@ public class FileWorker implements Closeable {
             }
             byte[] bytes = new byte[4];
             int read = buffRd.read(bytes, 0, 4);
+           addToCalc(bytes);
             if (read < 4) {
                 buffRd.close();
                 throw new RuntimeException("Reading failure");
@@ -125,6 +146,7 @@ public class FileWorker implements Closeable {
             int len = ByteBuffer.wrap(bytes).getInt();
             bytes = new byte[len];
             read = buffRd.read(bytes, 0, len);
+            addToCalc(bytes);
             if (read < len) {
                 buffRd.close();
                 throw new RuntimeException("Reading failure");
@@ -156,6 +178,7 @@ public class FileWorker implements Closeable {
             if (read < 8) {
                 throw new RuntimeException("Reading failure");
             }
+            addToCalc(bytes);
             currOffset += 8;
             return ByteBuffer.wrap(bytes).getLong();
         } catch (IOException e) {
