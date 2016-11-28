@@ -12,15 +12,18 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class UpdatedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private final Identification<K> keyIdentification;
     private final Identification<V> valueIdentification;
-    private RandomAccessFile keysStorage;
+    private final RandomAccessFile keysStorage;
     private RandomAccessFile valuesStorage;
     private Map<K, Long> bufferOffsets;
     private Boolean closed = false;
     private ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+    private int changesCounter = 0;
+    private final String nameDirectory;
 
-    public UpdatedKeyValueStorage(String nameDirectory, Identification<K> key, Identification<V> value)
+    public UpdatedKeyValueStorage(String nameDirectory_, Identification<K> key, Identification<V> value)
             throws IOException {
 
+        nameDirectory = nameDirectory_;
         bufferOffsets = new HashMap<K, Long>();
         File directory = new File(nameDirectory);
         keyIdentification = key;
@@ -47,6 +50,7 @@ public class UpdatedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private void load() throws IOException {
         bufferOffsets.clear();
 
+        changesCounter = IntegerIdentification.get().read(keysStorage);
         int readSize = IntegerIdentification.get().read(keysStorage);
         for (int i = 0; i < readSize; i++) {
             bufferOffsets.put(keyIdentification.read(keysStorage), LongIdentification.get().read(keysStorage));
@@ -56,6 +60,7 @@ public class UpdatedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private void save() throws IOException {
         try {
             keysStorage.seek(0);
+            IntegerIdentification.get().write(keysStorage, changesCounter);
             IntegerIdentification.get().write(keysStorage, bufferOffsets.size());
             for (Map.Entry<K, Long> entry : bufferOffsets.entrySet()) {
                 keyIdentification.write(keysStorage, entry.getKey());
@@ -64,6 +69,29 @@ public class UpdatedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         } finally {
             keysStorage.close();
             valuesStorage.close();
+        }
+    }
+
+    private void update() throws IOException {
+        lock.writeLock().lock();
+        lock.readLock().lock();
+        try {
+            Map<K, Long> newBufferOffsets = new HashMap<>();
+            File newValuesFile = new File(nameDirectory + File.separator + "newValue.db");
+            newValuesFile.createNewFile();
+            RandomAccessFile newValuesStorage = new RandomAccessFile(newValuesFile, "rw");
+            newValuesStorage.seek(0);
+            for (Map.Entry<K, Long> entry : bufferOffsets.entrySet()) {
+                valuesStorage.seek(entry.getValue());
+                newBufferOffsets.put(entry.getKey(), newValuesStorage.length());
+                valueIdentification.write(newValuesStorage, valueIdentification.read(valuesStorage));
+            }
+            bufferOffsets = newBufferOffsets;
+            valuesStorage.close();
+            valuesStorage = newValuesStorage;
+        } finally {
+            lock.writeLock().unlock();
+            lock.readLock().unlock();
         }
     }
 
@@ -97,14 +125,14 @@ public class UpdatedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public void close() throws IOException {
-        lock.writeLock().lock();
-        try {
-            if (!closed) {
+        if (!closed) {
+            lock.writeLock().lock();
+            try {
                 save();
                 closed = true;
+            } finally {
+                lock.writeLock().unlock();
             }
-        } finally {
-            lock.writeLock().unlock();
         }
     }
 
@@ -125,6 +153,15 @@ public class UpdatedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         try {
             checkClosing();
             bufferOffsets.remove(key);
+            changesCounter += 1;
+            if (changesCounter >= bufferOffsets.size()) {
+                try {
+                    update();
+                    changesCounter = 0;
+                } catch(IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
         } finally {
             lock.writeLock().unlock();
         }
