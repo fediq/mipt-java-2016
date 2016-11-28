@@ -173,7 +173,7 @@ public class OptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             if (keyAndValueMap.size() > MAX_SIZE_OF_KEY_AND_VALUE_MAP) {
                 try {
                     dropKeyAndValueMapOnDisk();
-                    if (keyAndOffsetMap.size() == garbageCounter) {
+                    if (presenceSet.size() <= garbageCounter) {
                         removeGarbage();
                     }
                 } catch (IOException e) {
@@ -277,7 +277,7 @@ public class OptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         isStorageOpened = false;
         try {
             dropKeyAndValueMapOnDisk();
-            if (keyAndOffsetMap.size() == garbageCounter) {
+            if (presenceSet.size() <= garbageCounter) {
                 removeGarbage();
             }
             randAccFileWithOffsets = new RandomAccessFile(this.fileWithOffsetsPathname, mode);
