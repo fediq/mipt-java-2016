@@ -161,7 +161,13 @@ public class OptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         try {
             checkStorageNotClosed();
             keyAndValueMap.put(key, value);
-            presenceSet.add(key);
+            if (!presenceSet.add(key)) {
+                ++garbageCounter;
+            }
+            /*
+            if (keyAndOffsetMap.size() == garbageCounter) {
+                removeGarbage();
+            }*/
             if (keyAndValueMap.size() > MAX_SIZE_OF_KEY_AND_VALUE_MAP) {
                 try {
                     dropKeyAndValueMapOnDisk();
@@ -228,11 +234,6 @@ public class OptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private void removeGarbage() {
         File clearedStorage = new File(fileClearedStoragePathname);
         try {
-
-            if (randAccFileStorage.length() <= 1000000000) {
-                return;
-            }
-
             if (!clearedStorage.createNewFile()) {
                 throw new IllegalStateException("Couldn't create file during removing garbage");
             }
@@ -253,10 +254,10 @@ public class OptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             if (!oldStorage.delete()) {
                 throw new IllegalStateException("Can't delete old storage");
             }
-            if (clearedStorage.renameTo(oldStorage)) {
+            if (!clearedStorage.renameTo(oldStorage)) {
                 throw new IllegalStateException("Can't rename file");
             }
-            randAccFileStorage = new RandomAccessFile(clearedStorage, mode);
+            randAccFileStorage = new RandomAccessFile(oldStorage, mode);
 
         } catch (IOException e) {
             throw new IllegalStateException("Couldn't read/write during removing garbage");
@@ -269,9 +270,10 @@ public class OptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         lock.writeLock().lock();
 
         isStorageOpened = false;
-        removeGarbage();
+
         try {
             dropKeyAndValueMapOnDisk();
+            removeGarbage();
             randAccFileWithOffsets = new RandomAccessFile(this.fileWithOffsetsPathname, mode);
             try {
                 storageLock = randAccFileWithOffsets.getChannel().lock();
