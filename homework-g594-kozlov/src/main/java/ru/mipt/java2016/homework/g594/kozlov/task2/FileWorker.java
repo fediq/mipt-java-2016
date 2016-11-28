@@ -15,7 +15,7 @@ public class FileWorker implements Closeable {
     private InputStream buffRd = null;
     private long currOffset = 0;
     private boolean mustCalc = false;
-    Adler32 adl = new Adler32();
+    private Adler32 adl = new Adler32();
 
     public FileWorker(String fileName, boolean mc) {
         this.file = new File(fileName);
@@ -137,7 +137,7 @@ public class FileWorker implements Closeable {
             }
             byte[] bytes = new byte[4];
             int read = buffRd.read(bytes, 0, 4);
-           addToCalc(bytes);
+            addToCalc(bytes);
             if (read < 4) {
                 buffRd.close();
                 throw new RuntimeException("Reading failure");

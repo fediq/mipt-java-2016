@@ -37,7 +37,7 @@ public class FastStorage<K, V> implements KeyValueStorage<K, V> {
         } else {
             this.dirPath = dirPath + File.separator;
         }
-        indexFile = new FileWorker(this.dirPath + "indexfile.db", false);
+        indexFile = new FileWorker(this.dirPath + "indexfile.db", true);
         tabFile = new FileWorker(this.dirPath + "tabfile.db", false);
         deleteFile = new FileWorker(this.dirPath + "deletes.db", false);
         validFile = new FileWorker(this.dirPath + "validfile.db", false);
@@ -76,11 +76,11 @@ public class FastStorage<K, V> implements KeyValueStorage<K, V> {
             }
             nextKey = deleteFile.readNextToken();
         }
-        /*long checksum = indexFile.getCheckSum();
+        long checksum = indexFile.getCheckSum();
         if (checksum != Long.parseLong(validFile.readNextToken())) {
             throw new RuntimeException("validation error");
         }
-        indexFile.appMode();*/
+        indexFile.appMode();
         deleteFile.close();
     }
 
@@ -154,7 +154,7 @@ public class FastStorage<K, V> implements KeyValueStorage<K, V> {
             deleteFile.close();
             indexFile.close();
             tabFile.close();
-            //writeChecksum();
+            writeChecksum();
         }
     }
 
