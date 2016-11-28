@@ -57,10 +57,10 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
                                    SerializationStrategy<K> keySerializer,
                                    SerializationStrategy<V> valueSerializer) throws IOException {
 
-        handleFileExistence(path);
-
         this.path = path;
         this.name = name;
+
+        handleFileExistence();
 
         this.keySerializer = keySerializer;
         this.valueSerializer = valueSerializer;
@@ -76,7 +76,7 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
         countModifyOperations = 0;
     }
 
-    private void handleFileExistence(String path) throws FileNotFoundException {
+    private void handleFileExistence() throws FileNotFoundException {
         if (!Files.exists(Paths.get(path))) {
             throw new FileNotFoundException("Passed path is not valid.");
         }
