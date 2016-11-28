@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -277,7 +278,14 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
             valuesFile.close();
             valuesFile = newValuesFile;
             System.gc();
-            Files.delete(values.toPath());
+            while (true) {
+                try {
+                    Files.delete(values.toPath());
+                    break;
+                } catch (FileSystemException e) {
+                    e.printStackTrace();
+                }
+            }
             if (!newValues.renameTo(values)) {
                 throw new IOException("Can't rename values file");
             }
