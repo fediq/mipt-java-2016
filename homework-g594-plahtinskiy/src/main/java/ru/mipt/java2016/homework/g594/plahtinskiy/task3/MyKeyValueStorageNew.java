@@ -3,6 +3,7 @@ package ru.mipt.java2016.homework.g594.plahtinskiy.task3;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.g594.plahtinskiy.task2.MyException;
 import ru.mipt.java2016.homework.g594.plahtinskiy.task2.Serialization;
+import ru.mipt.java2016.homework.g594.plahtinskiy.task2.SerializationInt;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -27,7 +28,8 @@ public class MyKeyValueStorageNew<K, V> implements KeyValueStorage<K, V> {
     private File lockFile;
     private Serialization<K> serializationKey;
     private Serialization<V> serializationValue;
-    private  Serialization<Long> serializationoffest;
+    private Serialization<Long> serializationoffest;
+    private int size;
     private boolean flagOpen;
 
     public MyKeyValueStorageNew(String path, String name, Serialization<K> serializationKey,
@@ -70,20 +72,23 @@ public class MyKeyValueStorageNew<K, V> implements KeyValueStorage<K, V> {
 
     private void openDataBase() throws MyException {
         offsets.clear();
-        Long length = null;
         try {
-            length = keys.length();
+            long length = keys.length();
+            if (length == 0) {
+                return;
+            }
         } catch (IOException e) {
-            throw new MyException("keysFile emprty");
+            e.printStackTrace();
         }
-
-        if (length == 0) {
-            return;
+        try {
+            keys.seek(0);
+            size = new SerializationInt().read(keys);
+        } catch (IOException e) {
+            throw new MyException("=(");
         }
 
         try {
-            int count = keys.readInt();
-            for (int i = 0; i < count; i++) {
+            for (int i = 0; i < size; ++i) {
                 K key;
                 Long offset;
                 key = serializationKey.read(keys);
@@ -101,18 +106,18 @@ public class MyKeyValueStorageNew<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public V read(K key) {
-        V result = null;
-        try {
-            checkNotClosed();
-            if (offsets.containsKey(key)) {
-                long offset = offsets.get(key);
+        checkNotClosed();
+        Long offset = offsets.get(key);
+        if (offset == null) {
+            return null;
+        } else {
+            try {
                 values.seek(offset);
-                result =  serializationValue.read(values);
+                return serializationValue.read(values);
+            } catch (IOException e) {
+                return null;
             }
-        } catch (IOException e) {
-            result = null;
         }
-        return result;
     }
 
     @Override
@@ -156,7 +161,7 @@ public class MyKeyValueStorageNew<K, V> implements KeyValueStorage<K, V> {
             flagOpen = false;
             keys.seek(0);
             keys.setLength(0);
-            keys.writeInt(offsets.size());
+            new SerializationInt().write(keys, offsets.size());
 
             for (Map.Entry<K, Long> pair : offsets.entrySet()) {
                 serializationKey.write(keys, pair.getKey());

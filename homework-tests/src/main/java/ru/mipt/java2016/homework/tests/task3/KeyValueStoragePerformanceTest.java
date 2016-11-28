@@ -1,6 +1,7 @@
 package ru.mipt.java2016.homework.tests.task3;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import ru.mipt.java2016.homework.tests.task2.AbstractSingleFileStorageTest;
 import ru.mipt.java2016.homework.tests.task2.StorageTestUtils;
