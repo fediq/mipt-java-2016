@@ -37,7 +37,7 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
     private int countModifyOperations;
     private static final int MAX_MODIFY_OPERATIONS = 500;
 
-    private LoadingCache<K, V> cache = CacheBuilder.newBuilder().maximumSize(100).build(new CacheLoader<K, V>() {
+    private LoadingCache<K, V> cache = CacheBuilder.newBuilder().maximumSize(500).build(new CacheLoader<K, V>() {
         @Override
         public V load(K key) throws Exception {
             Long offset = offsets.get(key);
@@ -117,6 +117,7 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
         }
         dataStorage.close();
         buffer.close();
+        offsets.clear();
 
         offsets = updatedOffsets;
 
@@ -153,11 +154,6 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
                 countModifyOperations += 1;
             }
 
-            if (countModifyOperations >= MAX_MODIFY_OPERATIONS) {
-                updateStorage();
-                countModifyOperations = 0;
-            }
-
             dataStorage.seek(dataStorage.length());
             Long offset = dataStorage.getFilePointer();
 
@@ -165,6 +161,11 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
 
             valueSerializer.write(dataStorage, value);
             keySerializer.write(dataStorage, key);
+
+            if (countModifyOperations >= MAX_MODIFY_OPERATIONS) {
+                updateStorage();
+                countModifyOperations = 0;
+            }
         } catch (IOException e) {
             throw new RuntimeException("File operation error");
         } finally {
@@ -182,12 +183,12 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
                 countModifyOperations += 1;
             }
 
+            offsets.remove(key);
+
             if (countModifyOperations >= MAX_MODIFY_OPERATIONS) {
                 updateStorage();
                 countModifyOperations = 0;
             }
-
-            offsets.remove(key);
         } catch (IOException e) {
             throw new RuntimeException("File operation error");
         } finally {
@@ -239,7 +240,9 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
 
         isOpen = false;
         try {
-            updateStorage();
+            if (countModifyOperations >= MAX_MODIFY_OPERATIONS) {
+                updateStorage();
+            }
 
             offsetStorage.setLength(0);
             offsetStorage.seek(0);
