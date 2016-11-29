@@ -31,19 +31,6 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private boolean isClosed = false;
     private boolean existanceOfFreeSpace = false;
 
-    static private class PlaceOfValue {
-
-        private int numberOfFile;
-        private long offset;
-        private long size;
-
-        PlaceOfValue(int newFileNumber, long newOffset, long newSize) {
-            numberOfFile = newFileNumber;
-            offset = newOffset;
-            size = newSize;
-        }
-    }
-
     MyKeyValueStorage(String currentPath, SerializationStrategy<K> serializerForKeys,
                       SerializationStrategy<V> serializerForValues) throws IOException {
         keySerializer = serializerForKeys;
@@ -151,7 +138,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             long finish = currentFile.getFilePointer();
             PlaceOfValue newLocation = new PlaceOfValue(numberOfNewFile, start, finish - start);
             offsetTable.put(entry.getKey(), newLocation);
-            for (int numberOfFile = 0; numberOfFile < startsOfFreePlaces.size() - 1; numberOfFile++)
+            for (int numberOfFile = 0; numberOfFile < startsOfFreePlaces.size() - 1; ++numberOfFile) {
                 for (Map.Entry<Long, Long> location : startsOfFreePlaces.get(numberOfFile).entrySet()) {
                     Long offset = location.getKey();
                     Long size = location.getValue();
@@ -178,6 +165,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                         deallocate(newLocation);
                     }
                 }
+            }
         }
         latestData.clear();
     }
@@ -323,6 +311,19 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             }
         } finally {
             lock.unlock();
+        }
+    }
+
+    static private class PlaceOfValue {
+
+        private int numberOfFile;
+        private long offset;
+        private long size;
+
+        PlaceOfValue(int newFileNumber, long newOffset, long newSize) {
+            numberOfFile = newFileNumber;
+            offset = newOffset;
+            size = newSize;
         }
     }
 
