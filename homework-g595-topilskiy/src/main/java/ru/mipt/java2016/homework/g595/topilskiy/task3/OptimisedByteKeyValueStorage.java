@@ -443,7 +443,6 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
             numberDirtyValues = 0;
 
         } catch (IOException caught) {
-            caught.printStackTrace();
             throw new MalformedDataException(FAILED_FILE_LOCATION);
         }
     }
