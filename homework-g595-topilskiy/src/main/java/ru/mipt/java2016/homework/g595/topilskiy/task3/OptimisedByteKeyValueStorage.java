@@ -309,8 +309,11 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
      * @return whether the Storage needs to be cleaned of deleted values
      */
     private boolean checkStorageTooDirty() {
-        return numberDirtyValues > mapKeyValueLocation.size() * MAX_DIRTY_FRACTION &&
-                                   mapKeyValueLocation.size() > MAX_BUFFER_SIZE;
+        if (mapKeyValueLocation.size() > MAX_BUFFER_SIZE) {
+            return numberDirtyValues > mapKeyValueLocation.size() * MAX_DIRTY_FRACTION;
+        } else {
+            return numberDirtyValues > 4 * MAX_BUFFER_SIZE;
+        }
     }
 
     /**
