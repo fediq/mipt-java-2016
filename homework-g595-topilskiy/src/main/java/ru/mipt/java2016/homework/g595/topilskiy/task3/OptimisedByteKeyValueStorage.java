@@ -67,6 +67,8 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
     private static final int MAX_BUFFER_SIZE = 128;
     /* Maximum number of bytes stored on a file before the need for a new file */
     private static final int MAX_FILE_BYTE_SIZE = 1024 * 1024 * 1024;  /* 1GB */
+    /* Maximum percentage of storage that can be dirty (filled with deleted values) while running */
+    private static final double MAX_DIRTY_FRACTION = 0.1;
 
 
     /**
@@ -139,11 +141,11 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
      */
     /* Boolean whether Storage is Closed */
     private Boolean isClosed = false;
+    /* Number of dirty (deleted) values in storage */
+    private int numberDirtyValues = 0;
 
     /* A buffer for intermediate data storage */
     private HashMap<KeyType, ValueType> bufferKeyVal = new HashMap<>();
-    /* A set for storing all valid keys */
-    private HashSet<KeyType> validKeys = new HashSet<>();
     /* A list of RAF of Storage in use for storing Values */
     private ArrayList<RandomAccessFile> rafStorageFiles = new ArrayList<>();
 
@@ -267,6 +269,8 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
                 rafStorageFiles.add(new RandomAccessFile(currentFile, "rw"));
             }
 
+            numberDirtyValues = RWStreamSerializer.deserializeInteger(readFromFile);
+
             Integer numberOfKeys = RWStreamSerializer.deserializeInteger(readFromFile);
 
             for (Integer keyNumber = 0; keyNumber < numberOfKeys; ++keyNumber) {
@@ -275,8 +279,6 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
                 Long readOffset = RWStreamSerializer.deserializeLong(readFromFile);
 
                 mapKeyValueLocation.put(readKey, new ValueFileAndOffset(readFile, readOffset));
-
-                validKeys.add(readKey);
             }
 
         } catch (IOException caught) {
@@ -324,15 +326,9 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
     }
 
     /**
-     *  Flush bufferKeyVal to a new disk file if:
-     *  - The Storage is in the process of closing
-     *  - bufferKeyVal has reached its capacity
+     *  Flush bufferKeyVal to disk
      */
-    private void flushBufferIfNeeded() {
-        if (!(isClosed || bufferKeyVal.size() >= MAX_BUFFER_SIZE)) {
-            return;
-        }
-
+    private void flushBuffer() {
         readWriteLock.writeLock().lock();
         try {
             int indexRAFToWrite = getIndexOfRAFToWrite();
@@ -451,7 +447,11 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
 
         readWriteLock.readLock().lock();
         try {
-            return validKeys.contains(key);
+            /* mapKeyValueLocation has all of the keys of bufferKeyVal, but the latter has less elements,
+             * so a search there first will be much faster in the best case than
+             * just looking straight into mapKeyValueLocation
+             */
+            return bufferKeyVal.containsKey(key) || mapKeyValueLocation.containsKey(key);
         } finally {
             readWriteLock.readLock().unlock();
         }
@@ -470,13 +470,19 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
 
         readWriteLock.writeLock().lock();
         try {
+            /* If the old value will have to be deleted */
+            if (mapKeyValueLocation.containsKey(key) && !bufferKeyVal.containsKey(key)) {
+                ++numberDirtyValues;
+            }
             bufferKeyVal.put(key, value);
-            validKeys.add(key);
+            mapKeyValueLocation.put(key, null);
         } finally {
             readWriteLock.writeLock().unlock();
         }
 
-        flushBufferIfNeeded();
+        if (bufferKeyVal.size() >= MAX_BUFFER_SIZE) {
+            flushBuffer();
+        }
     }
 
     /**
@@ -491,8 +497,11 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
 
         readWriteLock.writeLock().lock();
         try {
-            mapKeyValueLocation.remove(key);
-            validKeys.remove(key);
+            if (mapKeyValueLocation.containsKey(key)) {
+                ++numberDirtyValues;
+                mapKeyValueLocation.remove(key);
+            }
+            bufferKeyVal.remove(key);
         } finally {
             readWriteLock.writeLock().unlock();
         }
@@ -510,7 +519,7 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
 
         readWriteLock.readLock().lock();
         try {
-            return validKeys.iterator();
+            return mapKeyValueLocation.keySet().iterator();
         } finally {
             readWriteLock.readLock().unlock();
         }
@@ -528,7 +537,7 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
 
         readWriteLock.readLock().lock();
         try {
-            return validKeys.size();
+            return mapKeyValueLocation.size();
         } finally {
             readWriteLock.readLock().unlock();
         }
@@ -550,13 +559,14 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
         readWriteLock.writeLock().lock();
         try {
             isClosed = true;
-            flushBufferIfNeeded();
+            flushBuffer();
 
             try (BufferedOutputStream storageBOS =
                          new BufferedOutputStream(new FileOutputStream(getPathToStorage()))) {
 
                 RWStreamSerializer.serializeString(getSerializerClassStringVerification(), storageBOS);
                 RWStreamSerializer.serializeInteger(rafStorageFiles.size(), storageBOS);
+                RWStreamSerializer.serializeInteger(numberDirtyValues, storageBOS);
                 RWStreamSerializer.serializeInteger(mapKeyValueLocation.size(), storageBOS);
 
                 for (Map.Entry<KeyType, ValueFileAndOffset> entry : mapKeyValueLocation.entrySet()) {
