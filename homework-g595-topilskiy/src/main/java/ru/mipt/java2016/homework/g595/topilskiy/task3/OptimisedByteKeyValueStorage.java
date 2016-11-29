@@ -19,11 +19,13 @@ import java.io.BufferedOutputStream;
 
 import java.nio.channels.Channels;
 
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * A KeyValueStorage implementation for <KeyType, ValueType> pair that uses
@@ -32,7 +34,7 @@ import java.util.Iterator;
  * -   storageN.db     files for storing ValueType information
  * - a storage_hash.db file  for storing hashes of Storage files (verification)
  *
- * - a buffered     <KeyType, ValueType> cache                       (for O(1) repeat access)
+ * - a buffered     <KeyType, ValueType>         cache           (for O(1) repeat access)
  * - a SSTable-like <KeyType, ValueTypeLocation> lookup table    (for O(logN) all-around access)
  *
  * @author Artem K. Topilskiy
@@ -43,9 +45,11 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
      *  Static Final Exception Strings
      */
     private static final String FAILED_FILE_CREATION = "Failure to create file";
+    private static final String FAILED_FILE_DELETION = "Failure to delete file";
     private static final String FAILED_FILE_LOCATION = "Failure to locate file";
     private static final String FAILED_FILE_READ     = "Failure to read file";
     private static final String FILE_CORRUPTED       = "File corrupted: checksums off";
+    private static final String STORAGE_ALREADY_LOCKED = "Storage is locked: lock file already exists.";
 
 
     /**
@@ -57,6 +61,8 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
     private static final String STORAGE_FILENAME_PREFIX = "storage";
     /* The filename of the file of the hashes for storage */
     private static final String HASH_FILENAME = "storage_hash.db";
+    /* The filename of the file of the hashes for storage */
+    private static final String LOCK_FILENAME = "storage.lock";
     /* Maximum size of buffer before the need for a Buffer Flush */
     private static final int MAX_BUFFER_SIZE = 128;
     /* Maximum number of bytes stored on a file before the need for a new file */
@@ -72,6 +78,10 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
     private final ISerializer keyTypeSerializer;
     /* A Serializer for ValueType in KeyValueStorage */
     private final ISerializer valueTypeSerializer;
+    /* A ReadWrite lock for thread-safety */
+    private final ReentrantReadWriteLock readWriteLock = new ReentrantReadWriteLock();
+    /* A file for locking the storage on a filesystem level */
+    private final File storageFilesystemLock;
 
 
     /**
@@ -107,6 +117,13 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
      */
     public String getPathToHashStorage() {
         return pathToStorageDirectory + File.separator + HASH_FILENAME;
+    }
+
+    /**
+     * @return the path to the lock file of data storage
+     */
+    public String getPathToLockStorage() {
+        return pathToStorageDirectory + File.separator + LOCK_FILENAME;
     }
 
     /**
@@ -316,6 +333,7 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
             return;
         }
 
+        readWriteLock.writeLock().lock();
         try {
             int indexRAFToWrite = getIndexOfRAFToWrite();
             RandomAccessFile usedRAF = rafStorageFiles.get(indexRAFToWrite);
@@ -341,6 +359,8 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
 
         } catch (IOException caught) {
             throw new MalformedDataException(FAILED_FILE_LOCATION);
+        } finally {
+            readWriteLock.writeLock().unlock();
         }
     }
 
@@ -366,6 +386,15 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
         this.keyTypeSerializer = keyTypeSerializer;
         this.valueTypeSerializer = valueTypeSerializer;
 
+        storageFilesystemLock = new File(getPathToLockStorage());
+        try {
+            if (!storageFilesystemLock.createNewFile()) {
+                throw new MalformedDataException(STORAGE_ALREADY_LOCKED);
+            }
+        } catch (IOException caught) {
+            throw new MalformedDataException(FAILED_FILE_CREATION);
+        }
+
         initializeFilesOfStorage();
     }
 
@@ -382,23 +411,28 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
 
         ValueType readValue = null;
 
-        if (bufferKeyVal.keySet().contains(key)) {
-            readValue = bufferKeyVal.get(key);
+        readWriteLock.readLock().lock();
+        try {
+            if (bufferKeyVal.keySet().contains(key)) {
+                readValue = bufferKeyVal.get(key);
 
-        } else if (mapKeyValueLocation.keySet().contains(key)) {
-            Integer file = mapKeyValueLocation.get(key).file;
-            Long offset  = mapKeyValueLocation.get(key).offset;
-            RandomAccessFile currentFile = rafStorageFiles.get(file);
+            } else if (mapKeyValueLocation.keySet().contains(key)) {
+                Integer file = mapKeyValueLocation.get(key).file;
+                Long offset = mapKeyValueLocation.get(key).offset;
+                RandomAccessFile currentFile = rafStorageFiles.get(file);
 
-            try {
-                currentFile.seek(offset);
-                InputStream inStream = Channels.newInputStream(currentFile.getChannel());
-                readValue = (ValueType) RWStreamSerializer.deserialize(valueTypeSerializer, inStream);
+                try {
+                    currentFile.seek(offset);
+                    InputStream inStream = Channels.newInputStream(currentFile.getChannel());
+                    readValue = (ValueType) RWStreamSerializer.deserialize(valueTypeSerializer, inStream);
 
-            } catch (IOException caught) {
-                throw new MalformedDataException(FAILED_FILE_READ);
+                } catch (IOException caught) {
+                    throw new MalformedDataException(FAILED_FILE_READ);
+                }
+
             }
-
+        } finally {
+            readWriteLock.readLock().unlock();
         }
 
         return readValue;
@@ -414,7 +448,13 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
     @Override
     public boolean exists(KeyType key) throws MalformedDataException {
         checkNotClosed();
-        return validKeys.contains(key);
+
+        readWriteLock.readLock().lock();
+        try {
+            return validKeys.contains(key);
+        } finally {
+            readWriteLock.readLock().unlock();
+        }
     }
 
     /**
@@ -428,8 +468,13 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
     public void write(KeyType key, ValueType value) throws MalformedDataException {
         checkNotClosed();
 
-        bufferKeyVal.put(key, value);
-        validKeys.add(key);
+        readWriteLock.writeLock().lock();
+        try {
+            bufferKeyVal.put(key, value);
+            validKeys.add(key);
+        } finally {
+            readWriteLock.writeLock().unlock();
+        }
 
         flushBufferIfNeeded();
     }
@@ -444,8 +489,13 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
     public void delete(KeyType key) throws MalformedDataException {
         checkNotClosed();
 
-        mapKeyValueLocation.remove(key);
-        validKeys.remove(key);
+        readWriteLock.writeLock().lock();
+        try {
+            mapKeyValueLocation.remove(key);
+            validKeys.remove(key);
+        } finally {
+            readWriteLock.writeLock().unlock();
+        }
     }
 
     /**
@@ -458,7 +508,12 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
     public Iterator<KeyType> readKeys() throws MalformedDataException {
         checkNotClosed();
 
-        return validKeys.iterator();
+        readWriteLock.readLock().lock();
+        try {
+            return validKeys.iterator();
+        } finally {
+            readWriteLock.readLock().unlock();
+        }
     }
 
     /**
@@ -471,7 +526,12 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
     public int size() throws MalformedDataException {
         checkNotClosed();
 
-        return validKeys.size();
+        readWriteLock.readLock().lock();
+        try {
+            return validKeys.size();
+        } finally {
+            readWriteLock.readLock().unlock();
+        }
     }
 
     /**
@@ -487,46 +547,57 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
             return;
         }
 
-        isClosed = true;
-        flushBufferIfNeeded();
-
-        try (BufferedOutputStream storageBOS =
-                     new BufferedOutputStream(new FileOutputStream(getPathToStorage()))) {
-
-            RWStreamSerializer.serializeString(getSerializerClassStringVerification(), storageBOS);
-            RWStreamSerializer.serializeInteger(rafStorageFiles.size(), storageBOS);
-            RWStreamSerializer.serializeInteger(mapKeyValueLocation.size(), storageBOS);
-
-            for (Map.Entry<KeyType, ValueFileAndOffset> entry : mapKeyValueLocation.entrySet()) {
-                RWStreamSerializer.serialize(entry.getKey(), keyTypeSerializer, storageBOS);
-                RWStreamSerializer.serializeInteger(entry.getValue().file, storageBOS);
-                RWStreamSerializer.serializeLong(entry.getValue().offset, storageBOS);
-            }
-        } catch (IOException caught) {
-            throw new MalformedDataException(FAILED_FILE_LOCATION);
-        }
-
-        try (BufferedOutputStream storageHashBOS =
-                     new BufferedOutputStream(new FileOutputStream(getPathToHashStorage()))) {
-            RWStreamSerializer.serializeInteger(rafStorageFiles.size(), storageHashBOS);
-
-            for (Integer fileIndex = 0; fileIndex < rafStorageFiles.size(); ++fileIndex) {
-                Long currentFileChecksum =
-                        Adler32Verification.calculateAdler32Checksum(getPathToStorageFileOfIndex(fileIndex));
-                RWStreamSerializer.serializeLong(currentFileChecksum, storageHashBOS);
-            }
-        } catch (IOException caught) {
-            throw new MalformedDataException(FAILED_FILE_LOCATION);
-        }
-
+        readWriteLock.writeLock().lock();
         try {
-            for (RandomAccessFile currentFile : rafStorageFiles) {
-                currentFile.close();
-            }
-        } catch (IOException caught) {
-            throw new MalformedDataException(FAILED_FILE_LOCATION);
-        }
+            isClosed = true;
+            flushBufferIfNeeded();
 
-        bufferKeyVal = null;
+            try (BufferedOutputStream storageBOS =
+                         new BufferedOutputStream(new FileOutputStream(getPathToStorage()))) {
+
+                RWStreamSerializer.serializeString(getSerializerClassStringVerification(), storageBOS);
+                RWStreamSerializer.serializeInteger(rafStorageFiles.size(), storageBOS);
+                RWStreamSerializer.serializeInteger(mapKeyValueLocation.size(), storageBOS);
+
+                for (Map.Entry<KeyType, ValueFileAndOffset> entry : mapKeyValueLocation.entrySet()) {
+                    RWStreamSerializer.serialize(entry.getKey(), keyTypeSerializer, storageBOS);
+                    RWStreamSerializer.serializeInteger(entry.getValue().file, storageBOS);
+                    RWStreamSerializer.serializeLong(entry.getValue().offset, storageBOS);
+                }
+            } catch (IOException caught) {
+                throw new MalformedDataException(FAILED_FILE_LOCATION);
+            }
+
+            try (BufferedOutputStream storageHashBOS =
+                         new BufferedOutputStream(new FileOutputStream(getPathToHashStorage()))) {
+                RWStreamSerializer.serializeInteger(rafStorageFiles.size(), storageHashBOS);
+
+                for (Integer fileIndex = 0; fileIndex < rafStorageFiles.size(); ++fileIndex) {
+                    Long currentFileChecksum =
+                            Adler32Verification.calculateAdler32Checksum(getPathToStorageFileOfIndex(fileIndex));
+                    RWStreamSerializer.serializeLong(currentFileChecksum, storageHashBOS);
+                }
+            } catch (IOException caught) {
+                throw new MalformedDataException(FAILED_FILE_LOCATION);
+            }
+
+            try {
+                for (RandomAccessFile currentFile : rafStorageFiles) {
+                    currentFile.close();
+                }
+            } catch (IOException caught) {
+                throw new MalformedDataException(FAILED_FILE_LOCATION);
+            }
+
+            try {
+                Files.delete(storageFilesystemLock.toPath());
+            } catch (IOException caught) {
+                throw new MalformedDataException(FAILED_FILE_DELETION);
+            }
+
+            bufferKeyVal = null;
+        } finally {
+            readWriteLock.writeLock().unlock();
+        }
     }
 }
