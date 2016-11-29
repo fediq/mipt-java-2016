@@ -16,7 +16,8 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private Map<K, V> latestData = new HashMap<K, V>();
     private Set<K> setKeys = new HashSet<K>();
-    private Set<PlaceOfValue> emptyPlace = new HashSet<>();
+    private ArrayList<Map<Long, Long>> startsOfFreePlaces = new ArrayList<>();
+    private ArrayList<Map<Long, Long>> endsOfFreePlaces = new ArrayList<>();
     private Map<K, PlaceOfValue> shiftTable = new HashMap<K, PlaceOfValue>();
     private Map<Integer, RandomAccessFile> listOfFiles = new HashMap<>();
 
@@ -28,7 +29,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private boolean isClosed = false;
 
-    private class PlaceOfValue {
+    static private class PlaceOfValue {
 
         private int numberOfFile;
         private long shift;
@@ -46,53 +47,57 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         keySerializer = serializerForKeys;
         valueSerializer = serializerForValues;
         directoryName = currentPath;
-        Lock lock = globalLock.writeLock();
-        lock.lock();
-        try {
-            storageFileName = directoryName + File.separator + "Storage";
-            emptyPlacesFileName = directoryName + File.separator + "Empties";
-            File storageFile = new File(storageFileName);
-            if (!storageFile.createNewFile()) {
-                readStorage();
-            }
-        } finally {
-            lock.unlock();
+        storageFileName = directoryName + File.separator + "Storage";
+        emptyPlacesFileName = directoryName + File.separator + "Empties";
+        File storageFile = new File(storageFileName);
+        if (!storageFile.createNewFile()) {
+            readStorage();
         }
     }
 
-    private void addEmpties(PlaceOfValue newEmptiness) {
+    private void deallocate(PlaceOfValue newEmptiness) {
         boolean mergedNext = false;
         boolean mergedPrev = false;
-        for (PlaceOfValue location : emptyPlace) {
-            if (newEmptiness.numberOfFile == location.numberOfFile) {
-                if (newEmptiness.shift + newEmptiness.size == location.shift) {
-                    PlaceOfValue mergedEmpties = new PlaceOfValue(newEmptiness.numberOfFile,
-                            newEmptiness.shift, newEmptiness.size + location.size);
-                    emptyPlace.add(mergedEmpties);
-                    emptyPlace.remove(location);
-                    mergedNext = true;
-                    break;
-                }
+        Integer numberOfFile = newEmptiness.numberOfFile;
+        for (Map.Entry<Long, Long> location : startsOfFreePlaces.get(numberOfFile).entrySet()) {
+            Long offset = location.getKey();
+            Long size = location.getValue();
+            if (newEmptiness.shift + newEmptiness.size == location.getKey()) {
+                PlaceOfValue mergedEmpties = new PlaceOfValue(numberOfFile,
+                        newEmptiness.shift, newEmptiness.size + size);
+                startsOfFreePlaces.get(numberOfFile).put(mergedEmpties.shift, mergedEmpties.size);
+                endsOfFreePlaces.get(numberOfFile).put(
+                        mergedEmpties.shift + mergedEmpties.size, mergedEmpties.size);
+                startsOfFreePlaces.get(numberOfFile).remove(offset);
+                endsOfFreePlaces.get(numberOfFile).remove(offset + size);
+                newEmptiness = mergedEmpties;
+                mergedNext = true;
+                break;
             }
         }
-        for (PlaceOfValue location : emptyPlace) {
-            if (newEmptiness.numberOfFile == location.numberOfFile) {
-                if (newEmptiness.shift == location.shift + location.shift) {
-                    PlaceOfValue mergedEmpties = new PlaceOfValue(newEmptiness.numberOfFile,
-                            location.shift, newEmptiness.size + location.size);
-                    emptyPlace.add(mergedEmpties);
-                    emptyPlace.remove(location);
-                    mergedPrev = true;
-                    break;
-                }
+        for (Map.Entry<Long, Long> location : endsOfFreePlaces.get(numberOfFile).entrySet()) {
+            Long offset = location.getKey() - location.getValue();
+            Long size = location.getValue();
+            if (newEmptiness.shift == offset + size) {
+                PlaceOfValue mergedEmpties = new PlaceOfValue(newEmptiness.numberOfFile,
+                        offset, newEmptiness.size + size);
+                endsOfFreePlaces.get(numberOfFile).put(
+                        mergedEmpties.shift + mergedEmpties.size, mergedEmpties.size);
+                startsOfFreePlaces.get(numberOfFile).put(
+                        mergedEmpties.shift, mergedEmpties.size);
+                startsOfFreePlaces.get(numberOfFile).remove(offset);
+                endsOfFreePlaces.get(numberOfFile).remove(offset + size);
+                mergedPrev = true;
+                break;
             }
         }
         if (!mergedNext && !mergedPrev) {
-            emptyPlace.add(newEmptiness);
+            startsOfFreePlaces.get(numberOfFile).put(newEmptiness.shift, newEmptiness.size);
+            endsOfFreePlaces.get(numberOfFile).put(newEmptiness.shift + newEmptiness.size, newEmptiness.size);
         }
     }
 
-    private void readStorage() {
+    private void readStorage() throws IOException {
         try (DataInputStream storage = new DataInputStream(new BufferedInputStream(
                 new FileInputStream(storageFileName)))) {
             File emptyPlaceFile = new File(emptyPlacesFileName);
@@ -101,7 +106,8 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                         new FileInputStream(emptyPlacesFileName)))) {
                     PlaceOfValue location = new PlaceOfValue(empties.readInt(),
                             empties.readLong(), empties.readLong());
-                    emptyPlace.add(location);
+                    startsOfFreePlaces.get(location.numberOfFile).put(location.shift, location.size);
+                    endsOfFreePlaces.get(location.numberOfFile).put(location.shift + location.size, location.size);
                 }
             }
             int countOfFiles = storage.readInt();
@@ -118,8 +124,6 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 shiftTable.put(key, new PlaceOfValue(fileNumber, shift, size));
                 setKeys.add(key);
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 
@@ -129,12 +133,12 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         String newFileName = directoryName + File.separator + numberOfNewFile.toString();
         listOfFiles.put(numberOfNewFile, new RandomAccessFile(newFileName, "rw"));
         for (Map.Entry<K, V> entry : latestData.entrySet()) {
-            if (entry.getValue().equals(null)) {
+            if (entry.getValue() == null) {
                 shiftTable.remove(entry.getKey());
                 continue;
             }
             if (shiftTable.containsKey(entry.getKey())) {
-                addEmpties(shiftTable.get(entry.getKey()));
+                deallocate(shiftTable.get(entry.getKey()));
             }
             currentFile = listOfFiles.get(numberOfNewFile);
             currentFile.seek(currentFile.length());
@@ -143,29 +147,32 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             long finish = currentFile.getFilePointer();
             PlaceOfValue newLocation = new PlaceOfValue(numberOfNewFile, start, finish - start);
             shiftTable.put(entry.getKey(), newLocation);
-            for (PlaceOfValue location : emptyPlace) {
-                if (location.size == finish - start) {
-                    shiftTable.put(entry.getKey(), location);
-                    currentFile = listOfFiles.get(location.numberOfFile);
-                    currentFile.seek(location.shift);
-                    valueSerializer.serialize(currentFile, entry.getValue());
-                    emptyPlace.remove(location);
-                    addEmpties(newLocation);
-                    continue;
+            for (int numberOfFile = 0; numberOfFile < startsOfFreePlaces.size() - 1; numberOfFile++)
+                for (Map.Entry<Long, Long> location : startsOfFreePlaces.get(numberOfFile).entrySet()) {
+                    Long offset = location.getKey();
+                    Long size = location.getValue();
+                    if (size == finish - start) {
+                        shiftTable.put(entry.getKey(), new PlaceOfValue(numberOfFile, offset, size));
+                        currentFile = listOfFiles.get(numberOfFile);
+                        currentFile.seek(offset);
+                        valueSerializer.serialize(currentFile, entry.getValue());
+                        startsOfFreePlaces.get(numberOfFile).remove(offset);
+                        endsOfFreePlaces.get(numberOfFile).remove(offset + size);
+                        deallocate(newLocation);
+                        continue;
+                    }
+                    if (size > finish - start) {
+                        shiftTable.put(entry.getKey(), new PlaceOfValue(numberOfNewFile, offset, size));
+                        currentFile = listOfFiles.get(numberOfFile);
+                        currentFile.seek(offset);
+                        valueSerializer.serialize(currentFile, entry.getValue());
+                        startsOfFreePlaces.get(numberOfFile).remove(offset);
+                        endsOfFreePlaces.get(numberOfFile).remove(offset + size);
+                        startsOfFreePlaces.get(numberOfFile).put(offset + finish - start, size - finish + start);
+                        endsOfFreePlaces.get(numberOfFile).put(offset + size, size - finish + start);
+                        deallocate(newLocation);
+                    }
                 }
-                if (location.size > finish - start) {
-                    shiftTable.put(entry.getKey(), location);
-                    currentFile = listOfFiles.get(location.numberOfFile);
-                    currentFile.seek(location.shift);
-                    valueSerializer.serialize(currentFile, entry.getValue());
-                    PlaceOfValue restOfEmptiness = new PlaceOfValue(location.numberOfFile,
-                            location.shift + finish - start,
-                            location.size - finish + start);
-                    emptyPlace.remove(location);
-                    emptyPlace.add(restOfEmptiness);
-                    addEmpties(newLocation);
-                }
-            }
         }
         latestData.clear();
     }
@@ -193,7 +200,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                     currentFile.seek(shift);
                     return valueSerializer.deserialize(currentFile);
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    System.out.println(e.getMessage());
                 }
             }
             return null;
@@ -205,7 +212,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public boolean exists(K key) {
         checkClosed();
-        Lock lock = globalLock.writeLock();
+        Lock lock = globalLock.readLock();
         lock.lock();
         try {
             return setKeys.contains(key);
@@ -218,9 +225,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     public void write(K key, V value) {
         checkClosed();
         Lock writeLock = globalLock.writeLock();
-        Lock readLock = globalLock.readLock();
         writeLock.lock();
-        readLock.lock();
         try {
             latestData.put(key, value);
             setKeys.add(key);
@@ -231,7 +236,6 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             System.out.println(e.getMessage());
         } finally {
             writeLock.unlock();
-            readLock.unlock();
         }
     }
 
@@ -239,25 +243,22 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     public void delete(K key) {
         checkClosed();
         Lock writeLock = globalLock.writeLock();
-        Lock readLock = globalLock.readLock();
         writeLock.lock();
-        readLock.lock();
         try {
             setKeys.remove(key);
             if (!latestData.containsKey(key)) {
-                addEmpties(shiftTable.get(key));
+                deallocate(shiftTable.get(key));
                 shiftTable.remove(key);
             }
         } finally {
             writeLock.unlock();
-            readLock.unlock();
         }
     }
 
     @Override
     public Iterator<K> readKeys() {
         checkClosed();
-        Lock lock = globalLock.writeLock();
+        Lock lock = globalLock.readLock();
         lock.lock();
         try {
             return setKeys.iterator();
@@ -269,7 +270,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public int size() {
         checkClosed();
-        Lock lock = globalLock.writeLock();
+        Lock lock = globalLock.readLock();
         lock.lock();
         try {
             return setKeys.size();
@@ -281,35 +282,34 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public void close() throws IOException {
         writeLatestData();
-        if (!emptyPlace.isEmpty()) {
+        if (!startsOfFreePlaces.isEmpty()) {
             try (DataOutputStream empties = new DataOutputStream(new BufferedOutputStream(
                     new FileOutputStream(emptyPlacesFileName)))) {
-                for (PlaceOfValue location : emptyPlace) {
-                    empties.writeInt(location.numberOfFile);
-                    empties.writeLong(location.shift);
-                    empties.writeLong(location.size);
+                for (int numberOfFile = 0; numberOfFile < startsOfFreePlaces.size(); ++numberOfFile) {
+                    for (Map.Entry<Long, Long> location : startsOfFreePlaces.get(numberOfFile).entrySet()) {
+                        empties.writeInt(numberOfFile);
+                        empties.writeLong(location.getKey());
+                        empties.writeLong(location.getValue());
+                    }
                 }
             }
-        } else {
-            File empties = new File(emptyPlacesFileName);
-            empties.delete();
-        }
-        try (DataOutputStream storage = new DataOutputStream(new BufferedOutputStream(
-                new FileOutputStream(storageFileName)))) {
-            storage.writeInt(listOfFiles.size());
-            storage.writeInt(shiftTable.size());
-            for (Map.Entry<K, PlaceOfValue> entry : shiftTable.entrySet()) {
-                keySerializer.serialize(storage, entry.getKey());
-                storage.writeInt(entry.getValue().numberOfFile);
-                storage.writeLong(entry.getValue().shift);
-                storage.writeLong(entry.getValue().size);
+            try (DataOutputStream storage = new DataOutputStream(new BufferedOutputStream(
+                    new FileOutputStream(storageFileName)))) {
+                storage.writeInt(listOfFiles.size());
+                storage.writeInt(shiftTable.size());
+                for (Map.Entry<K, PlaceOfValue> entry : shiftTable.entrySet()) {
+                    keySerializer.serialize(storage, entry.getKey());
+                    storage.writeInt(entry.getValue().numberOfFile);
+                    storage.writeLong(entry.getValue().shift);
+                    storage.writeLong(entry.getValue().size);
+                }
+                for (Map.Entry<Integer, RandomAccessFile> currentFile : listOfFiles.entrySet()) {
+                    currentFile.getValue().close();
+                }
             }
-            for (Map.Entry<Integer, RandomAccessFile> currentFile : listOfFiles.entrySet()) {
-                currentFile.getValue().close();
-            }
+            latestData = null;
+            isClosed = true;
         }
-        latestData = null;
-        isClosed = true;
     }
 
 }
