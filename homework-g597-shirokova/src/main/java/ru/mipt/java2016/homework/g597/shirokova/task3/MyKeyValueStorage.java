@@ -314,7 +314,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
-    static private class PlaceOfValue {
+    private static class PlaceOfValue {
 
         private int numberOfFile;
         private long offset;
