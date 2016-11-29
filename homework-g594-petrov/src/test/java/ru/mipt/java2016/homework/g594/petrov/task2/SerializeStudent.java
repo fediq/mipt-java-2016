@@ -4,6 +4,7 @@ import ru.mipt.java2016.homework.tests.task2.Student;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.Date;
 
 /**
@@ -19,7 +20,7 @@ public class SerializeStudent implements InterfaceSerialization<Student> {
             outputStream.writeLong(obj.getBirthDate().getTime());
             outputStream.writeBoolean(obj.isHasDormitory());
             outputStream.writeDouble(obj.getAverageScore());
-        } catch (Exception e) {
+        } catch (IOException e) {
             throw new IllegalStateException(e.getMessage(), e.getCause());
         }
     }
@@ -33,7 +34,7 @@ public class SerializeStudent implements InterfaceSerialization<Student> {
             Date studentDate = new Date(inputStream.readLong());
             return new Student(studentGroup, studentName, studentHometown, studentDate,
                     inputStream.readBoolean(), inputStream.readDouble());
-        } catch (Exception e) {
+        } catch (IOException e) {
             throw new IllegalStateException(e.getMessage(), e.getCause());
         }
     }

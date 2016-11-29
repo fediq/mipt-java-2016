@@ -15,17 +15,16 @@ public class MyKeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
     /* ! path to the directory */
     private String nameOfFile;
     /* ! string used to validate if the storage is appropriate */
-    private String validation;
+    private static final String VALIDATION = "validationstring";
     /* ! storage where data will be stored before closing */
     private HashMap<K, V> storage;
     private MySerializer<K> keySerializer;
     private MySerializer<V> valueSerializer;
     private boolean isOpened;
 
-    public MyKeyValueStorageImpl(String validationTmp, String nameOfFileTmp,
+    public MyKeyValueStorageImpl(String nameOfFileTmp,
                                  MySerializer keySerializerTmp, MySerializer valueSerializerTmp) {
-        nameOfFile = nameOfFileTmp + "/storage.db";
-        validation = validationTmp;
+        nameOfFile = nameOfFileTmp + File.separator + "storage.db";
         keySerializer = keySerializerTmp;
         valueSerializer = valueSerializerTmp;
         storage = new HashMap<K, V>();
@@ -43,7 +42,7 @@ public class MyKeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
             }
 
             try (DataOutputStream Output = new DataOutputStream(new FileOutputStream(nameOfFile))) {
-                Output.writeUTF(validation);
+                Output.writeUTF(VALIDATION);
                 Output.writeInt(0);
             } catch (IOException e) {
                 throw new IllegalStateException("Failed to write to file");
@@ -51,7 +50,7 @@ public class MyKeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
         }
 
         try (DataInputStream Input = new DataInputStream(new FileInputStream(nameOfFile))) {
-            if (!Input.readUTF().equals(validation)) {
+            if (!Input.readUTF().equals(VALIDATION)) {
                 throw new IllegalStateException("Validation failed");
             }
             int amount = Input.readInt();
@@ -106,7 +105,7 @@ public class MyKeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
     public void close() throws IOException {
         isFileClosed();
         try (DataOutputStream Output = new DataOutputStream(new FileOutputStream(nameOfFile))) {
-            Output.writeUTF(validation);
+            Output.writeUTF(VALIDATION);
             Output.writeInt(storage.size());
             for (Map.Entry<K, V> i: storage.entrySet()) {
                 keySerializer.serializeToStream(Output, i.getKey());
