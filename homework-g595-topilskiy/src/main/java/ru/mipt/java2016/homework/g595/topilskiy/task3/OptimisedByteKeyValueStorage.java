@@ -18,12 +18,13 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 
 import java.nio.channels.Channels;
-
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -67,8 +68,8 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
     private static final int MAX_BUFFER_SIZE = 128;
     /* Maximum number of bytes stored on a file before the need for a new file */
     private static final int MAX_FILE_BYTE_SIZE = 1024 * 1024 * 1024;  /* 1GB */
-    /* Maximum percentage of storage that can be dirty (filled with deleted values) while running */
-    private static final double MAX_DIRTY_FRACTION = 0.1;
+    /* Maximum additional fraction of the storage size that can be dirty (filled with deleted values) */
+    private static final double MAX_DIRTY_FRACTION = 2.0;
 
 
     /**
@@ -142,7 +143,7 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
     /* Boolean whether Storage is Closed */
     private Boolean isClosed = false;
     /* Number of dirty (deleted) values in storage */
-    private int numberDirtyValues = 0;
+    private int numberDirtyValues;
 
     /* A buffer for intermediate data storage */
     private HashMap<KeyType, ValueType> bufferKeyVal = new HashMap<>();
@@ -304,6 +305,18 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
         }
     }
 
+    /**
+     * @return whether the Storage needs to be cleaned of deleted values
+     */
+    private boolean checkStorageTooDirty() {
+        return numberDirtyValues > mapKeyValueLocation.size() * MAX_DIRTY_FRACTION &&
+                                   mapKeyValueLocation.size() > MAX_BUFFER_SIZE;
+    }
+
+    /**
+     * @return the index of the next suitable RAF of Storage to write to
+     * @throws IOException if a new RAF file could not be created
+     */
     private int getIndexOfRAFToWrite() throws IOException {
         if (rafStorageFiles.size() != 0) {
             RandomAccessFile currRAF = rafStorageFiles.get(rafStorageFiles.size() - 1);
@@ -327,16 +340,16 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
 
     /**
      *  Flush bufferKeyVal to disk
+     *  NOTE: only called within an existing write lock
      */
     private void flushBuffer() {
-        readWriteLock.writeLock().lock();
         try {
             int indexRAFToWrite = getIndexOfRAFToWrite();
             RandomAccessFile usedRAF = rafStorageFiles.get(indexRAFToWrite);
 
             usedRAF.seek(usedRAF.length());
 
-            OutputStream inStream = Channels.newOutputStream(usedRAF.getChannel());
+            OutputStream outStream = Channels.newOutputStream(usedRAF.getChannel());
 
             for (Map.Entry<KeyType, ValueType> entry: bufferKeyVal.entrySet()) {
 
@@ -349,17 +362,88 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
                         new ValueFileAndOffset(indexRAFToWrite, usedRAF.getFilePointer());
 
                 mapKeyValueLocation.put(entry.getKey(), valueLocation);
-                RWStreamSerializer.serialize(entry.getValue(), valueTypeSerializer, inStream);
+                RWStreamSerializer.serialize(entry.getValue(), valueTypeSerializer, outStream);
             }
             bufferKeyVal.clear();
 
         } catch (IOException caught) {
             throw new MalformedDataException(FAILED_FILE_LOCATION);
-        } finally {
-            readWriteLock.writeLock().unlock();
         }
     }
 
+    /**
+     *  Rebuild Storage Value files from scratch
+     *  (retaining all data, except deleted values)
+     *  NOTE: only called within an existing write lock
+     */
+    private void rebuildStorage() throws MalformedDataException {
+        if (bufferKeyVal.size() > 0) {
+            flushBuffer();
+        }
+
+        try {
+            HashMap<KeyType, ValueFileAndOffset> newMapKeyValueLocation =
+                    new HashMap<KeyType, ValueFileAndOffset>();
+
+            ArrayList<File> newFiles = new ArrayList<>();
+
+            File currFile = new File(getPathToStorageFileOfIndex(newFiles.size()) + "tmp");
+            newFiles.add(currFile);
+            RandomAccessFile currRAF = new RandomAccessFile(currFile, "rw");
+            OutputStream outStream = Channels.newOutputStream(currRAF.getChannel());
+            currRAF.setLength(0);
+            currRAF.seek(0);
+
+            for (Map.Entry<KeyType, ValueFileAndOffset> entry : mapKeyValueLocation.entrySet()) {
+                if (currRAF.length() > MAX_FILE_BYTE_SIZE) {
+                    outStream.close();
+                    currRAF.close();
+
+                    currFile = new File(getPathToStorageFileOfIndex(newFiles.size()) + "tmp");
+                    newFiles.add(currFile);
+                    currRAF = new RandomAccessFile(currFile, "rw");
+                    outStream = Channels.newOutputStream(currRAF.getChannel());
+                    currRAF.setLength(0);
+                    currRAF.seek(0);
+                }
+
+                RandomAccessFile currValueFile = rafStorageFiles.get(entry.getValue().file);
+                currValueFile.seek(entry.getValue().offset);
+                InputStream inStream = Channels.newInputStream(currValueFile.getChannel());
+
+                ValueType currValue =
+                        (ValueType) RWStreamSerializer.deserialize(valueTypeSerializer, inStream);
+
+                ValueFileAndOffset newValueLocation =
+                        new ValueFileAndOffset(newFiles.size() - 1, currRAF.getFilePointer());
+
+                mapKeyValueLocation.put(entry.getKey(), newValueLocation);
+                RWStreamSerializer.serialize(currValue, valueTypeSerializer, outStream);
+            }
+
+            for (RandomAccessFile currentFile : rafStorageFiles) {
+                currentFile.close();
+            }
+
+            for (Integer fileIndex = 0; fileIndex < rafStorageFiles.size(); ++fileIndex) {
+                Path currPath = Paths.get(getPathToStorageFileOfIndex(fileIndex));
+                Files.delete(currPath);
+            }
+
+            Path storageDirPath = Paths.get(pathToStorageDirectory);
+            for (Integer fileIndex = 0; fileIndex < newFiles.size(); ++fileIndex) {
+                Path currPath = Paths.get(getPathToStorageFileOfIndex(fileIndex) + "tmp");
+                Path destPath = Paths.get(getPathToStorageFileOfIndex(fileIndex));
+                Files.move(currPath, destPath);
+            }
+
+            numberDirtyValues = 0;
+
+        } catch (IOException caught) {
+            caught.printStackTrace();
+            throw new MalformedDataException(FAILED_FILE_LOCATION);
+        }
+    }
 
 
     /**
@@ -405,10 +489,10 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
     public ValueType read(KeyType key) throws MalformedDataException {
         checkNotClosed();
 
-        ValueType readValue = null;
-
         readWriteLock.readLock().lock();
         try {
+            ValueType readValue = null;
+
             if (bufferKeyVal.keySet().contains(key)) {
                 readValue = bufferKeyVal.get(key);
 
@@ -425,13 +509,13 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
                 } catch (IOException caught) {
                     throw new MalformedDataException(FAILED_FILE_READ);
                 }
-
             }
+
+            return readValue;
+
         } finally {
             readWriteLock.readLock().unlock();
         }
-
-        return readValue;
     }
 
     /**
@@ -474,14 +558,20 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
             if (mapKeyValueLocation.containsKey(key) && !bufferKeyVal.containsKey(key)) {
                 ++numberDirtyValues;
             }
+
             bufferKeyVal.put(key, value);
             mapKeyValueLocation.put(key, null);
+
+            if (bufferKeyVal.size() >= MAX_BUFFER_SIZE) {
+                flushBuffer();
+            }
+
+            if (checkStorageTooDirty()) {
+                rebuildStorage();
+            }
+
         } finally {
             readWriteLock.writeLock().unlock();
-        }
-
-        if (bufferKeyVal.size() >= MAX_BUFFER_SIZE) {
-            flushBuffer();
         }
     }
 
@@ -499,9 +589,16 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
         try {
             if (mapKeyValueLocation.containsKey(key)) {
                 ++numberDirtyValues;
+
                 mapKeyValueLocation.remove(key);
             }
+
             bufferKeyVal.remove(key);
+
+            if (checkStorageTooDirty()) {
+                rebuildStorage();
+            }
+
         } finally {
             readWriteLock.writeLock().unlock();
         }
@@ -560,6 +657,10 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
         try {
             isClosed = true;
             flushBuffer();
+
+            if (checkStorageTooDirty()) {
+                rebuildStorage();
+            }
 
             try (BufferedOutputStream storageBOS =
                          new BufferedOutputStream(new FileOutputStream(getPathToStorage()))) {
