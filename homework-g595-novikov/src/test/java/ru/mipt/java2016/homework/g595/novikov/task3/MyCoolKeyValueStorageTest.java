@@ -11,6 +11,7 @@ import ru.mipt.java2016.homework.tests.task3.KeyValueStoragePerformanceTest;
 /**
  * Created by igor on 11/14/16.
  */
+@Ignore
 public class MyCoolKeyValueStorageTest extends KeyValueStoragePerformanceTest {
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String path) {

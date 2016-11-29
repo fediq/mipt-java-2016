@@ -95,22 +95,20 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private class KVSIterator implements Iterator<K> {
         private Iterator<K> iterator;
-        private MyKeyValueStorage kvs;
 
-        KVSIterator(Iterator<K> iter, MyKeyValueStorage myKvs) {
-            kvs = myKvs;
+        KVSIterator(Iterator<K> iter) {
             iterator = iter;
         }
 
         @Override
         public boolean hasNext() {
-            kvs.checkIsNotClosed();
+            checkIsNotClosed();
             return iterator.hasNext();
         }
 
         @Override
         public K next() {
-            kvs.checkIsNotClosed();
+            checkIsNotClosed();
             return iterator.next();
         }
     }
@@ -118,7 +116,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public Iterator<K> readKeys() {
         checkIsNotClosed();
-        return new KVSIterator(objects.keySet().iterator(), this);
+        return new KVSIterator(objects.keySet().iterator());
     }
 
     @Override
