@@ -74,12 +74,14 @@ public class UpdatedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void update() throws IOException {
+        changesCounter = 0;
+
         Map<K, Long> newBufferOffsets = new HashMap<K, Long>();
         Map<V, Long> newBuffer = new HashMap<V, Long>();
 
         keysStorage.seek(0);
         keysStorage.setLength(0);
-        LongIdentification.get().write(keysStorage, (long)0);
+        LongIdentification.get().write(keysStorage, changesCounter);
         IntegerIdentification.get().write(keysStorage, bufferOffsets.size());
 
         File valuesFile = new File(nameDirectory + File.separator + "value.db");
@@ -112,7 +114,6 @@ public class UpdatedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         if (changesCounter >= bufferOffsets.size()) {
             try {
                 update();
-                changesCounter = 0;
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
