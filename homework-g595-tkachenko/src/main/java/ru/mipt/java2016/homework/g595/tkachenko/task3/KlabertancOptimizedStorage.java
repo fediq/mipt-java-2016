@@ -67,7 +67,7 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
                 throw new RuntimeException("Can't read from file!");
             }
             try {
-                valuesRandomAccess = new RandomAccessFile(values, "rws");
+                valuesRandomAccess = new RandomAccessFile(values, "rw");
             } catch (IOException e) {
                 throw new RuntimeException("Can't create RA file!");
             }
@@ -75,7 +75,7 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
             try {
                 keys.createNewFile();
                 values.createNewFile();
-                valuesRandomAccess = new RandomAccessFile(values, "rws");
+                valuesRandomAccess = new RandomAccessFile(values, "rw");
             } catch (IOException e) {
                 throw new RuntimeException("Can't create file for storage!");
             }
@@ -158,6 +158,9 @@ public class KlabertancOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public synchronized boolean exists(K key) {
         isStorageClosed();
+        if (readCache.containsKey(key) || writeCache.containsKey(key)) {
+            return true;
+        }
         return offsets.containsKey(key);
     }
 
