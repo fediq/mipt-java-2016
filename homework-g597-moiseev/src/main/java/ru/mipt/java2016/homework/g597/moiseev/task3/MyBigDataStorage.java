@@ -4,10 +4,7 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.g597.moiseev.task2.IntegerSerializationStrategy;
 import ru.mipt.java2016.homework.g597.moiseev.task2.SerializationStrategy;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -128,7 +125,7 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
                 return memTable.get(key);
             }
         } catch (IOException e) {
-            throw new RuntimeException("Read error" + e.getMessage());
+            throw new UncheckedIOException(e);
         } finally {
             readLock.unlock();
         }
@@ -160,7 +157,7 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
 
             checkSizeAndDumpOrOptimize();
         } catch (IOException e) {
-            throw new RuntimeException("Write error: " + e.getMessage());
+            throw new UncheckedIOException(e);
         } finally {
             writeLock.unlock();
         }
@@ -218,8 +215,8 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
                 keysFile.close();
                 valuesFile.close();
             }
-        } catch (Exception e) {
-            throw new RuntimeException("Close error: " + e.getMessage());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         } finally {
             writeLock.unlock();
         }
@@ -281,7 +278,7 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
                 throw new IOException("Can't rename values file");
             }
         } catch (IOException e) {
-            throw new RuntimeException("Optimize memory error: " + e.getMessage());
+            throw new UncheckedIOException(e);
         }
     }
 }
