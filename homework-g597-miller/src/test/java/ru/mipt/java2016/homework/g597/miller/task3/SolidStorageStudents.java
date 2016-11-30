@@ -1,7 +1,7 @@
 package ru.mipt.java2016.homework.g597.miller.task3;
 
+import java.io.DataInput;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import ru.mipt.java2016.homework.tests.task2.Student;
@@ -17,7 +17,7 @@ public class SolidStorageStudents extends SolidStorageAbstract<StudentKey, Stude
     }
 
     @Override
-    protected StudentKey readKey(RandomAccessFile f) throws IOException {
+    protected StudentKey readKey(DataInput f) throws IOException {
         try {
             int groupId = f.readInt();
             int n = f.readInt();
@@ -25,7 +25,7 @@ public class SolidStorageStudents extends SolidStorageAbstract<StudentKey, Stude
                 throw new IOException("Invalid storage file.");
             }
             byte[] name = new byte[n];
-            f.read(name, 0, n);
+            f.readFully(name, 0, n);
             return new StudentKey(groupId, new String(name, StandardCharsets.UTF_8));
         } catch (IOException e) {
             throw new IOException(e);
@@ -33,7 +33,7 @@ public class SolidStorageStudents extends SolidStorageAbstract<StudentKey, Stude
     }
 
     @Override
-    protected Student readValue(RandomAccessFile f) throws IOException {
+    protected Student readValue(DataInput f) throws IOException {
         try {
             int n;
             int groupId = f.readInt();
@@ -42,13 +42,13 @@ public class SolidStorageStudents extends SolidStorageAbstract<StudentKey, Stude
                 throw new IOException("Invalid storage file.");
             }
             byte[] name = new byte[n];
-            f.read(name, 0, n);
+            f.readFully(name, 0, n);
             n = f.readInt();
             if (n < 0) {
                 throw new IOException("Invalid storage file.");
             }
             byte[] hometown = new byte[n];
-            f.read(hometown, 0, n);
+            f.readFully(hometown, 0, n);
             long time = f.readLong();
             Date birthDate = new Date();
             birthDate.setTime(time);

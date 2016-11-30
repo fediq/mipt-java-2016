@@ -1,5 +1,6 @@
 package ru.mipt.java2016.homework.g597.miller.task3;
 
+import java.io.DataInput;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -21,7 +22,7 @@ abstract class SolidStorageAbstract<K, V> implements KeyValueStorage<K, V> {
     // Таблица координат value по key.
     private HashMap<K, Long> indexTable = new HashMap<>();
     // Путь хранилища.
-    private String pathName;
+    final private String pathName;
     // Состояние хранилища.
     private boolean isClosed = true;
     // Многопоточность.
@@ -71,7 +72,7 @@ abstract class SolidStorageAbstract<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public V read(K key) {
-        readLock.lock();
+        writeLock.lock();
         try {
             // Достаём значение с диска.
             Long pos = indexTable.get(key);
@@ -85,7 +86,7 @@ abstract class SolidStorageAbstract<K, V> implements KeyValueStorage<K, V> {
                 throw new RuntimeException("Error occurred while reading.", e);
             }
         } finally {
-            readLock.unlock();
+            writeLock.unlock();
         }
     }
 
@@ -202,9 +203,9 @@ abstract class SolidStorageAbstract<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
-    protected abstract K readKey(RandomAccessFile f) throws IOException;
+    protected abstract K readKey(DataInput f) throws IOException;
 
-    protected abstract V readValue(RandomAccessFile f) throws IOException;
+    protected abstract V readValue(DataInput f) throws IOException;
 
     protected abstract void writeKey(K key) throws IOException;
 

@@ -1,7 +1,7 @@
 package ru.mipt.java2016.homework.g597.miller.task3;
 
+import java.io.DataInput;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
 
 /*
@@ -14,12 +14,12 @@ public class SolidStorageStrings extends SolidStorageAbstract<String, String> {
     }
 
     @Override
-    protected String readKey(RandomAccessFile f) throws IOException {
+    protected String readKey(DataInput f) throws IOException {
         return readString(f);
     }
 
     @Override
-    protected String readValue(RandomAccessFile f) throws IOException {
+    protected String readValue(DataInput f) throws IOException {
         return readString(f);
     }
 
@@ -33,14 +33,14 @@ public class SolidStorageStrings extends SolidStorageAbstract<String, String> {
         writeString(value);
     }
 
-    private String readString(RandomAccessFile f) throws IOException {
+    private String readString(DataInput f) throws IOException {
         try {
             int n = f.readInt();
             if (n < 0) {
                 throw new IOException("Invalid storage file.");
             }
             byte[] b = new byte[n];
-            f.read(b, 0, n);
+            f.readFully(b, 0, n);
             return new String(b, StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new IOException(e);

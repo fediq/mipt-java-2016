@@ -1,7 +1,7 @@
 package ru.mipt.java2016.homework.g597.miller.task3;
 
+import java.io.DataInput;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 
 /*
  * Created by Vova Miller on 20.11.2016.
@@ -13,7 +13,7 @@ public class SolidStorageNumbers extends SolidStorageAbstract<Integer, Double> {
     }
 
     @Override
-    protected Integer readKey(RandomAccessFile f) throws IOException {
+    protected Integer readKey(DataInput f) throws IOException {
         try {
             return f.readInt();
         } catch (IOException e) {
@@ -22,7 +22,7 @@ public class SolidStorageNumbers extends SolidStorageAbstract<Integer, Double> {
     }
 
     @Override
-    protected Double readValue(RandomAccessFile f) throws IOException {
+    protected Double readValue(DataInput f) throws IOException {
         try {
             return f.readDouble();
         } catch (IOException e) {
