@@ -6,7 +6,9 @@ import ru.mipt.java2016.homework.g597.zakharkin.task2.Serializer;
 import java.io.*;
 import java.nio.channels.OverlappingFileLockException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -16,7 +18,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public class KeyValueStorageOptimized<K, V> implements KeyValueStorage<K, V>, AutoCloseable {
     private static final int MAX_CACHE_SIZE = 10;
-    private static final int MAX_BUF_SIZE = 1000;
+    private static final int MAX_BUF_SIZE = 100;
     private static final String DB_NAME = "storage";
     private static final String OFFSET_NAME = "offsets";
     private final String dbPath;
@@ -210,9 +212,9 @@ public class KeyValueStorageOptimized<K, V> implements KeyValueStorage<K, V>, Au
         lock.writeLock().lock();
         lock.readLock().lock();
         try {
-            File oldStorageFile = new File(dbPath + File.separator + DB_NAME);
             File newStorageFile = new File(dbPath + File.separator + DB_NAME + "__tmp");
-            BufferedOutputStream outputStreamStorage = new BufferedOutputStream(new FileOutputStream(newStorageFile));
+            DataOutputStream outputStreamStorage =
+                    new DataOutputStream(new BufferedOutputStream(new FileOutputStream(newStorageFile)));
             offsetsFile.setLength(0);
             offsetsFile.seek(0);
             for (Map.Entry<K, Long> entry : offsets.entrySet()) {
@@ -221,15 +223,16 @@ public class KeyValueStorageOptimized<K, V> implements KeyValueStorage<K, V>, Au
                 V value = valueSerializer.read(dbFile);
                 keySerializer.write(offsetsFile, entry.getKey());
                 offsetsFile.writeLong(newStorageFile.length());
-                valueSerializer.write((DataOutput) outputStreamStorage, value);
+                valueSerializer.write(outputStreamStorage, value);
             }
             dbFile.close();
-            oldStorageFile.delete();
-            newStorageFile.renameTo(new File(dbPath + File.separator + DB_NAME));
+            Path tempName = Paths.get(dbPath + File.separator + DB_NAME + "__tmp");
+            Path realName = Paths.get(dbPath + File.separator + DB_NAME);
+            Files.move(tempName, realName, StandardCopyOption.REPLACE_EXISTING);
             dbFile = new RandomAccessFile(newStorageFile, "rw");
         } finally {
-            lock.writeLock().unlock();
             lock.readLock().unlock();
+            lock.writeLock().unlock();
         }
     }
 
