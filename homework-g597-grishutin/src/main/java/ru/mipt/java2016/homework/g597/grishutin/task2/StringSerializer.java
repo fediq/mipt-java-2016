@@ -1,6 +1,9 @@
 package ru.mipt.java2016.homework.g597.grishutin.task2;
 
 
+import javax.xml.crypto.Data;
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
@@ -17,14 +20,14 @@ public class StringSerializer implements SerializationStrategy<String> {
             IntegerSerializer.getInstance();
     
     @Override
-    public void serialize(String value, RandomAccessFile raf) throws IOException {
+    public void serialize(String value, DataOutput raf) throws IOException {
         byte[] bytes = value.getBytes();
         integerSerializer.serialize(bytes.length, raf);
         raf.write(bytes);
     }
 
     @Override
-    public String deserialize(RandomAccessFile raf) throws IOException {
+    public String deserialize(DataInput raf) throws IOException {
         int numBytes = integerSerializer.deserialize(raf);
         byte[] bytes = new byte[numBytes];
         raf.readFully(bytes);

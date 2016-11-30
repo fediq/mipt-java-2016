@@ -3,6 +3,8 @@ package ru.mipt.java2016.homework.g597.grishutin.task2;
 
 import ru.mipt.java2016.homework.tests.task2.Student;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
@@ -22,7 +24,7 @@ public class StudentSerializationStrategy implements SerializationStrategy<Stude
     private DoubleSerializer doubleSerializer = DoubleSerializer.getInstance();
 
     @Override
-    public void serialize(Student student, RandomAccessFile raf) throws IOException {
+    public void serialize(Student student, DataOutput raf) throws IOException {
         integerSerializer.serialize(student.getGroupId(), raf);
         stringSerializer.serialize(student.getName(), raf);
         stringSerializer.serialize(student.getHometown(), raf);
@@ -32,7 +34,7 @@ public class StudentSerializationStrategy implements SerializationStrategy<Stude
     }
 
     @Override
-    public Student deserialize(RandomAccessFile raf) throws IOException {
+    public Student deserialize(DataInput raf) throws IOException {
         return new Student(integerSerializer.deserialize(raf),
                 stringSerializer.deserialize(raf),
                 stringSerializer.deserialize(raf),

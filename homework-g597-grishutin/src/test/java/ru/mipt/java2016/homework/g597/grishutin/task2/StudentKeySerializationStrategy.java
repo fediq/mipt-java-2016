@@ -2,6 +2,8 @@ package ru.mipt.java2016.homework.g597.grishutin.task2;
 
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
@@ -10,13 +12,13 @@ public class StudentKeySerializationStrategy implements SerializationStrategy<St
     private StringSerializer stringSerializer = StringSerializer.getInstance();
 
     @Override
-    public void serialize(StudentKey studentKey, RandomAccessFile raf) throws IOException {
+    public void serialize(StudentKey studentKey, DataOutput raf) throws IOException {
         integerSerializer.serialize(studentKey.getGroupId(), raf);
         stringSerializer.serialize(studentKey.getName(), raf);
     }
 
     @Override
-    public StudentKey deserialize(RandomAccessFile raf) throws IOException {
+    public StudentKey deserialize(DataInput raf) throws IOException {
         return new StudentKey(integerSerializer.deserialize(raf),
                 stringSerializer.deserialize(raf));
     }

@@ -19,6 +19,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import static java.lang.Thread.sleep;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 
@@ -220,7 +221,6 @@ public class LargeKeyValueStorage<K, V> implements KeyValueStorage<K, V>, AutoCl
             offsetsFile.close();
             valuesFile.close();
             cached.cleanUp();
-            // sleep(5 * 100L);
         } finally {
             lock.writeLock().unlock();
         }

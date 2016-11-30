@@ -1,18 +1,17 @@
 package ru.mipt.java2016.homework.g597.grishutin.task2;
 
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 
 public interface SerializationStrategy<T> {
     /*
         serializes value to current location of caret in file
      */
-    void serialize(T value, RandomAccessFile raf) throws IOException;
+    void serialize(T value, DataOutput raf) throws IOException;
 
     /*
         deserializes value from current location of caret in file
      */
-    T deserialize(RandomAccessFile raf) throws IOException;
+    T deserialize(DataInput raf) throws IOException;
 
     /*
         returns number of bytes value will take after serialization
