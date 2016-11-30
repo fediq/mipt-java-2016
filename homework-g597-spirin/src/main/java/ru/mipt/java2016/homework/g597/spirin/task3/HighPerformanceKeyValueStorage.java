@@ -35,9 +35,9 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
     private boolean isOpen = false;
 
     private int countModifyOperations;
-    private static final int MAX_MODIFY_OPERATIONS = 500;
+    private static final int MAX_MODIFY_OPERATIONS = 5000;
 
-    private LoadingCache<K, V> cache = CacheBuilder.newBuilder().maximumSize(500).build(new CacheLoader<K, V>() {
+    private LoadingCache<K, V> cache = CacheBuilder.newBuilder().maximumSize(1000).build(new CacheLoader<K, V>() {
         @Override
         public V load(K key) throws Exception {
             Long offset = offsets.get(key);
@@ -252,7 +252,7 @@ public class HighPerformanceKeyValueStorage<K, V> implements KeyValueStorage<K, 
                 keySerializer.write(offsetStorage, entry.getKey());
                 offsetStorage.writeLong(entry.getValue());
             }
-            
+
             dataStorage.close();
             offsetStorage.close();
         } finally {
