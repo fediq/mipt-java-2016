@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
+
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
@@ -390,6 +391,7 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
 
             ArrayList<File> newFiles = new ArrayList<>();
 
+
             File currFile = new File(getPathToStorageFileOfIndex(newFiles.size()) + "tmp");
             newFiles.add(currFile);
             RandomAccessFile currRAF = new RandomAccessFile(currFile, "rw");
@@ -420,27 +422,33 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
                 ValueFileAndOffset newValueLocation =
                         new ValueFileAndOffset(newFiles.size() - 1, currRAF.getFilePointer());
 
-                mapKeyValueLocation.put(entry.getKey(), newValueLocation);
+                newMapKeyValueLocation.put(entry.getKey(), newValueLocation);
                 RWStreamSerializer.serialize(currValue, valueTypeSerializer, outStream);
             }
+
 
             for (RandomAccessFile currentFile : rafStorageFiles) {
                 currentFile.close();
             }
+            rafStorageFiles.clear();
 
             for (Integer fileIndex = 0; fileIndex < rafStorageFiles.size(); ++fileIndex) {
                 Path currPath = Paths.get(getPathToStorageFileOfIndex(fileIndex));
                 Files.delete(currPath);
             }
 
-            Path storageDirPath = Paths.get(pathToStorageDirectory);
+
             for (Integer fileIndex = 0; fileIndex < newFiles.size(); ++fileIndex) {
                 Path currPath = Paths.get(getPathToStorageFileOfIndex(fileIndex) + "tmp");
                 Path destPath = Paths.get(getPathToStorageFileOfIndex(fileIndex));
                 Files.move(currPath, destPath);
             }
 
+            for (File newFile : newFiles) {
+                rafStorageFiles.add(new RandomAccessFile(newFile, "rw"));
+            }
             numberDirtyValues = 0;
+            mapKeyValueLocation = newMapKeyValueLocation;
 
         } catch (IOException caught) {
             throw new MalformedDataException(FAILED_FILE_LOCATION);
