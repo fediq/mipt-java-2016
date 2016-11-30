@@ -22,18 +22,18 @@ public class OptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private ReadWriteLock lock = new ReentrantReadWriteLock();
 
-    private HashMap<K, Long> keyAndOffsetMap;
-    private Map<K, V> keyAndValueMap;
-    private HashSet<K> presenceSet;
-    private RandomAccessFile randAccFileStorage;
+    private final HashMap<K, Long> keyAndOffsetMap = new HashMap<K, Long>();
+    private final Map<K, V> keyAndValueMap = new HashMap<K, V>();
+    private final HashSet<K> presenceSet = new HashSet<K>();
     private RandomAccessFile randAccFileWithOffsets;
+    private RandomAccessFile randAccFileStorage;
 
-    private SerializationStrategy<K> keyStrategy;
-    private SerializationStrategy<V> valueStrategy;
+    private final SerializationStrategy<K> keyStrategy;
+    private final SerializationStrategy<V> valueStrategy;
 
-    private String fileWithOffsetsPathname;
-    private String fileStoragePathname;
-    private String fileClearedStoragePathname;
+    private final String fileWithOffsetsPathname;
+    private final String fileStoragePathname;
+    private final String fileClearedStoragePathname;
     private final String mode = "rw"; // По умолчанию выставили чтение/запись
     private boolean isStorageOpened = true;
     private int garbageCounter;
@@ -57,10 +57,6 @@ public class OptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         fileWithOffsetsPathname = path + File.separator + "offsets.txt";
         fileStoragePathname = path + File.separator + "storage.txt";
         fileClearedStoragePathname = path + File.separator + "cleared_storage_tmp.txt";
-
-        keyAndOffsetMap = new HashMap<K, Long>();
-        keyAndValueMap = new HashMap<K, V>();
-        presenceSet = new HashSet<K>();
 
         try {
             File fileWithOffsets = new File(fileWithOffsetsPathname);
@@ -115,7 +111,7 @@ public class OptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public V read(K key) {
-        lock.readLock().lock();
+        lock.writeLock().lock();
         try {
             checkStorageNotClosed();
 
@@ -132,7 +128,7 @@ public class OptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         } catch (IOException e) {
             throw new IllegalStateException("Couldn't find needed data in file");
         } finally {
-            lock.readLock().unlock();
+            lock.writeLock().unlock();
         }
     }
 
@@ -302,4 +298,3 @@ public class OptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
     }
 }
-// NEW TESTS YEEEEEEEE
