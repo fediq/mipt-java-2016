@@ -251,7 +251,6 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
             String newValuesPath = path + File.separator + "new_" + this.name + "_values.db";
             String valuesPath = path + File.separator + this.name + "_values.db";
             File newValues = new File(newValuesPath);
-            File values = new File(valuesPath);
 
             newValues.createNewFile();
 
@@ -275,7 +274,7 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
             valuesFile.close();
             newValuesFile.close();
             Files.move(Paths.get(newValuesPath), Paths.get(valuesPath), REPLACE_EXISTING);
-            valuesFile = new RandomAccessFile(Paths.get(newValuesPath).toString(), "rw");
+            valuesFile = new RandomAccessFile(Paths.get(valuesPath).toString(), "rw");
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
