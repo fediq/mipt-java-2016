@@ -1,5 +1,8 @@
 package ru.mipt.java2016.homework.g597.kirilenko.task3;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.g597.kirilenko.task3.MySerialization.MySerialization;
 import ru.mipt.java2016.homework.g597.kirilenko.task3.MySerialization.SerializationType;
@@ -8,6 +11,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Created by Natak on 27.10.2016.
@@ -16,14 +22,26 @@ import java.util.*;
 
 
 public class MyOptimisedStorage<K, V> implements KeyValueStorage<K, V> {
-    private static boolean close = false;
+    private boolean close = false;
     private final RandomAccessFile keysRwFile;
     private final RandomAccessFile valueRwFile;
-    private HashMap<K, Long> keysStorage = new HashMap<>();
+    private final Map<K, Long> keysStorage = new HashMap<>();
     private final MySerialization<K> keySerialization;
     private final MySerialization<V> valueSerialization;
     private final File f;
-    private ArrayList<Long> unusedOffsets = new ArrayList<>();
+    private final List<Long> unusedOffsets = new ArrayList<>();
+    private final ReadWriteLock concurrentLock = new ReentrantReadWriteLock();
+    private final LoadingCache<K, V> smartCache = CacheBuilder.newBuilder().maximumSize(128).build(
+            new CacheLoader<K, V>() {
+                @Override
+                public V load(K k) throws Exception {
+                    Long offset = keysStorage.get(k);
+                    valueRwFile.seek(offset);
+                    V value = valueSerialization.read(valueRwFile);
+                    return value;
+                }
+            }
+    );
 
     public MyOptimisedStorage(String path, MySerialization<K> serializeK,
                               MySerialization<V> serializeV) throws IOException {
@@ -32,9 +50,9 @@ public class MyOptimisedStorage<K, V> implements KeyValueStorage<K, V> {
             throw new IOException("There is no such directory");
         }
 
-        String check = path + File.separator + "checkProcesses"; //file for thread safety
+        String check = path + File.separator + "checkProcesses";
         f = new File(check);
-        if (!f.createNewFile()) { //thread safety
+        if (!f.createNewFile()) {
             throw new IOException("Error");
         }
 
@@ -56,8 +74,8 @@ public class MyOptimisedStorage<K, V> implements KeyValueStorage<K, V> {
                 keysStorage.put(key, offset);
             }
         } else {
-            kFile.createNewFile();
-            vFile.createNewFile();
+            /*kFile.createNewFile();
+            vFile.createNewFile();*/
             keysRwFile = new RandomAccessFile(kFile, "rw");
             valueRwFile = new RandomAccessFile(vFile, "rw");
         }
@@ -72,16 +90,17 @@ public class MyOptimisedStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public V read(K key) {
         isClose();
-        if (!exists(key)) {
+        if (!keysStorage.containsKey(key)) {
             return null;
         }
+        concurrentLock.writeLock().lock();
         try {
-            Long offset = keysStorage.get(key);
-            valueRwFile.seek(offset);
-            V value = valueSerialization.read(valueRwFile);
+            V value = smartCache.get(key);
             return value;
-        } catch (IOException e) {
+        } catch (ExecutionException e) {
             throw new RuntimeException("Error");
+        } finally {
+            concurrentLock.writeLock().unlock();
         }
     }
 
@@ -94,20 +113,25 @@ public class MyOptimisedStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public void write(K key, V value) {
         isClose();
+        concurrentLock.writeLock().lock();
         try {
+            if (keysStorage.containsKey(key)) {
+                delete(key);
+            }
             Long offset;
-            offset = valueRwFile.length();
             if (unusedOffsets.size() == 0) {
                 offset = valueRwFile.length();
             } else {
-                offset = unusedOffsets.get(0);
-                unusedOffsets.remove(0);
+                offset = unusedOffsets.get(unusedOffsets.size() - 1);
+                unusedOffsets.remove(unusedOffsets.size() - 1);
             }
             valueRwFile.seek(offset);
             valueSerialization.write(valueRwFile, value);
             keysStorage.put(key, offset);
         } catch (IOException e) {
             throw new RuntimeException("Error");
+        } finally {
+            concurrentLock.writeLock().unlock();
         }
     }
 

@@ -164,7 +164,7 @@ public class SerializationType {
             }
         }
     }
-    
+
     public static class SerializationLong implements MySerialization<Long> {
         private static SerializationLong serialize = new SerializationLong();
 
