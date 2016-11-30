@@ -68,7 +68,7 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
     /* Maximum size of buffer before the need for a Buffer Flush */
     private static final int MAX_BUFFER_SIZE = 128;
     /* Maximum number of bytes stored on a file before the need for a new file */
-    private static final int MAX_FILE_BYTE_SIZE = 1024 * 1024 * 1024;  /* 1GB */
+    private static final long MAX_FILE_BYTE_SIZE = 256 * 1024 * 1024;  /* 256MB */
     /* Maximum additional fraction of the storage size that can be dirty (filled with deleted values) */
     private static final double MAX_DIRTY_FRACTION = 2.0;
 
