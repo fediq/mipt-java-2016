@@ -19,6 +19,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import static java.lang.Thread.sleep;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+
 
 public class LargeKeyValueStorage<K, V> implements KeyValueStorage<K, V>, AutoCloseable {
 
@@ -141,7 +144,7 @@ public class LargeKeyValueStorage<K, V> implements KeyValueStorage<K, V>, AutoCl
             valueOffsets.put(key, valuesFile.getFilePointer());
             valueSerializer.serialize(value, valuesFile);
         } catch (IOException e) {
-            throw new RuntimeException("Write failed");
+            throw new UncheckedIOException(e);
         } finally {
             lock.writeLock().unlock();
         }
@@ -217,6 +220,8 @@ public class LargeKeyValueStorage<K, V> implements KeyValueStorage<K, V>, AutoCl
 
             offsetsFile.close();
             valuesFile.close();
+            cached.cleanUp();
+            // sleep(5 * 100L);
         } finally {
             lock.writeLock().unlock();
         }
@@ -257,21 +262,18 @@ public class LargeKeyValueStorage<K, V> implements KeyValueStorage<K, V>, AutoCl
                 valueSerializer.serialize(value, newValuesFile);
             }
 
-            File extraTmpValuesFile = newValuesPath.toFile();
-            Files.deleteIfExists(Paths.get(path, VALUES_FILENAME));
-            File valuesFileRenamer = Paths.get(path, VALUES_FILENAME).toFile();
+            newValuesFile.close();
+            valuesFile.close();
 
-            if (!extraTmpValuesFile.renameTo(valuesFileRenamer)) {
-                throw new IOException("Unable to rename file");
-            }
+            Files.move(newValuesPath, Paths.get(path, VALUES_FILENAME), REPLACE_EXISTING);
+
+            // Files.deleteIfExists(Paths.get(path, VALUES_SWAP_FILENAME));
 
             valuesFile = new RandomAccessFile(Paths.get(path, VALUES_FILENAME).toFile(), "rw");
-
-            Files.deleteIfExists(Paths.get(path, VALUES_SWAP_FILENAME));
             valueOffsets = newOffsets;
             numObsoleteEntries = 0;
         } catch (IOException e) {
-            throw new RuntimeException("refresh failed");
+            throw new UncheckedIOException(e);
         }
     }
 }
