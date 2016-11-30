@@ -273,8 +273,9 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
             numberOfDeletedElements = 0;
             offsets = newOffsets;
             valuesFile.close();
-            valuesFile = newValuesFile;
+            newValuesFile.close();
             Files.move(Paths.get(newValuesPath), Paths.get(valuesPath), REPLACE_EXISTING);
+            valuesFile = new RandomAccessFile(Paths.get(newValuesPath).toString(), "rw");
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
