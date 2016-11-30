@@ -13,17 +13,15 @@ public class UpdatedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private final Identification<K> keyIdentification;
     private final Identification<V> valueIdentification;
     private final RandomAccessFile keysStorage;
-    private RandomAccessFile valuesStorage;
+    private final RandomAccessFile valuesStorage;
     private Map<K, Long> bufferOffsets;
     private Boolean closed = false;
     private ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private long changesCounter = 0;
-    private final String nameDirectory;
 
-    public UpdatedKeyValueStorage(String name, Identification<K> key, Identification<V> value)
+    public UpdatedKeyValueStorage(String nameDirectory, Identification<K> key, Identification<V> value)
             throws IOException {
 
-        nameDirectory = name;
         bufferOffsets = new HashMap<K, Long>();
         File directory = new File(nameDirectory);
         keyIdentification = key;
@@ -61,6 +59,7 @@ public class UpdatedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         try {
             keysStorage.seek(0);
             keysStorage.setLength(0);
+
             LongIdentification.get().write(keysStorage, changesCounter);
             IntegerIdentification.get().write(keysStorage, bufferOffsets.size());
             for (Map.Entry<K, Long> entry : bufferOffsets.entrySet()) {
@@ -74,40 +73,31 @@ public class UpdatedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void update() throws IOException {
-        changesCounter = 0;
-
-        Map<K, Long> newBufferOffsets = new HashMap<K, Long>();
-        Map<V, Long> newBuffer = new HashMap<V, Long>();
-
-        keysStorage.seek(0);
-        keysStorage.setLength(0);
-        LongIdentification.get().write(keysStorage, changesCounter);
-        IntegerIdentification.get().write(keysStorage, bufferOffsets.size());
-
-        File valuesFile = new File(nameDirectory + File.separator + "value.db");
-        File newValuesFile = new File(nameDirectory + File.separator + "newValue.db");
-
-        newValuesFile.createNewFile();
-
-        RandomAccessFile newFileForValues = new RandomAccessFile(newValuesFile, "rw");
-
-        newFileForValues.seek(0);
-        newFileForValues.setLength(0);
-        for (Map.Entry<K, Long> entry : bufferOffsets.entrySet()) {
-            valuesStorage.seek(entry.getValue());
-            V value = valueIdentification.read(valuesStorage);
-            if (!newBuffer.containsKey(value)) {
-                newBuffer.put(value, newFileForValues.length());
-                valueIdentification.write(newFileForValues, value);
+        lock.writeLock().lock();
+        lock.readLock().lock();
+        try {
+            changesCounter = 0;
+            Map<V, Long> newBuffer = new HashMap<V, Long>();
+            long i = 0;
+            for (Map.Entry<K, Long> entry : bufferOffsets.entrySet()) {
+                valuesStorage.seek(entry.getValue());
+                V value = valueIdentification.read(valuesStorage);
+                if (!newBuffer.containsKey(value)) {
+                    newBuffer.put(value, i);
+                    i++;
+                }
+                bufferOffsets.put(entry.getKey(), newBuffer.get(value));
             }
-            newBufferOffsets.put(entry.getKey(), newBuffer.get(value));
-            keyIdentification.write(keysStorage, entry.getKey());
-            LongIdentification.get().write(keysStorage, newBuffer.get(value));
+
+            valuesStorage.setLength(0);
+            for (Map.Entry<V, Long> entry : newBuffer.entrySet()) {
+                valuesStorage.seek(entry.getValue());
+                valueIdentification.write(valuesStorage, entry.getKey());
+            }
+        } finally {
+            lock.writeLock().unlock();
+            lock.readLock().unlock();
         }
-        bufferOffsets = newBufferOffsets;
-        valuesFile.delete();
-        newValuesFile.renameTo(valuesFile);
-        valuesStorage = newFileForValues;
     }
 
     private void checkUpdate() {
@@ -153,8 +143,8 @@ public class UpdatedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         if (!closed) {
             lock.writeLock().lock();
             try {
-                save();
                 closed = true;
+                save();
             } finally {
                 lock.writeLock().unlock();
             }
@@ -193,6 +183,10 @@ public class UpdatedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             bufferOffsets.put(key, valuesStorage.length());
             valuesStorage.seek(valuesStorage.length());
             valueIdentification.write(valuesStorage, value);
+            if (!bufferOffsets.containsKey(key)) {
+                changesCounter += 1;
+            }
+            checkUpdate();
         } catch (IOException e) {
             throw new RuntimeException(e);
         } finally {
@@ -205,7 +199,7 @@ public class UpdatedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         lock.readLock().lock();
         try {
             checkClosing();
-            if (!bufferOffsets.containsKey(key)) {
+            if (!exists(key)) {
                 return null;
             }
             Long value = bufferOffsets.get(key);
