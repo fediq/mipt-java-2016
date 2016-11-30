@@ -22,7 +22,7 @@ abstract class SolidStorageAbstract<K, V> implements KeyValueStorage<K, V> {
     // Таблица координат value по key.
     private HashMap<K, Long> indexTable = new HashMap<>();
     // Путь хранилища.
-    final private String pathName;
+    private final String pathName;
     // Состояние хранилища.
     private boolean isClosed = true;
     // Многопоточность.
