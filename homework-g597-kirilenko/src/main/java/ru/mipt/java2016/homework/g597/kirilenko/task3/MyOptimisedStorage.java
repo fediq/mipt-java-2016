@@ -31,12 +31,14 @@ public class MyOptimisedStorage<K, V> implements KeyValueStorage<K, V> {
     private final File f;
     private final List<Long> unusedOffsets = new ArrayList<>();
     private final ReadWriteLock concurrentLock = new ReentrantReadWriteLock();
+    private final String dirPath;
     private final LoadingCache<K, V> smartCache = CacheBuilder.newBuilder().maximumSize(128).build(
             new CacheLoader<K, V>() {
                 @Override
                 public V load(K k) throws Exception {
                     Long offset = keysStorage.get(k);
                     valueRwFile.seek(offset);
+                    K key = keySerialization.read(valueRwFile);
                     V value = valueSerialization.read(valueRwFile);
                     return value;
                 }
@@ -45,6 +47,7 @@ public class MyOptimisedStorage<K, V> implements KeyValueStorage<K, V> {
 
     public MyOptimisedStorage(String path, MySerialization<K> serializeK,
                               MySerialization<V> serializeV) throws IOException {
+        dirPath = path;
         File dir = new File(path);
         if (!dir.isDirectory()) {
             throw new IOException("There is no such directory");
@@ -74,8 +77,6 @@ public class MyOptimisedStorage<K, V> implements KeyValueStorage<K, V> {
                 keysStorage.put(key, offset);
             }
         } else {
-            /*kFile.createNewFile();
-            vFile.createNewFile();*/
             keysRwFile = new RandomAccessFile(kFile, "rw");
             valueRwFile = new RandomAccessFile(vFile, "rw");
         }
@@ -104,6 +105,37 @@ public class MyOptimisedStorage<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
+    private void compress() {
+        try {
+            File newFile = new File(dirPath + File.separator + "temp");
+            RandomAccessFile newStorage = new RandomAccessFile(newFile, "rw");
+            newStorage.seek(0);
+
+            int initialOffset = 0;
+            valueRwFile.seek(initialOffset);
+            while (true) {
+                Long offset = valueRwFile.getFilePointer();
+                if (offset >= valueRwFile.length()) {
+                    break;
+                }
+                K key = keySerialization.read(valueRwFile);
+                V value = valueSerialization.read(valueRwFile);
+                if (unusedOffsets.contains(offset)) {
+                    continue;
+                }
+                keysStorage.remove(key);
+                keysStorage.put(key, newStorage.getFilePointer());
+                keySerialization.write(newStorage, key);
+                valueSerialization.write(newStorage, value);
+            }
+            valueRwFile.close();
+            newFile.renameTo(new File(dirPath + File.separator + "valueStorage"));
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     @Override
     public boolean exists(K key) {
         isClose();
@@ -115,17 +147,10 @@ public class MyOptimisedStorage<K, V> implements KeyValueStorage<K, V> {
         isClose();
         concurrentLock.writeLock().lock();
         try {
-            if (keysStorage.containsKey(key)) {
-                delete(key);
-            }
             Long offset;
-            if (unusedOffsets.size() == 0) {
-                offset = valueRwFile.length();
-            } else {
-                offset = unusedOffsets.get(unusedOffsets.size() - 1);
-                unusedOffsets.remove(unusedOffsets.size() - 1);
-            }
+            offset = valueRwFile.length();
             valueRwFile.seek(offset);
+            keySerialization.write(valueRwFile, key);
             valueSerialization.write(valueRwFile, value);
             keysStorage.put(key, offset);
         } catch (IOException e) {
@@ -164,6 +189,9 @@ public class MyOptimisedStorage<K, V> implements KeyValueStorage<K, V> {
         }
         close = true;
         try {
+            if (unusedOffsets.size() > 500) {
+                compress();
+            }
             f.delete();
             keysRwFile.seek(0);
             keysRwFile.setLength(0);
