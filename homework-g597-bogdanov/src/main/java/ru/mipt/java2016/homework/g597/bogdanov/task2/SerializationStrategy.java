@@ -1,13 +1,16 @@
 package ru.mipt.java2016.homework.g597.bogdanov.task2;
 
 import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.DataOutput;
+import java.io.DataInput;
 
 public interface SerializationStrategy<K, V> {
 
-    void write(RandomAccessFile file, K key, V value) throws IOException;
+    void writeKey(DataOutput file, K key) throws IOException;
 
-    K readKey(RandomAccessFile file) throws IOException;
+    void writeValue(DataOutput file, V value) throws IOException;
 
-    V readValue(RandomAccessFile file) throws IOException;
+    K readKey(DataInput file) throws IOException;
+
+    V readValue(DataInput file) throws IOException;
 }
