@@ -52,11 +52,4 @@ public class MyBigDataStorageTest extends KeyValueStoragePerformanceTest {
             return null;
         }
     }
-
-    @Override
-    @Ignore
-    @Test
-    public void testMultipleModifications() {
-        super.testMultipleModifications();
-    }
 }

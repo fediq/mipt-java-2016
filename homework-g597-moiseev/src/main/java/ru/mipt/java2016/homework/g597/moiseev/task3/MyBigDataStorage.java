@@ -12,6 +12,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+
 /**
  * Дисковое хранилище.
  *
@@ -272,11 +274,7 @@ public class MyBigDataStorage<K, V> implements KeyValueStorage<K, V>, AutoClosea
             offsets = newOffsets;
             valuesFile.close();
             valuesFile = newValuesFile;
-            System.gc();
-            Files.delete(values.toPath());
-            if (!newValues.renameTo(values)) {
-                throw new IOException("Can't rename values file");
-            }
+            Files.move(Paths.get(newValuesPath), Paths.get(valuesPath), REPLACE_EXISTING);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
