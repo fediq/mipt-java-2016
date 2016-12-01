@@ -9,9 +9,10 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+
+import java.util.Collections;
 
 @Configuration
 @EnableWebSecurity
@@ -30,21 +31,24 @@ public class SecurityServiceConfiguration extends WebSecurityConfigurerAdapter {
                 .logout().disable()
                 .csrf().disable()
                 .authorizeRequests()
-                .anyRequest().authenticated();
+                .antMatchers("/eval/**").authenticated()
+                .anyRequest().permitAll();
     }
 
     @Autowired
     public void registerGlobalAuthentication(AuthenticationManagerBuilder auth) throws Exception {
         LOG.info("Registering global user details service");
-        auth.userDetailsService(new UserDetailsService() {
-            @Override
-            public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-                try {
-                    return billingDao.loadUser(username);
-                } catch (EmptyResultDataAccessException e) {
-                    LOG.warn("No such user: " + username);
-                    throw new UsernameNotFoundException(username);
-                }
+        auth.userDetailsService(username -> {
+            try {
+                BillingUser user = billingDao.loadUser(username);
+                return new User(
+                        user.getUsername(),
+                        user.getPassword(),
+                        Collections.singletonList(() -> "AUTH")
+                );
+            } catch (EmptyResultDataAccessException e) {
+                LOG.warn("No such user: " + username);
+                throw new UsernameNotFoundException(username);
             }
         });
     }

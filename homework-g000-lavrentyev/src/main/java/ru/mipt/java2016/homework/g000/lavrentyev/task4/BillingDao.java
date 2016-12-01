@@ -5,16 +5,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Arrays;
 
 @Repository
 public class BillingDao {
@@ -39,20 +33,18 @@ public class BillingDao {
         jdbcTemplate.update("INSERT INTO billing.users VALUES ('username', 'password', TRUE)");
     }
 
-    public User loadUser(String username) throws EmptyResultDataAccessException {
+
+    public BillingUser loadUser(String username) throws EmptyResultDataAccessException {
         LOG.trace("Querying for user " + username);
         return jdbcTemplate.queryForObject(
                 "SELECT username, password, enabled FROM billing.users WHERE username = ?",
                 new Object[]{username},
-                new RowMapper<User>() {
-                    @Override
-                    public User mapRow(ResultSet rs, int rowNum) throws SQLException {
-                        return new User(
-                                rs.getString("username"),
-                                rs.getString("password"),
-                                Arrays.asList((GrantedAuthority) () -> "USER")
-                        );
-                    }
+                (rs, rowNum) -> {
+                    return new BillingUser(
+                            rs.getString("username"),
+                            rs.getString("password"),
+                            rs.getBoolean("enabled")
+                    );
                 }
         );
     }
