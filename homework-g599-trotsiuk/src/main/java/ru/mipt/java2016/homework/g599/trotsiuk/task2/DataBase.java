@@ -46,7 +46,7 @@ public class DataBase<K, V> implements KeyValueStorage<K, V> {
                 data.put(key, value);
             }
         } catch (FileNotFoundException e) {
-        throw new IOException(e + "DataBase.readFromFile: File not found");
+            throw new IOException(e + "DataBase.readFromFile: File not found");
         }
     }
 
