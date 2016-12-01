@@ -40,13 +40,21 @@ public class BillingUser {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         BillingUser that = (BillingUser) o;
 
-        if (enabled != that.enabled) return false;
-        if (!username.equals(that.username)) return false;
+        if (enabled != that.enabled) {
+            return false;
+        }
+        if (!username.equals(that.username)) {
+            return false;
+        }
         return password.equals(that.password);
 
     }
