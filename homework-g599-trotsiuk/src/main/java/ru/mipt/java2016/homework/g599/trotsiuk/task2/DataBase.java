@@ -34,19 +34,19 @@ public class DataBase<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void readFromFile() throws IOException {
-            try (DataInputStream stream = new DataInputStream(new FileInputStream(dataFile))) {
-                int count;
-                count = stream.readInt();
-                for (int i = 0; i < count; i++) {
-                    K key = serializerKey.deserializeRead(stream);
-                    V value = serializerValue.deserializeRead(stream);
-                    if (data.containsKey(key)) {
-                        throw new IOException("DataBase.readFromFile: Two same keys in database file");
-                    }
-                    data.put(key, value);
+        try (DataInputStream stream = new DataInputStream(new FileInputStream(dataFile))) {
+            int count;
+            count = stream.readInt();
+            for (int i = 0; i < count; i++) {
+                K key = serializerKey.deserializeRead(stream);
+                V value = serializerValue.deserializeRead(stream);
+                if (data.containsKey(key)) {
+                    throw new IOException("DataBase.readFromFile: Two same keys in database file");
                 }
-            } catch (FileNotFoundException e) {
-            throw new IOException(e + "DataBase.readFromFile: File not found");
+                data.put(key, value);
+            }
+        } catch (FileNotFoundException e) {
+        throw new IOException(e + "DataBase.readFromFile: File not found");
         }
     }
 
