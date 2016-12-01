@@ -37,7 +37,8 @@ public class CalculatorMain implements Calculator {
     }
 
     private static String markUnaryMinuses(String s, char newSymbol) throws ParsingException {
-        String result = "(";
+        StringBuilder result = new StringBuilder();
+        result.append("(");
         String correctSymbols = "01234567890.+-*/()";
         for (int i = 1; i < s.length(); i++) {
             char current = s.charAt(i);
@@ -51,11 +52,8 @@ public class CalculatorMain implements Calculator {
             if (current == '-' && previous != ')' && !Character.isDigit(previous)) {
                 current = newSymbol;
             }
-
-            StringBuilder builder = new StringBuilder();
-            builder.append(result).append(current);
-            result = builder.toString();
+            result.append(result).append(current);
         }
-        return result;
+        return result.toString();
     }
 }

@@ -14,8 +14,7 @@ public class MyKeyValueStorageTest extends AbstractSingleFileStorageTest {
         try {
             return new DataBase<>(path, new SerializerString(), new SerializerString());
             } catch (IOException e) {
-                e.printStackTrace();
-                return null;
+            throw new RuntimeException(e + "buildStringsStorage: Problem");
             }
     }
 
@@ -25,8 +24,7 @@ public class MyKeyValueStorageTest extends AbstractSingleFileStorageTest {
             return new DataBase<>(path, new SerializerInteger(), new SerializerDouble());
 
         } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+            throw new RuntimeException(e + "buildNumbersStorage: Problem");
         }
     }
 
@@ -35,8 +33,7 @@ public class MyKeyValueStorageTest extends AbstractSingleFileStorageTest {
         try {
             return new DataBase<>(path, new SerializerStudentKey(), new SerializerStudent());
         } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+            throw new RuntimeException(e + "buildPojoStorage: Problem");
         }
     }
 }

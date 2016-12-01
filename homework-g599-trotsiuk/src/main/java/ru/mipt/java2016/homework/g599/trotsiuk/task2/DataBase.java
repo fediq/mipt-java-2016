@@ -2,92 +2,91 @@ package ru.mipt.java2016.homework.g599.trotsiuk.task2;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.HashMap;
+import java.io.*;
 import java.util.Iterator;
 import java.util.Map;
 
 public class DataBase<K, V> implements KeyValueStorage<K, V> {
 
-    private Path dbFileName;
-    private File dbFile;
+    private File dataFile;
     private Map<K, V> data;
     private Serializer<K> serializerKey;
     private Serializer<V> serializerValue;
-    private RandomAccessFile file;
 
     public DataBase(String path, Serializer<K> serializerKey, Serializer<V> serializerValue) throws IOException {
 
-        try {
-            dbFileName = Paths.get(path);
-            data = new HashMap<>();
-            dbFile = new File(path + File.separator + "storage.db" + ".lock");
+        this.serializerKey = serializerKey;
+        this.serializerValue = serializerValue;
 
-            if (!dbFile.exists() && !dbFile.createNewFile()) {
-                throw new FileNotFoundException("DataBase: Cannot create new database file");
-            }
+        File directory = new File(path);
+        if (!directory.isDirectory()) {
+            throw new RuntimeException("DataBase: Wrong path");
+        }
 
-            this.serializerKey = serializerKey;
-            this.serializerValue = serializerValue;
+        dataFile = new File(path, "storage.db");
 
-            File database = new File(path + File.separator + "storage.db");
+        if (dataFile.exists()) {
+            readFromFile();
+        } else if (!dataFile.createNewFile()) {
+            throw new RuntimeException("DataBase: Can't create file");
+        }
 
-            file = new RandomAccessFile(database, "rw");
-            if (!database.createNewFile()) {
-                if (file.length() > 0) {
-                    while (file.getFilePointer() < file.length()) {
-                        K key = serializerKey.deserializeRead(file);
-                        V value = serializerValue.deserializeRead(file);
-                        if (data.containsKey(key)) {
-                            throw new IOException("DataBase.readFromFile: Two same keys in database file");
-                        }
-                        data.put(key, value);
+    }
+
+    private void readFromFile() throws IOException {
+            try (DataInputStream stream = new DataInputStream(new FileInputStream(dataFile))) {
+                int count;
+                count = stream.readInt();
+                for (int i = 0; i < count; i++) {
+                    K key = serializerKey.deserializeRead(stream);
+                    V value = serializerValue.deserializeRead(stream);
+                    if (data.containsKey(key)) {
+                        throw new IOException("DataBase.readFromFile: Two same keys in database file");
                     }
+                    data.put(key, value);
                 }
+            } catch (FileNotFoundException e) {
+            throw new IOException(e + "DataBase.readFromFile: File not found");
+        }
+    }
+
+    private void writeInFile() throws IOException {
+        try (DataOutputStream stream = new DataOutputStream(new FileOutputStream(dataFile))) {
+
+
+            for (Map.Entry<K, V> current : data.entrySet()) {
+                serializerKey.serializeWrite(current.getKey(), stream);
+                serializerValue.serializeWrite(current.getValue(), stream);
             }
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            throw new IOException("DataBase.writeInFile: File not found", e);
         }
+
     }
 
     @Override
-    public V read(K key) {
+    public V read(K key)  {
         checkNotClosed();
-        if (data.containsKey(key)) {
-            return data.get(key);
-        } else {
-            return null;
-        }
+        return data.get(key);
     }
 
     @Override
-    public boolean exists(K key) {
+    public boolean exists(K key)  {
         checkNotClosed();
-        if (data.containsKey(key)) {
-            return true;
-        }
-        return false;
+        return data.containsKey(key);
     }
 
 
     @Override
-    public void write(K key, V value) {
+    public void write(K key, V value)  {
         checkNotClosed();
         data.put(key, value);
     }
 
     @Override
-    public void delete(K key) {
+    public void delete(K key)  {
         checkNotClosed();
-        if (data.containsKey(key)) {
-            data.remove(key);
-        }
+        data.remove(key);
     }
 
 
@@ -100,24 +99,13 @@ public class DataBase<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public int size() {
+        checkNotClosed();
         return data.size();
     }
 
     @Override
     public void close() throws IOException {
-
-        try {
-            file.setLength(0);
-            file.seek(0);
-            for (Map.Entry<K, V> current : data.entrySet()) {
-                serializerKey.serializeWrite(current.getKey(), file);
-                serializerValue.serializeWrite(current.getValue(), file);
-            }
-            file.close();
-            Files.delete(dbFile.toPath());
-        } catch (FileNotFoundException e) {
-            throw new IOException("DataBase.writeInFile: File not found", e);
-        }
+        writeInFile();
         data = null;
     }
 
