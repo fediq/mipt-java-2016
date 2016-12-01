@@ -52,7 +52,9 @@ public class CalculatorMain implements Calculator {
             if (current == '-' && previous != ')' && !Character.isDigit(previous)) {
                 current = newSymbol;
             }
-            result.append(result).append(current);
+
+
+            result.append(current);
         }
         return result.toString();
     }
