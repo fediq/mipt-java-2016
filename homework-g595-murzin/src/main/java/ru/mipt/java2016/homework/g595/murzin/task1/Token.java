@@ -11,6 +11,7 @@ public class Token {
     public static final Token DIVIDE = new TokenOperatorBinary(TokenType.DIVIDE, 2, (a, b) -> a / b);
     public static final Token OPEN_BRACKET = new Token(TokenType.OPEN_BRACKET);
     public static final Token CLOSE_BRACKET = new Token(TokenType.CLOSE_BRACKET);
+    public static final Token COMMA = new Token(TokenType.COMMA);
 
     public final TokenType type;
 

@@ -11,5 +11,7 @@ public enum TokenType {
     DIVIDE,
     OPEN_BRACKET,
     CLOSE_BRACKET,
-    MINUS_UNARY
+    MINUS_UNARY,
+    COMMA,
+    FUNCTION
 }
