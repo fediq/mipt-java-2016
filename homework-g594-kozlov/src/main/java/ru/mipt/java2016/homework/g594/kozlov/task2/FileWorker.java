@@ -28,6 +28,7 @@ public class FileWorker implements Closeable {
         try {
             file.createNewFile();
         } catch (IOException e) {
+            System.out.println("failed to create file");
             throw new RuntimeException(e);
         }
     }

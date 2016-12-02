@@ -12,6 +12,11 @@
     <artifactId>homework-g594-kozlov</artifactId>
     <dependencies>
         <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>19.0</version>
+        </dependency>
+        <dependency>
             <groupId>ru.mipt.java2016</groupId>
             <artifactId>homework-base</artifactId>
             <version>1.0.0</version>
@@ -21,11 +26,6 @@
             <artifactId>homework-tests</artifactId>
             <version>1.0.0</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>16.0.1</version>
         </dependency>
     </dependencies>
 

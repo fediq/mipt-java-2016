@@ -34,7 +34,6 @@ public class KVStorageImpl<K, V> implements KeyValueStorage<K, V> {
                             return result;
                         }
                     });*/
-
     private final Map<K, KeyInfo> keyMap;
     private static final String VALIDATE_STRING = "itismyawesomestoragedontfakeit";
     private Boolean isClosedFlag = false;

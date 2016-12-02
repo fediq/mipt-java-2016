@@ -2,29 +2,17 @@ package ru.mipt.java2016.homework.g594.kozlov.task3;
 
 import org.junit.Test;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
-import ru.mipt.java2016.homework.g594.kozlov.task2.FileWorker;
 import ru.mipt.java2016.homework.g594.kozlov.task2.KVStorageFactory;
 
 import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
 
+
 /**
  * Created by Anatoly on 14.11.2016.
  */
 public class MyTests {
-    @Test
-    public void simpleWriteReadTest() {
-        FileWorker file = new FileWorker("temp/mytemp.txt", false);
-        file.createFile();
-        String testString = "testString";
-        file.bufferedWrite(testString);
-        file.bufferedWriteSubmit();
-        file.close();
-        String result = file.readNextToken();
-        assertEquals(testString, result);
-    }
-
 
     @Test
     public void storageWriteReadTest() {
