@@ -5,22 +5,24 @@ import ru.mipt.java2016.homework.base.task1.ParsingException;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
-import static ru.mipt.java2016.homework.g595.murzin.task1.MyFunction.create0;
-import static ru.mipt.java2016.homework.g595.murzin.task1.MyFunction.create1;
-import static ru.mipt.java2016.homework.g595.murzin.task1.MyFunction.create2;
+import static ru.mipt.java2016.homework.g595.murzin.task1.IFunction.create0;
+import static ru.mipt.java2016.homework.g595.murzin.task1.IFunction.create1;
+import static ru.mipt.java2016.homework.g595.murzin.task1.IFunction.create2;
 
 /**
  * Created by Дмитрий Мурзин on 10.10.16.
  */
 public class SimpleCalculator implements Calculator {
-    private static HashMap<Character, Token> charactersToTokens = createMap();
-    private static HashMap<String, MyFunction> functions = createFunctions();
 
-    private static HashMap<Character, Token> createMap() {
+    public final static Map<Character, Token> charactersToTokens = createMap();
+    public final static Map<String, IFunction> functions = createFunctions();
+
+    private static Map<Character, Token> createMap() {
         HashMap<Character, Token> map = new HashMap<>();
         map.put('+', Token.PLUS);
         map.put('-', Token.MINUS);
@@ -29,11 +31,11 @@ public class SimpleCalculator implements Calculator {
         map.put('(', Token.OPEN_BRACKET);
         map.put(')', Token.CLOSE_BRACKET);
         map.put(',', Token.COMMA);
-        return map;
+        return Collections.unmodifiableMap(map);
     }
 
-    private static HashMap<String, MyFunction> createFunctions() {
-        HashMap<String, MyFunction> map = new HashMap<>();
+    private static Map<String, IFunction> createFunctions() {
+        HashMap<String, IFunction> map = new HashMap<>();
         map.put("sin", create1(Math::sin));
         map.put("cos", create1(Math::cos));
         map.put("tg", create1(Math::tan));
@@ -46,17 +48,21 @@ public class SimpleCalculator implements Calculator {
         map.put("rnd", create0(() -> new Random().nextDouble()));
         map.put("max", create2(Math::max));
         map.put("min", create2(Math::min));
-        return map;
+        return Collections.unmodifiableMap(map);
     }
 
     @Override
     public double calculate(String expression) throws ParsingException {
-        ArrayList<Token> input = parseString(expression);
+        return calculate(expression, null, null);
+    }
+
+    public double calculate(String expression, MyContext context, HashMap<String, Double> additionalVariables) throws ParsingException {
+        ArrayList<Token> input = parseString(expression, context, additionalVariables);
         ArrayDeque<Token> rpn = convertToRPN(input);
         return calculateRPN(rpn);
     }
 
-    private ArrayList<Token> parseString(String expression) throws ParsingException {
+    private ArrayList<Token> parseString(String expression, MyContext context, HashMap<String, Double> additionalVariables) throws ParsingException {
         expression += " ";
         ArrayList<Token> input = new ArrayList<>();
         for (int i = 0; i < expression.length(); i++) {
@@ -83,16 +89,34 @@ public class SimpleCalculator implements Calculator {
             } else {
                 Token token = charactersToTokens.get(c);
                 if (token == null) {
-                    for (Map.Entry<String, MyFunction> entry : functions.entrySet()) {
-                        String functionName = entry.getKey();
-                        if (expression.startsWith(functionName, i)) {
+                    // проверяем наличие функции
+                    ArrayList<Map.Entry<String, ? extends IFunction>> allFunctions = new ArrayList<>();
+                    allFunctions.addAll(functions.entrySet());
+                    allFunctions.addAll(context.functions.entrySet());
+                    for (Map.Entry<String, ? extends IFunction> entry : allFunctions) {
+                        if (expression.startsWith(entry.getKey(), i)) {
                             token = new TokenFunction(entry.getValue());
-                            i += functionName.length() - 1;
+                            i += entry.getKey().length() - 1;
                             break;
                         }
                     }
                     if (token == null) {
-                        throw new ParsingException("Illegal character: " + c);
+                        // проверяем наличие переменной
+                        HashMap<String, Double> allVariables = new HashMap<>();
+                        context.variables.forEach((name, variable) -> allVariables.put(name, variable.value));
+                        if (additionalVariables != null) {
+                            allVariables.putAll(additionalVariables);
+                        }
+                        for (Map.Entry<String, Double> entry : allVariables.entrySet()) {
+                            if (expression.startsWith(entry.getKey(), i)) {
+                                token = new TokenNumber(entry.getValue());
+                                i += entry.getKey().length() - 1;
+                                break;
+                            }
+                        }
+                        if (token == null) {
+                            throw new ParsingException("Illegal character: " + c);
+                        }
                     }
                 }
                 token = tryReplaceBinaryToUnary(token, input.isEmpty() ? null : input.get(input.size() - 1));
@@ -127,6 +151,9 @@ public class SimpleCalculator implements Calculator {
                     throw new ParsingException("Bad brackets balance");
                 }
                 stack.pollLast();
+                if (!stack.isEmpty() && stack.peekLast().type == TokenType.FUNCTION) {
+                    output.addLast(stack.pollLast());
+                }
             } else if (token.type == TokenType.COMMA) {
                 output.addLast(token);
             } else if (token.type == TokenType.FUNCTION) {
@@ -161,7 +188,7 @@ public class SimpleCalculator implements Calculator {
             if (token.type == TokenType.NUMBER || token.type == TokenType.COMMA) {
                 stack.push(token);
             } else if (token.type == TokenType.FUNCTION) {
-                MyFunction function = ((TokenFunction) token).function;
+                IFunction function = ((TokenFunction) token).function;
                 int numberArguments = function.numberArguments();
                 if (stack.size() < numberArguments) {
                     throw new ParsingException(String.format("Function %s takes %d arguments, only %d given",
