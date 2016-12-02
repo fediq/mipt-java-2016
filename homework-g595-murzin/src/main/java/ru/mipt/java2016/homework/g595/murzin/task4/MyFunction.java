@@ -13,13 +13,13 @@ import java.util.List;
  */
 public class MyFunction implements IFunction {
     public final String name;
-    public final String[] arguments;
+    public final String[] argumentsNames;
     public final String expression;
     private final MyContext context;
 
-    public MyFunction(String name, List<String> arguments, String expression, MyContext context) {
+    public MyFunction(String name, List<String> argumentsNames, String expression, MyContext context) {
         this.name = name;
-        this.arguments = arguments.toArray(new String[arguments.size()]);
+        this.argumentsNames = argumentsNames.toArray(new String[argumentsNames.size()]);
         this.expression = expression;
         this.context = context;
     }
@@ -28,14 +28,14 @@ public class MyFunction implements IFunction {
     public double apply(double[] arguments) throws ParsingException {
         assert numberArguments() == arguments.length;
         HashMap<String, Double> additionalVariables = new HashMap<>();
-        for (int i = 0; i < this.arguments.length; i++) {
-            additionalVariables.put(this.arguments[i], arguments[i]);
+        for (int i = 0; i < argumentsNames.length; i++) {
+            additionalVariables.put(argumentsNames[i], arguments[i]);
         }
         return new SimpleCalculator().calculate(expression, context, additionalVariables);
     }
 
     @Override
     public int numberArguments() {
-        return arguments.length;
+        return argumentsNames.length;
     }
 }

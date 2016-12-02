@@ -37,7 +37,8 @@ public class MyController {
     }
 
     @RequestMapping(value = "/variable/{variableName}", method = RequestMethod.PUT)
-    public void putVariable(@PathVariable String variableName, @RequestBody String variableExpression) throws ParsingException {
+    public void putVariable(@PathVariable String variableName, @RequestBody String variableExpression)
+            throws ParsingException {
         context.setVariable(variableName, variableExpression);
     }
 
@@ -63,7 +64,9 @@ public class MyController {
     }
 
     @RequestMapping(value = "/function/{functionName}", method = RequestMethod.PUT)
-    public ResponseEntity<Void> putFunction(@PathVariable String functionName, @RequestParam(value = "args") List<String> arguments, @RequestBody String functionExpression) {
+    public ResponseEntity<Void> putFunction(@PathVariable String functionName,
+                                            @RequestParam(value = "args") List<String> arguments,
+                                            @RequestBody String functionExpression) {
         boolean success = context.setFunction(functionName, arguments, functionExpression);
         return new ResponseEntity<>(success ? HttpStatus.OK : HttpStatus.BAD_REQUEST);
     }

@@ -19,8 +19,8 @@ import static ru.mipt.java2016.homework.g595.murzin.task1.IFunction.create2;
  */
 public class SimpleCalculator implements Calculator {
 
-    public final static Map<Character, Token> charactersToTokens = createMap();
-    public final static Map<String, IFunction> functions = createFunctions();
+    public static final Map<Character, Token> CHARACTERS_TO_TOKENS = createMap();
+    public static final Map<String, IFunction> FUNCTIONS = createFunctions();
 
     private static Map<Character, Token> createMap() {
         HashMap<Character, Token> map = new HashMap<>();
@@ -56,13 +56,15 @@ public class SimpleCalculator implements Calculator {
         return calculate(expression, null, null);
     }
 
-    public double calculate(String expression, MyContext context, HashMap<String, Double> additionalVariables) throws ParsingException {
+    public double calculate(String expression, MyContext context, HashMap<String, Double> additionalVariables)
+            throws ParsingException {
         ArrayList<Token> input = parseString(expression, context, additionalVariables);
         ArrayDeque<Token> rpn = convertToRPN(input);
         return calculateRPN(rpn);
     }
 
-    private ArrayList<Token> parseString(String expression, MyContext context, HashMap<String, Double> additionalVariables) throws ParsingException {
+    private ArrayList<Token> parseString(String expression, MyContext context,
+                                         HashMap<String, Double> additionalVariables) throws ParsingException {
         expression += " ";
         ArrayList<Token> input = new ArrayList<>();
         for (int i = 0; i < expression.length(); i++) {
@@ -87,12 +89,14 @@ public class SimpleCalculator implements Calculator {
                     }
                 }
             } else {
-                Token token = charactersToTokens.get(c);
+                Token token = CHARACTERS_TO_TOKENS.get(c);
                 if (token == null) {
                     // проверяем наличие функции
                     ArrayList<Map.Entry<String, ? extends IFunction>> allFunctions = new ArrayList<>();
-                    allFunctions.addAll(functions.entrySet());
-                    allFunctions.addAll(context.functions.entrySet());
+                    allFunctions.addAll(FUNCTIONS.entrySet());
+                    if (context != null) {
+                        allFunctions.addAll(context.functions.entrySet());
+                    }
                     for (Map.Entry<String, ? extends IFunction> entry : allFunctions) {
                         if (expression.startsWith(entry.getKey(), i)) {
                             token = new TokenFunction(entry.getValue());
@@ -103,7 +107,9 @@ public class SimpleCalculator implements Calculator {
                     if (token == null) {
                         // проверяем наличие переменной
                         HashMap<String, Double> allVariables = new HashMap<>();
-                        context.variables.forEach((name, variable) -> allVariables.put(name, variable.value));
+                        if (context != null) {
+                            context.variables.forEach((name, variable) -> allVariables.put(name, variable.value));
+                        }
                         if (additionalVariables != null) {
                             allVariables.putAll(additionalVariables);
                         }

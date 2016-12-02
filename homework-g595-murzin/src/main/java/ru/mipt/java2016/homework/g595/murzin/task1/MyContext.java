@@ -15,11 +15,12 @@ public class MyContext {
     public final HashMap<String, MyFunction> functions = new HashMap<>();
 
     public void setVariable(String variableName, String variableExpression) throws ParsingException {
-        variables.put(variableName, new MyVariable(variableExpression, new SimpleCalculator().calculate(variableExpression, this, null)));
+        double variableValue = new SimpleCalculator().calculate(variableExpression, this, null);
+        variables.put(variableName, new MyVariable(variableExpression, variableValue));
     }
 
     public boolean setFunction(String functionName, List<String> arguments, String functionExpresion) {
-        if (SimpleCalculator.functions.containsKey(functionName)) {
+        if (SimpleCalculator.FUNCTIONS.containsKey(functionName)) {
             return false;
         }
         functions.put(functionName, new MyFunction(functionExpresion, arguments, functionExpresion, this));
