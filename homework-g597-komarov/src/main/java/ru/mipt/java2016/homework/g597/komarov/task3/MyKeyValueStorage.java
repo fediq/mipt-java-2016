@@ -3,12 +3,9 @@ package ru.mipt.java2016.homework.g597.komarov.task3;
 /**
  * Created by mikhail on 17.11.16.
  */
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.File;
+import java.io.*;
 import java.nio.file.Paths;
 import java.util.*;
-import java.io.RandomAccessFile;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import  ru.mipt.java2016.homework.base.task2.KeyValueStorage;
@@ -17,7 +14,7 @@ import ru.mipt.java2016.homework.g597.komarov.task2.Serializer;
 public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private RandomAccessFile valueTable;
     private RandomAccessFile keyOffsetTable;
-    private String pathToStorage;
+    final private String pathToStorage;
     private File flag;
     private Serializer<K> keySerializer;
     private Serializer<V> valueSerializer;
@@ -43,11 +40,6 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         File pathToFile = Paths.get(path, "storage.db").toFile();
 
         try {
-            pathToFile.createNewFile();
-        } catch (IOException e) {
-            throw new RuntimeException("Cannot create the file");
-        }
-        try {
             valueTable = new RandomAccessFile(pathToFile, "rw");
         } catch (FileNotFoundException e) {
             throw new IOException("File not found");
@@ -55,22 +47,16 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
         pathToFile = Paths.get(path, "index.db").toFile();
         try {
-            pathToFile.createNewFile();
-        } catch (IOException e) {
-            throw new RuntimeException("Cannot create the file");
-        }
-        try {
             keyOffsetTable = new RandomAccessFile(pathToFile, "rw");
             dataBase = readMapFromFile();
         } catch (FileNotFoundException e) {
             throw new IOException("File not found");
         }
-
     }
 
     @Override
     public V read(K key) {
-        lock.readLock().lock();
+        lock.writeLock().lock();
         try {
             checkState();
             if (!dataBase.containsKey(key)) {
@@ -84,10 +70,10 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 valueTable.seek(offset);
                 return valueSerializer.read(valueTable);
             } catch (IOException e) {
-                return null;
+                throw new UncheckedIOException(e);
             }
         } finally {
-            lock.readLock().unlock();
+            lock.writeLock().unlock();
         }
     }
 
@@ -113,7 +99,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 try {
                     merge();
                 } catch (IOException e) {
-                    return;
+                    throw new UncheckedIOException(e);
                 }
             }
         } finally {
@@ -135,7 +121,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                     rewriteFile();
                     deletedCount = 0;
                 } catch (IOException e) {
-                    return;
+                    throw new UncheckedIOException(e);
                 }
             }
         } finally {
@@ -167,9 +153,9 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public void close() throws IOException {
+        checkState();
         lock.writeLock().lock();
         try {
-            checkState();
             if (written.size() != 0) {
                 merge();
             }
@@ -218,45 +204,36 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             valueSerializer.write(valueTable, entry.getValue());
             offset = valueTable.length();
         }
-        written = new HashMap<>();
+        written.clear();
     }
 
     private void rewriteFile() throws IOException {
         keyOffsetTable.setLength(0);
         keyOffsetTable.seek(0);
 
-        RandomAccessFile bufFile;
         File pathToFile = Paths.get(pathToStorage, "storageCopy.db").toFile();
-        try {
-            pathToFile.createNewFile();
-        } catch (IOException e) {
-            throw new RuntimeException("Cannot create the file");
-        }
-        try {
-            bufFile = new RandomAccessFile(pathToFile, "rw");
-        } catch (FileNotFoundException e) {
-            throw new IOException("File not found");
-        }
-        bufFile.seek(0);
+        try (RandomAccessFile bufFile = new RandomAccessFile(pathToFile, "rw")) {
+            bufFile.seek(0);
+            long offset = 0;
+            V bufValue;
 
-        long offset = 0;
-        V bufValue;
-
-        for (Map.Entry<K, Long> entry : dataBase.entrySet()) {
-            if (entry.getValue() >= 0) {
-                keySerializer.write(keyOffsetTable, entry.getKey());
-                keyOffsetTable.writeLong(offset);
-                valueTable.seek(entry.getValue());
-                bufValue = valueSerializer.read(valueTable);
-                valueSerializer.write(bufFile, bufValue);
-                offset += bufFile.length();
+            for (Map.Entry<K, Long> entry : dataBase.entrySet()) {
+                if (entry.getValue() >= 0) {
+                    keySerializer.write(keyOffsetTable, entry.getKey());
+                    keyOffsetTable.writeLong(offset);
+                    valueTable.seek(entry.getValue());
+                    bufValue = valueSerializer.read(valueTable);
+                    valueSerializer.write(bufFile, bufValue);
+                    offset += bufFile.length();
+                }
             }
-        }
 
-        File oldFile = Paths.get(pathToStorage, "storage.db").toFile();
-        oldFile.delete();
-        File newFile = Paths.get(pathToStorage, "storageCopy.db").toFile();
-        newFile.renameTo(oldFile);
-        valueTable = bufFile;
+            valueTable.close();
+            File oldFile = Paths.get(pathToStorage, "storage.db").toFile();
+            oldFile.delete();
+            File newFile = Paths.get(pathToStorage, "storageCopy.db").toFile();
+            newFile.renameTo(oldFile);
+            valueTable = bufFile;
+        }
     }
 }
