@@ -14,7 +14,6 @@ import ru.mipt.java2016.homework.g597.komarov.task2.Serializer;
 public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private RandomAccessFile valueTable;
     private RandomAccessFile keyOffsetTable;
-    final private String pathToStorage;
     private File flag;
     private Serializer<K> keySerializer;
     private Serializer<V> valueSerializer;
@@ -22,6 +21,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private int deletedCount;
     private Map<K, V> written;
     private ReentrantReadWriteLock lock;
+    final private String pathToStorage;
 
     public MyKeyValueStorage(String path, Serializer<K> keySerializerArg,
                              Serializer<V> valueSerializerArg) throws IOException {
