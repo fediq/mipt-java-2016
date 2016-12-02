@@ -9,11 +9,11 @@ import ru.mipt.java2016.homework.base.task1.ParsingException;
  * Created by igor on 11/28/16.
  */
 interface CalculatorWithMethods extends Calculator {
-    double getVariable(String name);
+    Double getVariable(String name);
 
-    void addVariable(String name, Double value);
+    void addVariable(String name, Double value) throws ParsingException;
 
-    void deleteVariable(String name);
+    boolean deleteVariable(String name);
 
     Collection<String> getVariablesList();
 
@@ -21,7 +21,7 @@ interface CalculatorWithMethods extends Calculator {
 
     void addFunction(String name, List<String> args, String expr);
 
-    void deleteFunction(String name);
+    boolean deleteFunction(String name);
 
     Collection<String> getFunctionsList();
 

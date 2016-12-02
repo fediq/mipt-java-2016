@@ -5,11 +5,15 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import org.apache.commons.collections.IteratorUtils;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 import ru.mipt.java2016.homework.g595.novikov.myutils.MapUnion2;
 import ru.mipt.java2016.homework.g595.novikov.myutils.SavingPointer;
+import ru.mipt.java2016.homework.g595.novikov.task4.MyFunction;
 
 public class MyCalculator implements Calculator {
     public static class Tokenizer implements SavingPointer<String> {
@@ -61,12 +65,11 @@ public class MyCalculator implements Calculator {
         }
     }
 
-
-    public class MyFunction {
+    class MyEvaluableFunction implements MyFunction {
         private List<String> args;
         private List<String> functionTokens;
 
-        public MyFunction(List<String> myArgs, String myExpression) {
+        MyEvaluableFunction(List<String> myArgs, String myExpression) {
             args = myArgs;
             functionTokens = IteratorUtils.toList(new Tokenizer(myExpression)
                     .toIterator()); // FIXME : unchecked assignment ???
@@ -205,5 +208,85 @@ public class MyCalculator implements Calculator {
     @Override
     public double calculate(String expression) throws ParsingException {
         return calculateExpression(expression, Collections.emptyMap(), Collections.emptyMap());
+    }
+
+    public MyFunction addFunction(List<String> args, String expression) {
+        return new MyEvaluableFunction(args, expression);
+    }
+
+    private class MyBuiltinFunction2Arg implements MyFunction {
+        private BiFunction<Double, Double, Double> func;
+
+        MyBuiltinFunction2Arg(BiFunction<Double, Double, Double> func) {
+            this.func = func;
+        }
+
+        @Override
+        public double eval(SavingPointer<String> tokens, Map<String, Double> variables,
+                Map<String, MyFunction> functions) throws ParsingException {
+            double a;
+            double b;
+            a = expr(tokens, variables, functions);
+            if (!tokens.getCurrent().equals(",")) {
+                throw new ParsingException("wrong number of arguments");
+            }
+            tokens.next();
+            b = expr(tokens, variables, functions);
+            if (!tokens.getCurrent().equals(")")) {
+                throw new ParsingException("expected ) in the end of function body");
+            }
+            tokens.next();
+            return func.apply(a, b);
+        }
+    }
+
+    private class MyBuiltinFunction1Arg implements MyFunction {
+        private Function<Double, Double> func;
+
+        MyBuiltinFunction1Arg(Function<Double, Double> func) {
+            this.func = func;
+        }
+
+        @Override
+        public double eval(SavingPointer<String> tokens, Map<String, Double> variables,
+                Map<String, MyFunction> functions) throws ParsingException {
+            double a;
+            a = expr(tokens, variables, functions);
+            if (!tokens.getCurrent().equals(")")) {
+                throw new ParsingException("expected ) in the end of function body");
+            }
+            tokens.next();
+            return func.apply(a);
+        }
+    }
+
+    private class MyBuiltinFunction0Arg implements MyFunction {
+        private Supplier<Double> func;
+
+        MyBuiltinFunction0Arg(Supplier<Double> func) {
+            this.func = func;
+        }
+
+        @Override
+        public double eval(SavingPointer<String> tokens, Map<String, Double> variables,
+                Map<String, MyFunction> functions) throws ParsingException {
+            if (!tokens.getCurrent().equals(")")) {
+                throw new ParsingException("expected ) in the end of function body");
+            }
+            tokens.next();
+            return func.get();
+        }
+    }
+
+    public MyFunction addBuiltinFunction0Arg(Supplier<Double> func) {
+        return new MyBuiltinFunction0Arg(func);
+    }
+
+    public MyFunction addBuiltinFunction1Arg(Function<Double, Double> func) {
+        return new MyBuiltinFunction1Arg(func);
+    }
+
+    public MyFunction addBuiltinFunction2Arg(BiFunction<Double, Double, Double> func) {
+        return new MyBuiltinFunction2Arg(func);
     }
 }

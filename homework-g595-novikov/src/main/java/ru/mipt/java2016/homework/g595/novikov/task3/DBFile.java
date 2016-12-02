@@ -31,7 +31,7 @@ public class DBFile<K, V> implements Closeable {
         String keysFilename = String.format("%s%skeys_%d.db", path, File.separator, index);
         valuesFile = new File(valuesFilename);
         keysFile = new File(keysFilename);
-        if (!valuesFile.createNewFile() || !keysFile.createNewFile()) { // need to remove unused files if error occured
+        if (!valuesFile.createNewFile() || !keysFile.createNewFile()) { // need to remove unused files if error occurred
             throw new RuntimeException("Cannot create new DBFile : file already exists");
         }
 

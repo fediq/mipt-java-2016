@@ -5,6 +5,7 @@ import java.util.Collections;
 import org.junit.Assert;
 import org.junit.Test;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
+import ru.mipt.java2016.homework.g595.novikov.myutils.MyMath;
 import ru.mipt.java2016.homework.tests.task1.AbstractCalculatorTest;
 import ru.mipt.java2016.homework.tests.task2.StorageTestUtils;
 
@@ -22,8 +23,6 @@ public abstract class AbstractCalculatorStateTest extends AbstractCalculatorTest
         try {
             callback.callback(calculator);
         } catch (ParsingException e) {
-            throw e;
-        } catch (IllegalStateException e) {
             throw e;
         } catch (Exception e) {
             e.printStackTrace();
@@ -83,6 +82,22 @@ public abstract class AbstractCalculatorStateTest extends AbstractCalculatorTest
             calculator.addVariable("a", 42.0);
             calculator.addFunction("f", Arrays.asList("x"), "x + a");
             Assert.assertEquals(42 + 43.0, calculator.calculate("f(43)"), EPS);
+        });
+    }
+
+    @Test
+    public void testBuiltinFunctionsAndVariables() throws ParsingException {
+        testCalculatorWithMethods(calculator -> {
+            Assert.assertEquals(Math.sin(23.0), calculator.calculate("sin(21 + 4/2)"), EPS);
+            Assert.assertEquals(MyMath.sign(Math.cos(3) + Math.cos(6)),
+                    calculator.calculate("sign(cos(3) + cos(6))"), EPS);
+            Assert.assertEquals(MyMath.log(Math.sqrt(42), Math.sqrt(52)),
+                    calculator.calculate("log(sqrt(42), sqrt(52))"), EPS);
+
+            calculator.addVariable("g", 6.21);
+            calculator.addVariable("lx", 4.8101);
+            Assert.assertEquals(MyMath.log2(6.21) + 4.8101, calculator.calculate("log2(g) + lx"), EPS);
+            Assert.assertEquals(Math.pow(2, 6.21), calculator.calculate("pow(2, max(lx, g))"), EPS);
         });
     }
 }

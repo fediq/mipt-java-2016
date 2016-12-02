@@ -267,7 +267,7 @@ public class MyCoolKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             }
         } catch (IOException e) {
             e.printStackTrace();
-            throw new IllegalStateException("IOException durng flush()");
+            throw new IllegalStateException("IOException during flush()");
         }
     }
 
