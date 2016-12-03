@@ -6,6 +6,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.file.NotDirectoryException;
@@ -13,18 +15,20 @@ import java.nio.file.NotDirectoryException;
 /**
  * Created by geras-artem on 17.11.16.
  */
-public class StorageFileIO {
+public class StorageFileIO implements AutoCloseable {
+    private static final int INT_SIZE = Integer.SIZE / 8;
+
     private File file;
 
     private File tmpFile;
 
     private RandomAccessFile randomAccessFile;
 
-    private BufferedInputStream inputStream;
+    private InputStream inputStream;
 
-    private BufferedOutputStream outputStream;
+    private OutputStream outputStream;
 
-    private ByteBuffer intBuffer = ByteBuffer.allocate(4);
+    private ByteBuffer intBuffer = ByteBuffer.allocate(INT_SIZE);
 
     public StorageFileIO(String directoryPath, String fileName) throws IOException {
         File directory = new File(directoryPath);
@@ -58,7 +62,7 @@ public class StorageFileIO {
         outputStream.write(toWrite.array());
     }
 
-    public void enterCopyMode() throws IOException {
+    public void open() throws IOException {
         randomAccessFile.close();
         outputStream.close();
         tmpFile.createNewFile();
@@ -66,16 +70,20 @@ public class StorageFileIO {
         outputStream = new BufferedOutputStream((new FileOutputStream(tmpFile)));
     }
 
-    public void exitCopyMode() throws IOException {
+    @Override
+    public void close() throws IOException {
         inputStream.close();
         outputStream.close();
-        tmpFile.renameTo(file);
+        file.delete();
+        if (!tmpFile.renameTo(file)) {
+            throw new IOException("Error in refreshing of the storage file");
+        }
         randomAccessFile = new RandomAccessFile(file, "rw");
         outputStream = new BufferedOutputStream(new FileOutputStream(tmpFile));
     }
 
     public int copyReadSize() throws IOException {
-        if (inputStream.read(intBuffer.array()) != 4) {
+        if (inputStream.read(intBuffer.array()) != INT_SIZE) {
             throw new IOException("Read error");
         }
         return intBuffer.getInt(0);
@@ -97,7 +105,7 @@ public class StorageFileIO {
         return randomAccessFile.length();
     }
 
-    public void close() throws IOException {
+    public void epicClose() throws IOException {
         intBuffer.putInt(0, -1);
         outputStream.write(intBuffer.array());
         outputStream.close();

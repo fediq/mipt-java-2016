@@ -1,5 +1,8 @@
 package ru.mipt.java2016.homework.g596.gerasimov.task3;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -14,6 +17,10 @@ import ru.mipt.java2016.homework.g596.gerasimov.task2.Serializer.ISerializer;
  * Created by geras-artem on 16.11.16.
  */
 public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
+    private static final int INT_SIZE = Integer.SIZE / 8;
+
+    private static final int REFRESH_CONST = 3;
+
     private final HashMap<K, Long> offsetTable = new HashMap<>();
 
     private final ISerializer<K> keySerializer;
@@ -34,14 +41,18 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private boolean offsetTableIsUpdated = false;
 
-    private int deletedCounter = 0;
+    private int oldNoteCounter = 0;
 
     private long storageLength;
 
     private long writtenLength;
 
+    private long cacheSize;
+
+    private LoadingCache<K, V> cache;
+
     public SSTableKeyValueStorage(String directoryPath, ISerializer<K> keySerializer,
-            ISerializer<V> valueSerializer) throws IOException {
+            ISerializer<V> valueSerializer, long cacheSize) throws IOException {
         this.keySerializer = keySerializer;
         this.valueSerializer = valueSerializer;
         indexFileIO = new IndexFileIO(directoryPath, "index.db");
@@ -49,25 +60,43 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         storageLength = storageFileIO.fileLength();
         writtenLength = storageLength - 1;
         readOffsetTable();
+
+        this.cacheSize = cacheSize;
+        cache = CacheBuilder.newBuilder()
+                .maximumSize(this.cacheSize)
+                .build(new CacheLoader<K, V>() {
+                    @Override
+                    public V load(K key) throws Exception {
+                        if (offsetTable.containsKey(key)) {
+                            try {
+                                return readValue(key);
+                            } catch (Exception exception) {
+                                return null;
+                            }
+                        } else {
+                            return null;
+                        }
+                    }
+                });
     }
 
     @Override
     public V read(K key) {
-        writeLock.lock();
-        V result;
+        readLock.lock();
         try {
             checkClosed();
-            if (!exists(key)) {
-                result = null;
-            }
-
-            result = readValue(key);
+//            writeLock.lock();
+//            try {
+//                return cache.get(key);
+//            } finally {
+//                writeLock.unlock();
+//            }
+            return cache.get(key);
         } catch (Exception exception) {
-            result = null;
+            return null;
         } finally {
-            writeLock.unlock();
+            readLock.unlock();
         }
-        return result;
     }
 
     @Override
@@ -89,7 +118,16 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         try {
             checkClosed();
             offsetTableIsUpdated = true;
+            if (offsetTable.containsKey(key)) {
+                ++oldNoteCounter;
+            }
             writeField(key, value);
+
+            if (cache.asMap().containsKey(key)) {
+                cache.put(key, value);
+            }
+
+            refreshStorageFile();
         } catch (Exception exception) {
             throw new RuntimeException("Error in write");
         } finally {
@@ -103,8 +141,12 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         try {
             checkClosed();
             offsetTableIsUpdated = true;
-            ++deletedCounter;
+            ++oldNoteCounter;
             offsetTable.remove(key);
+            cache.invalidate(key);
+            refreshStorageFile();
+        } catch (Exception exception) {
+            throw new RuntimeException("Error in delete");
         } finally {
             writeLock.unlock();
         }
@@ -144,13 +186,15 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             isClosed = true;
 
             refreshStorageFile();
-            storageFileIO.close();
+            storageFileIO.epicClose();
 
             if (offsetTableIsUpdated) {
                 writeOffsetTable();
                 offsetTableIsUpdated = false;
             }
             indexFileIO.close();
+
+            cache.cleanUp();
         } finally {
             writeLock.unlock();
         }
@@ -193,47 +237,48 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void writeField(K key, V value) throws IOException {
-        storageLength += 4 + keySerializer.sizeOfSerialization(key);
+        storageLength += INT_SIZE + keySerializer.sizeOfSerialization(key);
         storageFileIO.writeSize(keySerializer.sizeOfSerialization(key));
         storageFileIO.writeField(keySerializer.serialize(key));
 
         offsetTable.put(key, storageLength);
 
-        storageLength += 4 + valueSerializer.sizeOfSerialization(value);
+        storageLength += INT_SIZE + valueSerializer.sizeOfSerialization(value);
         storageFileIO.writeSize(valueSerializer.sizeOfSerialization(value));
         storageFileIO.writeField(valueSerializer.serialize(value));
     }
 
     private void refreshStorageFile() throws IOException {
-        if (deletedCounter > 3 * offsetTable.size()) {
-            storageFileIO.enterCopyMode();
-            storageLength = 0;
-            long oldFileOffset = 0;
-            for (int keySize = storageFileIO.copyReadSize(); keySize > 0;
-                     keySize = storageFileIO.copyReadSize()) {
+        if (oldNoteCounter > REFRESH_CONST * offsetTable.size()) {
+            try (StorageFileIO storageFileIO = this.storageFileIO) {
+                storageFileIO.open();
+                storageLength = 0;
+                long oldFileOffset = 0;
+                for (int keySize = storageFileIO.copyReadSize();
+                     keySize > 0; keySize = storageFileIO.copyReadSize()) {
 
-                ByteBuffer keyCode = storageFileIO.copyReadField(keySize);
-                int valueSize = storageFileIO.copyReadSize();
-                ByteBuffer valueCode = storageFileIO.copyReadField(valueSize);
-                K key = keySerializer.deserialize(keyCode);
+                    ByteBuffer keyCode = storageFileIO.copyReadField(keySize);
+                    int valueSize = storageFileIO.copyReadSize();
+                    ByteBuffer valueCode = storageFileIO.copyReadField(valueSize);
+                    K key = keySerializer.deserialize(keyCode);
 
-                if (offsetTable.containsKey(key) && offsetTable.get(key)
-                        .equals(oldFileOffset)) {
+                    if (offsetTable.containsKey(key) && offsetTable.get(key).equals(oldFileOffset)) {
 
-                    storageFileIO.writeSize(keySize);
-                    storageFileIO.writeField(keyCode);
-                    storageLength += 4 + keySize;
+                        storageFileIO.writeSize(keySize);
+                        storageFileIO.writeField(keyCode);
+                        storageLength += INT_SIZE + keySize;
 
-                    offsetTable.put(key, storageLength);
+                        offsetTable.put(key, storageLength);
 
-                    storageFileIO.writeSize(valueSize);
-                    storageFileIO.writeField(valueCode);
-                    storageLength += 4 + valueSize;
+                        storageFileIO.writeSize(valueSize);
+                        storageFileIO.writeField(valueCode);
+                        storageLength += INT_SIZE + valueSize;
+                    }
+
+                    oldFileOffset += 2 * INT_SIZE + keySize + valueSize;
                 }
-
-                oldFileOffset += 8 + keySize + valueSize;
             }
-            storageFileIO.exitCopyMode();
         }
     }
 }
+

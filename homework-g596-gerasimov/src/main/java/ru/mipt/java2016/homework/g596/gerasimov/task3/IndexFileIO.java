@@ -6,23 +6,29 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
 /**
  * Created by geras-artem on 17.11.16.
  */
 public class IndexFileIO {
+    private static final int INT_SIZE = Integer.SIZE / 8;
+
+    private static final int LONG_SIZE = Long.SIZE / 8;
+
     private final File file;
 
-    private final BufferedInputStream inputStream;
+    private final InputStream inputStream;
 
-    private BufferedOutputStream outputStream;
+    private OutputStream outputStream;
 
     private boolean isCleared = false;
 
-    private ByteBuffer intBuffer = ByteBuffer.allocate(4);
+    private ByteBuffer intBuffer = ByteBuffer.allocate(INT_SIZE);
 
-    private ByteBuffer longBuffer = ByteBuffer.allocate(8);
+    private ByteBuffer longBuffer = ByteBuffer.allocate(LONG_SIZE);
 
     public IndexFileIO(String directoryPath, String fileName) throws IOException {
         File directory = new File(directoryPath);
@@ -35,7 +41,7 @@ public class IndexFileIO {
     }
 
     public int readSize() throws IOException {
-        if (inputStream.read(intBuffer.array()) != 4) {
+        if (inputStream.read(intBuffer.array()) != INT_SIZE) {
             throw new IOException("Read error");
         }
         return intBuffer.getInt(0);
@@ -65,7 +71,7 @@ public class IndexFileIO {
     }
 
     public long readOffset() throws IOException {
-        if (inputStream.read(longBuffer.array()) != 8) {
+        if (inputStream.read(longBuffer.array()) != LONG_SIZE) {
             throw new IOException("Read error");
         }
         return longBuffer.getLong(0);
