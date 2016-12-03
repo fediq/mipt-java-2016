@@ -11,25 +11,26 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 
-@EnableAutoConfiguration
+@EnableAutoConfiguration(exclude = {
+        org.springframework.boot.autoconfigure.security.SecurityAutoConfiguration.class})
 @Configuration
 @ComponentScan(basePackageClasses = Application.class)
 public class Application {
 
     @Bean
-    public Calculator calculator() {
+    public TopCalculator calculator() {
         return new TopCalculator();
     }
 
     @Bean
     public EmbeddedServletContainerCustomizer customizer(
-            @Value("${ru.mipt.java2016.homework.g000.lavrentyev.task4.httpPort:9001}") int port) {
+            @Value("${ru.mipt.java2016.homework.g000.sharuev.task4.httpPort:9001}") int port) {
         return container -> container.setPort(port);
     }
 
     public static void main(String[] args) {
         SpringApplication application = new SpringApplication(Application.class);
-        //application.setBannerMode(Banner.Mode.OFF);
+        application.setBannerMode(Banner.Mode.OFF);
         application.run(args);
     }
 }

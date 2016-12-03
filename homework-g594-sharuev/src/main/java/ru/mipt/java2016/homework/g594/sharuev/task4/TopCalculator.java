@@ -8,12 +8,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Stack;
 
-
 public class TopCalculator implements ru.mipt.java2016.homework.base.task1.Calculator {
 
     private Logger LOG;
 
     public double calculate(String expression) throws ParsingException {
+        sb.setLength(0);
+        numbers.clear();
+        operators.clear();
         if (expression == null) {
             throw new ParsingException("Null expression");
         } else if (expression.equals("")) {
@@ -37,7 +39,8 @@ public class TopCalculator implements ru.mipt.java2016.homework.base.task1.Calcu
         double[] args = new double[oper.getArity()];
         for (int i = 0; i < args.length; ++i) {
             if (numbers.isEmpty()) {
-                throw new ParsingException(String.format("Not enough operands for operator %s", "a")); // TODO
+                throw new ParsingException(
+                        String.format("Not enough operands for operator %s", "a")); // TODO
             }
             args[i] = numbers.pop();
         }
@@ -50,7 +53,8 @@ public class TopCalculator implements ru.mipt.java2016.homework.base.task1.Calcu
                 try {
                     numbers.push(Double.parseDouble(sb.toString()));
                 } catch (NumberFormatException e) {
-                    throw new ParsingException(String.format("Number \"%s\" is not valid", sb.toString()));
+                    throw new ParsingException(
+                            String.format("Number \"%s\" is not valid", sb.toString()));
                 }
                 //LOG.trace("Push number "+numbers.peek());
                 sb.setLength(0);
@@ -64,7 +68,6 @@ public class TopCalculator implements ru.mipt.java2016.homework.base.task1.Calcu
                             String.format("Unknown operator \"%s\"", operatorStr));
                 }
 
-                //
                 if (operator == Operator.RBRACKET) {
                     while (!operators.isEmpty() && operators.peek() != Operator.LBRACKET) {
                         performOperation(operators.pop());
@@ -256,12 +259,36 @@ public class TopCalculator implements ru.mipt.java2016.homework.base.task1.Calcu
     private HashMap<String, Double> variables;
     private HashMap<String, TopCalculatorFunction> functions;
     private HashMap<String, TopCalculatorFunction> predefinedFunctions;
+    {
+        variables = new HashMap<>();
+        functions = new HashMap<>();
+        predefinedFunctions = new HashMap<>();
+    }
+
+    {
+        /*
+        sin(a)
+cos(a)
+tg(a)
+sqrt(a)
+pow(m, e)
+abs(a)
+sign(a)
+log(a, n)
+log2(a)
+rnd()
+max(a, b)
+min(a, b)
+         */
+        //predefinedFunctions.put()
+    }
 
     public Double getVariable(String variableName) {
         return variables.get(variableName);
     }
 
-    public boolean putVariable(String variableName, String variableValueExpr) throws ParsingException {
+    public boolean putVariable(String variableName,
+                               String variableValueExpr) throws ParsingException {
         return variables.put(variableName, eval(variableValueExpr)) != null;
     }
 
@@ -274,7 +301,7 @@ public class TopCalculator implements ru.mipt.java2016.homework.base.task1.Calcu
     }
 
     public TopCalculatorFunction getFunction(String name) {
-        TopCalculatorFunction f =  predefinedFunctions.get(name);
+        TopCalculatorFunction f = predefinedFunctions.get(name);
         if (f == null) {
             f = functions.get(name);
         }
@@ -286,7 +313,7 @@ public class TopCalculator implements ru.mipt.java2016.homework.base.task1.Calcu
 
         if (predefinedFunctions.containsKey(name)) {
             throw new ParsingException(
-                    String.format("Can't redefine predefined function \"%func\"", name));
+                    String.format("Can't redefine predefined function \"%s\"", name));
         }
 
         return functions.put(name, new TopCalculatorFunction(body, args)) != null;

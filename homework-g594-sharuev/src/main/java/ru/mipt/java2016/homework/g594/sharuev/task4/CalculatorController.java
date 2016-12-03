@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
 import java.util.List;
@@ -17,14 +18,14 @@ public class CalculatorController {
         return calculator.getVariable(variableName);
     }
 
-    @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.PUT)
-    public boolean putVariable(@PathVariable String variableName,
+    @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.PUT, consumes = "text/plain", produces = "text/plain")
+    public @ResponseBody Boolean putVariable(@PathVariable String variableName,
                                @RequestBody String value) throws ParsingException {
         return calculator.putVariable(variableName, value);
     }
 
     @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.DELETE)
-    public boolean deleteVariable(String variableName) {
+    public Boolean deleteVariable(String variableName) {
         return calculator.deleteVariable(variableName);
     }
 
@@ -40,14 +41,14 @@ public class CalculatorController {
     }
 
     @RequestMapping(path = "/function/{functionName}", method = RequestMethod.PUT)
-    public boolean putFunction(@PathVariable String functionName,
+    public Boolean putFunction(@PathVariable String functionName,
                                @RequestParam(value = "args") List<String> args,
                                @RequestBody String functionBody) throws ParsingException {
         return calculator.putFunction(functionName, functionBody, args);
     }
 
     @RequestMapping(path = "/function/{functionName}", method = RequestMethod.DELETE)
-    public boolean deleteFunction(@PathVariable String functionName) {
+    public Boolean deleteFunction(@PathVariable String functionName) {
         return calculator.deleteFunction(functionName);
     }
 
@@ -69,18 +70,7 @@ public class CalculatorController {
         return "OK\n";
     }
 
-    @RequestMapping(path = "/", method = RequestMethod.GET, produces = "text/html")
-    public String main(@RequestParam(required = false) String name) {
-        if (name == null) {
-            name = "world";
-        }
-        return "<html>" +
-                "<head><title>FediqApp</title></head>" +
-                "<body><h1>Hello, " + name + "!</h1></body>" +
-                "</html>";
-    }
-
-    @RequestMapping(path = "/eval", method = RequestMethod.POST, consumes = "text/plain", produces = "text/plain")
+    @RequestMapping(path = "/eval", method = RequestMethod.POST , consumes = "text/plain", produces = "text/plain")
     public String eval(@RequestBody String expression) throws ParsingException {
         LOG.debug("Evaluation request: [" + expression + "]");
         double result = calculator.calculate(expression);
