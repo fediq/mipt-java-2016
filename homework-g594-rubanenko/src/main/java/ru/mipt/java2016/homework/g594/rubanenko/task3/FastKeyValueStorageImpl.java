@@ -167,6 +167,7 @@ public class FastKeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void startWorkWithOffsetTable() throws IOException {
+        writeLock.lock();
         if (!referenceFile.checkIsEmpty()) {
             int counter = referenceFile.readKey();
             while (counter > 0) {
@@ -186,6 +187,7 @@ public class FastKeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
             referenceFile.writeOffset(iterator.getValue());
         }
         offsetTable.clear();
+        writeLock.unlock();
     }
 
     private void checkFreeSpace(long offset) throws IOException {
