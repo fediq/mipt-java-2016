@@ -1,12 +1,17 @@
 package ru.mipt.java2016.homework.g594.sharuev.task4;
 
+import org.slf4j.Logger;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Stack;
 
 
 public class TopCalculator implements ru.mipt.java2016.homework.base.task1.Calculator {
+
+    private Logger LOG;
 
     public double calculate(String expression) throws ParsingException {
         if (expression == null) {
@@ -32,7 +37,7 @@ public class TopCalculator implements ru.mipt.java2016.homework.base.task1.Calcu
         double[] args = new double[oper.getArity()];
         for (int i = 0; i < args.length; ++i) {
             if (numbers.isEmpty()) {
-                throw new ParsingException("Not enough operands for operator %s"); // TODO
+                throw new ParsingException(String.format("Not enough operands for operator %s", "a")); // TODO
             }
             args[i] = numbers.pop();
         }
@@ -42,9 +47,15 @@ public class TopCalculator implements ru.mipt.java2016.homework.base.task1.Calcu
     private void pushBuffer() throws ParsingException {
         switch (state) {
             case NUMBER:
-                numbers.push(Double.parseDouble(sb.toString()));
+                try {
+                    numbers.push(Double.parseDouble(sb.toString()));
+                } catch (NumberFormatException e) {
+                    throw new ParsingException(String.format("Number \"%s\" is not valid", sb.toString()));
+                }
+                //LOG.trace("Push number "+numbers.peek());
                 sb.setLength(0);
                 unary = false;
+                break;
             case LITERAL:
                 String operatorStr = unary ? "U" + sb.toString() : sb.toString();
                 Operator operator = Operator.getOperator(operatorStr);
@@ -53,32 +64,39 @@ public class TopCalculator implements ru.mipt.java2016.homework.base.task1.Calcu
                             String.format("Unknown operator \"%s\"", operatorStr));
                 }
 
+                //
                 if (operator == Operator.RBRACKET) {
-                    if (operators.empty()) {
+                    while (!operators.isEmpty() && operators.peek() != Operator.LBRACKET) {
+                        performOperation(operators.pop());
+                    }
+                    if (!operators.empty()) {
+                        operators.pop(); // вытащить (
+                    } else {
                         throw new ParsingException("Closing bracket without opening one");
                     }
-                    while (operators.peek() != Operator.LBRACKET) {
-                        pushBuffer();
-                        if (operators.empty()) {
-                            throw new ParsingException("Closing bracket without opening one");
-                        }
+                    unary = false;
+                } else {
+                    while (!operators.empty() && operators.peek() != Operator.LBRACKET
+                            && ((operators.peek().getAssociativity() == Operator.Associativity.LEFT) ?
+                            (operator.getPriority() <= operators.peek().getPriority()) :
+                            (operator.getPriority() < operators.peek().getPriority()))) {
+                        performOperation(operators.pop());
                     }
-                    operators.pop(); // Remove ( from stack.
+                    operators.push(operator);
+                    state = ParserState.NONE;
+                    unary = true;
                 }
-
-                while (!operators.empty() && operators.peek() != Operator.LBRACKET
-                        && ((operators.peek().getAssociativity() == Operator.Associativity.LEFT) ?
-                        (operator.getPriority() <= operators.peek().getPriority()) :
-                        (operator.getPriority() < operators.peek().getPriority()))) {
-                    performOperation(operators.pop());
-                }
-
-
+                sb.setLength(0);
+                break;
+            default:
+                // nop
         }
     }
 
     private double eval(String str) throws ParsingException {
-        for (int i = 0; i < sb.length(); ++i) {
+        state = ParserState.NONE;
+        unary = true;
+        for (int i = 0; i < str.length(); ++i) {
             char c = str.charAt(i);
             if (Character.isDigit(c) || c == '.') {
                 if (state != ParserState.NUMBER) {
@@ -104,24 +122,33 @@ public class TopCalculator implements ru.mipt.java2016.homework.base.task1.Calcu
             sb.append(c);
 
             Operator oper = Operator.getOperator(sb.toString());
-            if (oper == Operator.LBRACKET) {
-                unary = true;
+            if (oper != null) {
+                if (oper == Operator.LBRACKET) {
+                    unary = false; // скобку пушим не унарную
+
+                    //operators.push(Operator.LBRACKET);
+                    pushBuffer();
+                    unary = true;
+                    continue;
+                }
+                if (oper == Operator.UNARY_PLUS && operators.peek() == Operator.UNARY_PLUS) {
+                    throw new ParsingException("Two unary + in a row");
+                }
                 pushBuffer();
-                operators.push(Operator.LBRACKET);
-                continue;
+
+                state = ParserState.NONE;
             }
-            if (oper == Operator.UNARY_PLUS&& operators.peek() == Operator.UNARY_PLUS) {
-                throw new ParsingException("Two unary + in a row");
-            }
-            unary = true;
-            state = ParserState.NONE;
         }
         pushBuffer();
+
         while (!operators.empty()) {
             if (operators.peek() == Operator.LBRACKET) {
                 throw new ParsingException("No closing bracket");
             }
-
+            performOperation(operators.pop());
+        }
+        if (numbers.isEmpty()) {
+            throw new ParsingException("String consists of only whitespaces");
         }
         return numbers.peek();
     }
@@ -130,31 +157,31 @@ public class TopCalculator implements ru.mipt.java2016.homework.base.task1.Calcu
         PLUS(2, 1, Associativity.LEFT) {
             @Override
             double evaluate(double... args) {
-                return args[0] + args[1];
+                return args[1] + args[0];
             }
         },
         MINUS(2, 1, Associativity.LEFT) {
             @Override
             double evaluate(double... args) {
-                return args[0] - args[1];
+                return args[1] - args[0];
             }
         },
         MULTIPLY(2, 2, Associativity.LEFT) {
             @Override
             double evaluate(double... args) {
-                return args[0] * args[1];
+                return args[1] * args[0];
             }
         },
         DIVIDE(2, 2, Associativity.LEFT) {
             @Override
             double evaluate(double... args) {
-                return args[0] / args[1];
+                return args[1] / args[0];
             }
         },
         POWER(2, 3, Associativity.RIGHT) {
             @Override
             double evaluate(double... args) {
-                return Math.pow(args[0], args[1]);
+                return Math.pow(args[1], args[0]);
             }
         },
         UNARY_MINUS(1, 4, Associativity.LEFT) {
@@ -169,10 +196,10 @@ public class TopCalculator implements ru.mipt.java2016.homework.base.task1.Calcu
                 return args[0];
             }
         },
-        LBRACKET(1, 0, Associativity.LEFT) {
+        LBRACKET(1, 5, Associativity.LEFT) {
 
         },
-        RBRACKET(1, 0, Associativity.LEFT) {
+        RBRACKET(1, 5, Associativity.LEFT) {
 
         };
 
@@ -206,19 +233,76 @@ public class TopCalculator implements ru.mipt.java2016.homework.base.task1.Calcu
             this.associativity = associativity;
         }
 
+        int arity;
+        int priority;
+        Associativity associativity;
+        private static HashMap<String, Operator> opers;
+
         static {
-            HashMap<String, Operator> opers = new HashMap<>();
+            opers = new HashMap<>();
             opers.put("+", Operator.PLUS);
             opers.put("-", Operator.MINUS);
             opers.put("*", Operator.MULTIPLY);
             opers.put("/", Operator.DIVIDE);
             opers.put("^", Operator.POWER);
             opers.put("U-", Operator.UNARY_MINUS);
+            opers.put("U(", Operator.LBRACKET);
+            opers.put("(", Operator.LBRACKET);
+            opers.put("U)", Operator.RBRACKET);
+            opers.put(")", Operator.RBRACKET);
+        }
+    }
+
+    private HashMap<String, Double> variables;
+    private HashMap<String, TopCalculatorFunction> functions;
+    private HashMap<String, TopCalculatorFunction> predefinedFunctions;
+
+    public Double getVariable(String variableName) {
+        return variables.get(variableName);
+    }
+
+    public boolean putVariable(String variableName, String variableValueExpr) throws ParsingException {
+        return variables.put(variableName, eval(variableValueExpr)) != null;
+    }
+
+    public boolean deleteVariable(String variableName) {
+        return variables.remove(variableName) != null;
+    }
+
+    public List<String> getVariablesNames() {
+        return new ArrayList<>(variables.keySet());
+    }
+
+    public TopCalculatorFunction getFunction(String name) {
+        TopCalculatorFunction f =  predefinedFunctions.get(name);
+        if (f == null) {
+            f = functions.get(name);
+        }
+        return f;
+    }
+
+    public boolean putFunction
+            (String name, String body, List<String> args) throws ParsingException {
+
+        if (predefinedFunctions.containsKey(name)) {
+            throw new ParsingException(
+                    String.format("Can't redefine predefined function \"%func\"", name));
         }
 
-        int arity;
-        int priority;
-        Associativity associativity;
-        private static HashMap<String, Operator> opers;
+        return functions.put(name, new TopCalculatorFunction(body, args)) != null;
     }
+
+    public boolean deleteFunction(String name) {
+        return functions.remove(name) != null;
+    }
+
+    public List<String> getFunctionsNames() {
+        return new ArrayList<>(functions.keySet());
+    }
+
+    private double evalFunction(TopCalculatorFunction function) {
+        return 0;
+    }
+
+
 }
