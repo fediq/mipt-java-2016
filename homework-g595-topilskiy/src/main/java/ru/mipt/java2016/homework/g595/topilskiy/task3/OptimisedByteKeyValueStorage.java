@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
@@ -72,6 +73,19 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
     /* Maximum additional fraction of the storage size that can be dirty (filled with deleted values) */
     private static final double MAX_DIRTY_FRACTION = 2.0;
 
+    /* Class for keeping the file and offset of where the Value is stored */
+    private static class ValueFileAndOffset {
+        /* number of the file, in which to look for Value */
+        private int  file;
+        /* offset from the start of the file, where to look for Value */
+        private long offset;
+
+        ValueFileAndOffset(int file, long offset) {
+            this.file = file;
+            this.offset = offset;
+        }
+    }
+
 
     /**
      *  Final Data of Storage
@@ -84,6 +98,8 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
     private final ISerializer valueTypeSerializer;
     /* A ReadWrite lock for thread-safety */
     private final ReentrantReadWriteLock readWriteLock = new ReentrantReadWriteLock();
+    /* A */
+    private final ReentrantLock fileLock = new ReentrantLock();
     /* A file for locking the storage on a filesystem level */
     private final File storageFilesystemLock;
 
@@ -153,19 +169,6 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
 
     /* Map of Keys and the locations of Values in Storage */
     private HashMap<KeyType, ValueFileAndOffset> mapKeyValueLocation = new HashMap<>();
-
-    /* Class for keeping the file and offset of where the Value is stored */
-    private class ValueFileAndOffset {
-        /* number of the file, in which to look for Value */
-        private int  file;
-        /* offset from the start of the file, where to look for Value */
-        private long offset;
-
-        ValueFileAndOffset(int file, long offset) {
-            this.file = file;
-            this.offset = offset;
-        }
-    }
 
 
     /**
@@ -347,6 +350,7 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
      *  NOTE: only called within an existing write lock
      */
     private void flushBuffer() {
+        readWriteLock.writeLock().lock();
         try {
             int indexRAFToWrite = getIndexOfRAFToWrite();
             RandomAccessFile usedRAF = rafStorageFiles.get(indexRAFToWrite);
@@ -356,12 +360,6 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
             OutputStream outStream = Channels.newOutputStream(usedRAF.getChannel());
 
             for (Map.Entry<KeyType, ValueType> entry: bufferKeyVal.entrySet()) {
-
-                if (entry.getValue().equals(null)) {
-                    mapKeyValueLocation.remove(entry.getKey());
-                    continue;
-                }
-
                 ValueFileAndOffset valueLocation =
                         new ValueFileAndOffset(indexRAFToWrite, usedRAF.getFilePointer());
 
@@ -372,6 +370,8 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
 
         } catch (IOException caught) {
             throw new MalformedDataException(FAILED_FILE_LOCATION);
+        } finally {
+            readWriteLock.writeLock().unlock();
         }
     }
 
@@ -381,11 +381,12 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
      *  NOTE: only called within an existing write lock
      */
     private void rebuildStorage() throws MalformedDataException {
-        if (bufferKeyVal.size() > 0) {
-            flushBuffer();
-        }
-
+        readWriteLock.writeLock().lock();
         try {
+            if (bufferKeyVal.size() > 0) {
+                flushBuffer();
+            }
+
             HashMap<KeyType, ValueFileAndOffset> newMapKeyValueLocation =
                     new HashMap<KeyType, ValueFileAndOffset>();
 
@@ -452,6 +453,8 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
 
         } catch (IOException caught) {
             throw new MalformedDataException(FAILED_FILE_LOCATION);
+        } finally {
+            readWriteLock.writeLock().unlock();
         }
     }
 
@@ -511,6 +514,7 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
                 Long offset = mapKeyValueLocation.get(key).offset;
                 RandomAccessFile currentFile = rafStorageFiles.get(file);
 
+                fileLock.lock();
                 try {
                     currentFile.seek(offset);
                     InputStream inStream = Channels.newInputStream(currentFile.getChannel());
@@ -518,6 +522,8 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
 
                 } catch (IOException caught) {
                     throw new MalformedDataException(FAILED_FILE_READ);
+                } finally {
+                    fileLock.unlock();
                 }
             }
 
@@ -716,7 +722,6 @@ public class OptimisedByteKeyValueStorage<KeyType, ValueType> implements KeyValu
                 throw new MalformedDataException(FAILED_FILE_DELETION);
             }
 
-            bufferKeyVal = null;
         } finally {
             readWriteLock.writeLock().unlock();
         }

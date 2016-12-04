@@ -16,6 +16,9 @@ import java.util.Date;
  * @since 21.11.16
  */
 public class RWStreamSerializer {
+    /* Integer length symbolising that the value being read is actually null */
+    private static final Integer NULL_INTEGER_LENGTH = 0;
+
     /**
      * Serialize a Type object into outStream
      *
@@ -38,9 +41,13 @@ public class RWStreamSerializer {
      * @return NumBytes + Value in binary form
      */
     private static <Type> byte[] getNumBytesAndBytes(Type value, ISerializer typeSerializer) {
-        byte[] valueBytes     = typeSerializer.serialize(value);
-        byte[] valueNumBytes  = IntegerSerializerSingleton.getInstance().serialize(valueBytes.length);
-        return JoinArraysPrimitiveByte.joinArrays(valueNumBytes, valueBytes);
+        if (value == null) {
+            return IntegerSerializerSingleton.getInstance().serialize(NULL_INTEGER_LENGTH);
+        } else {
+            byte[] valueBytes = typeSerializer.serialize(value);
+            byte[] valueNumBytes = IntegerSerializerSingleton.getInstance().serialize(valueBytes.length);
+            return JoinArraysPrimitiveByte.joinArrays(valueNumBytes, valueBytes);
+        }
     }
     
     /* Wrapping of serialization for known types */
@@ -80,10 +87,15 @@ public class RWStreamSerializer {
      */
     public static Object deserialize(ISerializer readTypeSerializer, InputStream inStream) throws IOException {
         Integer lenRead = readInteger(inStream);
-        byte[] typeBytes = new byte[lenRead];
-        inStream.read(typeBytes);
 
-        return readTypeSerializer.deserialize(typeBytes);
+        if (lenRead.equals(NULL_INTEGER_LENGTH)) {
+            return null;
+        } else {
+            byte[] typeBytes = new byte[lenRead];
+            inStream.read(typeBytes);
+
+            return readTypeSerializer.deserialize(typeBytes);
+        }
     }
 
     /**
