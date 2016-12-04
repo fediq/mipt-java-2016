@@ -184,7 +184,7 @@ public class OptimizedHashTable<K, V> implements KeyValueStorage<K, V> {
 
     private synchronized void optimize() throws IOException {
         // Если нужно вставить много элементов в б.д.
-        if (elemsToInsert.size() > 128) {
+        if (elemsToInsert.size() > 256) {
             insertElems();
         }
 
