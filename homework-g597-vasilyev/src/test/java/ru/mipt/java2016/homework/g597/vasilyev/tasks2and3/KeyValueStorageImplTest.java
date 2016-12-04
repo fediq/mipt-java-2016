@@ -45,7 +45,7 @@ public class KeyValueStorageImplTest extends KeyValueStoragePerformanceTest {
     }
 
     private class StudentSerializer implements Serializer<Student> {
-        private Serializer<String> stringSerializer;
+        private final Serializer<String> stringSerializer;
 
         public StudentSerializer() {
             this.stringSerializer = new StringSerializer();
@@ -77,7 +77,7 @@ public class KeyValueStorageImplTest extends KeyValueStoragePerformanceTest {
     }
 
     private class StudentKeySerializer implements Serializer<StudentKey> {
-        private Serializer<String> stringSerializer;
+        private final Serializer<String> stringSerializer;
 
         public StudentKeySerializer() {
             this.stringSerializer = new StringSerializer();

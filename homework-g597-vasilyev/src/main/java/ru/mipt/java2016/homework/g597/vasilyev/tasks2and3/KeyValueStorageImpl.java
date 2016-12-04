@@ -7,6 +7,7 @@ import java.nio.channels.OverlappingFileLockException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -19,17 +20,17 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class KeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
 
     private final Map<K, Long> offsets = new HashMap<>();
-    private ReadWriteLock lock = new ReentrantReadWriteLock();
-    private Serializer<K> keySerializer;
-    private Serializer<V> valueSerializer;
+    private final ReadWriteLock lock = new ReentrantReadWriteLock();
+    private final Serializer<K> keySerializer;
+    private final Serializer<V> valueSerializer;
     private boolean open;
-    private RandomAccessFile db;
+    private final RandomAccessFile db;
     private RandomAccessFile valuesFile;
     private long valuesCount;
     private boolean readyToWrite = false;
 
-    private Path valuesPath;
-    private Path basePath;
+    private final Path valuesPath;
+    private final Path basePath;
 
     public KeyValueStorageImpl(String path,
                                Serializer<K> keySerializer,
@@ -190,8 +191,7 @@ public class KeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
         }
 
         valuesFile.close();
-        Files.delete(valuesPath);
-        Files.move(newPath, valuesPath);
+        Files.move(newPath, valuesPath, StandardCopyOption.REPLACE_EXISTING);
         valuesFile = openRandomAccessFile(valuesPath);
     }
 
