@@ -9,18 +9,20 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
 
 
 public class OptimizedHashTable<K, V> implements KeyValueStorage<K, V> {
     private final String databaseName = "storage.db";
+    private final String databasePath;
     private final String keysFileName = "keys_" + databaseName;
     private final String valuesFileName = "values_" + databaseName;
 
     private final SerializationStrategy<K> keySerializer;
     private final SerializationStrategy<V> valueSerializer;
-    private final HashMap<K, Long> offsets = new HashMap<>();
+    private final Map<K, Long> offsets = new HashMap<>();
     private RandomAccessFile keysFile;
     private RandomAccessFile valuesFile;
     private boolean closed = false;
@@ -32,37 +34,33 @@ public class OptimizedHashTable<K, V> implements KeyValueStorage<K, V> {
 
         keySerializer = serializerKeys;
         valueSerializer = serializerValues;
+        databasePath = path + File.separator;
         File databaseFile;
 
         File tryFile = new File(path);
         if (tryFile.exists() && tryFile.isDirectory()) {
-            databaseFile = new File(path + File.separator + databaseName);
+            databaseFile = new File(databasePath + databaseName);
         } else {
             throw new IllegalArgumentException("path" + path + " is not available");
         }
-
-        if (databaseFile.exists()) {
-            openStorage();
-        } else {
-            databaseFile.createNewFile();
+        if (databaseFile.createNewFile()) {
             createStorage();
+        } else {
+           openStorage();
         }
     }
 
     private synchronized void createStorage() throws IOException {
-        File fileK = new File(keysFileName);
-        File fileV = new File(valuesFileName);
-
-        fileK.createNewFile();
-        fileV.createNewFile();
+        File fileK = new File(databasePath + keysFileName);
+        File fileV = new File(databasePath + valuesFileName);
 
         keysFile = new RandomAccessFile(fileK, "rw");
         valuesFile = new RandomAccessFile(fileV, "rw");
     }
 
     private void openStorage() throws IOException {
-        File fileK = new File(keysFileName);
-        File fileV = new File(valuesFileName);
+        File fileK = new File(databasePath + keysFileName);
+        File fileV = new File(databasePath + valuesFileName);
 
         if (!fileK.exists() || !fileV.exists()) {
             throw new IOException("database does not exist");
@@ -133,6 +131,7 @@ public class OptimizedHashTable<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public synchronized int size() {
+        checkForClosed();
         return offsets.size();
     }
 
@@ -144,18 +143,20 @@ public class OptimizedHashTable<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public void close() throws IOException {
-        keysFile.seek(0);
-        (new IntegerSerializator()).write(keysFile, offsets.size());
-        for (K key : offsets.keySet()) {
-            keySerializer.write(keysFile, key);
-            (new LongSerializator()).write(keysFile, offsets.get(key));
+        if (!closed){
+            keysFile.seek(0);
+            (new IntegerSerializator()).write(keysFile, offsets.size());
+            SerializationStrategy<Long> longSerializator = new LongSerializator();
+            for (K key : offsets.keySet()) {
+                keySerializer.write(keysFile, key);
+                longSerializator.write(keysFile, offsets.get(key));
+            }
+            offsets.clear();
+
+            keysFile.close();
+            valuesFile.close();
+            closed = true;
         }
-        offsets.clear();
-
-        keysFile.close();
-        valuesFile.close();
-        closed = true;
     }
-
 }
 
