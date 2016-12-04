@@ -82,29 +82,23 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public V read(K key) {
-        readLock.lock();
+        checkClosed();
+        writeLock.lock();
         try {
-            checkClosed();
-//            writeLock.lock();
-//            try {
-//                return cache.get(key);
-//            } finally {
-//                writeLock.unlock();
-//            }
             return cache.get(key);
         } catch (Exception exception) {
             return null;
         } finally {
-            readLock.unlock();
+            writeLock.unlock();
         }
     }
 
     @Override
     public boolean exists(K key) {
+        checkClosed();
         readLock.lock();
         boolean result;
         try {
-            checkClosed();
             result = offsetTable.containsKey(key);
         } finally {
             readLock.unlock();
@@ -114,9 +108,9 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public void write(K key, V value) {
+        checkClosed();
         writeLock.lock();
         try {
-            checkClosed();
             offsetTableIsUpdated = true;
             if (offsetTable.containsKey(key)) {
                 ++oldNoteCounter;
@@ -137,9 +131,9 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public void delete(K key) {
+        checkClosed();
         writeLock.lock();
         try {
-            checkClosed();
             offsetTableIsUpdated = true;
             ++oldNoteCounter;
             offsetTable.remove(key);
@@ -154,10 +148,10 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public Iterator<K> readKeys() {
+        checkClosed();
         Iterator<K> iterator;
         readLock.lock();
         try {
-            checkClosed();
             iterator = offsetTable.keySet().iterator();
         } finally {
             readLock.unlock();
@@ -167,10 +161,10 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public int size() {
+        checkClosed();
         int result;
         readLock.lock();
         try {
-            checkClosed();
             result = offsetTable.size();
         } finally {
             readLock.unlock();
@@ -180,9 +174,9 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public void close() throws IOException {
+        checkClosed();
         writeLock.lock();
         try {
-            checkClosed();
             isClosed = true;
 
             refreshStorageFile();
@@ -201,8 +195,13 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void checkClosed() {
-        if (isClosed) {
-            throw new RuntimeException("Storage is closed");
+        readLock.lock();
+        try {
+            if (isClosed) {
+                throw new RuntimeException("Storage is closed");
+            }
+        } finally {
+            readLock.unlock();
         }
     }
 
@@ -250,8 +249,7 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private void refreshStorageFile() throws IOException {
         if (oldNoteCounter > REFRESH_CONST * offsetTable.size()) {
-            try (StorageFileIO storageFileIO = this.storageFileIO) {
-                storageFileIO.open();
+            try (StorageFileIO storageFileIO = this.storageFileIO.open()) {
                 storageLength = 0;
                 long oldFileOffset = 0;
                 for (int keySize = storageFileIO.copyReadSize();

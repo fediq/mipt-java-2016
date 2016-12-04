@@ -62,12 +62,13 @@ public class StorageFileIO implements AutoCloseable {
         outputStream.write(toWrite.array());
     }
 
-    public void open() throws IOException {
+    public StorageFileIO open() throws IOException {
         randomAccessFile.close();
         outputStream.close();
         tmpFile.createNewFile();
         inputStream = new BufferedInputStream(new FileInputStream(file));
         outputStream = new BufferedOutputStream((new FileOutputStream(tmpFile)));
+        return this;
     }
 
     @Override
