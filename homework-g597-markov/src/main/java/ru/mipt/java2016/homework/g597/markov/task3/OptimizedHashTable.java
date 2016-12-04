@@ -28,7 +28,7 @@ public class OptimizedHashTable<K, V> implements KeyValueStorage<K, V> {
     private final SerializationStrategy<V> valueSerializer;
 
     private final Map<K, V> elemsToInsert = new HashMap<>();
-    private final long TOINSERT = -1;
+    private static final long TO_INSERT = -1;
 
     private RandomAccessFile keysFile;
     private RandomAccessFile valuesFile;
@@ -100,7 +100,7 @@ public class OptimizedHashTable<K, V> implements KeyValueStorage<K, V> {
             return null;
         }
         try {
-            if (offset == TOINSERT) {
+            if (offset == TO_INSERT) {
                 return elemsToInsert.get(key);
             } else {
                 valuesFile.seek(offset);
@@ -122,9 +122,9 @@ public class OptimizedHashTable<K, V> implements KeyValueStorage<K, V> {
         checkForClosed();
         try {
             elemsToInsert.put(key, value);
-            Long offset = offsets.put(key, TOINSERT);
+            Long offset = offsets.put(key, TO_INSERT);
 
-            if (offset == null || offset == TOINSERT) {
+            if (offset == null || offset == TO_INSERT) {
                 optimizeCounter += 1;
             }
             optimize();
@@ -137,7 +137,7 @@ public class OptimizedHashTable<K, V> implements KeyValueStorage<K, V> {
     public synchronized void delete(K key) {
         checkForClosed();
         if (offsets.containsKey(key)) {
-            if (offsets.remove(key) != TOINSERT) {
+            if (offsets.remove(key) != TO_INSERT) {
                 optimizeCounter += 1;
             }
             elemsToInsert.remove(key);
@@ -203,8 +203,8 @@ public class OptimizedHashTable<K, V> implements KeyValueStorage<K, V> {
                 newValuesFile.setLength(0);
 
                 for (K key : offsets.keySet()) {
-                    if (offsets.get(key) == TOINSERT) {
-                        newOffsets.put(key, TOINSERT);
+                    if (offsets.get(key) == TO_INSERT) {
+                        newOffsets.put(key, TO_INSERT);
                     } else {
                         valuesFile.seek(offsets.get(key));
                         V value = valueSerializer.read(valuesFile);
