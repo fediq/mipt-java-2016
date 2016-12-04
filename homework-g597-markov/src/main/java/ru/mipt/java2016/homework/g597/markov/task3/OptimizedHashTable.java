@@ -9,9 +9,9 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 
 public class OptimizedHashTable<K, V> implements KeyValueStorage<K, V> {
@@ -46,7 +46,7 @@ public class OptimizedHashTable<K, V> implements KeyValueStorage<K, V> {
         if (databaseFile.createNewFile()) {
             createStorage();
         } else {
-           openStorage();
+            openStorage();
         }
     }
 
@@ -143,7 +143,7 @@ public class OptimizedHashTable<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public void close() throws IOException {
-        if (!closed){
+        if (!closed) {
             keysFile.seek(0);
             (new IntegerSerializator()).write(keysFile, offsets.size());
             SerializationStrategy<Long> longSerializator = new LongSerializator();
