@@ -5,10 +5,10 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 public class DoubleSerializer implements SerializationStrategy<Double> {
-    private static final DoubleSerializer instance = new DoubleSerializer();
+    private static final DoubleSerializer INSTANCE = new DoubleSerializer();
 
     public static DoubleSerializer getInstance() {
-        return instance;
+        return INSTANCE;
     }
 
     @Override
