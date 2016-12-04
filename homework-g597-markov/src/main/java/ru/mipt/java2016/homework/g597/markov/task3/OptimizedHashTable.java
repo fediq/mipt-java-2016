@@ -203,28 +203,31 @@ public class OptimizedHashTable<K, V> implements KeyValueStorage<K, V> {
                 String valuesPath = databasePath + File.separator + valuesFileName;
                 File newValues = new File(newValuesPath);
 
+
                 RandomAccessFile newValuesFile = new RandomAccessFile(newValues, "rw");
 
-                newValuesFile.seek(0);
-                newValuesFile.setLength(0);
+                try {
+                    newValuesFile.seek(0);
+                    newValuesFile.setLength(0);
 
-                for (K key : offsets.keySet()) {
-                    if (offsets.get(key) == TO_INSERT) {
-                        newOffsets.put(key, TO_INSERT);
-                    } else {
-                        valuesFile.seek(offsets.get(key));
-                        V value = valueSerializer.read(valuesFile);
-                        newOffsets.put(key, newValuesFile.length());
-                        valueSerializer.write(newValuesFile, value);
+                    for (K key : offsets.keySet()) {
+                        if (offsets.get(key) == TO_INSERT) {
+                            newOffsets.put(key, TO_INSERT);
+                        } else {
+                            valuesFile.seek(offsets.get(key));
+                            V value = valueSerializer.read(valuesFile);
+                            newOffsets.put(key, newValuesFile.length());
+                            valueSerializer.write(newValuesFile, value);
+                        }
                     }
+                } finally {
+                    optimizeCounter = 0;
+                    offsets = newOffsets;
+                    valuesFile.close();
+                    newValuesFile.close();
+                    Files.move(Paths.get(newValuesPath), Paths.get(valuesPath), REPLACE_EXISTING);
+                    valuesFile = new RandomAccessFile(valuesPath, "rw");
                 }
-
-                optimizeCounter = 0;
-                offsets = newOffsets;
-                valuesFile.close();
-                newValuesFile.close();
-                Files.move(Paths.get(newValuesPath), Paths.get(valuesPath), REPLACE_EXISTING);
-                valuesFile = new RandomAccessFile(valuesPath, "rw");
             } catch (IOException e) {
                 throw new IOException(e);
             }
