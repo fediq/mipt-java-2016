@@ -52,9 +52,6 @@ public class GrishutinKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
-    public GrishutinKeyValueStorage() {
-    }
-
     /*
         File with SSTable looks like:
         numEntries: int | (key, value, tombstone : boolean) | (key, value, tombstone : boolean) | ....

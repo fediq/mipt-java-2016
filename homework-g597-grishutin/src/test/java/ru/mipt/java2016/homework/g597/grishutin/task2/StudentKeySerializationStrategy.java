@@ -5,7 +5,6 @@ import ru.mipt.java2016.homework.tests.task2.StudentKey;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 
 public class StudentKeySerializationStrategy implements SerializationStrategy<StudentKey> {
     private IntegerSerializer integerSerializer = IntegerSerializer.getInstance();
