@@ -5,10 +5,10 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 public class LongSerializer implements SerializationStrategy<Long> {
-    private static LongSerializer instance = new LongSerializer();
+    private static final LongSerializer INSTANCE = new LongSerializer();
 
     public static LongSerializer getInstance() {
-        return instance;
+        return INSTANCE;
     }
 
     @Override

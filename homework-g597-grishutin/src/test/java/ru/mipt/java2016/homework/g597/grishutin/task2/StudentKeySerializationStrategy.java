@@ -7,8 +7,8 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 public class StudentKeySerializationStrategy implements SerializationStrategy<StudentKey> {
-    private IntegerSerializer integerSerializer = IntegerSerializer.getInstance();
-    private StringSerializer stringSerializer = StringSerializer.getInstance();
+    private final IntegerSerializer integerSerializer = IntegerSerializer.getInstance();
+    private final StringSerializer stringSerializer = StringSerializer.getInstance();
 
     @Override
     public void serialize(StudentKey studentKey, DataOutput raf) throws IOException {

@@ -16,11 +16,11 @@ import java.io.IOException;
     double averageScore
  */
 public class StudentSerializationStrategy implements SerializationStrategy<Student> {
-    private IntegerSerializer integerSerializer = IntegerSerializer.getInstance();
-    private StringSerializer stringSerializer = StringSerializer.getInstance();
-    private DateSerializer dateSerializer = DateSerializer.getInstance();
-    private BooleanSerializer booleanSerializer = BooleanSerializer.getInstance();
-    private DoubleSerializer doubleSerializer = DoubleSerializer.getInstance();
+    private final IntegerSerializer integerSerializer = IntegerSerializer.getInstance();
+    private final StringSerializer stringSerializer = StringSerializer.getInstance();
+    private final DateSerializer dateSerializer = DateSerializer.getInstance();
+    private final BooleanSerializer booleanSerializer = BooleanSerializer.getInstance();
+    private final DoubleSerializer doubleSerializer = DoubleSerializer.getInstance();
 
     @Override
     public void serialize(Student student, DataOutput raf) throws IOException {

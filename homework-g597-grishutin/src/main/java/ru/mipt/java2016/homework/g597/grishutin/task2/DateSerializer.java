@@ -5,13 +5,13 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Date;
 
-class DateSerializer implements SerializationStrategy<Date> {
-    private LongSerializer longSerializer = LongSerializer.getInstance();
+public class DateSerializer implements SerializationStrategy<Date> {
+    private final LongSerializer longSerializer = LongSerializer.getInstance();
 
-    private static DateSerializer instance = new DateSerializer();
+    private static final DateSerializer INSTANCE = new DateSerializer();
 
     public static DateSerializer getInstance() {
-        return instance;
+        return INSTANCE;
     }
 
     @Override

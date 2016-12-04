@@ -1,6 +1,8 @@
 package ru.mipt.java2016.homework.g597.grishutin.task2;
 
-import java.io.*;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 
 public interface SerializationStrategy<T> {
     /*

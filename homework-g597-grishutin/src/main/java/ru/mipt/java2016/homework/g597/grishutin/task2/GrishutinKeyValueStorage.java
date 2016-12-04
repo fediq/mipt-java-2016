@@ -2,30 +2,31 @@ package ru.mipt.java2016.homework.g597.grishutin.task2;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
-
 import java.util.Iterator;
 import java.util.Map;
 
 
 public class GrishutinKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
-    protected SerializationStrategy<K> keySerializationStrategy;
-    protected SerializationStrategy<V> valueSerializationStrategy;
+    protected final SerializationStrategy<K> keySerializationStrategy;
+    protected final SerializationStrategy<V> valueSerializationStrategy;
     protected RandomAccessFile storageFile;
-    protected File lock;
+    protected final File lock;
 
-    protected HashMap<K, V> cached = new HashMap<>();
+    protected final HashMap<K, V> cached = new HashMap<>();
 
     protected Integer numEpoch = 0;
     protected int numRecords = 0;
     protected boolean isClosed = false;
 
     protected final String storageFilename = "Azazaza.db";
-    protected String directoryPath;
+    protected final String directoryPath;
 
     public GrishutinKeyValueStorage(String directoryPathInit,
                              SerializationStrategy<K> keyStrat,
