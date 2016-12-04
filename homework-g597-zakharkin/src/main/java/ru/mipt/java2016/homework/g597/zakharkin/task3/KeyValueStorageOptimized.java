@@ -229,6 +229,9 @@ public class KeyValueStorageOptimized<K, V> implements KeyValueStorage<K, V>, Au
             dbFile.close();
             Path tempName = Paths.get(dbPath + File.separator + DB_NAME + "__tmp");
             Path realName = Paths.get(dbPath + File.separator + DB_NAME);
+            if (Files.exists(realName)) {
+                Files.delete(realName);
+            }
             Files.move(tempName, realName, StandardCopyOption.REPLACE_EXISTING);
             dbFile = new RandomAccessFile(dbPath + File.separator + DB_NAME, "rw");
             if (Files.exists(tempName)) {
