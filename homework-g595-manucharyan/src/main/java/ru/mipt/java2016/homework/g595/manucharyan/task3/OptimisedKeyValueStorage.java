@@ -279,5 +279,6 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             throw new IllegalStateException("Can't write: storage is closed");
         }
     }
+    
 }
 
