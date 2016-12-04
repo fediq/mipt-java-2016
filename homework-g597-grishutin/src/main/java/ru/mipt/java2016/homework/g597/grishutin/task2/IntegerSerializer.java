@@ -3,7 +3,6 @@ package ru.mipt.java2016.homework.g597.grishutin.task2;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 
 public class IntegerSerializer implements SerializationStrategy<Integer> {
     private static IntegerSerializer instance = new IntegerSerializer();
