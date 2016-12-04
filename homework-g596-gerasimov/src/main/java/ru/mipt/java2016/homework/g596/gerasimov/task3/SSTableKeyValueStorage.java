@@ -41,7 +41,7 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private boolean offsetTableIsUpdated = false;
 
-    private int oldNoteCounter = 0;
+    private int oldNoteCounter;
 
     private long storageLength;
 
@@ -97,13 +97,11 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     public boolean exists(K key) {
         checkClosed();
         readLock.lock();
-        boolean result;
         try {
-            result = offsetTable.containsKey(key);
+            return offsetTable.containsKey(key);
         } finally {
             readLock.unlock();
         }
-        return result;
     }
 
     @Override
@@ -149,27 +147,23 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public Iterator<K> readKeys() {
         checkClosed();
-        Iterator<K> iterator;
         readLock.lock();
         try {
-            iterator = offsetTable.keySet().iterator();
+            return offsetTable.keySet().iterator();
         } finally {
             readLock.unlock();
         }
-        return iterator;
     }
 
     @Override
     public int size() {
         checkClosed();
-        int result;
         readLock.lock();
         try {
-            result = offsetTable.size();
+            return offsetTable.size();
         } finally {
             readLock.unlock();
         }
-        return result;
     }
 
     @Override
@@ -178,19 +172,19 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         writeLock.lock();
         try {
             isClosed = true;
-
             refreshStorageFile();
-            storageFileIO.epicClose();
-
             if (offsetTableIsUpdated) {
                 writeOffsetTable();
                 offsetTableIsUpdated = false;
             }
-            indexFileIO.close();
-
-            cache.cleanUp();
         } finally {
-            writeLock.unlock();
+            try {
+                storageFileIO.epicClose();
+                indexFileIO.close();
+                cache.cleanUp();
+            } finally {
+                writeLock.unlock();
+            }
         }
     }
 
@@ -275,6 +269,7 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
                     oldFileOffset += 2 * INT_SIZE + keySize + valueSize;
                 }
+                oldNoteCounter = 0;
             }
         }
     }
