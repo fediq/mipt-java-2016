@@ -9,9 +9,12 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 /**
  * Created by irinadmitrieva on 19.11.16.
@@ -22,7 +25,7 @@ public class OptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private ReadWriteLock lock = new ReentrantReadWriteLock();
 
-    private final HashMap<K, Long> keyAndOffsetMap = new HashMap<K, Long>();
+    private final TreeMap<K, Long> keyAndOffsetMap = new TreeMap<K, Long>();
     private final Map<K, V> keyAndValueMap = new HashMap<K, V>();
     private final HashSet<K> presenceSet = new HashSet<K>();
     private RandomAccessFile randAccFileWithOffsets;
@@ -234,16 +237,14 @@ public class OptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
 
     private void removeGarbage() {
-        File clearedStorage = new File(fileClearedStoragePathname);
         try {
-            if (!clearedStorage.createNewFile()) {
-                throw new IllegalStateException("Couldn't create file during removing garbage");
-            }
-        } catch (IOException e) {
-            throw new IllegalStateException("Didn't get the length of random access file during removing garbage");
-        }
+            File clearedStorage = new File(fileClearedStoragePathname);
 
-        try (RandomAccessFile randAccFileClearedStorage = new RandomAccessFile(clearedStorage, mode)) {
+            clearedStorage.createNewFile();
+            RandomAccessFile randAccFileClearedStorage = new RandomAccessFile(clearedStorage, mode);
+            randAccFileClearedStorage.seek(0);
+            randAccFileClearedStorage.setLength(0);
+
             for (Map.Entry<K, Long> iterator : keyAndOffsetMap.entrySet()) {
                 if (iterator.getValue() != null) {
                     randAccFileStorage.seek(iterator.getValue());
@@ -251,16 +252,11 @@ public class OptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                     valueStrategy.write(randAccFileClearedStorage, valueStrategy.read(randAccFileStorage));
                 }
             }
+            garbageCounter = 0;
             randAccFileClearedStorage.close();
-            File oldStorage = new File(fileStoragePathname);
-            if (!oldStorage.delete()) {
-                throw new IllegalStateException("Can't delete old storage");
-            }
-            if (!clearedStorage.renameTo(oldStorage)) {
-                throw new IllegalStateException("Can't rename file");
-            }
-            randAccFileStorage = new RandomAccessFile(oldStorage, mode);
-
+            randAccFileStorage.close();
+            Files.move(Paths.get(fileClearedStoragePathname), Paths.get(fileStoragePathname), REPLACE_EXISTING);
+            randAccFileStorage = new RandomAccessFile(fileStoragePathname, mode);
         } catch (IOException e) {
             throw new IllegalStateException("Couldn't read/write during removing garbage");
         }
