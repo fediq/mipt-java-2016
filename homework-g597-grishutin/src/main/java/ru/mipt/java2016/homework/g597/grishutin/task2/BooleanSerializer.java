@@ -5,7 +5,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 public class BooleanSerializer implements SerializationStrategy<Boolean> {
-    private static BooleanSerializer instance = new BooleanSerializer();
+    private static final BooleanSerializer instance = new BooleanSerializer();
 
     public static BooleanSerializer getInstance() {
         return instance;

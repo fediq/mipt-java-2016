@@ -13,19 +13,19 @@ import java.util.Map;
 
 
 public class GrishutinKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
-    protected SerializationStrategy<K> keySerializationStrategy;
-    protected SerializationStrategy<V> valueSerializationStrategy;
+    protected final SerializationStrategy<K> keySerializationStrategy;
+    protected final SerializationStrategy<V> valueSerializationStrategy;
     protected RandomAccessFile storageFile;
-    protected File lock;
+    protected final File lock;
 
-    protected HashMap<K, V> cached = new HashMap<>();
+    protected final HashMap<K, V> cached = new HashMap<>();
 
     protected Integer numEpoch = 0;
     protected int numRecords = 0;
     protected boolean isClosed = false;
 
     protected final String storageFilename = "Azazaza.db";
-    protected String directoryPath;
+    protected final String directoryPath;
 
     public GrishutinKeyValueStorage(String directoryPathInit,
                              SerializationStrategy<K> keyStrat,

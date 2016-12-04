@@ -5,7 +5,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 public class DoubleSerializer implements SerializationStrategy<Double> {
-    private static DoubleSerializer instance = new DoubleSerializer();
+    private static final DoubleSerializer instance = new DoubleSerializer();
 
     public static DoubleSerializer getInstance() {
         return instance;

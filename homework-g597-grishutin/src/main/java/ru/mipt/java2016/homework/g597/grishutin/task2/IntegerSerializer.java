@@ -5,7 +5,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 public class IntegerSerializer implements SerializationStrategy<Integer> {
-    private static IntegerSerializer instance = new IntegerSerializer();
+    private static final IntegerSerializer instance = new IntegerSerializer();
 
     public static IntegerSerializer getInstance() {
         return instance;
