@@ -111,7 +111,7 @@ public class MyOptimizedKeyValueStorage<K, V>  implements KeyValueStorage<K, V> 
         lock.writeLock().lock();
         try {
             checkForClosed();
-            if(exists(key)) {
+            if (exists(key)) {
                 numberOfDeletions++;
             }
             dataOffset.put(key, database.length());
