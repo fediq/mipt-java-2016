@@ -9,9 +9,13 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 
 public class OptimizedHashTable<K, V> implements KeyValueStorage<K, V> {
@@ -22,10 +26,15 @@ public class OptimizedHashTable<K, V> implements KeyValueStorage<K, V> {
 
     private final SerializationStrategy<K> keySerializer;
     private final SerializationStrategy<V> valueSerializer;
-    private final Map<K, Long> offsets = new HashMap<>();
+
+    private final Map<K, V> elemsToInsert = new HashMap<>();
+    private final long TO_INSERT = -1;
+
     private RandomAccessFile keysFile;
     private RandomAccessFile valuesFile;
     private boolean closed = false;
+    private Map<K, Long> offsets = new HashMap<>();
+    private int optimizeCounter = 0;
 
     public OptimizedHashTable(String path,
                               SerializationStrategy<K> serializerKeys,
@@ -43,6 +52,8 @@ public class OptimizedHashTable<K, V> implements KeyValueStorage<K, V> {
         } else {
             throw new IllegalArgumentException("path" + path + " is not available");
         }
+
+        elemsToInsert.clear();
         if (databaseFile.createNewFile()) {
             createStorage();
         } else {
@@ -84,14 +95,17 @@ public class OptimizedHashTable<K, V> implements KeyValueStorage<K, V> {
     @Override
     public synchronized V read(K key) {
         checkForClosed();
-        if (!offsets.containsKey(key)) {
+        Long offset = offsets.get(key);
+        if (offset == null) {
             return null;
         }
-
-        Long offset = offsets.get(key);
         try {
-            valuesFile.seek(offset);
-            return valueSerializer.read(valuesFile);
+            if (offset == TO_INSERT) {
+                return elemsToInsert.get(key);
+            } else {
+                valuesFile.seek(offset);
+                return valueSerializer.read(valuesFile);
+            }
         } catch (IOException e) {
             return null;
         }
@@ -107,9 +121,13 @@ public class OptimizedHashTable<K, V> implements KeyValueStorage<K, V> {
     public synchronized void write(K key, V value) {
         checkForClosed();
         try {
-            offsets.put(key, valuesFile.length());
-            valuesFile.seek(valuesFile.length());
-            valueSerializer.write(valuesFile, value);
+            elemsToInsert.put(key, value);
+            Long offset = offsets.put(key, TO_INSERT);
+
+            if (offset == null || offset == TO_INSERT) {
+                optimizeCounter += 1;
+            }
+            optimize();
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
@@ -119,12 +137,15 @@ public class OptimizedHashTable<K, V> implements KeyValueStorage<K, V> {
     public synchronized void delete(K key) {
         checkForClosed();
         if (offsets.containsKey(key)) {
-            offsets.remove(key);
+            if (offsets.remove(key) != TO_INSERT) {
+                optimizeCounter += 1;
+            }
+            elemsToInsert.remove(key);
         }
     }
 
     @Override
-    public Iterator<K> readKeys() {
+    public synchronized Iterator<K> readKeys() {
         checkForClosed();
         return offsets.keySet().iterator();
     }
@@ -135,28 +156,84 @@ public class OptimizedHashTable<K, V> implements KeyValueStorage<K, V> {
         return offsets.size();
     }
 
-    private void checkForClosed() {
+    private synchronized void checkForClosed() {
         if (closed) {
             throw new IllegalStateException("database is closed");
         }
     }
 
     @Override
-    public void close() throws IOException {
-        if (!closed) {
-            keysFile.seek(0);
-            (new IntegerSerializator()).write(keysFile, offsets.size());
-            SerializationStrategy<Long> longSerializator = new LongSerializator();
-            for (K key : offsets.keySet()) {
-                keySerializer.write(keysFile, key);
-                longSerializator.write(keysFile, offsets.get(key));
-            }
-            offsets.clear();
-
-            keysFile.close();
-            valuesFile.close();
-            closed = true;
+    public synchronized void close() throws IOException {
+        if (closed) {
+            return;
         }
+        insertElems();
+        keysFile.seek(0);
+        keysFile.setLength(0);
+        new IntegerSerializator().write(keysFile, offsets.size());
+        SerializationStrategy<Long> longSerializator = new LongSerializator();
+        for (K key : offsets.keySet()) {
+            keySerializer.write(keysFile, key);
+            longSerializator.write(keysFile, offsets.get(key));
+        }
+        offsets.clear();
+        keysFile.close();
+        valuesFile.close();
+        closed = true;
+    }
+
+    private synchronized void optimize() throws IOException {
+        // Если нужно вставить много элементов в б.д.
+        if (elemsToInsert.size() > 128) {
+            insertElems();
+        }
+
+        // Если нужно убрать много элементов из б.д.
+        if (optimizeCounter * 2 > offsets.size()) {
+            try {
+                Map<K, Long> newOffsets = new HashMap<>();
+                String newValuesPath = databasePath + File.separator + "new_" + valuesFileName;
+
+                String valuesPath = databasePath + File.separator + valuesFileName;
+                File newValues = new File(newValuesPath);
+
+                RandomAccessFile newValuesFile = new RandomAccessFile(newValues, "rw");
+
+                newValuesFile.seek(0);
+                newValuesFile.setLength(0);
+
+                for (K key : offsets.keySet()) {
+                    if (offsets.get(key) == TO_INSERT) {
+                        newOffsets.put(key, TO_INSERT);
+                    } else {
+                        valuesFile.seek(offsets.get(key));
+                        V value = valueSerializer.read(valuesFile);
+                        newOffsets.put(key, newValuesFile.length());
+                        valueSerializer.write(newValuesFile, value);
+                    }
+                }
+
+                optimizeCounter = 0;
+                offsets = newOffsets;
+                valuesFile.close();
+                newValuesFile.close();
+                Files.move(Paths.get(newValuesPath), Paths.get(valuesPath), REPLACE_EXISTING);
+                valuesFile = new RandomAccessFile(valuesPath, "rw");
+            } catch (IOException e) {
+                throw new IOException(e);
+            }
+        }
+    }
+
+    private synchronized void insertElems() throws IOException {
+        Long offset = valuesFile.length();
+        valuesFile.seek(offset);
+        for (K key : elemsToInsert.keySet()) {
+            offsets.put(key, offset);
+            valueSerializer.write(valuesFile, elemsToInsert.get(key));
+            offset = valuesFile.getFilePointer();
+        }
+        elemsToInsert.clear();
     }
 }
 
