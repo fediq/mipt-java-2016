@@ -26,7 +26,7 @@ public class OptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private ReadWriteLock lock = new ReentrantReadWriteLock();
 
-    private final TreeMap<K, Long> keyAndOffsetMap = new TreeMap<K, Long>();
+    private TreeMap<K, Long> keyAndOffsetMap = new TreeMap<K, Long>();
     private final Map<K, V> keyAndValueMap = new HashMap<K, V>();
     private final HashSet<K> presenceSet = new HashSet<K>();
     private RandomAccessFile randAccFileWithOffsets;
@@ -240,6 +240,7 @@ public class OptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private void removeGarbage() {
         try {
             File clearedStorage = new File(fileClearedStoragePathname);
+            TreeMap<K, Long> newOffsets = new TreeMap<K, Long>();
 
             clearedStorage.createNewFile();
             RandomAccessFile randAccFileClearedStorage = new RandomAccessFile(clearedStorage, mode);
@@ -250,14 +251,19 @@ public class OptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 if (iterator.getValue() != null) {
                     randAccFileStorage.seek(iterator.getValue());
                     iterator.setValue(randAccFileClearedStorage.length());
+                    newOffsets.put(iterator.getKey(), iterator.getValue());
                     valueStrategy.write(randAccFileClearedStorage, valueStrategy.read(randAccFileStorage));
+                } else {
+                    newOffsets.put(iterator.getKey(), null);
                 }
             }
+
             garbageCounter = 0;
             randAccFileClearedStorage.close();
             randAccFileStorage.close();
             Files.move(Paths.get(fileClearedStoragePathname), Paths.get(fileStoragePathname), REPLACE_EXISTING);
             randAccFileStorage = new RandomAccessFile(fileStoragePathname, mode);
+            keyAndOffsetMap = newOffsets;
         } catch (IOException e) {
             throw new IllegalStateException("Couldn't read/write during removing garbage");
         }
