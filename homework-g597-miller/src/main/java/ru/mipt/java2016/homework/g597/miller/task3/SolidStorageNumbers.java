@@ -1,6 +1,7 @@
 package ru.mipt.java2016.homework.g597.miller.task3;
 
 import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 
 /*
@@ -31,18 +32,18 @@ public class SolidStorageNumbers extends SolidStorageAbstract<Integer, Double> {
     }
 
     @Override
-    protected void writeKey(Integer key) throws IOException {
+    protected void writeKey(DataOutput f, Integer key) throws IOException {
         try {
-            file.writeInt(key);
+            f.writeInt(key);
         } catch (IOException e) {
             throw new IOException(e);
         }
     }
 
     @Override
-    protected void writeValue(Double value) throws IOException {
+    protected void writeValue(DataOutput f, Double value) throws IOException {
         try {
-            file.writeDouble(value);
+            f.writeDouble(value);
         } catch (IOException e) {
             throw new IOException(e);
         }

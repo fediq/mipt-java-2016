@@ -1,6 +1,7 @@
 package ru.mipt.java2016.homework.g597.miller.task3;
 
 import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
@@ -24,13 +25,13 @@ public class SolidStorageStrings extends SolidStorageAbstract<String, String> {
     }
 
     @Override
-    protected void writeKey(String key) throws IOException {
-        writeString(key);
+    protected void writeKey(DataOutput f, String key) throws IOException {
+        writeString(f, key);
     }
 
     @Override
-    protected void writeValue(String value) throws IOException {
-        writeString(value);
+    protected void writeValue(DataOutput f, String value) throws IOException {
+        writeString(f, value);
     }
 
     private String readString(DataInput f) throws IOException {
@@ -47,14 +48,14 @@ public class SolidStorageStrings extends SolidStorageAbstract<String, String> {
         }
     }
 
-    private void writeString(String s) throws IOException {
+    private void writeString(DataOutput f, String s) throws IOException {
         if (s == null) {
             throw new NullPointerException();
         }
         try {
             byte[] b = s.getBytes();
-            file.writeInt(b.length);
-            file.write(b);
+            f.writeInt(b.length);
+            f.write(b);
         } catch (IOException e) {
             throw new IOException(e);
         }

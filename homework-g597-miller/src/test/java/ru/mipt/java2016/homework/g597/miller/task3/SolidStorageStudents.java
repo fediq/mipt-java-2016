@@ -1,6 +1,7 @@
 package ru.mipt.java2016.homework.g597.miller.task3;
 
 import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
@@ -63,36 +64,36 @@ public class SolidStorageStudents extends SolidStorageAbstract<StudentKey, Stude
     }
 
     @Override
-    protected void writeKey(StudentKey key) throws IOException {
+    protected void writeKey(DataOutput f, StudentKey key) throws IOException {
         try {
-            file.writeInt(key.getGroupId());
+            f.writeInt(key.getGroupId());
             byte[] name = key.getName().getBytes();
-            file.writeInt(name.length);
-            file.write(name);
+            f.writeInt(name.length);
+            f.write(name);
         } catch (IOException e) {
             throw new IOException(e);
         }
     }
 
     @Override
-    protected void writeValue(Student value) throws IOException {
+    protected void writeValue(DataOutput f, Student value) throws IOException {
         try {
             // Group ID
-            file.writeInt(value.getGroupId());
+            f.writeInt(value.getGroupId());
             // Name
             byte[] name = value.getName().getBytes();
-            file.writeInt(name.length);
-            file.write(name);
+            f.writeInt(name.length);
+            f.write(name);
             // Hometown
             byte[] hometown = value.getHometown().getBytes();
-            file.writeInt(hometown.length);
-            file.write(hometown);
+            f.writeInt(hometown.length);
+            f.write(hometown);
             // Birth Date
-            file.writeLong(value.getBirthDate().getTime());
+            f.writeLong(value.getBirthDate().getTime());
             // Has Dormitory
-            file.writeBoolean(value.isHasDormitory());
+            f.writeBoolean(value.isHasDormitory());
             // Average Score
-            file.writeDouble(value.getAverageScore());
+            f.writeDouble(value.getAverageScore());
         } catch (IOException e) {
             throw new IOException(e);
         }
