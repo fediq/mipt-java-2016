@@ -4,12 +4,15 @@ package ru.mipt.java2016.homework.g597.komarov.task3;
  * Created by mikhail on 17.11.16.
  */
 import java.io.*;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import  ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.g597.komarov.task2.Serializer;
+
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private final String pathToStorage;
@@ -229,10 +232,14 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             }
 
             valueTable.close();
-            File oldFile = Paths.get(pathToStorage, "storage.db").toFile();
-            oldFile.delete();
-            File newFile = Paths.get(pathToStorage, "storageCopy.db").toFile();
-            newFile.renameTo(oldFile);
+            bufFile.close();
+//            File oldFile = Paths.get(pathToStorage, "storage.db").toFile();
+//            oldFile.delete();
+//            File newFile = Paths.get(pathToStorage, "storageCopy.db").toFile();
+            Files.move(Paths.get(pathToStorage + File.separator + "storageCopy.db"),
+                    Paths.get(pathToStorage + File.separator + "storage.db"),
+                    REPLACE_EXISTING);
+//            newFile.renameTo(oldFile);
             valueTable = bufFile;
         }
     }
