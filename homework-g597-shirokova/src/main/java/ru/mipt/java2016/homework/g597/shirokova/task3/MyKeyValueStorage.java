@@ -49,25 +49,22 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         boolean mergedPrev = false;
         Integer numberOfFile = newEmptiness.numberOfFile;
         if (!startsOfFreePlaces.get(numberOfFile).isEmpty()) {
-            for (Map.Entry<Long, Long> location : startsOfFreePlaces.get(numberOfFile).entrySet()) {
-                Long offset = location.getKey();
-                Long size = location.getValue();
-                if (newEmptiness.offset + newEmptiness.size == location.getKey()) {
-                    PlaceOfValue mergedEmpties = new PlaceOfValue(numberOfFile,
-                            newEmptiness.offset, newEmptiness.size + size);
-                    startsOfFreePlaces.get(numberOfFile).put(mergedEmpties.offset, mergedEmpties.size);
-                    endsOfFreePlaces.get(numberOfFile).put(
-                            mergedEmpties.offset + mergedEmpties.size, mergedEmpties.size);
-                    startsOfFreePlaces.get(numberOfFile).remove(offset);
-                    endsOfFreePlaces.get(numberOfFile).remove(offset + size);
-                    newEmptiness = mergedEmpties;
-                    mergedNext = true;
-                    break;
+            if (endsOfFreePlaces.get(numberOfFile).get(newEmptiness.offset) != null) {
+                Long offset = newEmptiness.offset - endsOfFreePlaces.get(numberOfFile).get(newEmptiness.offset);
+                Long size = endsOfFreePlaces.get(numberOfFile).get(newEmptiness.offset);
+                PlaceOfValue mergedEmpties = new PlaceOfValue(numberOfFile,
+                        newEmptiness.offset, newEmptiness.size + size);
+                startsOfFreePlaces.get(numberOfFile).put(mergedEmpties.offset, mergedEmpties.size);
+                endsOfFreePlaces.get(numberOfFile).put(
+                        mergedEmpties.offset + mergedEmpties.size, mergedEmpties.size);
+                startsOfFreePlaces.get(numberOfFile).remove(offset);
+                endsOfFreePlaces.get(numberOfFile).remove(offset + size);
+                newEmptiness = mergedEmpties;
+                mergedNext = true;
                 }
-            }
-            for (Map.Entry<Long, Long> location : endsOfFreePlaces.get(numberOfFile).entrySet()) {
-                Long offset = location.getKey() - location.getValue();
-                Long size = location.getValue();
+            if (startsOfFreePlaces.get(numberOfFile).get(newEmptiness.offset + newEmptiness.size) != null) {
+                Long offset = newEmptiness.offset + newEmptiness.size;
+                Long size = startsOfFreePlaces.get(numberOfFile).get(newEmptiness.offset + newEmptiness.size);
                 if (newEmptiness.offset == offset + size) {
                     PlaceOfValue mergedEmpties = new PlaceOfValue(newEmptiness.numberOfFile,
                             offset, newEmptiness.size + size);
@@ -78,7 +75,6 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                     startsOfFreePlaces.get(numberOfFile).remove(offset);
                     endsOfFreePlaces.get(numberOfFile).remove(offset + size);
                     mergedPrev = true;
-                    break;
                 }
             }
         }
