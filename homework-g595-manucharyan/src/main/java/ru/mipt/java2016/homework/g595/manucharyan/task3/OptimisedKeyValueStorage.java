@@ -225,16 +225,19 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private void writeCacheToStorage() {
         isClose();
-        try {
-            File file = new File(pathname, storageName);
-            RandomAccessFile storage = new RandomAccessFile(file, "rw");
+        if (cache.isEmpty()) {
+            return;
+        }
 
+        File file = new File(pathname, storageName);
+
+        try (RandomAccessFile storage = new RandomAccessFile(file, "rw");) {
+
+            storage.seek(maxOffset);
             for (HashMap.Entry<K, V> entry : cache.entrySet()) {
-                storage.seek(maxOffset);
                 valueSerializationStrategy.serializeToFile(entry.getValue(), storage);
-                long curOffset = storage.getFilePointer();
                 base.put(entry.getKey(), maxOffset);
-                maxOffset = curOffset;
+                maxOffset = storage.getFilePointer();
             }
             storage.close();
             cache.clear();
