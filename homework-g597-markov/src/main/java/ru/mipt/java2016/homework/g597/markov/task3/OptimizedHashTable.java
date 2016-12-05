@@ -20,7 +20,7 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 public class OptimizedHashTable<K, V> implements KeyValueStorage<K, V> {
     private static final long TO_INSERT = -1;
-    private static final int MAGIC_CONSTANT = 2056;
+    private static final int MIN_NUMBER_TO_INSERT = 100;
 
     private final String databaseName = "storage.db";
     private final String databasePath;
@@ -131,7 +131,7 @@ public class OptimizedHashTable<K, V> implements KeyValueStorage<K, V> {
             }
             optimize();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Something went wrong during writing");
         }
     }
 
@@ -190,7 +190,7 @@ public class OptimizedHashTable<K, V> implements KeyValueStorage<K, V> {
 
     private synchronized void optimize() throws IOException {
         // Если нужно вставить много элементов в б.д.
-        if (elemsToInsert.size() > MAGIC_CONSTANT) {
+        if (elemsToInsert.size() > MIN_NUMBER_TO_INSERT) {
             insertElems();
         }
 
