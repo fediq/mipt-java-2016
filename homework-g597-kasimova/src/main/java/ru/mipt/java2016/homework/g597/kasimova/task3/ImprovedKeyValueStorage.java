@@ -17,27 +17,25 @@ public class ImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private MSerialization<K> keySerializer;
     private MSerialization<V> valueSerializer;
     private MSerialization<Long> shiftSerializer = MSerialization.LONG_SERIALIZER;
-    ;
     private RandomAccessFile fileForKeys;
     private RandomAccessFile fileForValues;
     private static final int BUFFER_SIZE = 10000;
     private static final int MAX_SIZE = 100000;
     private final Map<K, V> map = new HashMap<K, V>();
     private final Map<K, Long> keysAndShiftTable = new HashMap<K, Long>();
-    ;
     private boolean closed;
     private File valuesFile;
     private String way;
     private int maxShift;
 
-    public ImprovedKeyValueStorage(String _path, MSerialization<K> key, MSerialization<V> value) throws IOException {
+    public ImprovedKeyValueStorage(String path, MSerialization<K> key, MSerialization<V> value) throws IOException {
         boolean canRead = true;
-        way = _path;
+        way = path;
         keySerializer = key;
         valueSerializer = value;
         maxShift = 0;
-        File keysFile = new File(_path + File.separator + "KeysFile");
-        valuesFile = new File(_path + File.separator + "ValuesFile");
+        File keysFile = new File(path + File.separator + "KeysFile");
+        valuesFile = new File(path + File.separator + "ValuesFile");
         if (!keysFile.exists()) {
             keysFile.createNewFile();
             if (!valuesFile.exists()) {
@@ -51,8 +49,8 @@ public class ImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 throw new IOException("Error!");
             }
         }
-        fileForKeys = new RandomAccessFile(_path + File.separator + "Keys", "rw");
-        fileForValues = new RandomAccessFile(_path + File.separator + "Values", "rw");
+        fileForKeys = new RandomAccessFile(path + File.separator + "Keys", "rw");
+        fileForValues = new RandomAccessFile(path + File.separator + "Values", "rw");
         if (canRead) {
             closed = false;
             try {
@@ -142,8 +140,8 @@ public class ImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                     DataInputStream valuesDataInputStream = new DataInputStream(new BufferedInputStream(
                             Channels.newInputStream(fileForValues.getChannel()), BUFFER_SIZE));
                     keysAndShiftTable.put(entry, startPosition + (long) newValuesDataOutputStream.size());
-                    valueSerializer.serializeToStream(valueSerializer.deserializeFromStream(valuesDataInputStream)
-                            , newValuesDataOutputStream);
+                    valueSerializer.serializeToStream(valueSerializer.deserializeFromStream(valuesDataInputStream),
+                            newValuesDataOutputStream);
                 }
                 newValuesDataOutputStream.flush();
                 newValueFile.close();
