@@ -55,27 +55,22 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 PlaceOfValue mergedEmpties = new PlaceOfValue(numberOfFile,
                         newEmptiness.offset, newEmptiness.size + size);
                 startsOfFreePlaces.get(numberOfFile).put(mergedEmpties.offset, mergedEmpties.size);
-                endsOfFreePlaces.get(numberOfFile).put(
-                        mergedEmpties.offset + mergedEmpties.size, mergedEmpties.size);
+                endsOfFreePlaces.get(numberOfFile).put(mergedEmpties.offset + mergedEmpties.size, mergedEmpties.size);
                 startsOfFreePlaces.get(numberOfFile).remove(offset);
                 endsOfFreePlaces.get(numberOfFile).remove(offset + size);
                 newEmptiness = mergedEmpties;
-                mergedNext = true;
-                }
+                mergedPrev = true;
+            }
             if (startsOfFreePlaces.get(numberOfFile).get(newEmptiness.offset + newEmptiness.size) != null) {
                 Long offset = newEmptiness.offset + newEmptiness.size;
                 Long size = startsOfFreePlaces.get(numberOfFile).get(newEmptiness.offset + newEmptiness.size);
-                if (newEmptiness.offset == offset + size) {
-                    PlaceOfValue mergedEmpties = new PlaceOfValue(newEmptiness.numberOfFile,
-                            offset, newEmptiness.size + size);
-                    endsOfFreePlaces.get(numberOfFile).put(
-                            mergedEmpties.offset + mergedEmpties.size, mergedEmpties.size);
-                    startsOfFreePlaces.get(numberOfFile).put(
-                            mergedEmpties.offset, mergedEmpties.size);
-                    startsOfFreePlaces.get(numberOfFile).remove(offset);
-                    endsOfFreePlaces.get(numberOfFile).remove(offset + size);
-                    mergedPrev = true;
-                }
+                PlaceOfValue mergedEmpties = new PlaceOfValue(newEmptiness.numberOfFile,
+                        offset, newEmptiness.size + size);
+                endsOfFreePlaces.get(numberOfFile).put(mergedEmpties.offset + mergedEmpties.size, mergedEmpties.size);
+                startsOfFreePlaces.get(numberOfFile).put(mergedEmpties.offset, mergedEmpties.size);
+                startsOfFreePlaces.get(numberOfFile).remove(offset);
+                endsOfFreePlaces.get(numberOfFile).remove(offset + size);
+                mergedNext = true;
             }
         }
         if (!mergedNext && !mergedPrev) {
