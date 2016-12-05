@@ -1,7 +1,5 @@
 package ru.mipt.java2016.homework.g596.kozlova.task3;
 
-import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
-
 import java.io.DataInput;
 import java.io.IOException;
 

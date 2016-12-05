@@ -25,7 +25,7 @@ public class MyStudentSerialization implements MySerialization<Student> {
     }
 
     @Override
-    public Student read(DataInput input) throws IOException{
+    public Student read(DataInput input) throws IOException {
         String[] parts = input.readUTF().split("/");
         int groupId = Integer.parseInt(parts[0]);
         String name = parts[1];
