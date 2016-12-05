@@ -33,6 +33,7 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private final String pathname;
     private final String storageName = "storage.txt";
     private RandomAccessFile mapStorage;
+    private RandomAccessFile storage;
     private final String mapStorageName = "mapStorage.txt";
 
     private File mutexFile; // для многопоточности
@@ -60,8 +61,9 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
 
         try {
-            File file2 = new File(path, mapStorageName);
-            mapStorage = new RandomAccessFile(file2, "rw");
+            mapStorage = new RandomAccessFile(new File(path, mapStorageName), "rw");
+
+            storage = new RandomAccessFile(new File(pathname, storageName), "rw");
 
             downloadDataFromStorage();
         } catch (IOException exception) {
@@ -84,13 +86,10 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 if (cache.get(key) != null) {
                     return cache.get(key);
                 }
-                File file = new File(pathname, storageName);
-                RandomAccessFile storage = new RandomAccessFile(file, "rw");
 
                 Long offset = base.get(key);
                 storage.seek(offset);
                 V res = valueSerializationStrategy.deserializeFromFile(storage);
-                storage.close();
                 return res;
             } catch (Exception exception) {
                 throw new RuntimeException("Can't read from storage");
@@ -177,6 +176,7 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
         try {
             mapStorage.close();
+            storage.close();
         } catch (IOException excetion) {
             throw new RuntimeException("Can't close storage");
         } finally {
@@ -201,7 +201,6 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             }
         } catch (IOException exception) {
             base.clear();
-            //throw new RuntimeException("Trouble with storage.db");
         }
     }
 
@@ -210,8 +209,7 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             mapStorage.close();
             File file = new File(pathname, mapStorageName);
             assert (file.delete());
-            file = new File(pathname, mapStorageName);
-            mapStorage = new RandomAccessFile(file, "rw");
+            mapStorage = new RandomAccessFile(new File(pathname, mapStorageName), "rw");
 
             mapStorage.writeInt(size());
             for (HashMap.Entry<K, Long> entry : base.entrySet()) {
@@ -225,21 +223,19 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private void writeCacheToStorage() {
         isClose();
+
         if (cache.isEmpty()) {
             return;
         }
 
-        File file = new File(pathname, storageName);
-
-        try (RandomAccessFile storage = new RandomAccessFile(file, "rw");) {
-
+        try {
             storage.seek(maxOffset);
             for (HashMap.Entry<K, V> entry : cache.entrySet()) {
                 valueSerializationStrategy.serializeToFile(entry.getValue(), storage);
                 base.put(entry.getKey(), maxOffset);
                 maxOffset = storage.getFilePointer();
             }
-            storage.close();
+
             cache.clear();
 
         } catch (IOException exception) {
@@ -253,8 +249,7 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         File file1 = new File(pathname, storageName);
         File file = new File(pathname, "newStorage.txt");
 
-        try (DataOutputStream newStorage = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(file)));
-             RandomAccessFile storage = new RandomAccessFile(file1, "rw");) {
+        try (DataOutputStream newStorage = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(file)));) {
 
             writeCacheToStorage();
 
@@ -271,6 +266,7 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
             newStorage.close();
             assert (file.renameTo(file1));
+            storage = new RandomAccessFile(new File(pathname, storageName), "rw");
 
         } catch (IOException exception) {
             throw new RuntimeException("Can't reorganise storage!");
@@ -282,6 +278,6 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             throw new IllegalStateException("Can't write: storage is closed");
         }
     }
-    
+
 }
 
