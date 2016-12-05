@@ -48,34 +48,36 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         boolean mergedNext = false;
         boolean mergedPrev = false;
         Integer numberOfFile = newEmptiness.numberOfFile;
-        if (!startsOfFreePlaces.get(numberOfFile).isEmpty()) {
-            if (endsOfFreePlaces.get(numberOfFile).get(newEmptiness.offset) != null) {
-                Long offset = newEmptiness.offset - endsOfFreePlaces.get(numberOfFile).get(newEmptiness.offset);
-                Long size = endsOfFreePlaces.get(numberOfFile).get(newEmptiness.offset);
+        Map<Long, Long> currentMapOfStarts = startsOfFreePlaces.get(numberOfFile);
+        Map<Long, Long> currentMapOfEnds = endsOfFreePlaces.get(numberOfFile);
+        if (!currentMapOfStarts.isEmpty()) {
+            if (currentMapOfEnds.containsKey(newEmptiness.offset)) {
+                Long offset = newEmptiness.offset - currentMapOfEnds.get(newEmptiness.offset);
+                Long size = currentMapOfEnds.get(newEmptiness.offset);
                 PlaceOfValue mergedEmpties = new PlaceOfValue(numberOfFile,
                         newEmptiness.offset, newEmptiness.size + size);
-                startsOfFreePlaces.get(numberOfFile).put(mergedEmpties.offset, mergedEmpties.size);
-                endsOfFreePlaces.get(numberOfFile).put(mergedEmpties.offset + mergedEmpties.size, mergedEmpties.size);
-                startsOfFreePlaces.get(numberOfFile).remove(offset);
-                endsOfFreePlaces.get(numberOfFile).remove(offset + size);
+                currentMapOfStarts.put(mergedEmpties.offset, mergedEmpties.size);
+                currentMapOfEnds.put(mergedEmpties.offset + mergedEmpties.size, mergedEmpties.size);
+                currentMapOfStarts.remove(offset);
+                currentMapOfEnds.remove(offset + size);
                 newEmptiness = mergedEmpties;
                 mergedPrev = true;
             }
-            if (startsOfFreePlaces.get(numberOfFile).get(newEmptiness.offset + newEmptiness.size) != null) {
+            if (currentMapOfStarts.containsKey(newEmptiness.offset + newEmptiness.size)) {
                 Long offset = newEmptiness.offset + newEmptiness.size;
-                Long size = startsOfFreePlaces.get(numberOfFile).get(newEmptiness.offset + newEmptiness.size);
+                Long size = currentMapOfStarts.get(newEmptiness.offset + newEmptiness.size);
                 PlaceOfValue mergedEmpties = new PlaceOfValue(newEmptiness.numberOfFile,
                         offset, newEmptiness.size + size);
-                endsOfFreePlaces.get(numberOfFile).put(mergedEmpties.offset + mergedEmpties.size, mergedEmpties.size);
-                startsOfFreePlaces.get(numberOfFile).put(mergedEmpties.offset, mergedEmpties.size);
-                startsOfFreePlaces.get(numberOfFile).remove(offset);
-                endsOfFreePlaces.get(numberOfFile).remove(offset + size);
+                currentMapOfEnds.put(mergedEmpties.offset + mergedEmpties.size, mergedEmpties.size);
+                currentMapOfStarts.put(mergedEmpties.offset, mergedEmpties.size);
+                currentMapOfStarts.remove(offset);
+                currentMapOfEnds.remove(offset + size);
                 mergedNext = true;
             }
         }
         if (!mergedNext && !mergedPrev) {
-            startsOfFreePlaces.get(numberOfFile).put(newEmptiness.offset, newEmptiness.size);
-            endsOfFreePlaces.get(numberOfFile).put(newEmptiness.offset + newEmptiness.size, newEmptiness.size);
+            currentMapOfStarts.put(newEmptiness.offset, newEmptiness.size);
+            currentMapOfEnds.put(newEmptiness.offset + newEmptiness.size, newEmptiness.size);
         }
         existanceOfFreeSpace = true;
     }
