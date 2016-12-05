@@ -16,15 +16,16 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private final String pathToStorage;
+    private final Serializer<K> keySerializer;
+    private final Serializer<V> valueSerializer;
+    private final ReentrantReadWriteLock lock;
+    private final File flag;
+    private final RandomAccessFile keyOffsetTable;
     private RandomAccessFile valueTable;
-    private RandomAccessFile keyOffsetTable;
-    private File flag;
-    private Serializer<K> keySerializer;
-    private Serializer<V> valueSerializer;
     private Map<K, Long> dataBase;
     private int deletedCount;
     private Map<K, V> written;
-    private ReentrantReadWriteLock lock;
+
 
     public MyKeyValueStorage(String path, Serializer<K> keySerializerArg,
                              Serializer<V> valueSerializerArg) throws IOException {
@@ -119,14 +120,6 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 deletedCount++;
                 dataBase.remove(key);
             }
-            if (deletedCount >= 100) {
-                try {
-                    rewriteFile();
-                    deletedCount = 0;
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-            }
         } finally {
             lock.writeLock().unlock();
         }
@@ -196,6 +189,15 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void merge() throws IOException {
+        if (deletedCount >= 100) {
+            try {
+                rewriteFile();
+                deletedCount = 0;
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
         long offset = valueTable.length();
         valueTable.seek(offset);
         keyOffsetTable.seek(keyOffsetTable.length());
@@ -233,13 +235,9 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
             valueTable.close();
             bufFile.close();
-//            File oldFile = Paths.get(pathToStorage, "storage.db").toFile();
-//            oldFile.delete();
-//            File newFile = Paths.get(pathToStorage, "storageCopy.db").toFile();
             Files.move(Paths.get(pathToStorage + File.separator + "storageCopy.db"),
                     Paths.get(pathToStorage + File.separator + "storage.db"),
                     REPLACE_EXISTING);
-//            newFile.renameTo(oldFile);
             valueTable = bufFile;
         }
     }
