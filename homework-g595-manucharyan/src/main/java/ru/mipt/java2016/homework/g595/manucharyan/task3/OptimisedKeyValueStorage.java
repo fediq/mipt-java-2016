@@ -249,7 +249,7 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         File file1 = new File(pathname, storageName);
         File file = new File(pathname, "newStorage.txt");
 
-        try (DataOutputStream newStorage = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(file)));) {
+        try (DataOutputStream newStorage = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(file)))) {
 
             writeCacheToStorage();
 
