@@ -203,10 +203,7 @@ public class OptimizedHashTable<K, V> implements KeyValueStorage<K, V> {
                 String valuesPath = databasePath + File.separator + valuesFileName;
                 File newValues = new File(newValuesPath);
 
-
-                RandomAccessFile newValuesFile = new RandomAccessFile(newValues, "rw");
-
-                try {
+                try (RandomAccessFile newValuesFile = new RandomAccessFile(newValues, "rw")) {
                     newValuesFile.seek(0);
                     newValuesFile.setLength(0);
 
@@ -220,7 +217,6 @@ public class OptimizedHashTable<K, V> implements KeyValueStorage<K, V> {
                             valueSerializer.write(newValuesFile, value);
                         }
                     }
-                } finally {
                     optimizeCounter = 0;
                     offsets = newOffsets;
                     valuesFile.close();
