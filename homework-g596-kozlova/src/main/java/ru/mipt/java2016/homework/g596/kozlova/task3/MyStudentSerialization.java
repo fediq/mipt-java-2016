@@ -1,11 +1,14 @@
 package ru.mipt.java2016.homework.g596.kozlova.task3;
 
 import ru.mipt.java2016.homework.tests.task2.Student;
+
+import java.io.DataInput;
+import java.io.IOException;
 import java.util.Date;
 
 public class MyStudentSerialization implements MySerialization<Student> {
     @Override
-    public String write(Student obj) {
+    public String write(Student obj) throws IOException {
         StringBuffer s = new StringBuffer();
         s.append(obj.getGroupId());
         s.append('/');
@@ -22,8 +25,8 @@ public class MyStudentSerialization implements MySerialization<Student> {
     }
 
     @Override
-    public Student read(String s) {
-        String[] parts = s.split("/");
+    public Student read(DataInput input) throws IOException{
+        String[] parts = input.readUTF().split("/");
         int groupId = Integer.parseInt(parts[0]);
         String name = parts[1];
         String homeTown = parts[2];
