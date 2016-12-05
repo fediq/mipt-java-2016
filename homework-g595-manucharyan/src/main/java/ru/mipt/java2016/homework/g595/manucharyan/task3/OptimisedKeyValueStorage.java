@@ -61,11 +61,15 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
 
         try {
-            mapStorage = new RandomAccessFile(new File(path, mapStorageName), "rw");
+            File file = new File(path, mapStorageName);
+            boolean exist = file.exists();
 
+            mapStorage = new RandomAccessFile(file, "rw");
+            if (exist) {
+                downloadDataFromStorage();
+            }
             storage = new RandomAccessFile(new File(pathname, storageName), "rw");
 
-            downloadDataFromStorage();
         } catch (IOException exception) {
             throw new RuntimeException("Can't create a storage!");
         }
@@ -190,8 +194,7 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private void downloadDataFromStorage() {
         try {
 
-            int count = -1;
-            count = mapStorage.readInt();
+            int count = mapStorage.readInt();
 
             for (int i = 0; i < count; i++) {
                 K key = keySerializationStrategy.deserializeFromFile(mapStorage);
@@ -201,6 +204,7 @@ public class OptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             }
         } catch (IOException exception) {
             base.clear();
+            throw new RuntimeException("Trouble with storage.db");
         }
     }
 
