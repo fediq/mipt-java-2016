@@ -3,6 +3,8 @@ package ru.mipt.java2016.homework.g596.fattakhetdinov.task3;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -11,11 +13,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -26,9 +28,9 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private Map<K, Long> keysOffsetsTable = new HashMap<>();
     private final Map<K, V> storageChanges = new TreeMap<>();
-    private final Set<K> deleteChanges = new TreeSet<>();
+    private final Set<K> deleteChanges = new HashSet<>();
     private LoadingCache<K, V> cacheTable =
-            CacheBuilder.newBuilder().maximumSize(200).softValues().build(new CacheLoader<K, V>() {
+            CacheBuilder.newBuilder().maximumSize(60).softValues().build(new CacheLoader<K, V>() {
                 @Override
                 public V load(K key) {
                     V result = null;
@@ -46,6 +48,8 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private File initFile;
     private RandomAccessFile keysFile;
     private RandomAccessFile valuesFile;
+    private DataInputStream keysDataInputStream;
+    private DataOutputStream valuesOutputStream;
     private final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
     private final Lock writeLock = readWriteLock.writeLock();
     private final Lock readLock = readWriteLock.readLock();
@@ -57,6 +61,8 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private String currentStorageType; //Строка для проверки типа хранилища
     private boolean isClosed;
+    private long storageLength;
+    private long writtenLength;
 
     public MyOptimizedKeyValueStorage(String path,
             SerializationStrategy<K> keySerializationStrategy,
@@ -81,6 +87,9 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         } else {
             createNewFiles();
         }
+
+        storageLength = valuesFile.length();
+        writtenLength = storageLength - 1;
     }
 
     private void createNewFiles() throws IOException {
@@ -92,6 +101,8 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
         keysFile = new RandomAccessFile(fileK, "rw");
         valuesFile = new RandomAccessFile(fileV, "rw");
+
+        createDataStreams();
     }
 
     private void loadDataFromFiles() throws IOException {
@@ -104,6 +115,8 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
         keysFile = new RandomAccessFile(fileK, "rw");
         valuesFile = new RandomAccessFile(fileV, "rw");
+
+        createDataStreams();
 
         try (DataInputStream input = new DataInputStream(new FileInputStream(initFile))) {
             String fileStorageType = input.readUTF(); //Считываем проверочную строку
@@ -119,18 +132,29 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         readOffsetsTable();
     }
 
+    private void createDataStreams() throws IOException {
+        FileInputStream keysFIS = new FileInputStream(keysFile.getFD());
+        BufferedInputStream keysBIS = new BufferedInputStream(keysFIS);
+        keysDataInputStream = new DataInputStream(keysBIS);
+
+        valuesFile.seek(valuesFile.length());
+        FileOutputStream valuesFOS = new FileOutputStream(valuesFile.getFD());
+        BufferedOutputStream valuesBOS = new BufferedOutputStream(valuesFOS);
+        valuesOutputStream = new DataOutputStream(valuesBOS);
+    }
+
     private void readOffsetsTable() throws IOException {
-        String fileStorageType = keysFile.readUTF(); //Считываем проверочную строку
+        String fileStorageType = keysDataInputStream.readUTF(); //Считываем проверочную строку
         if (!currentStorageType.equals(fileStorageType)) {
             throw new RuntimeException(
                     String.format("Storage contains: %s; expected: %s", fileStorageType,
                             currentStorageType));
         }
 
-        int numKeys = keysFile.readInt();
+        int numKeys = keysDataInputStream.readInt();
         for (int i = 0; i < numKeys; i++) {
-            K key = keySerializationStrategy.deserializeFromFile(keysFile);
-            Long offset = keysFile.readLong();
+            K key = keySerializationStrategy.deserializeFromFile(keysDataInputStream);
+            Long offset = keysDataInputStream.readLong();
             keysOffsetsTable.put(key, offset);
         }
     }
@@ -145,7 +169,14 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private V loadValueFromFile(K key) throws IOException {
         Long offset = keysOffsetsTable.get(key);
         valuesFile.seek(offset);
-        return valueSerializationStrategy.deserializeFromFile(valuesFile);
+        if (offset > writtenLength) {
+            valuesOutputStream.flush();
+            writtenLength = storageLength - 1;
+        }
+
+        V result = valueSerializationStrategy.deserializeFromFile(valuesFile);
+        valuesFile.seek(valuesFile.length());
+        return result;
     }
 
     @Override
@@ -189,9 +220,12 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         writeLock.lock();
         try {
             checkForClosedDatabase();
-            keysOffsetsTable.put(key, valuesFile.length());
-            valuesFile.seek(valuesFile.length());
-            valueSerializationStrategy.serializeToFile(value, valuesFile);
+
+            keysOffsetsTable.put(key, storageLength);
+            long writtenSize = valuesOutputStream.size();
+            valueSerializationStrategy.serializeToFile(value, valuesOutputStream);
+            storageLength += valuesOutputStream.size() - writtenSize;
+
             deleteChanges.remove(key);
             storageChanges.put(key, value);
             changesCheck();
@@ -247,13 +281,11 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void changesCheck() {
-        if (storageChanges.size() > 1000 || deleteChanges.size() > 2000) {
+        if (storageChanges.size() > 100 || deleteChanges.size() > 50) {
             storageChanges.clear();
             deleteChanges.clear();
             cacheTable.cleanUp();
         }
-
-
     }
 
     @Override
@@ -262,15 +294,24 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         output.writeUTF(currentStorageType);
         output.close();
 
-        keysFile.seek(0);
-        keysFile.writeUTF(currentStorageType);
-        keysFile.writeInt(keysOffsetsTable.size());
+        valuesOutputStream.close();
+        keysDataInputStream.close();
+        keysFile.close();
+        File fileK = new File(keysFileName);
+        keysFile = new RandomAccessFile(fileK, "rw");
+        FileOutputStream keysFOS = new FileOutputStream(keysFile.getFD());
+        BufferedOutputStream keysBOS = new BufferedOutputStream(keysFOS);
+        DataOutputStream keysDataOutputStream = new DataOutputStream(keysBOS);
+
+        keysDataOutputStream.writeUTF(currentStorageType);
+        keysDataOutputStream.writeInt(keysOffsetsTable.size());
         for (K key : keysOffsetsTable.keySet()) {
-            keySerializationStrategy.serializeToFile(key, keysFile);
-            keysFile.writeLong(keysOffsetsTable.get(key));
+            keySerializationStrategy.serializeToFile(key, keysDataOutputStream);
+            keysDataOutputStream.writeLong(keysOffsetsTable.get(key));
         }
         keysOffsetsTable.clear();
 
+        keysDataOutputStream.close();
         keysFile.close();
         valuesFile.close();
         isClosed = true;

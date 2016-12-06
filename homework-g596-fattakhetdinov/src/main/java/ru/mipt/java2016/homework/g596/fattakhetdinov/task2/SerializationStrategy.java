@@ -5,6 +5,8 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 public interface SerializationStrategy<T> {
+    int sizeOfSerialization(T value);
+
     void serializeToFile(T value, DataOutput output) throws IOException;
 
     T deserializeFromFile(DataInput input) throws IOException;

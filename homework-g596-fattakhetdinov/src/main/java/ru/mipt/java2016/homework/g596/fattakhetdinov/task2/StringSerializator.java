@@ -6,6 +6,11 @@ import java.io.IOException;
 
 public class StringSerializator implements SerializationStrategy<String> {
     @Override
+    public int sizeOfSerialization(String str) {
+        return str.length();
+    }
+
+    @Override
     public void serializeToFile(String str, DataOutput output) throws IOException {
         output.writeUTF(str);
     }

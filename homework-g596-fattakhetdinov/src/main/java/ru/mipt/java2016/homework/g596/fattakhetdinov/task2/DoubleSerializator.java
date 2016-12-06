@@ -6,6 +6,11 @@ import java.io.IOException;
 
 public class DoubleSerializator implements SerializationStrategy<Double> {
     @Override
+    public int sizeOfSerialization(Double value) {
+        return Double.SIZE / 8;
+    }
+
+    @Override
     public void serializeToFile(Double value, DataOutput output) throws IOException {
         output.writeDouble(value);
     }
