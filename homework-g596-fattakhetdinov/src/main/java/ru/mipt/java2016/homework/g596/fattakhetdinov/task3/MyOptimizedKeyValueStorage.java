@@ -23,25 +23,26 @@ import ru.mipt.java2016.homework.g596.fattakhetdinov.task2.SerializationStrategy
 
 public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
-    private int MAX_CACHE_SIZE = 50;
+    private final int MAX_CACHE_SIZE = 50;
 
     private Map<K, Long> keysOffsetsTable = new HashMap<>();
     private LoadingCache<K, V> cacheTable =
-            CacheBuilder.newBuilder().maximumSize(MAX_CACHE_SIZE).softValues().build(new CacheLoader<K, V>() {
-                @Override
-                public V load(K key) {
-                    V result = null;
-                    try {
-                        result = loadValueFromFile(key);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    if (result == null) {
-                        throw new RuntimeException();
-                    }
-                    return result;
-                }
-            });
+            CacheBuilder.newBuilder().maximumSize(MAX_CACHE_SIZE).softValues()
+                    .build(new CacheLoader<K, V>() {
+                        @Override
+                        public V load(K key) {
+                            V result = null;
+                            try {
+                                result = loadValueFromFile(key);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                            if (result == null) {
+                                throw new RuntimeException();
+                            }
+                            return result;
+                        }
+                    });
     private File initFile;
     private RandomAccessFile keysFile;
     private RandomAccessFile valuesFile;
@@ -214,7 +215,7 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             valuesOutputStream.flush();
             storageLength += valuesOutputStream.size() - writtenSize;
 
-            if(cacheTable.asMap().containsKey(key)){
+            if (cacheTable.asMap().containsKey(key)) {
                 cacheTable.put(key, value);
             }
             changesCheck();
