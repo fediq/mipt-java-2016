@@ -86,7 +86,6 @@ public class QCalculator implements Calculator {
 
     private class Evaluator {
         private int currentToken = 0;
-        private int depthParens = 0;
 
         private double getN() throws ParsingException {
             QToken token = tokens.get(currentToken);
@@ -122,7 +121,6 @@ public class QCalculator implements Calculator {
 
             if(token.getType() == QToken.TokType.LPAREN) {
                 currentToken++;
-                depthParens++;
 
                 result *= getE();
 
@@ -133,7 +131,6 @@ public class QCalculator implements Calculator {
                 }
 
                 currentToken++;
-                depthParens--;
 
                 return result;
             }
@@ -144,7 +141,7 @@ public class QCalculator implements Calculator {
             }
         }
 
-        public double getT() throws ParsingException {
+        private double getT() throws ParsingException {
             double val1 = getP();
 
             QToken token = tokens.get(currentToken);
@@ -169,7 +166,7 @@ public class QCalculator implements Calculator {
             return val1;
         }
 
-        public double getE() throws ParsingException {
+        private double getE() throws ParsingException {
             double val1 = getT();
 
             QToken token = tokens.get(currentToken);
@@ -190,16 +187,12 @@ public class QCalculator implements Calculator {
 
                 token = tokens.get(currentToken);
             }
-            
+
             return val1;
         }
 
         public double evaluate() throws ParsingException {
             double result = getE();
-
-            if(depthParens != 0) {
-                throw new ParsingException("Unpaired LPAREN.");
-            }
 
             if(currentToken != tokens.size() - 1) {
                 throw new ParsingException("Unexpected end of expression.");
