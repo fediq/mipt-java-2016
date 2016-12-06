@@ -23,11 +23,11 @@ import ru.mipt.java2016.homework.g596.fattakhetdinov.task2.SerializationStrategy
 
 public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
-    private final int MAX_CACHE_SIZE = 50;
+    private final int maxCacheSize = 50;
 
     private Map<K, Long> keysOffsetsTable = new HashMap<>();
     private LoadingCache<K, V> cacheTable =
-            CacheBuilder.newBuilder().maximumSize(MAX_CACHE_SIZE).softValues()
+            CacheBuilder.newBuilder().maximumSize(maxCacheSize).softValues()
                     .build(new CacheLoader<K, V>() {
                         @Override
                         public V load(K key) {
