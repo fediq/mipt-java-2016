@@ -17,11 +17,17 @@ public class QCalculator implements Calculator {
     private class Parser {
         private int currentPosition = 0;
 
-        private void stripSpaces(String expression) {
-            while(currentPosition < expression.length() &&
-                    (Character.isWhitespace(expression.charAt(currentPosition)) ||
-                    Character.isSpaceChar(expression.charAt(currentPosition))))
+        public void parseExpression(String expression) throws ParsingException {
+            stripSpaces(expression);
+
+            for( ; currentPosition < expression.length(); ) {
+                tokens.add(getNextToken(expression));
                 currentPosition++;
+
+                stripSpaces(expression);
+            }
+
+            tokens.add(new QToken(QToken.TokType.END));
         }
 
         private QToken getNextToken(String expression) throws ParsingException {
@@ -70,106 +76,40 @@ public class QCalculator implements Calculator {
             }
         }
 
-        public void parseExpression(String expression) throws ParsingException {
-            stripSpaces(expression);
-
-            for( ; currentPosition < expression.length(); ) {
-                tokens.add(getNextToken(expression));
+        private void stripSpaces(String expression) {
+            while(currentPosition < expression.length() &&
+                    (Character.isWhitespace(expression.charAt(currentPosition)) ||
+                            Character.isSpaceChar(expression.charAt(currentPosition))))
                 currentPosition++;
-
-                stripSpaces(expression);
-            }
-
-            tokens.add(new QToken(QToken.TokType.END));
         }
     }
+
+    /*
+        Grammar:
+        Result = E
+        E = T+T | T-T | T
+        T = P*P | P/P | P
+        P = [-+]?N | [-+]?(E)
+        N = number
+     */
 
     private class Evaluator {
         private int currentToken = 0;
 
-        private double getN() throws ParsingException {
-            QToken token = tokens.get(currentToken);
+        public double evaluate() throws ParsingException {
+            double result = getE();
 
-            if (token.getType() != QToken.TokType.NUMBER) {
-                throw new ParsingException("Not a number in getN().");
+            if (currentToken < tokens.size() - 1) {
+                throw new ParsingException("Unexpected end of expression.");
             }
-
-            double result = token.getNumber();
-            currentToken++;
 
             return result;
-        }
-
-        private double getP() throws ParsingException {
-            QToken token = tokens.get(currentToken);
-
-            double result = 0;
-
-            if(token.getType() == QToken.TokType.SUB) {
-                result = -1;
-                currentToken++;
-                token = tokens.get(currentToken);
-            }
-            else {
-                if(token.getType() == QToken.TokType.ADD) {
-                    currentToken++;
-                    token = tokens.get(currentToken);
-                }
-
-                result = 1;
-            }
-
-            if(token.getType() == QToken.TokType.LPAREN) {
-                currentToken++;
-
-                result *= getE();
-
-                token = tokens.get(currentToken);
-
-                if(token.getType() != QToken.TokType.RPAREN) {
-                    throw new ParsingException("Unpaired RPAREN in getP().");
-                }
-
-                currentToken++;
-
-                return result;
-            }
-            else {
-                result *= getN();
-
-                return result;
-            }
-        }
-
-        private double getT() throws ParsingException {
-            double val1 = getP();
-
-            QToken token = tokens.get(currentToken);
-
-            while(token.getType() == QToken.TokType.MUL ||
-                    token.getType() == QToken.TokType.DIV) {
-                QToken opToken = token;
-                currentToken++;
-
-                double val2 = getP();
-
-                if(opToken.getType() == QToken.TokType.MUL) {
-                    val1 *= val2;
-                }
-                if(opToken.getType() == QToken.TokType.DIV) {
-                    val1 /= val2;
-                }
-
-                token = tokens.get(currentToken);
-            }
-
-            return val1;
         }
 
         private double getE() throws ParsingException {
             double val1 = getT();
 
-            QToken token = tokens.get(currentToken);
+            QToken token = getCurToken();
 
             while(token.getType() == QToken.TokType.ADD ||
                     token.getType() == QToken.TokType.SUB) {
@@ -185,20 +125,89 @@ public class QCalculator implements Calculator {
                     val1 -= val2;
                 }
 
-                token = tokens.get(currentToken);
+                token = getCurToken();
             }
 
             return val1;
         }
 
-        public double evaluate() throws ParsingException {
-            double result = getE();
+        private double getT() throws ParsingException {
+            double val1 = getP();
 
-            if(currentToken != tokens.size() - 1) {
-                throw new ParsingException("Unexpected end of expression.");
+            QToken token = getCurToken();
+
+            while(token.getType() == QToken.TokType.MUL ||
+                    token.getType() == QToken.TokType.DIV) {
+                QToken opToken = token;
+                currentToken++;
+
+                double val2 = getP();
+
+                if(opToken.getType() == QToken.TokType.MUL) {
+                    val1 *= val2;
+                }
+                if(opToken.getType() == QToken.TokType.DIV) {
+                    val1 /= val2;
+                }
+
+                token = getCurToken();
             }
 
+            return val1;
+        }
+
+        private double getP() throws ParsingException {
+            QToken token = getCurToken();
+
+            double result = 1;
+
+            if(token.getType() == QToken.TokType.SUB) {
+                result = -1;
+                token = getNextToken();
+            }
+            else {
+                if(token.getType() == QToken.TokType.ADD) token = getNextToken();
+            }
+
+            if(token.getType() == QToken.TokType.LPAREN) {
+                currentToken++;
+
+                result *= getE();
+
+                token = getCurToken();
+                if(token.getType() != QToken.TokType.RPAREN) {
+                    throw new ParsingException("Unpaired RPAREN in getP().");
+                }
+                currentToken++;
+
+                return result;
+            }
+            else {
+                result *= getN();
+
+                return result;
+            }
+        }
+
+        private double getN() throws ParsingException {
+            QToken token = getCurToken();
+            currentToken++;
+
+            if (token.getType() != QToken.TokType.NUMBER) {
+                throw new ParsingException("Not a number in getN().");
+            }
+
+            double result = token.getNumber();
+
             return result;
+        }
+
+        private QToken getNextToken() {
+            return tokens.get(++currentToken);
+        }
+
+        private QToken getCurToken() {
+            return tokens.get(currentToken);
         }
     }
 
@@ -216,8 +225,6 @@ public class QCalculator implements Calculator {
 
         Evaluator eval = new Evaluator();
         double result = eval.evaluate();
-
-//        System.out.println(result);
 
         return result;
     }
