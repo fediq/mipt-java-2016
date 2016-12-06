@@ -26,32 +26,35 @@ public class OptimizedKVStorage<K, V> implements KeyValueStorage<K, V> {
     private final Serializer<V> valueSerializer;
 
     private File initFile;
+    private File values;
+    private File keys;
     private RandomAccessFile keysFile;
     private RandomAccessFile valuesFile;
     private final HashMap<K, Long> keysOffsetsTable = new HashMap<>();
     private boolean closed = false;
+    private int badValues = 0;
 
     public void createStorage() throws IOException {
-        File fileK = new File(keysFileName);
-        File fileV = new File(valuesFileName);
+        keys = new File(keysFileName);
+        values = new File(valuesFileName);
 
-        fileK.createNewFile();
-        fileV.createNewFile();
+        keys.createNewFile();
+        values.createNewFile();
 
-        keysFile = new RandomAccessFile(fileK, "rw");
-        valuesFile = new RandomAccessFile(fileV, "rw");
+        keysFile = new RandomAccessFile(keys, "rw");
+        valuesFile = new RandomAccessFile(values, "rw");
     }
 
     public void openStorage() throws IOException, ValidationException {
-        File fileK = new File(keysFileName);
-        File fileV = new File(valuesFileName);
+        keys = new File(keysFileName);
+        values = new File(valuesFileName);
 
-        if (!fileK.exists() || !fileV.exists()) {
+        if (!keys.exists() || !values.exists()) {
             throw new IOException("Files don't exist");
         }
 
-        keysFile = new RandomAccessFile(fileK, "rw");
-        valuesFile = new RandomAccessFile(fileV, "rw");
+        keysFile = new RandomAccessFile(keys, "rw");
+        valuesFile = new RandomAccessFile(values, "rw");
 
         getKeysAndOffsets();
     }
@@ -62,6 +65,7 @@ public class OptimizedKVStorage<K, V> implements KeyValueStorage<K, V> {
         }
 
         int numberOfKeys = (new SerializerForInteger()).deserializeFromStream(keysFile);
+        badValues = (new SerializerForInteger()).deserializeFromStream(keysFile);
         for (int i = 0; i < numberOfKeys; i++) {
             K key = keySerializer.deserializeFromStream(keysFile);
             Long offset = (new SerializerForLong()).deserializeFromStream(keysFile);
@@ -122,8 +126,14 @@ public class OptimizedKVStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public void write(K key, V value) {
         chekingForClosed();
+
         try {
-            keysOffsetsTable.put(key, valuesFile.length());
+            if (keysOffsetsTable.containsKey(key)) {
+                keysOffsetsTable.replace(key, valuesFile.length());
+            } else {
+                keysOffsetsTable.put(key, valuesFile.length());
+
+            }
             valuesFile.seek(valuesFile.length());
             valueSerializer.serializeToStream(value, valuesFile);
         } catch (IOException excep) {
@@ -136,6 +146,10 @@ public class OptimizedKVStorage<K, V> implements KeyValueStorage<K, V> {
         chekingForClosed();
         if (keysOffsetsTable.containsKey(key)) {
             keysOffsetsTable.remove(key);
+            badValues++;
+            if (badValues >= 3 * size()) {
+                flush();
+            }
         }
     }
 
@@ -151,7 +165,31 @@ public class OptimizedKVStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     @Override
-    public void flush() { }
+    public void flush() {
+        File temp = new File(initFileName + "temp");
+        try {
+            if (temp.exists()) {
+                temp.delete();
+                temp.createNewFile();
+            } else {
+                temp.createNewFile();
+            }
+
+            RandomAccessFile randomTemp = new RandomAccessFile(temp, "rw");
+
+            for (K key : keysOffsetsTable.keySet()) {
+                valuesFile.seek(keysOffsetsTable.get(key));
+                V val = valueSerializer.deserializeFromStream(valuesFile);
+                keysOffsetsTable.replace(key, randomTemp.length());
+                valueSerializer.serializeToStream(val, randomTemp);
+            }
+            temp.renameTo(values);
+            valuesFile.close();
+            valuesFile = new RandomAccessFile(values, "rw");
+        } catch (IOException exc) {
+            System.out.println(exc.getMessage());
+        }
+    }
 
     private void chekingForClosed() {
         if (closed) {
@@ -165,9 +203,15 @@ public class OptimizedKVStorage<K, V> implements KeyValueStorage<K, V> {
         (new SerializerForString()).serializeToStream(validationString, out);
         out.close();
 
+
+        keys.delete();
+        keys.createNewFile();
+        keysFile = new RandomAccessFile(keys, "rw");
         keysFile.seek(0);
+
         (new SerializerForString()).serializeToStream(validationString, keysFile);
         (new SerializerForInteger()).serializeToStream(keysOffsetsTable.size(), keysFile);
+        (new SerializerForInteger()).serializeToStream(badValues, keysFile);
         for (K key : keysOffsetsTable.keySet()) {
             keySerializer.serializeToStream(key, keysFile);
             (new SerializerForLong()).serializeToStream(keysOffsetsTable.get(key), keysFile);
