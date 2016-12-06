@@ -63,6 +63,7 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private boolean isClosed;
     private long storageLength;
     private long writtenLength;
+    private String path;
 
     public MyOptimizedKeyValueStorage(String path,
             SerializationStrategy<K> keySerializationStrategy,
@@ -82,6 +83,8 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
         initFile = new File(path + File.separator + initFileName);
 
+        this.path = path;
+
         if (initFile.exists()) {
             loadDataFromFiles(); //Если файлы существуют, подгружаем данные из них
         } else {
@@ -93,8 +96,8 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void createNewFiles() throws IOException {
-        File fileK = new File(keysFileName);
-        File fileV = new File(valuesFileName);
+        File fileK = new File(path + File.separator + keysFileName);
+        File fileV = new File(path + File.separator + valuesFileName);
 
         fileK.createNewFile();
         fileV.createNewFile();
@@ -106,8 +109,8 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void loadDataFromFiles() throws IOException {
-        File fileK = new File(keysFileName);
-        File fileV = new File(valuesFileName);
+        File fileK = new File(path + File.separator + keysFileName);
+        File fileV = new File(path + File.separator + valuesFileName);
 
         if (!fileK.exists() || !fileV.exists()) {
             throw new IOException("Files don't exist");
@@ -297,7 +300,7 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         valuesOutputStream.close();
         keysDataInputStream.close();
         keysFile.close();
-        File fileK = new File(keysFileName);
+        File fileK = new File(path + File.separator + keysFileName);
         keysFile = new RandomAccessFile(fileK, "rw");
         FileOutputStream keysFOS = new FileOutputStream(keysFile.getFD());
         BufferedOutputStream keysBOS = new BufferedOutputStream(keysFOS);
