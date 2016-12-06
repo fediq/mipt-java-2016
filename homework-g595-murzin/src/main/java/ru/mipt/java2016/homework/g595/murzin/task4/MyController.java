@@ -21,7 +21,6 @@ import java.util.Set;
 
 @RestController
 public class MyController {
-
     private MyContext context = new MyContext();
 
     public void reset() {

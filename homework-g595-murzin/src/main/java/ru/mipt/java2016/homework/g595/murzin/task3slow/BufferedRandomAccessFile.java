@@ -13,13 +13,12 @@ import java.nio.channels.FileChannel;
  * Created by dima on 05.11.16.
  */
 public class BufferedRandomAccessFile implements Closeable {
+    private static final int BUFFER_SIZE = 8192;
 
-    public static final int BUFFER_SIZE = 8192;
-
-    private RandomAccessFile randomAccessFile;
+    private final RandomAccessFile randomAccessFile;
     private HackedBufferedInputStream bufferedInputStream;
     private DataInputStream dataInputStream;
-    private FileChannel fileChannel;
+    private final FileChannel fileChannel;
 
     public BufferedRandomAccessFile(File storageFile) throws FileNotFoundException {
         randomAccessFile = new RandomAccessFile(storageFile, "rw");

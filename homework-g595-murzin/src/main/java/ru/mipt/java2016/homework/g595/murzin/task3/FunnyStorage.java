@@ -56,18 +56,18 @@ public class FunnyStorage<Key, Value> implements KeyValueStorage<Key, Value> {
     // (Не тут ибо ограничение 120 символов на строчку)
 
     // File задающий папку хранилища
-    private File storageDirectory;
+    private final File storageDirectory;
     // FileLock для обеспечения между процессорной синхронизации
-    private FileLock lock;
+    private final FileLock lock;
     // стратегия сериализация ключей
-    private SerializationStrategy<Key> keySerializationStrategy;
+    private final SerializationStrategy<Key> keySerializationStrategy;
     // стратегия сериализация значений
-    private SerializationStrategy<Value> valueSerializationStrategy;
+    private final SerializationStrategy<Value> valueSerializationStrategy;
     // HashMap для получения по размеру значений x (x --- степень двойки) файла,
     // в котором лежат все значения размера [x/2 ... x)
-    private HashMap<Integer, RandomAccessFile> files = new HashMap<>();
+    private final Map<Integer, RandomAccessFile> files = new HashMap<>();
     // HashMap для быстрого получения по ключу информации о нём
-    private HashMap<Key, KeyWrapper> keys = new HashMap<>();
+    private final Map<Key, KeyWrapper> keys = new HashMap<>();
     // флаг, определющий, был ли уже вызван метод close()
     private volatile boolean isClosed;
 
@@ -148,8 +148,8 @@ public class FunnyStorage<Key, Value> implements KeyValueStorage<Key, Value> {
             for (Map.Entry<Key, KeyWrapper> entry : keys.entrySet()) {
                 keySerializationStrategy.serializeToStream(entry.getKey(), output);
                 KeyWrapper wrapper = entry.getValue();
-                output.writeInt(wrapper.getValueLength());
-                output.writeLong(wrapper.getOffsetInFile());
+                output.writeInt(wrapper.valueLength);
+                output.writeLong(wrapper.offsetInFile);
             }
         }
     }
@@ -171,11 +171,11 @@ public class FunnyStorage<Key, Value> implements KeyValueStorage<Key, Value> {
         if (wrapper == null) {
             return null;
         }
-        int x = lowerboundPowerOfTwo(wrapper.getValueLength());
+        int x = lowerboundPowerOfTwo(wrapper.valueLength);
         RandomAccessFile file = files.get(x);
         assert (file != null);
         try {
-            file.seek(wrapper.getOffsetInFile());
+            file.seek(wrapper.offsetInFile);
             return valueSerializationStrategy.deserializeFromStream(file);
         } catch (IOException e) {
             throw new MyException("Can't read from storage file " + getStorageFile(x).getAbsolutePath(), e);
@@ -218,16 +218,16 @@ public class FunnyStorage<Key, Value> implements KeyValueStorage<Key, Value> {
     public synchronized void delete(Key key) {
         checkForClosed();
         KeyWrapper wrapper = keys.get(key);
-        int x = lowerboundPowerOfTwo(wrapper.getValueLength());
+        int x = lowerboundPowerOfTwo(wrapper.valueLength);
         RandomAccessFile file = files.get(x);
         assert info != null;
         try {
             long fileLength = file.length();
-            if (wrapper.getOffsetInFile() < fileLength - x) {
+            if (wrapper.offsetInFile < fileLength - x) {
                 file.seek(fileLength - x);
                 byte[] bytes = new byte[x];
                 file.read(bytes);
-                file.seek(wrapper.getOffsetInFile());
+                file.seek(wrapper.offsetInFile);
                 file.write(bytes);
             }
             file.setLength(fileLength - x);
@@ -251,7 +251,9 @@ public class FunnyStorage<Key, Value> implements KeyValueStorage<Key, Value> {
 
     @Override
     public synchronized void close() throws IOException {
-        checkForClosed();
+        if (isClosed) {
+            return;
+        }
         for (RandomAccessFile file : files.values()) {
             file.close();
         }

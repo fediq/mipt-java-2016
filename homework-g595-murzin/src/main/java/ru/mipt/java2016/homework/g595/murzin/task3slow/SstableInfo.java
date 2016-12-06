@@ -33,8 +33,4 @@ public class SstableInfo<Key, Value> {
         }
         return bufferedRandomAccessFile;
     }
-
-    public void setBufferedRandomAccessFile(BufferedRandomAccessFile bufferedRandomAccessFile) {
-        this.bufferedRandomAccessFile = bufferedRandomAccessFile;
-    }
 }

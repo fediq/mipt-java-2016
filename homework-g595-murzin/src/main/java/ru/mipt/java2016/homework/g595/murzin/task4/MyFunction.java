@@ -12,13 +12,11 @@ import java.util.List;
  * Created by dima on 01.12.16.
  */
 public class MyFunction implements IFunction {
-    public final String name;
-    public final String[] argumentsNames;
+    private final String[] argumentsNames;
     public final String expression;
     private final MyContext context;
 
-    public MyFunction(String name, List<String> argumentsNames, String expression, MyContext context) {
-        this.name = name;
+    public MyFunction(List<String> argumentsNames, String expression, MyContext context) {
         this.argumentsNames = argumentsNames.toArray(new String[argumentsNames.size()]);
         this.expression = expression;
         this.context = context;

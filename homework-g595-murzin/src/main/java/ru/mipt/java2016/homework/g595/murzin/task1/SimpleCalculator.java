@@ -18,7 +18,6 @@ import static ru.mipt.java2016.homework.g595.murzin.task1.IFunction.create2;
  * Created by Дмитрий Мурзин on 10.10.16.
  */
 public class SimpleCalculator implements Calculator {
-
     public static final Map<Character, Token> CHARACTERS_TO_TOKENS = createMap();
     public static final Map<String, IFunction> FUNCTIONS = createFunctions();
 

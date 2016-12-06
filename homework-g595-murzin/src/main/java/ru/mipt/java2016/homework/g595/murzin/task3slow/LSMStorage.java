@@ -20,13 +20,13 @@ import java.nio.channels.FileLock;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -43,17 +43,17 @@ public class LSMStorage<Key, Value> implements KeyValueStorage<Key, Value> {
     private static final int MAX_NEW_ENTRIES_SIZE = (int) (MAX_RAM_SIZE * NEW_ENTRIES_PERCENTAGE / MAX_VALUE_SIZE);
     private static final int MAX_CACHE_SIZE = (int) (MAX_RAM_SIZE * CACHE_PERCENTAGE / MAX_VALUE_SIZE);
 
-    private SerializationStrategy<Key> keySerializationStrategy;
-    private SerializationStrategy<Value> valueSerializationStrategy;
+    private final SerializationStrategy<Key> keySerializationStrategy;
+    private final SerializationStrategy<Value> valueSerializationStrategy;
     private final Comparator<Key> comparator;
-    private FileLock lock;
-    private File storageDirectory;
+    private final FileLock lock;
+    private final File storageDirectory;
 
-    private Map<Key, KeyWrapper<Key, Value>> keys = new HashMap<>();
-    private ArrayList<SstableInfo<Key, Value>> sstableInfos = new ArrayList<>();
-    private HashSet<Integer> sstablesFilesIndexes = new HashSet<>();
-    private ArrayList<Key> newEntries = new ArrayList<>(MAX_NEW_ENTRIES_SIZE);
-    private Cache<Key, Value> cache = CacheBuilder
+    private final Map<Key, KeyWrapper<Key, Value>> keys = new HashMap<>();
+    private final List<SstableInfo<Key, Value>> sstableInfos = new ArrayList<>();
+    private final Set<Integer> sstablesFilesIndexes = new HashSet<>();
+    private final List<Key> newEntries = new ArrayList<>(MAX_NEW_ENTRIES_SIZE);
+    private final Cache<Key, Value> cache = CacheBuilder
             .newBuilder()
             .maximumSize(MAX_CACHE_SIZE)
             .build();
@@ -202,7 +202,7 @@ public class LSMStorage<Key, Value> implements KeyValueStorage<Key, Value> {
         }
 
         KeyWrapper<Key, Value>[] wrappers = new KeyWrapper[newEntries.size()];
-        Collections.sort(newEntries, comparator);
+        newEntries.sort(comparator);
         try (FileOutputStream fileOutput = new FileOutputStream(newTableFile);
              FileChannel fileChannel = fileOutput.getChannel();
              DataOutputStream output = new DataOutputStream(fileOutput)) {
@@ -243,7 +243,7 @@ public class LSMStorage<Key, Value> implements KeyValueStorage<Key, Value> {
     }
 
     private class MergeInfo {
-        public final int length;
+        private final int length;
         private final SstableInfo<Key, Value> sstableInfo;
         private final InputStream input;
         private final long fileLength;

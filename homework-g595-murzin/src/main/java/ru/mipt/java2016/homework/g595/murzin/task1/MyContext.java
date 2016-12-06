@@ -6,13 +6,14 @@ import ru.mipt.java2016.homework.g595.murzin.task4.MyVariable;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by dima on 02.12.16.
  */
 public class MyContext {
-    public final HashMap<String, MyVariable> variables = new HashMap<>();
-    public final HashMap<String, MyFunction> functions = new HashMap<>();
+    public final Map<String, MyVariable> variables = new HashMap<>();
+    public final Map<String, MyFunction> functions = new HashMap<>();
 
     public void setVariable(String variableName, String variableExpression) throws ParsingException {
         double variableValue = new SimpleCalculator().calculate(variableExpression, this, null);
@@ -23,7 +24,7 @@ public class MyContext {
         if (SimpleCalculator.FUNCTIONS.containsKey(functionName)) {
             return false;
         }
-        functions.put(functionName, new MyFunction(functionExpresion, arguments, functionExpresion, this));
+        functions.put(functionName, new MyFunction(arguments, functionExpresion, this));
         return true;
     }
 }
