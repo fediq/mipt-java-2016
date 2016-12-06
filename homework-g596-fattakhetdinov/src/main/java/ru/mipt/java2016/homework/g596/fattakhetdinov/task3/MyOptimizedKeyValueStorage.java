@@ -13,11 +13,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -26,11 +23,11 @@ import ru.mipt.java2016.homework.g596.fattakhetdinov.task2.SerializationStrategy
 
 public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
+    private int MAX_CACHE_SIZE = 50;
+
     private Map<K, Long> keysOffsetsTable = new HashMap<>();
-    private final Map<K, V> storageChanges = new TreeMap<>();
-    private final Set<K> deleteChanges = new HashSet<>();
     private LoadingCache<K, V> cacheTable =
-            CacheBuilder.newBuilder().maximumSize(60).softValues().build(new CacheLoader<K, V>() {
+            CacheBuilder.newBuilder().maximumSize(MAX_CACHE_SIZE).softValues().build(new CacheLoader<K, V>() {
                 @Override
                 public V load(K key) {
                     V result = null;
@@ -55,9 +52,9 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private final Lock readLock = readWriteLock.readLock();
     private SerializationStrategy<K> keySerializationStrategy;
     private SerializationStrategy<V> valueSerializationStrategy;
-    private final String keysFileName = "keysFile.db";
-    private final String valuesFileName = "valuesFile.db";
-    private final String initFileName = "initKeyValueStorage.txt";
+    private final String keysFileName = "keysFile1.db";
+    private final String valuesFileName = "valuesFile1.db";
+    private final String initFileName = "initKeyValueStorage1.txt";
 
     private String currentStorageType; //Строка для проверки типа хранилища
     private boolean isClosed;
@@ -92,7 +89,7 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
 
         storageLength = valuesFile.length();
-        writtenLength = storageLength - 1;
+        writtenLength = 0;
     }
 
     private void createNewFiles() throws IOException {
@@ -172,11 +169,10 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private V loadValueFromFile(K key) throws IOException {
         Long offset = keysOffsetsTable.get(key);
         valuesFile.seek(offset);
-        if (offset > writtenLength) {
+        /*if (offset > writtenLength) {
             valuesOutputStream.flush();
             writtenLength = storageLength - 1;
-        }
-
+        }*/
         V result = valueSerializationStrategy.deserializeFromFile(valuesFile);
         valuesFile.seek(valuesFile.length());
         return result;
@@ -185,37 +181,25 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public V read(K key) {
         writeLock.lock();
-        V result;
         try {
             checkForClosedDatabase();
-            if (exists(key)) {
-                result = storageChanges.get(key);
-                if (result == null) {
-                    result = cacheTable.get(key);
-                }
-            } else {
-                result = null;
-            }
+            return cacheTable.get(key);
         } catch (Exception exception) {
-            result = null;
+            return null;
         } finally {
             writeLock.unlock();
         }
-        return result;
     }
 
     @Override
     public boolean exists(K key) {
         readLock.lock();
-        boolean result;
         try {
             checkForClosedDatabase();
-            result = keysOffsetsTable.containsKey(key);
+            return keysOffsetsTable.containsKey(key);
         } finally {
             readLock.unlock();
         }
-        checkForClosedDatabase();
-        return result;
     }
 
     @Override
@@ -227,10 +211,12 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             keysOffsetsTable.put(key, storageLength);
             long writtenSize = valuesOutputStream.size();
             valueSerializationStrategy.serializeToFile(value, valuesOutputStream);
+            valuesOutputStream.flush();
             storageLength += valuesOutputStream.size() - writtenSize;
 
-            deleteChanges.remove(key);
-            storageChanges.put(key, value);
+            if(cacheTable.asMap().containsKey(key)){
+                cacheTable.put(key, value);
+            }
             changesCheck();
         } catch (IOException e) {
             e.printStackTrace();
@@ -246,8 +232,6 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         try {
             checkForClosedDatabase();
             if (exists(key)) {
-                storageChanges.remove(key);
-                deleteChanges.add(key);
                 cacheTable.invalidate(key);
                 keysOffsetsTable.remove(key);
                 changesCheck();
@@ -284,11 +268,6 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void changesCheck() {
-        if (storageChanges.size() > 100 || deleteChanges.size() > 50) {
-            storageChanges.clear();
-            deleteChanges.clear();
-            cacheTable.cleanUp();
-        }
     }
 
     @Override
