@@ -28,7 +28,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         this.keySerializer = keySerializer;
         this.valueSerializer = valueSerializer;
         closed = false;
-        realPath = path + File.separator + "database.txt";
+        realPath = path + "/" + "database.txt";
         File base = new File(realPath);
         if (base.exists()) {
             try {

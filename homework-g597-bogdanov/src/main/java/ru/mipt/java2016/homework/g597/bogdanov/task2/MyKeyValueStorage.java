@@ -104,8 +104,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V>, AutoClose
             file.seek(0);
             file.setLength(0);
             for (HashMap.Entry<K, V> entry : contents.entrySet()) {
-                serializationStrategy.writeKey(file, entry.getKey());
-                serializationStrategy.writeValue(file, entry.getValue());
+                serializationStrategy.write(file, entry.getKey(), entry.getValue());
             }
         } finally {
             Files.delete(lock.toPath());

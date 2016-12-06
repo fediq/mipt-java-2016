@@ -1,8 +1,7 @@
 package ru.mipt.java2016.homework.g597.bogdanov.task2;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 
 
 public class IntegerDoubleSerializationStrategy implements SerializationStrategy<Integer, Double> {
@@ -16,22 +15,18 @@ public class IntegerDoubleSerializationStrategy implements SerializationStrategy
     }
 
     @Override
-    public void writeKey(DataOutput file, Integer key) throws IOException {
+    public void write(RandomAccessFile file, Integer key, Double value) throws IOException {
         file.writeInt(key);
-    }
-
-    @Override
-    public void writeValue(DataOutput file, Double value) throws IOException {
         file.writeDouble(value);
     }
 
     @Override
-    public Integer readKey(DataInput file) throws IOException {
+    public Integer readKey(RandomAccessFile file) throws IOException {
         return file.readInt();
     }
 
     @Override
-    public Double readValue(DataInput file) throws IOException {
+    public Double readValue(RandomAccessFile file) throws IOException {
         return file.readDouble();
     }
 }

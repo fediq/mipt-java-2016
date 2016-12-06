@@ -2,7 +2,6 @@ package ru.mipt.java2016.homework.tests.task2;
 
 import org.apache.commons.io.FileUtils;
 
-import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -27,7 +26,7 @@ public class StorageTestUtils {
         try {
             Path path = null;
             try {
-                path = Files.createTempDirectory(new File(".").toPath(), "test_task_2");
+                path = Files.createTempDirectory("test_task_2");
                 callback.callback(path.toString());
             } finally {
                 if (path != null) {
