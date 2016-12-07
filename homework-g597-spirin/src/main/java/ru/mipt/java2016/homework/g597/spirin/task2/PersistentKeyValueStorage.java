@@ -16,7 +16,7 @@ import java.util.Map;
 /**
  * Created by whoami on 10/30/16.
  */
-class PersistentKeyValueStorage<K, V> implements KeyValueStorage<K, V>, AutoCloseable {
+class PersistentKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private final SerializationStrategy<K> keySerializer;
     private final SerializationStrategy<V> valueSerializer;
