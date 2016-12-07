@@ -158,6 +158,7 @@ public class MegaStorage<K, V> implements KeyValueStorage<K, V> {
         }
         return null;
     }
+
     @Override
     public void write(K key, V value) {
         isClosed();
