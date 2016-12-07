@@ -1,4 +1,4 @@
-package ru.mipt.java2016.homework.g597.vasilyev.task2;
+package ru.mipt.java2016.homework.g597.vasilyev.tasks2and3;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -10,9 +10,11 @@ import java.nio.charset.StandardCharsets;
  */
 public class StringSerializer implements Serializer<String> {
     @Override
-    public void write(String value, DataOutput destination) throws IOException {
-        destination.writeInt(value.length());
-        destination.write(value.getBytes(StandardCharsets.UTF_8));
+    public int write(String value, DataOutput destination) throws IOException {
+        byte[] buffer = value.getBytes(StandardCharsets.UTF_8);
+        destination.writeInt(buffer.length);
+        destination.write(buffer);
+        return 4 + buffer.length;
     }
 
     @Override

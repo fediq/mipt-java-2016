@@ -1,4 +1,4 @@
-package ru.mipt.java2016.homework.g597.vasilyev.task2;
+package ru.mipt.java2016.homework.g597.vasilyev.tasks2and3;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -9,8 +9,9 @@ import java.io.IOException;
  */
 public class IntegerSerializer implements Serializer<Integer> {
     @Override
-    public void write(Integer value, DataOutput destination) throws IOException {
+    public int write(Integer value, DataOutput destination) throws IOException {
         destination.writeInt(value);
+        return 4;
     }
 
     @Override
