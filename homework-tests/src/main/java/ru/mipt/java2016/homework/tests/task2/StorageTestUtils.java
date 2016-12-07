@@ -29,9 +29,9 @@ public class StorageTestUtils {
                 path = Files.createTempDirectory("test_task_2");
                 callback.callback(path.toString());
             } finally {
-                if (path != null) {
-                    FileUtils.deleteDirectory(path.toFile());
-                }
+//                if (path != null) {
+//                    FileUtils.deleteDirectory(path.toFile());
+//                }
             }
         } catch (RuntimeException e) {
             throw e;
