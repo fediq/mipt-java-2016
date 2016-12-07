@@ -32,11 +32,11 @@ public class MyOptimisedStorage<K, V> implements KeyValueStorage<K, V> {
     private final ReadWriteLock concurrentLock = new ReentrantReadWriteLock();
     private final String dirPath;
 
-    private final Integer maxCacheSize = 256;
-    private final Integer modificationLimit = 8192;
+    private final Integer MAX_CACHE_SIZE = 256;
+    private final Integer MODIFICATION_LIMIT = 8192;
     private Integer currentModifications = 0;
 
-    private final LoadingCache<K, V> smartCache = CacheBuilder.newBuilder().maximumSize(maxCacheSize).build(
+    private final LoadingCache<K, V> smartCache = CacheBuilder.newBuilder().maximumSize(MAX_CACHE_SIZE).build(
             new CacheLoader<K, V>() {
                 @Override
                 public V load(K k) throws Exception {
@@ -150,7 +150,7 @@ public class MyOptimisedStorage<K, V> implements KeyValueStorage<K, V> {
 
     private void updateModifications() {
         currentModifications++;
-        if (currentModifications >= modificationLimit) {
+        if (currentModifications >= MODIFICATION_LIMIT) {
             try {
                 compress();
                 currentModifications = 0;
