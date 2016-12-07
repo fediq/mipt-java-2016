@@ -123,23 +123,30 @@ public class MegaStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private V addToCache(K key, V value) {
-        if (cache.size() == CACHECONSTSIZE) { cache.clear(); }
+        if (cache.size() == CACHECONSTSIZE) {
+            cache.clear();
+        }
         cache.put(key, value);
         return value;
     }
 
     private void seekTo(RandomAccessFile f, Long pos) {
         try {
-            if (f.getFilePointer() != pos) { f.seek(pos); }
+            if (f.getFilePointer() != pos) {
+                f.seek(pos);
+            }
         } catch (IOException error) {
             System.out.println("Seeking error, My lord!");
         }
     }
+
     @Override
     public V read(K key) {
         isClosed();
         if (exists(key)) {
-            if (cache.containsKey(key)) { return cache.get(key); }
+            if (cache.containsKey(key)) {
+                return cache.get(key);
+            }
             Integer shift = map.get(key);
             try {
                 seekTo(dbFile, (long) shift);
@@ -159,7 +166,9 @@ public class MegaStorage<K, V> implements KeyValueStorage<K, V> {
             seekTo(dbFile, dbFile.length());
             map.put(key, (int) dbFile.length());
             valueSerializer.serialize(value, dbFile);
-            if (maxSize < map.size()) { maxSize++; }
+            if (maxSize < map.size()) {
+                maxSize++;
+            }
         } catch (IOException error) {
             System.out.println("Error in writing, My lord!");
         }
