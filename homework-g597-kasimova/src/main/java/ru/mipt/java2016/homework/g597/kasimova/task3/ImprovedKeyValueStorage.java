@@ -146,7 +146,8 @@ public class ImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                     if (!newFileForValues.exists()) {
                         newFileForValues.createNewFile();
                     }
-                    try (RandomAccessFile newValueFile = new RandomAccessFile(way + File.separator + "tempFileForValues", "rw");) {
+                    try (RandomAccessFile newValueFile =
+                                 new RandomAccessFile(way + File.separator + "tempFileForValues", "rw");) {
                         DataOutputStream newValuesDataOutputStream = new DataOutputStream(new BufferedOutputStream(
                                 Channels.newOutputStream(newValueFile.getChannel()), MAX_SIZE));
                         newValueFile.writeInt(keysAndShiftTable.size());
@@ -156,7 +157,8 @@ public class ImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                             DataInputStream valuesDataInputStream = new DataInputStream(new BufferedInputStream(
                                     Channels.newInputStream(fileForValues.getChannel()), BUFFER_SIZE));
                             keysAndShiftTable.put(entry, startPosition + (long) newValuesDataOutputStream.size());
-                            valueSerializer.serializeToStream(valueSerializer.deserializeFromStream(valuesDataInputStream),
+                            valueSerializer.serializeToStream(
+                                    valueSerializer.deserializeFromStream(valuesDataInputStream),
                                     newValuesDataOutputStream);
                         }
                         newValuesDataOutputStream.flush();
