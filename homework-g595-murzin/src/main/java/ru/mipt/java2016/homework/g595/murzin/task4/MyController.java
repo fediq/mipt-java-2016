@@ -21,6 +21,10 @@ import java.util.Set;
 
 @RestController
 public class MyController {
+    private static boolean checkName(String identifier) {
+        return identifier.matches("[_a-zA-Z][_0-9a-zA-Z]*");
+    }
+
     private MyContext context = new MyContext();
 
     public void reset() {
@@ -36,14 +40,15 @@ public class MyController {
     }
 
     @RequestMapping(value = "/variable/{variableName}", method = RequestMethod.PUT)
-    public void putVariable(@PathVariable String variableName, @RequestBody String variableExpression)
+    public ResponseEntity<Void> putVariable(@PathVariable String variableName, @RequestBody String variableExpression)
             throws ParsingException {
-        context.setVariable(variableName, variableExpression);
+        boolean success = checkName(variableName) && context.setVariable(variableName, variableExpression);
+        return new ResponseEntity<>(success ? HttpStatus.OK : HttpStatus.BAD_REQUEST);
     }
 
     @RequestMapping(value = "/variable/{variableName}", method = RequestMethod.DELETE)
     public ResponseEntity<Void> deleteVariable(@PathVariable String variableName) {
-        boolean success = context.functions.containsKey(variableName);
+        boolean success = context.variables.containsKey(variableName);
         context.variables.remove(variableName);
         return new ResponseEntity<>(success ? HttpStatus.OK : HttpStatus.BAD_REQUEST);
     }
@@ -66,7 +71,9 @@ public class MyController {
     public ResponseEntity<Void> putFunction(@PathVariable String functionName,
                                             @RequestParam(value = "args") List<String> arguments,
                                             @RequestBody String functionExpression) {
-        boolean success = context.setFunction(functionName, arguments, functionExpression);
+        boolean success = checkName(functionName)
+                && arguments.stream().allMatch(MyController::checkName)
+                && context.setFunction(functionName, arguments, functionExpression);
         return new ResponseEntity<>(success ? HttpStatus.OK : HttpStatus.BAD_REQUEST);
     }
 

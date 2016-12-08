@@ -15,9 +15,13 @@ public class MyContext {
     public final Map<String, MyVariable> variables = new HashMap<>();
     public final Map<String, MyFunction> functions = new HashMap<>();
 
-    public void setVariable(String variableName, String variableExpression) throws ParsingException {
+    public boolean setVariable(String variableName, String variableExpression) throws ParsingException {
+        if (SimpleCalculator.FUNCTIONS.containsKey(variableName)) {
+            return false;
+        }
         double variableValue = new SimpleCalculator().calculate(variableExpression, this, null);
         variables.put(variableName, new MyVariable(variableExpression, variableValue));
+        return true;
     }
 
     public boolean setFunction(String functionName, List<String> arguments, String functionExpresion) {

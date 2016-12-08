@@ -62,12 +62,12 @@ public class MyControllerTest extends AbstractCalculatorTest {
             String name = "x";
             String expression = "1 + 2 + 3";
 
-            controller.putVariable(name, expression);
+            assertEquals(controller.putVariable(name, expression).getStatusCode(), HttpStatus.OK);
             assertEquals(controller.getVariable(name).getBody(), expression);
             assertArrayEquals(controller.getVariables(), new String[]{name});
             test(name, 6);
 
-            controller.deleteVariable(name);
+            assertEquals(controller.deleteVariable(name).getStatusCode(), HttpStatus.OK);
             assertEquals(controller.getVariable(name).getStatusCode(), HttpStatus.NOT_FOUND);
             assertArrayEquals(controller.getVariables(), new String[0]);
             assertEquals(controller.eval(name).getStatusCode(), HttpStatus.BAD_REQUEST);
@@ -77,9 +77,9 @@ public class MyControllerTest extends AbstractCalculatorTest {
     @Test
     public void testThreeVariables() throws Exception {
         doWith(() -> {
-            controller.putVariable("x", "1 + 2 + 3 + 4");
-            controller.putVariable("y", "1 * 2 * 3 * 4");
-            controller.putVariable("z", "pow(2, 10)");
+            assertEquals(controller.putVariable("x", "1 + 2 + 3 + 4").getStatusCode(), HttpStatus.OK);
+            assertEquals(controller.putVariable("y", "1 * 2 * 3 * 4").getStatusCode(), HttpStatus.OK);
+            assertEquals(controller.putVariable("z", "pow(2, 10)").getStatusCode(), HttpStatus.OK);
             test("x", 10);
             test("y", 24);
             test("z", 1024);
@@ -94,12 +94,12 @@ public class MyControllerTest extends AbstractCalculatorTest {
             String expression = "(a + b) * 2";
             List<String> arguments = Arrays.asList("a", "b");
 
-            controller.putFunction(name, arguments, expression);
+            assertEquals(controller.putFunction(name, arguments, expression).getStatusCode(), HttpStatus.OK);
             assertEquals(controller.getFunction(name).getBody().expression, expression);
             assertArrayEquals(controller.getFunctions(), new String[]{name});
             test(name + "(3, 30)", 66);
 
-            controller.deleteFunction(name);
+            assertEquals(controller.deleteFunction(name).getStatusCode(), HttpStatus.OK);
             assertEquals(controller.getFunction(name).getStatusCode(), HttpStatus.NOT_FOUND);
             assertArrayEquals(controller.getFunctions(), new String[0]);
             tryFail(name + "(3, 11)", HttpStatus.BAD_REQUEST);
@@ -112,9 +112,9 @@ public class MyControllerTest extends AbstractCalculatorTest {
             String perimeter = "circlePerimeter";
             String square = "circleSquare";
 
-            controller.putVariable("pi", String.valueOf(Math.PI));
-            controller.putFunction(perimeter, Collections.singletonList("r"), "2 * pi * r");
-            controller.putFunction(square, Collections.singletonList("r"), "pi * r * r");
+            assertEquals(controller.putVariable("pi", String.valueOf(Math.PI)).getStatusCode(), HttpStatus.OK);
+            assertEquals(controller.putFunction(perimeter, Collections.singletonList("r"), "2 * pi * r").getStatusCode(), HttpStatus.OK);
+            assertEquals(controller.putFunction(square, Collections.singletonList("r"), "pi * r * r").getStatusCode(), HttpStatus.OK);
             test(perimeter + "(10)", 20 * Math.PI);
             test(square + "(10)", 100 * Math.PI);
         });
@@ -123,7 +123,7 @@ public class MyControllerTest extends AbstractCalculatorTest {
     @Test
     public void testThatVariablesAreConstant() throws Exception {
         doWith(() -> {
-            controller.putVariable("x", "rnd()");
+            assertEquals(controller.putVariable("x", "rnd()").getStatusCode(), HttpStatus.OK);
             for (int i = 0; i < 100; i++) {
                 test("x - x", 0);
             }
@@ -133,11 +133,11 @@ public class MyControllerTest extends AbstractCalculatorTest {
     @Test
     public void testChanges() throws Exception {
         doWith(() -> {
-            controller.putVariable("x", "7");
+            assertEquals(controller.putVariable("x", "7").getStatusCode(), HttpStatus.OK);
             test("x", 7);
-            controller.putVariable("x", "77");
+            assertEquals(controller.putVariable("x", "77").getStatusCode(), HttpStatus.OK);
             test("x", 77);
-            controller.deleteVariable("x");
+            assertEquals(controller.deleteVariable("x").getStatusCode(), HttpStatus.OK);
             tryFail("x", HttpStatus.BAD_REQUEST);
         });
     }
@@ -153,9 +153,9 @@ public class MyControllerTest extends AbstractCalculatorTest {
     @Test
     public void testFunctionsWithoutArguments() throws Exception {
         doWith(() -> {
-            controller.putFunction("f", Collections.emptyList(), "a + b");
-            controller.putVariable("a", "7");
-            controller.putVariable("b", "70");
+            assertEquals(controller.putFunction("f", Collections.emptyList(), "a + b").getStatusCode(), HttpStatus.OK);
+            assertEquals(controller.putVariable("a", "7").getStatusCode(), HttpStatus.OK);
+            assertEquals(controller.putVariable("b", "70").getStatusCode(), HttpStatus.OK);
             test("f()", 77);
         });
     }
@@ -163,7 +163,7 @@ public class MyControllerTest extends AbstractCalculatorTest {
     @Test
     public void testRecursion() throws Exception {
         doWith(() -> {
-            controller.putFunction("f", Collections.singletonList("n"), "n * f(n - 1)");
+            assertEquals(controller.putFunction("f", Collections.singletonList("n"), "n * f(n - 1)").getStatusCode(), HttpStatus.OK);
             tryFail("f(10)", HttpStatus.BAD_REQUEST);
         });
     }
@@ -171,12 +171,12 @@ public class MyControllerTest extends AbstractCalculatorTest {
     @Test
     public void testBigStackDepth() throws Exception {
         doWith(() -> {
-            controller.putFunction("a", Collections.emptyList(), "1");
-            controller.putFunction("b", Collections.emptyList(), "a() + a()");
-            controller.putFunction("c", Collections.emptyList(), "b() + b()");
-            controller.putFunction("d", Collections.emptyList(), "c() + c()");
-            controller.putFunction("e", Collections.emptyList(), "d() + d()");
-            controller.putFunction("f", Collections.emptyList(), "e() + e()");
+            assertEquals(controller.putFunction("a", Collections.emptyList(), "1").getStatusCode(), HttpStatus.OK);
+            assertEquals(controller.putFunction("b", Collections.emptyList(), "a() + a()").getStatusCode(), HttpStatus.OK);
+            assertEquals(controller.putFunction("c", Collections.emptyList(), "b() + b()").getStatusCode(), HttpStatus.OK);
+            assertEquals(controller.putFunction("d", Collections.emptyList(), "c() + c()").getStatusCode(), HttpStatus.OK);
+            assertEquals(controller.putFunction("e", Collections.emptyList(), "d() + d()").getStatusCode(), HttpStatus.OK);
+            assertEquals(controller.putFunction("f", Collections.emptyList(), "e() + e()").getStatusCode(), HttpStatus.OK);
             test("f()", 32);
         });
     }
