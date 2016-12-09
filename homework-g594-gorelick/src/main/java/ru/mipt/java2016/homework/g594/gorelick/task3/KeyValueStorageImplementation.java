@@ -23,7 +23,7 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
     private HashMap<K, KeyPosition> fileMap;
     private final FileWorker<K> keyFileWorker;
     private final FileWorker<V> valueFileWorker;
-    private static final int DATA_CAPACITY = 600;
+    private static final int DATA_CAPACITY = 200;
 
     private class KeyPosition {
         private int id;
@@ -84,7 +84,7 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
     }
 
     @Override
-    public V read(K key) {
+    public synchronized V read(K key) {
         if (valueMap.keySet().contains(key)) {
             return valueMap.get(key);
         } else if (fileMap.containsKey(key)) {
@@ -105,7 +105,7 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
     }
 
     @Override
-    public void write(K key, V value) {
+    public synchronized void write(K key, V value) {
         setKeys.add(key);
         valueMap.put(key, value);
         if (valueMap.size() >= DATA_CAPACITY) {
@@ -132,28 +132,28 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
 
 
     @Override
-    public boolean exists(K key) {
+    public synchronized boolean exists(K key) {
         return setKeys.contains(key);
     }
 
     @Override
-    public void delete(K key) {
+    public synchronized void delete(K key) {
         setKeys.remove(key);
         fileMap.remove(key);
     }
 
     @Override
-    public Iterator<K> readKeys() {
+    public synchronized Iterator<K> readKeys() {
         return setKeys.iterator();
     }
 
     @Override
-    public int size() {
+    public synchronized int size() {
         return setKeys.size();
     }
 
     @Override
-    public void close() throws IOException {
+    public synchronized void close() throws IOException {
         int id = filesTable.size();
         File tmp = new File(databasePath + File.separator + DATABASE_NAME_TEMPLATE + "." + id);
         try {
