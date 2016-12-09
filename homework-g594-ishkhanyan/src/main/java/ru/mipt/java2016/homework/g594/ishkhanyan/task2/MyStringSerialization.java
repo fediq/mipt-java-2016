@@ -1,31 +1,21 @@
 package ru.mipt.java2016.homework.g594.ishkhanyan.task2;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 
 /**
  * Created by ${Semien} on ${30.10.16}.
  */
 public class MyStringSerialization implements MySerialization<String> {
     @Override
-    public void writeToFile(String object, DataOutputStream file) throws IOException {
+    public void writeToFile(String object, DataOutput file) throws IOException {
         file.writeUTF(object);
     }
 
     @Override
-    public void writeToFile(String object, RandomAccessFile file) throws IOException {
-        file.writeUTF(object);
-    }
-
-    @Override
-    public String readFromFile(DataInputStream file) throws IOException {
-        return file.readUTF();
-    }
-
-    @Override
-    public String readFromFile(RandomAccessFile file) throws IOException {
+    public String readFromFile(DataInput file) throws IOException {
         return file.readUTF();
     }
 }

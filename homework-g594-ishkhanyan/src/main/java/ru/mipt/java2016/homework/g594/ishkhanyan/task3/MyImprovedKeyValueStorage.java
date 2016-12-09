@@ -7,12 +7,9 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map.Entry;
-import javafx.util.Pair;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.base.task2.MalformedDataException;
 import ru.mipt.java2016.homework.g594.ishkhanyan.task2.MySerialization;
@@ -25,21 +22,22 @@ import ru.mipt.java2016.homework.g594.ishkhanyan.task2.Serializations;
 
 public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
+    private Object obj = new Object();
     private String keyType;
     private String valueType;
     private int maxSize = 900;
+    private int fileNameEnd = 1;
+    private long endOfFile = 0;
     private HashMap<K, V> newAdditions = new HashMap<>();
-    private HashMap<K, Pair<Integer, Long>> pathToValue = new HashMap<>(); // keys and path to value
+    private HashMap<K, Long> pathToValue = new HashMap<>();
     private MySerialization keySerializer;
     private MySerialization valueSerializer;
+    private RandomAccessFile storageFile;
     private boolean fileIsNotEmpty; // true files have already been written
     private String pathDirectory;
     private String pathToConfigurations; // file with configurations
-    private List<RandomAccessFile> storageFiles = new ArrayList<>();
     private int numOfAdditions; // how many write operations have been done
     private int numOfDeletions; // how many deletions(or update) have been done
-    private int numberOfCurrentFile;
-    private int numberOfFirstFile;
     private boolean isOpen;
 
     public MyImprovedKeyValueStorage(String path, MySerialization keySer,
@@ -71,16 +69,16 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public V read(K key) {
+        synchronized (obj) {
         closeInspection();
         if (pathToValue.containsKey(key)) {
             if (newAdditions.containsKey(key)) {
                 return newAdditions.get(key);
             } else {
-                int numOfFile = pathToValue.get(key).getKey();
-                long index = pathToValue.get(key).getValue();
+                long index = pathToValue.get(key);
                 try {
-                    storageFiles.get(numOfFile).seek(index);
-                    return (V) valueSerializer.readFromFile(storageFiles.get(numOfFile));
+                    storageFile.seek(index);
+                    return (V) valueSerializer.readFromFile(storageFile);
                 } catch (IOException e) {
                     e.printStackTrace();
                     throw new MalformedDataException(e.getMessage());
@@ -89,16 +87,20 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         } else {
             return null;
         }
+        }
     }
 
     @Override
     public boolean exists(K key) {
+        synchronized (obj) {
         closeInspection();
         return pathToValue.containsKey(key);
+        }
     }
 
     @Override
     public void write(K key, V value) {
+        synchronized (obj) {
         closeInspection();
         checkSizeAndCorruption();
         if (fileIsNotEmpty) {
@@ -107,86 +109,90 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         if (pathToValue.containsKey(key) && fileIsNotEmpty) {
             ++numOfDeletions;
         }
-        pathToValue.put(key, new Pair(0, 0));
+            pathToValue.put(key, (long) 0);
         newAdditions.put(key, value);
+        }
     }
 
     @Override
     public void delete(K key) {
+        synchronized (obj) {
         closeInspection();
         if (fileIsNotEmpty) {
             ++numOfDeletions;
         }
         pathToValue.remove(key);
         newAdditions.remove(key);
+        }
     }
 
     @Override
     public Iterator<K> readKeys() {
+        synchronized (obj) {
         closeInspection();
         return pathToValue.keySet().iterator();
+        }
     }
 
     @Override
     public int size() {
+        synchronized (obj) {
         closeInspection();
         return pathToValue.size();
+        }
     }
 
     @Override
     public void close() throws IOException {
+        synchronized (obj) {
         closeInspection();
         recordNewAdditionToFile();
-        for (RandomAccessFile file : storageFiles) {
-            file.close();
-        }
+        storageFile.close();
         writeToConfig();
         isOpen = false;
+        }
     }
 
     private void prepareToWork() throws IOException {
-        File directory = new File(pathDirectory);
-        if (!directory.isDirectory()) {
-            throw new IOException("invalid directory path");
-        }
-        if (!directory.exists()) {
-            throw new IOException("such directory does not exist");
-        }
-        pathToConfigurations = pathDirectory + File.separator + "configs";
-        File configs = new File(pathToConfigurations);
-        if (!configs.exists()) {
-            configs.createNewFile();
-        } else {
-            FileInputStream in = new FileInputStream(pathToConfigurations);
-            DataInputStream configIn = new DataInputStream(in);
-            fileIsNotEmpty = true;
-            int numKeys = configIn.readInt();
-            numOfAdditions = configIn.readInt();
-            numOfDeletions = configIn.readInt();
-            numberOfFirstFile = configIn.readInt();
-            numberOfCurrentFile = configIn.readInt();
-            String keyT = configIn.readUTF();
-            String valueT = configIn.readUTF();
-            if (!keyType.equals(keyT) && !valueType.equals(valueT)) {
-                throw new MalformedDataException("invalid type");
+        synchronized (obj) {
+            File directory = new File(pathDirectory);
+            if (!directory.isDirectory()) {
+                throw new IOException("invalid directory path");
             }
-            K key;
-            int numOfFile;
-            long index;
-            for (int i = 0; i < numKeys; ++i) {
-                key = (K) keySerializer.readFromFile(configIn);
-                numOfFile = configIn.readInt();
-                index = configIn.readLong();
-                pathToValue.put(key, new Pair(numOfFile, index));
+            if (!directory.exists()) {
+                throw new IOException("such directory does not exist");
             }
-            configIn.close();
-            in.close();
-            for (int i = numberOfFirstFile; i < numberOfCurrentFile; ++i) {
-                RandomAccessFile file = new RandomAccessFile(intToPath(i), "r");
-                storageFiles.add(file);
+            pathToConfigurations = pathDirectory + File.separator + "configs";
+            File configs = new File(pathToConfigurations);
+            if (!configs.exists()) {
+                configs.createNewFile();
+                storageFile = new RandomAccessFile(intToPath(fileNameEnd), "rw");
+            } else {
+                FileInputStream in = new FileInputStream(pathToConfigurations);
+                DataInputStream configIn = new DataInputStream(in);
+                fileIsNotEmpty = true;
+                int numKeys = configIn.readInt();
+                numOfAdditions = configIn.readInt();
+                numOfDeletions = configIn.readInt();
+                fileNameEnd = configIn.readInt();
+                String keyT = configIn.readUTF();
+                String valueT = configIn.readUTF();
+                if (!keyType.equals(keyT) && !valueType.equals(valueT)) {
+                    throw new MalformedDataException("invalid type");
+                }
+                K key;
+                long index;
+                for (int i = 0; i < numKeys; ++i) {
+                    key = (K) keySerializer.readFromFile(configIn);
+                    index = configIn.readLong();
+                    pathToValue.put(key, index);
+                }
+                configIn.close();
+                in.close();
+                storageFile = new RandomAccessFile(intToPath(fileNameEnd), "rw");
             }
+            isOpen = true;
         }
-        isOpen = true;
     }
 
     private void closeInspection() {
@@ -203,7 +209,8 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 throw new MalformedDataException("Error while creating a new file");
             }
         }
-        if (fileIsNotEmpty && numOfAdditions < 2 * numOfDeletions && numOfDeletions > 20 * maxSize) {
+        if (fileIsNotEmpty && numOfAdditions < 2 * numOfDeletions
+                && numOfDeletions > 20 * maxSize) {
             try {
                 rebuild();
             } catch (IOException e) {
@@ -213,51 +220,44 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void recordNewAdditionToFile() throws IOException {
-        File newFile = new File(intToPath(numberOfCurrentFile));
+        synchronized (obj) {
         fileIsNotEmpty = true;
-        if (newFile.exists()) {
-            throw new MalformedDataException("file have already been created");
-        } else {
-            RandomAccessFile fileOut = new RandomAccessFile(intToPath(numberOfCurrentFile), "rw");
-            for (Entry<K, V> i : newAdditions.entrySet()) {
-                keySerializer.writeToFile(i.getKey(), fileOut);
-                pathToValue.put(i.getKey(), new Pair(numberOfCurrentFile, fileOut.getFilePointer()));
-                valueSerializer.writeToFile(i.getValue(), fileOut);
+            if (endOfFile != 0) {
+                storageFile.seek(endOfFile);
             }
-            storageFiles.add(fileOut);
+            for (Entry<K, V> i : newAdditions.entrySet()) {
+                keySerializer.writeToFile(i.getKey(), storageFile);
+                pathToValue.put(i.getKey(), storageFile.getFilePointer());
+                valueSerializer.writeToFile(i.getValue(), storageFile);
         }
         newAdditions.clear();
-        ++numberOfCurrentFile;
+        }
     }
 
     private String intToPath(int number) {
         return new String(pathDirectory + File.separator + Integer.toString(number));
     }
 
-    private void rebuild() throws IOException { // record all information to one file and delete others
-        int numOfNewFile;
-        if (numberOfFirstFile > 0) {
-            numOfNewFile = 0;
+    private void rebuild() throws IOException { // record all information to another file
+        int oldEnd = fileNameEnd;
+        if (fileNameEnd == 1) {
+            fileNameEnd = 2;
         } else {
-            numOfNewFile = numberOfCurrentFile;
+            fileNameEnd = 1;
         }
-        File newFile = new File(intToPath(numOfNewFile));
+        File newFile = new File(intToPath(fileNameEnd));
         if (!newFile.exists()) {
             newFile.createNewFile();
         }
-        RandomAccessFile fileOut = new RandomAccessFile(intToPath(numOfNewFile), "rw");
+        RandomAccessFile fileOut = new RandomAccessFile(intToPath(fileNameEnd), "rw");
         for (K key : pathToValue.keySet()) {
             keySerializer.writeToFile(key, fileOut);
             long point = fileOut.getFilePointer();
-            valueSerializer.writeToFile(read(key), fileOut);
-            pathToValue.put(key, new Pair(numOfNewFile, point));
+            pathToValue.put(key, point);
         }
-        for (int i = numberOfFirstFile; i < numberOfCurrentFile; ++i) {
-            File curFile = new File(intToPath(i));
-            curFile.delete();
-        }
-        numberOfFirstFile = numOfNewFile;
-        numberOfCurrentFile = numOfNewFile + 1;
+        File oldStor = new File(intToPath(oldEnd));
+        oldStor.delete();
+        storageFile = fileOut;
     }
 
     private void writeToConfig() throws IOException {
@@ -266,14 +266,12 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         configOut.writeInt(pathToValue.size());
         configOut.writeInt(numOfAdditions);
         configOut.writeInt(numOfDeletions);
-        configOut.writeInt(numberOfFirstFile);
-        configOut.writeInt(numberOfCurrentFile);
+        configOut.writeInt(fileNameEnd);
         configOut.writeUTF(keyType);
         configOut.writeUTF(valueType);
-        for (Entry<K, Pair<Integer, Long>> i : pathToValue.entrySet()) {
+        for (Entry<K, Long> i : pathToValue.entrySet()) {
             keySerializer.writeToFile(i.getKey(), configOut);
-            configOut.writeInt(i.getValue().getKey());
-            configOut.writeLong(i.getValue().getValue());
+            configOut.writeLong(i.getValue());
         }
         configOut.close();
         out.close();
