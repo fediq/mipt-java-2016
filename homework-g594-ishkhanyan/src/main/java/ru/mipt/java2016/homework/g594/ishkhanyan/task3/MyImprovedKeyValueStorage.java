@@ -70,86 +70,86 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public V read(K key) {
         synchronized (obj) {
-        closeInspection();
-        if (pathToValue.containsKey(key)) {
-            if (newAdditions.containsKey(key)) {
-                return newAdditions.get(key);
-            } else {
-                long index = pathToValue.get(key);
-                try {
-                    storageFile.seek(index);
-                    return (V) valueSerializer.readFromFile(storageFile);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    throw new MalformedDataException(e.getMessage());
+            closeInspection();
+            if (pathToValue.containsKey(key)) {
+                if (newAdditions.containsKey(key)) {
+                    return newAdditions.get(key);
+                } else {
+                    long index = pathToValue.get(key);
+                    try {
+                        storageFile.seek(index);
+                        return (V) valueSerializer.readFromFile(storageFile);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        throw new MalformedDataException(e.getMessage());
+                    }
                 }
+            } else {
+                return null;
             }
-        } else {
-            return null;
-        }
         }
     }
 
     @Override
     public boolean exists(K key) {
         synchronized (obj) {
-        closeInspection();
-        return pathToValue.containsKey(key);
+            closeInspection();
+            return pathToValue.containsKey(key);
         }
     }
 
     @Override
     public void write(K key, V value) {
         synchronized (obj) {
-        closeInspection();
-        checkSizeAndCorruption();
-        if (fileIsNotEmpty) {
-            ++numOfAdditions;
-        }
-        if (pathToValue.containsKey(key) && fileIsNotEmpty) {
-            ++numOfDeletions;
-        }
+            closeInspection();
+            checkSizeAndCorruption();
+            if (fileIsNotEmpty) {
+                ++numOfAdditions;
+            }
+            if (pathToValue.containsKey(key) && fileIsNotEmpty) {
+                ++numOfDeletions;
+            }
             pathToValue.put(key, (long) 0);
-        newAdditions.put(key, value);
+            newAdditions.put(key, value);
         }
     }
 
     @Override
     public void delete(K key) {
         synchronized (obj) {
-        closeInspection();
-        if (fileIsNotEmpty) {
-            ++numOfDeletions;
-        }
-        pathToValue.remove(key);
-        newAdditions.remove(key);
+            closeInspection();
+            if (fileIsNotEmpty) {
+                ++numOfDeletions;
+            }
+            pathToValue.remove(key);
+            newAdditions.remove(key);
         }
     }
 
     @Override
     public Iterator<K> readKeys() {
         synchronized (obj) {
-        closeInspection();
-        return pathToValue.keySet().iterator();
+            closeInspection();
+            return pathToValue.keySet().iterator();
         }
     }
 
     @Override
     public int size() {
         synchronized (obj) {
-        closeInspection();
-        return pathToValue.size();
+            closeInspection();
+            return pathToValue.size();
         }
     }
 
     @Override
     public void close() throws IOException {
         synchronized (obj) {
-        closeInspection();
-        recordNewAdditionToFile();
-        storageFile.close();
-        writeToConfig();
-        isOpen = false;
+            closeInspection();
+            recordNewAdditionToFile();
+            storageFile.close();
+            writeToConfig();
+            isOpen = false;
         }
     }
 
@@ -221,7 +221,7 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private void recordNewAdditionToFile() throws IOException {
         synchronized (obj) {
-        fileIsNotEmpty = true;
+            fileIsNotEmpty = true;
             if (endOfFile != 0) {
                 storageFile.seek(endOfFile);
             }
@@ -229,8 +229,8 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 keySerializer.writeToFile(i.getKey(), storageFile);
                 pathToValue.put(i.getKey(), storageFile.getFilePointer());
                 valueSerializer.writeToFile(i.getValue(), storageFile);
-        }
-        newAdditions.clear();
+            }
+            newAdditions.clear();
         }
     }
 
