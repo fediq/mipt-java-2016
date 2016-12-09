@@ -2,16 +2,11 @@ package ru.mipt.java2016.homework.tests.task3;
 
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Random;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
-
 import ru.mipt.java2016.homework.tests.task2.AbstractSingleFileStorageTest;
 import ru.mipt.java2016.homework.tests.task2.StorageTestUtils;
+
+import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static ru.mipt.java2016.homework.tests.task3.PerformanceTestUtils.randomKey;
 import static ru.mipt.java2016.homework.tests.task3.PerformanceTestUtils.randomValue;
