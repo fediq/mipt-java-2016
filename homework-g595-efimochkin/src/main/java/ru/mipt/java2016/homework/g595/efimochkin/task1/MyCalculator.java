@@ -192,10 +192,8 @@ public class MyCalculator implements Calculator {
                 continue;
             }
             if (ch == '.') {
-                if (isThereADot)
-                {
-                    return true;
-                }
+                if (isThereADot) {
+                    return true;}
                 else {
                     if (isItANewNumber) {
                         return true;
