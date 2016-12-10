@@ -168,8 +168,9 @@ public class MyCalculator implements Calculator {
                 if (isAnOperator(prev)) {
                     return true;
                 }
-                if (prev == '(' && !((ch == '+' || ch == '-') && Character.isDigit(expression.charAt(i+1))))
-                        return true;
+                if (prev == '(' && !((ch == '+' || ch == '-') && Character.isDigit(expression.charAt(i+1)))) {
+                    return true;
+                }
 
             }
             prev = ch;
@@ -191,7 +192,8 @@ public class MyCalculator implements Calculator {
                 continue;
             }
             if (ch == '.') {
-                if (isThereADot) {
+                if (isThereADot)
+                {
                     return true;
                 }
                 else {
