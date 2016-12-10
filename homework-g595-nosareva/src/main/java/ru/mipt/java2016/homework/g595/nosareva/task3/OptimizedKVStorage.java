@@ -8,6 +8,7 @@ import ru.mipt.java2016.homework.g595.nosareva.task2.SerializerForString;
 
 import javax.xml.bind.ValidationException;
 import java.io.*;
+import java.nio.channels.FileLock;
 import java.util.HashMap;
 import java.util.Iterator;
 
@@ -25,6 +26,8 @@ public class OptimizedKVStorage<K, V> implements KeyValueStorage<K, V> {
     private final Serializer<K> keySerializer;
     private final Serializer<V> valueSerializer;
 
+    static final Object lockObject = new Object();
+    private final FileLock lockFile;
     private File initFile;
     private File values;
     private File keys;
@@ -77,6 +80,10 @@ public class OptimizedKVStorage<K, V> implements KeyValueStorage<K, V> {
                               Serializer<K> serializerForKeys,
                               Serializer<V> serializerForValues)
             throws IOException, ValidationException {
+
+        synchronized (lockObject) {
+                lockFile = new RandomAccessFile(initFileName + "_lock_", "rw").getChannel().lock();
+        }
 
         this.directory = path;
         this.keySerializer = serializerForKeys;
@@ -189,6 +196,7 @@ public class OptimizedKVStorage<K, V> implements KeyValueStorage<K, V> {
         } catch (IOException exc) {
             System.out.println(exc.getMessage());
         }
+        badValues = 0;
     }
 
     private void chekingForClosed() {
@@ -199,6 +207,7 @@ public class OptimizedKVStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public void close() throws IOException {
+        chekingForClosed();
         DataOutputStream out = new DataOutputStream(new FileOutputStream(initFile));
         (new SerializerForString()).serializeToStream(validationString, out);
         out.close();
@@ -218,6 +227,7 @@ public class OptimizedKVStorage<K, V> implements KeyValueStorage<K, V> {
         }
         keysOffsetsTable.clear();
 
+        lockFile.release();
         keysFile.close();
         valuesFile.close();
         closed = true;
