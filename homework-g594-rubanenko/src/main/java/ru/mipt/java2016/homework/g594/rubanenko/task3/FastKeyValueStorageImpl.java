@@ -16,7 +16,9 @@ public class FastKeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
 
     private static final String STORAGE_NAME = "storage.db";
     private static final String REFERENCE_FILE_NAME = "reference.db";
+    private static final String LOCK_FILE_NAME = "lock.db";
     private String fileDirectory;
+    private File lockFile;
     private FastStorage storage;
     private FastReferenceFile referenceFile;
     private FastKeyValueStorageSerializer<K> keySerializer;
@@ -44,6 +46,17 @@ public class FastKeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
         storageLength = storage.getLength();
         recordLength = storageLength - 1;
         cache = new LinkedHashMap<K, V>();
+        String lockFilePath = fileDirectory + File.separator + LOCK_FILE_NAME;
+        lockFile = new File(lockFilePath);
+        if (!lockFile.exists()) {
+            try {
+                lockFile.createNewFile();
+            } catch (Exception e) {
+                throw new IOException("Failed to create lock file");
+            }
+        } else {
+            throw new IOException("Somebody is working w/ db right now.");
+        }
         startWorkWithOffsetTable();
     }
 
@@ -159,6 +172,13 @@ public class FastKeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
                 endWorkWithOffsetTable();
                 updated = false;
             }
+            if (lockFile.exists()) {
+                try {
+                    lockFile.delete();
+                } catch (Exception e) {
+                    throw new IOException("Failed to delete lock file");
+                }
+            }
             referenceFile.close();
             isOpened = false;
         } finally {
@@ -167,7 +187,6 @@ public class FastKeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void startWorkWithOffsetTable() throws IOException {
-        writeLock.lock();
         if (!referenceFile.checkIsEmpty()) {
             int counter = referenceFile.readKey();
             while (counter > 0) {
@@ -187,7 +206,13 @@ public class FastKeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
             referenceFile.writeOffset(iterator.getValue());
         }
         offsetTable.clear();
-        writeLock.unlock();
+        if (lockFile.exists()) {
+            try {
+                lockFile.delete();
+            } catch (Exception e) {
+                throw new IOException("Failed to delete lock file");
+            }
+        }
     }
 
     private void checkFreeSpace(long offset) throws IOException {
