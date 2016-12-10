@@ -29,6 +29,7 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
     private Long updatesSize;
     private File datafile;
     private File keyfile;
+    private File checkfile;
     private RandomAccessFile values;
     private FileOutputStream valuesout;
     private boolean open = false;
@@ -91,7 +92,6 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
         map = new HashMap();
         updates = new HashMap();
         updatesSize = 0L;
-
         lock = new ReentrantReadWriteLock();
         writelock = lock.writeLock();
         readlock = lock.readLock();
@@ -101,9 +101,13 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
         if (!directory.exists() || !directory.isDirectory()) {
             throw new IllegalStateException("Wrong path to directory");
         }
+        checkfile = new File(path + "/check");
         keyfile = new File(path + "/keys.db");
         datafile = new File(path + "/data.db");
         try {
+            if (!checkfile.createNewFile()) {
+                throw new IllegalStateException("Someone is already working with storage");
+            }
             if (!keyfile.exists()) {
                 keyfile.createNewFile();
                 if (!datafile.exists()) {
@@ -126,7 +130,7 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
             }
             values = new RandomAccessFile(datafile, "rw");
             valuesout = new FileOutputStream(datafile, true);
-        } catch (Exception exp) {
+        } catch (IOException exp) {
             throw new IllegalStateException("Invalid work with file");
         }
 
@@ -300,6 +304,7 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
             valueHash = getHash();
             offsetSerializer.put(out, valueHash.getValue());
             out.close();
+            checkfile.delete();
             writelock.unlock();
         } catch (Exception exc) {
             throw new IllegalStateException("Invalid work with file");
