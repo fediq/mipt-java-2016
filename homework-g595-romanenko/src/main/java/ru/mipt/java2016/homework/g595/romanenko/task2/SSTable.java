@@ -2,12 +2,11 @@ package ru.mipt.java2016.homework.g595.romanenko.task2;
 
 import ru.mipt.java2016.homework.g595.romanenko.task2.serialization.IntegerSerializer;
 import ru.mipt.java2016.homework.g595.romanenko.task2.serialization.SerializationStrategy;
+import ru.mipt.java2016.homework.g595.romanenko.utils.FileDigitalSignature;
 
 import java.io.*;
 import java.nio.channels.Channels;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.*;
 
 /**
  * Sorted strings table
@@ -22,102 +21,148 @@ Number of nodes (Integer)
 Key, offset(Integer) ...
 Values
 */
-class SSTable<Key, Value> {
+public class SSTable<Key, Value> {
 
-    private RandomAccessFile storage;
-    private final HashMap<Key, Integer> indexes = new HashMap<>();
+    protected RandomAccessFile storage;
+    protected final Map<Key, Integer> indices = new HashMap<>();
+    protected final Map<Key, Integer> valueByteSize = new HashMap<>();
 
-    private final SerializationStrategy<Key> keySerializationStrategy;
-    private final SerializationStrategy<Value> valueSerializationStrategy;
+    protected List<Key> sortedKeys = new ArrayList<>();
 
-    private boolean isClosed = false;
+    protected final SerializationStrategy<Key> keySerializationStrategy;
+    protected final SerializationStrategy<Value> valueSerializationStrategy;
 
-    private void readIndexes() throws IOException {
-        int totalAmount = storage.readInt();
-        InputStream stream = Channels.newInputStream(storage.getChannel());
-        IntegerSerializer serializer = IntegerSerializer.getInstance();
-        for (int i = 0; i < totalAmount; i++) {
-            Key key = keySerializationStrategy.deserializeFromStream(stream);
-            Integer offset = serializer.deserializeFromStream(stream);
-            indexes.put(key, offset);
-        }
-    }
+    protected int epochNumber = 0;
 
-    SSTable(String path,
-            SerializationStrategy<Key> keySerializationStrategy,
-            SerializationStrategy<Value> valueSerializationStrategy) throws IOException {
+    protected boolean isClosed = false;
+    protected boolean hasUncommittedChanges = false;
+    protected boolean needToSign = false;
+    protected String path;
+    protected String dbName = null;
+
+    protected final FileDigitalSignature fileDigitalSignature;
+
+    public SSTable(String path,
+                   SerializationStrategy<Key> keySerializationStrategy,
+                   SerializationStrategy<Value> valueSerializationStrategy,
+                   FileDigitalSignature fileDigitalSignature) throws IOException {
 
         this.keySerializationStrategy = keySerializationStrategy;
         this.valueSerializationStrategy = valueSerializationStrategy;
+        this.fileDigitalSignature = fileDigitalSignature;
 
         File tryFile = new File(path);
         if (tryFile.exists() && tryFile.isDirectory()) {
-            path += "//storage.db";
+            path += File.separator + "storage.db";
         }
+        if ((new File(path)).exists()) {
+            boolean validationOk = fileDigitalSignature.validateFileSignWithDefaultSignName(path);
+            if (!validationOk) {
+                throw new IllegalStateException("Invalid database");
+            }
+        }
+        this.path = path;
+
         storage = new RandomAccessFile(path, "rw");
         if (storage.length() != 0) {
-            readIndexes();
+            readIndices();
         }
     }
 
-    void rewrite(HashMap<Key, Value> toFlip) {
+
+    protected void readIndices() throws IOException {
+        int totalAmount = storage.readInt();
+        BufferedInputStream stream = new BufferedInputStream(Channels.newInputStream(storage.getChannel()));
+        IntegerSerializer serializer = IntegerSerializer.getInstance();
+
+        Integer offset;
+        Integer valueSize;
+
+        for (int i = 0; i < totalAmount; i++) {
+            Key key = keySerializationStrategy.deserializeFromStream(stream);
+            offset = serializer.deserializeFromStream(stream);
+            valueSize = serializer.deserializeFromStream(stream);
+            indices.put(key, offset);
+            valueByteSize.put(key, valueSize);
+            sortedKeys.add(key);
+        }
+    }
+
+    /**
+     * Write toFlip map to current storage. Remove old storage if it wasn't empty.
+     * Flush data to disk and sign storage with FileDigitalSignature.
+     *
+     * @param toFlip map<Key, Value> to flip
+     */
+    public void rewrite(Producer<Key, Value> toFlip) {
         checkClosed();
 
+        epochNumber++;
         try {
+            indices.clear();
+            valueByteSize.clear();
+            sortedKeys.clear();
+
             storage.setLength(0);
             IntegerSerializer integerSerializer = IntegerSerializer.getInstance();
 
-            OutputStream outputStream = Channels.newOutputStream(storage.getChannel());
+            BufferedOutputStream outputStream = new BufferedOutputStream(
+                    Channels.newOutputStream(storage.getChannel()));
 
             integerSerializer.serializeToStream(toFlip.size(), outputStream);
 
-            ArrayList<Integer> offsets = new ArrayList<>();
-            Integer totalLength = integerSerializer.getBytesSize(toFlip.size());
+            int totalLength = integerSerializer.getBytesSize(toFlip.size());
 
-            ArrayList<Key> cachedKeys = new ArrayList<>(toFlip.keySet());
+            sortedKeys.addAll(toFlip.keySet());
 
-            for (Key key : cachedKeys) {
+            for (Key key : sortedKeys) {
                 totalLength += keySerializationStrategy.getBytesSize(key);
-                totalLength += integerSerializer.getBytesSize(0);
+            }
+            totalLength += 2 * integerSerializer.getBytesSize(0) * sortedKeys.size();
+
+            int byteSize;
+
+            for (Key key : sortedKeys) {
+                indices.put(key, totalLength);
+                keySerializationStrategy.serializeToStream(key, outputStream);
+                integerSerializer.serializeToStream(totalLength, outputStream);
+                byteSize = valueSerializationStrategy.getBytesSize(toFlip.get(key));
+                valueByteSize.put(key, byteSize);
+                integerSerializer.serializeToStream(byteSize, outputStream);
+                totalLength += byteSize;
             }
 
-            for (Key key : cachedKeys) {
-                offsets.add(totalLength);
-                totalLength += valueSerializationStrategy.getBytesSize(toFlip.get(key));
-            }
-
-            for (int i = 0; i < cachedKeys.size(); i++) {
-                keySerializationStrategy.serializeToStream(cachedKeys.get(i), outputStream);
-                integerSerializer.serializeToStream(offsets.get(i), outputStream);
-            }
-
-            for (Key key : cachedKeys) {
+            for (Key key : sortedKeys) {
                 valueSerializationStrategy.serializeToStream(toFlip.get(key), outputStream);
             }
 
             outputStream.flush();
+
+            needToSign = true;
+
+            hasUncommittedChanges = false;
+
         } catch (IOException e) {
             throw new IllegalStateException();
         }
     }
 
-    private void checkClosed() {
+    protected void checkClosed() {
         if (isClosed) {
             throw new IllegalStateException("File is closed");
         }
     }
 
-    Value getValue(Key key) {
+    public Value getValue(Key key) {
         checkClosed();
-        if (!indexes.containsKey(key)) {
+        if (!indices.containsKey(key)) {
             return null;
         }
-        Integer offset = indexes.get(key);
+        Integer offset = indices.get(key);
         Value result;
         try {
-            storage.seek(0);
+            storage.seek(offset);
             InputStream stream = Channels.newInputStream(storage.getChannel());
-            stream.skip(offset);
             result = valueSerializationStrategy.deserializeFromStream(stream);
         } catch (IOException e) {
             throw new IllegalStateException();
@@ -125,10 +170,42 @@ class SSTable<Key, Value> {
         return result;
     }
 
-    void close() {
+    protected void rewriteIndices() {
+        if (!hasUncommittedChanges) {
+            return;
+        }
+
+        try {
+            storage.seek(0);
+
+            IntegerSerializer integerSerializer = IntegerSerializer.getInstance();
+            BufferedOutputStream outputStream = new BufferedOutputStream(
+                    Channels.newOutputStream(storage.getChannel()));
+
+            integerSerializer.serializeToStream(indices.size(), outputStream);
+
+            for (Map.Entry<Key, Integer> entry : indices.entrySet()) {
+                keySerializationStrategy.serializeToStream(entry.getKey(), outputStream);
+                integerSerializer.serializeToStream(entry.getValue(), outputStream);
+                integerSerializer.serializeToStream(valueByteSize.get(entry.getKey()), outputStream);
+            }
+
+            outputStream.flush();
+            hasUncommittedChanges = false;
+            needToSign = true;
+
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+            throw new IllegalStateException();
+        }
+    }
+
+    public void forceClose() {
         if (isClosed) {
             return;
         }
+        epochNumber++;
         isClosed = true;
         try {
             storage.close();
@@ -137,23 +214,99 @@ class SSTable<Key, Value> {
         }
     }
 
-    int size() {
-        checkClosed();
-        return indexes.size();
+    public void close() {
+        if (isClosed) {
+            return;
+        }
+        epochNumber++;
+        isClosed = true;
+        try {
+            rewriteIndices();
+            storage.close();
+            if (needToSign) {
+                fileDigitalSignature.signFileWithDefaultSignName(path);
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException();
+        }
     }
 
-    void removeKeyFromIndexes(Key key) {
+    public int size() {
         checkClosed();
-        indexes.remove(key);
+        return indices.size();
     }
 
-    boolean exists(Key key) {
+    public void removeKeyFromIndices(Key key) {
         checkClosed();
-        return indexes.containsKey(key);
+        epochNumber++;
+        hasUncommittedChanges = true;
+        indices.remove(key);
     }
 
-    Iterator<Key> readKeys() {
+    public boolean exists(Key key) {
         checkClosed();
-        return indexes.keySet().iterator();
+        return indices.containsKey(key);
+    }
+
+    public Iterator<Key> readKeys() {
+        checkClosed();
+        return new SSTableIterator();
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setDatabaseName(String newDBName) {
+        dbName = newDBName;
+    }
+
+    public String getDatabaseName() {
+        return dbName;
+    }
+
+    public class SSTableIterator implements Iterator<Key> {
+
+        private final int currentEpochNumber;
+        private Key nextValue = null;
+        private final Iterator<Key> sortedKeysIterator;
+
+        private SSTableIterator() {
+            currentEpochNumber = epochNumber;
+            sortedKeysIterator = sortedKeys.iterator();
+            getNext();
+        }
+
+        private void checkEpochNumber() {
+            if (currentEpochNumber != epochNumber) {
+                throw new ConcurrentModificationException();
+            }
+        }
+
+        private void getNext() {
+            checkEpochNumber();
+            nextValue = null;
+            while (sortedKeysIterator.hasNext()) {
+                nextValue = sortedKeysIterator.next();
+                if (indices.containsKey(nextValue)) {
+                    return;
+                }
+            }
+            nextValue = null;
+        }
+
+        @Override
+        public boolean hasNext() {
+            checkEpochNumber();
+            return nextValue != null;
+        }
+
+        @Override
+        public Key next() {
+            Key result = nextValue;
+            getNext();
+            return result;
+        }
+
     }
 }
