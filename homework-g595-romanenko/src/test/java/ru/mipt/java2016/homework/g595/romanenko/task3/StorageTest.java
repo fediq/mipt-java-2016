@@ -82,10 +82,4 @@ public class StorageTest extends KeyValueStoragePerformanceTest {
             }
         }));
     }
-
-    @Test
-    @Override
-    public void measure100kWDump100kR() {
-        super.measure100kWDump100kR();
-    }
 }
