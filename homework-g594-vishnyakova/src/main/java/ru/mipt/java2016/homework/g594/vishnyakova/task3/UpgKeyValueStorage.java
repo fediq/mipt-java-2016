@@ -23,7 +23,8 @@ import java.util.zip.CheckedInputStream;
  При открытии базы из основного файла считываем изформацию для map.
  При добавлении новых элементов, записываем их в tableFresh.
  Как только размер tableFresh превышает MAX_SIZE_OF_FRESH, записываем данные в новый файл на диск.
- Старые значения из файлов не удаляем, просто теряем на них ссылку, не записав ее в основной файл.
+ Старые значения из файлов не удаляем, просто теряем на них ссылку,
+ не записав ее в основной файл в конце работы с базой.
  */
 
 public class UpgKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
@@ -38,6 +39,7 @@ public class UpgKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
+    //Кеш, уменьшает свой размер автоматически когда превышает размер MAX_SIZE_OF_CASH
     private class Cash<K, V> extends LinkedHashMap<K, V> {
         private static final int MAX_SIZE_OF_CASH = 0;
 
@@ -53,6 +55,7 @@ public class UpgKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private String fileName;
     private String intFileName;
+    private String lockFileName;
     private String type;
     private HashMap<K, Location> mapPlace;
     private Cash<K, V> tableCash;
@@ -105,6 +108,8 @@ public class UpgKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
     */
 
+    //Проверка, что хеш-сумма по всем файлам базы данных на диске
+    // совпадает с сохраненным в отдельном файле значением
     private void checkIntegrity(int numOfFiles) {
         writeLock.lock();
         try (DataInputStream rd = new DataInputStream(new FileInputStream(intFileName))) {
@@ -138,6 +143,7 @@ public class UpgKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
+    // Скидываем на диск в новый файл свежие элементы, когда их стало больше чем MAX_SIZE_OF_FRESH
     private void reduceFresh(boolean doAnyway) {
         writeLock.lock();
         try {
@@ -182,6 +188,7 @@ public class UpgKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         type = typ;
         fileName = path + "/store";
         intFileName = path + "/hash.txt";
+        lockFileName = path + "/lock.txt";
         keySerializator = sKey;
         valSerializator = sVal;
         mapPlace = new HashMap<K, Location>();
@@ -194,6 +201,20 @@ public class UpgKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         lock = new ReentrantReadWriteLock();
         readLock = lock.readLock();
         writeLock = lock.writeLock();
+
+        File lockFile = new File(lockFileName);
+        writeLock.lock();
+        try {
+            if (!lockFile.exists()) {
+                lockFile.createNewFile();
+            } else {
+                throw new MalformedDataException("Somebody else is working with data base now");
+            }
+        } catch (IOException e) {
+            throw new MalformedDataException("Couldn't create new file", e);
+        } finally {
+            writeLock.unlock();
+        }
 
         String mainFile = getFileName(-1);
         File file = new File(mainFile);
@@ -369,6 +390,9 @@ public class UpgKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 }
                 wr.writeLong(validate.getValue());
             }
+
+            File lockFile = new File(lockFileName);
+            lockFile.delete();
         } finally {
             writeLock.unlock();
         }
