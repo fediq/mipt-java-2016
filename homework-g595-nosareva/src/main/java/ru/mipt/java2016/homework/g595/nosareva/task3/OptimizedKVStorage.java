@@ -26,7 +26,7 @@ public class OptimizedKVStorage<K, V> implements KeyValueStorage<K, V> {
     private final Serializer<K> keySerializer;
     private final Serializer<V> valueSerializer;
 
-    static final Object lockObject = new Object();
+    static final Object LOCK_OBJECT = new Object();
     private final FileLock lockFile;
     private File initFile;
     private File values;
@@ -81,8 +81,8 @@ public class OptimizedKVStorage<K, V> implements KeyValueStorage<K, V> {
                               Serializer<V> serializerForValues)
             throws IOException, ValidationException {
 
-        synchronized (lockObject) {
-                lockFile = new RandomAccessFile(initFileName + "_lock_", "rw").getChannel().lock();
+        synchronized (LOCK_OBJECT) {
+            lockFile = new RandomAccessFile(initFileName + "_lock_", "rw").getChannel().lock();
         }
 
         this.directory = path;
