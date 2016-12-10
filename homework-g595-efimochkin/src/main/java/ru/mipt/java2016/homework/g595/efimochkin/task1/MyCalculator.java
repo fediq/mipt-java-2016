@@ -168,7 +168,7 @@ public class MyCalculator implements Calculator {
                 if (isAnOperator(prev)) {
                     return true;
                 }
-                if (prev == '(' && !((ch == '+' || ch == '-') && Character.isDigit(expression.charAt(i+1)))) {
+                if (prev == '(' && !((ch == '+' || ch == '-') && Character.isDigit(expression.charAt(i + 1)))) {
                     return true;
                 }
 
@@ -233,7 +233,7 @@ public class MyCalculator implements Calculator {
         return count;
     }
 
-    private boolean checkInvalidSymbols (String expression) {
+    private boolean checkInvalidSymbols(String expression) {
         for (int i = 0; i < expression.length(); i++) {
             char ch = expression.charAt(i);
             if (!(Character.isDigit(ch) || isAnOperator(ch) || isABracket(ch) || ch == '.'
