@@ -20,11 +20,12 @@ public class StudentKeySerialization implements BaseSerialization<StudentKey> {
     private StudentKeySerialization() { }
 
     @Override
-    public void write(RandomAccessFile file, StudentKey object) throws IOException {
+    public Long write(RandomAccessFile file, StudentKey object) throws IOException {
         try {
-           // Long offset = file.getFilePointer();
+            Long offset = file.getFilePointer();
             file.writeInt(object.getGroupId());
             file.writeUTF(object.getName());
+            return offset;
         } catch (IOException e) {
             throw new IOException("Could not write to file.");
         }

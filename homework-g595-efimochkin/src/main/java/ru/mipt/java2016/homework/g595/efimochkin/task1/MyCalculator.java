@@ -47,7 +47,7 @@ public class MyCalculator implements Calculator {
 
     private void processExpression(String expression) throws ParsingException {
         boolean isUnary = true;
-        for(int i = 0; i < expression.length(); i++) {
+        for (int i = 0; i < expression.length(); i++) {
             char ch = expression.charAt(i);
 
             if (ch == ' ' || ch == '\n' || ch == '\t') {
@@ -159,14 +159,15 @@ public class MyCalculator implements Calculator {
 
     private boolean checkOperators(String expression) {
         char prev = '@';
-        for(int i = 0; i < expression.length(); i++) {
+        for (int i = 0; i < expression.length(); i++) {
             char ch = expression.charAt(i);
             if (ch == ')' && isAnOperator(prev)) {
                 return true;
             }
-            if (isAnOperator(ch)){
-                if (isAnOperator(prev))
+            if (isAnOperator(ch)) {
+                if (isAnOperator(prev)) {
                     return true;
+                }
                 if (prev == '(' && !((ch == '+' || ch == '-') && Character.isDigit(expression.charAt(i+1))))
                         return true;
 
@@ -190,11 +191,13 @@ public class MyCalculator implements Calculator {
                 continue;
             }
             if (ch == '.') {
-                if (isThereADot)
+                if (isThereADot) {
                     return true;
+                }
                 else {
-                    if (isItANewNumber)
+                    if (isItANewNumber) {
                         return true;
+                    }
                     isThereADot = true;
                 }
             }
@@ -232,7 +235,7 @@ public class MyCalculator implements Calculator {
         for (int i = 0; i < expression.length(); i++) {
             char ch = expression.charAt(i);
             if (!(Character.isDigit(ch) || isAnOperator(ch) || isABracket(ch) || ch == '.'
-                    || ch == ' ' || ch =='\n' || ch =='\t')) {
+                    || ch == ' ' || ch == '\n' || ch == '\t')) {
                 return true;
             }
         }

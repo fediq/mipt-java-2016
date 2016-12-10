@@ -27,14 +27,16 @@ public class StudentSerialization implements BaseSerialization<Student> {
     private StudentSerialization() { }
 
     @Override
-    public void write(RandomAccessFile file, Student object) throws IOException {
+    public Long write(RandomAccessFile file, Student object) throws IOException {
         try {
+            Long offset = file.getFilePointer();
             integerSerialization.write(file, object.getGroupId());
             stringSerialization.write(file, object.getName());
             stringSerialization.write(file, object.getHometown());
             dateSerialization.write(file, object.getBirthDate());
             booleanSerialization.write(file, object.isHasDormitory());
             doubleSerialization.write(file, object.getAverageScore());
+            return offset;
         } catch (IOException e) {
             throw new IOException("Could not write to file.");
         }
