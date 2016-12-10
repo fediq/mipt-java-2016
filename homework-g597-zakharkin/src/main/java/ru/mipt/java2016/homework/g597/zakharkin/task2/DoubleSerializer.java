@@ -1,7 +1,8 @@
 package ru.mipt.java2016.homework.g597.zakharkin.task2;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 
 /**
  * Serialization strategy for Double type
@@ -22,12 +23,12 @@ public class DoubleSerializer implements Serializer<Double> {
     }
 
     @Override
-    public void write(RandomAccessFile file, Double data) throws IOException {
+    public void write(DataOutput file, Double data) throws IOException {
         file.writeDouble(data);
     }
 
     @Override
-    public Double read(RandomAccessFile file) throws IOException {
+    public Double read(DataInput file) throws IOException {
         Double data = file.readDouble();
         return data;
     }
