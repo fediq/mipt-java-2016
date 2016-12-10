@@ -1,5 +1,8 @@
-package ru.mipt.java2016.homework.g595.romanenko.task2.serialization;
+package ru.mipt.java2016.homework.g595.romanenko.task2;
 
+import ru.mipt.java2016.homework.g595.romanenko.task2.serialization.IntegerSerializer;
+import ru.mipt.java2016.homework.g595.romanenko.task2.serialization.SerializationStrategy;
+import ru.mipt.java2016.homework.g595.romanenko.task2.serialization.StringSerializer;
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
 
 import java.io.IOException;
@@ -23,18 +26,24 @@ public class StudentKeySerializer implements SerializationStrategy<StudentKey> {
 
     @Override
     public void serializeToStream(StudentKey studentKey, OutputStream outputStream) throws IOException {
+        Integer totalSize = getBytesSize(studentKey);
+        IntegerSerializer.getInstance().serializeToStream(totalSize, outputStream);
+
         IntegerSerializer.getInstance().serializeToStream(studentKey.getGroupId(), outputStream);
         StringSerializer.getInstance().serializeToStream(studentKey.getName(), outputStream);
     }
 
     @Override
     public int getBytesSize(StudentKey studentKey) {
-        return IntegerSerializer.getInstance().getBytesSize(studentKey.getGroupId()) +
+        return IntegerSerializer.getInstance().getBytesSize(0) +
+                IntegerSerializer.getInstance().getBytesSize(studentKey.getGroupId()) +
                 StringSerializer.getInstance().getBytesSize(studentKey.getName());
     }
 
     @Override
     public StudentKey deserializeFromStream(InputStream inputStream) throws IOException {
+        Integer totalSize = IntegerSerializer.getInstance().deserializeFromStream(inputStream);
+
         Integer groupId = IntegerSerializer.getInstance().deserializeFromStream(inputStream);
         String name = StringSerializer.getInstance().deserializeFromStream(inputStream);
         return new StudentKey(groupId, name);
