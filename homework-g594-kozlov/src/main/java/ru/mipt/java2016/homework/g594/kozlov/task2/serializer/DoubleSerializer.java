@@ -12,7 +12,6 @@ public class DoubleSerializer implements SerializerInterface<Double> {
             return null;
         }
         return objToSerialize.toString();
-        //return ByteBuffer.allocate(8).putDouble(objToSerialize).array();
     }
 
     @Override
@@ -21,7 +20,6 @@ public class DoubleSerializer implements SerializerInterface<Double> {
             return null;
         }
         return Double.parseDouble(inputString);
-        //return ByteBuffer.wrap(inputString).getDouble();
     }
 
     @Override

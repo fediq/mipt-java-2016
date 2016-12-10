@@ -27,6 +27,7 @@ public class FastStorage<K, V> implements KeyValueStorage<K, V> {
     private final FileWorker tabFile;
     private final FileWorker deleteFile;
     private final FileWorker validFile;
+    private final FileWorker lockFile;
     private Long currOffset = new Long(0);
     private boolean writing = true;
     private boolean isClosedFlag = false;
@@ -59,6 +60,12 @@ public class FastStorage<K, V> implements KeyValueStorage<K, V> {
         tabFile = new FileWorker(this.dirPath + "tabfile.db", false);
         deleteFile = new FileWorker(this.dirPath + "deletes.db", false);
         validFile = new FileWorker(this.dirPath + "validfile.db", false);
+        lockFile = new FileWorker(this.dirPath + "lockfile.db", false);
+        if (lockFile.exists()) {
+            throw new RuntimeException("there is working storage");
+        } else {
+            lockFile.createFile();
+        }
         if (!indexFile.exists()) {
             indexFile.createFile();
             tabFile.createFile();
@@ -177,15 +184,18 @@ public class FastStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public void close() throws IOException {
         synchronized (lock) {
-            isClosedFlag = true;
-            if (needRebuild) {
-                rebuild();
-            } else {
-                flushDeletes();
-                deleteFile.close();
-                indexFile.close();
-                tabFile.close();
-                writeChecksum();
+            if (!isClosedFlag) {
+                isClosedFlag = true;
+                if (needRebuild) {
+                    rebuild();
+                } else {
+                    flushDeletes();
+                    deleteFile.close();
+                    indexFile.close();
+                    tabFile.close();
+                    writeChecksum();
+                }
+                lockFile.delete();
             }
         }
     }
