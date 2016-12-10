@@ -12,8 +12,8 @@ public class GrishutinKeyValueStorageTest extends AbstractSingleFileStorageTest 
     protected KeyValueStorage<String, String> buildStringsStorage(String path) {
         try {
             return new GrishutinKeyValueStorage<>(path,
-                    new StringSerializationStrategy(),
-                    new StringSerializationStrategy());
+                    new StringSerializer(),
+                    new StringSerializer());
         } catch (IOException | IllegalAccessException e) {
             e.printStackTrace();
         }
@@ -24,8 +24,8 @@ public class GrishutinKeyValueStorageTest extends AbstractSingleFileStorageTest 
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) {
         try {
             return new GrishutinKeyValueStorage<>(path,
-                    new IntegerSerializationStrategy(),
-                    new DoubleSerializationStrategy());
+                    new IntegerSerializer(),
+                    new DoubleSerializer());
         } catch (IOException | IllegalAccessException e) {
             e.printStackTrace();
         }

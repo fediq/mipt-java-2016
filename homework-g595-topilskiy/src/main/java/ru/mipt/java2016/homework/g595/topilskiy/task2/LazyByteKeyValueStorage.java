@@ -1,26 +1,30 @@
 package ru.mipt.java2016.homework.g595.topilskiy.task2;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
+import ru.mipt.java2016.homework.g595.topilskiy.task2.Serializer.ISerializer;
 
 import java.io.IOException;
 import java.util.Iterator;
 
 /**
  * A KeyValueStorage implementation for <KeyType, ValueType> pair that uses
- * - a JSON-like format for persistent Storage
+ * - a special byte serializer format for persistent Storage
  * - a HashMap for buffered use of the Storage
  *
  * @author Artem K. Topilskiy
  * @since 28.10.16
  */
-class      LazyByteKeyValueStorage<KeyType, ValueType>
-        implements KeyValueStorage<KeyType, ValueType> {
+public class LazyByteKeyValueStorage<KeyType, ValueType>
+          implements KeyValueStorage<KeyType, ValueType> {
 
     private final LazyByteKeyValueStorageHashMapBuffer<KeyType, ValueType> storageBuffer;
     private Boolean isClosed;
 
-    LazyByteKeyValueStorage(LazyByteKeyValueStorageInfo storageInfoInit) throws IOException {
-        storageBuffer = new LazyByteKeyValueStorageHashMapBuffer<>(storageInfoInit);
+    public LazyByteKeyValueStorage(String pathToStorageDirectory,
+                                   ISerializer keyTypeSerializer,
+                                   ISerializer valueTypeSerializer) throws IOException {
+        storageBuffer = new LazyByteKeyValueStorageHashMapBuffer<>(pathToStorageDirectory,
+                                                                   keyTypeSerializer, valueTypeSerializer);
         isClosed = false;
     }
 
@@ -99,6 +103,13 @@ class      LazyByteKeyValueStorage<KeyType, ValueType>
         return storageBuffer.size();
     }
 
+    /**
+     * Close the current Storage:
+     * - invalidate external Iterators
+     * - write data to disk
+     *
+     * @throws IOException - if Storage encountered IO Problems whilst closing
+     */
     @Override
     public void close() throws IOException {
         checkNotClosed();
@@ -123,7 +134,7 @@ class      LazyByteKeyValueStorage<KeyType, ValueType>
      *
      * @return the path to the directory of data storage
      */
-    String getPathToStorageDirectory() {
+    public String getPathToStorageDirectory() {
         return storageBuffer.getPathToStorageDirectory();
     }
 }
