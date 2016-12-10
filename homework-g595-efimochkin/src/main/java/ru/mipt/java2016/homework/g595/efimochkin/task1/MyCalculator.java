@@ -8,33 +8,38 @@ import java.util.Stack;
 /**
  * Created by sergejefimockin on 10.12.16.
  */
-public class MyCalculator implements Calculator{
+public class MyCalculator implements Calculator {
 
-    private Stack<Character> operations = new <Character>Stack();
-    private Stack <Double>  operands = new <Double>Stack();
+    private Stack<Character> operations = new<Character> Stack();
+    private Stack<Double>  operands = new<Double> Stack();
 
     @Override
-    public double calculate (String expression) throws ParsingException {
+    public double calculate(String expression) throws ParsingException {
 
-        if(expression == null)
+        if (expression == null) {
             throw new ParsingException("Null expression!");
+        }
 
-        if(expression.length() == 0 || expression.equals("()"))
+        if (expression.length() == 0 || expression.equals("()")) {
             throw new ParsingException("Empty expression!");
+        }
 
-        if(countBracketBalance(expression) != 0)
+        if (countBracketBalance(expression) != 0) {
             throw new ParsingException("Wrong bracket balance!");
+        }
 
-        if(checkInvalidSymbols(expression))
+        if (checkInvalidSymbols(expression)) {
             throw new ParsingException("There're some invalid symbols in the expression!");
+        }
 
-        if(checkIncorrectNumbers(expression))
+        if (checkIncorrectNumbers(expression)) {
             throw new ParsingException("There're some invalid numbers like 1.2.3 in the expression!");
+        }
 
-        if(checkOperators(expression))
+        if (checkOperators(expression)) {
             throw new ParsingException("There's some invalid operator usage like (1+) in the expression!");
+        }
 
-        //return 0;
         processExpression(expression);
         return calculateProcessedExpression();
 
@@ -42,13 +47,14 @@ public class MyCalculator implements Calculator{
 
     private void processExpression(String expression) throws ParsingException {
         boolean isUnary = true;
-        for(int i = 0; i < expression.length(); i++){
+        for(int i = 0; i < expression.length(); i++) {
             char ch = expression.charAt(i);
 
-            if(ch == ' ' || ch =='\n' || ch =='\t')
+            if (ch == ' ' || ch == '\n' || ch == '\t') {
                 continue;
+            }
 
-            if(ch == '('){
+            if (ch == '(') {
                 operations.push('(');
                 isUnary = true;
                 continue;
@@ -63,7 +69,7 @@ public class MyCalculator implements Calculator{
                 continue;
             }
 
-            if(isAnOperator(ch)){
+            if (isAnOperator(ch)) {
                 if (isUnary) {
                     if (ch == '+' || ch == '*' || ch == '/') {
                         throw new ParsingException("Invalid unary operator.");
@@ -71,22 +77,23 @@ public class MyCalculator implements Calculator{
                     ch = '~';
                 }
                 while (!operations.isEmpty() && (ch != '~' &&
-                        operationPriority(operations.lastElement()) >= operationPriority(ch)))
+                        operationPriority(operations.lastElement()) >= operationPriority(ch))) {
                     calculateStackOperation();
+                }
                 operations.push(ch);
                 isUnary = true;
                 continue;
             }
 
-            String lexem = "";
+            String number = "";
             while (i < expression.length() && (Character.isDigit(expression.charAt(i))
                     || expression.charAt(i) == '.')) {
-                lexem += Character.toString(expression.charAt(i));
+                number += Character.toString(expression.charAt(i));
                 i++;
             }
-            operands.add(Double.parseDouble(lexem));
+            operands.add(Double.parseDouble(number));
             isUnary = false;
-            i --;
+            i--;
 
 
 
@@ -95,11 +102,13 @@ public class MyCalculator implements Calculator{
     }
 
     private double calculateProcessedExpression() throws ParsingException {
-        if(operations.isEmpty() && operands.isEmpty())
+        if (operations.isEmpty() && operands.isEmpty()) {
             throw new ParsingException("The expression is all spaces!");
+        }
 
-        while (!operations.isEmpty())
+        while (!operations.isEmpty()) {
             calculateStackOperation();
+        }
 
         return operands.peek();
     }
@@ -150,14 +159,15 @@ public class MyCalculator implements Calculator{
 
     private boolean checkOperators(String expression) {
         char prev = '@';
-        for(int i = 0; i < expression.length(); i++){
+        for(int i = 0; i < expression.length(); i++) {
             char ch = expression.charAt(i);
-            if(ch == ')' && isAnOperator(prev))
+            if (ch == ')' && isAnOperator(prev)) {
                 return true;
-            if(isAnOperator(ch)){
+            }
+            if (isAnOperator(ch)){
                 if (isAnOperator(prev))
                     return true;
-                if(prev == '(' && !((ch == '+' || ch == '-') && Character.isDigit(expression.charAt(i+1))))
+                if (prev == '(' && !((ch == '+' || ch == '-') && Character.isDigit(expression.charAt(i+1))))
                         return true;
 
             }
@@ -172,15 +182,15 @@ public class MyCalculator implements Calculator{
         boolean isThereADot = false;
         boolean isItANewNumber = true;
         char prev = '@';
-        for(int i = 0; i < expression.length(); i++){
+        for (int i = 0; i < expression.length(); i++) {
             char ch = expression.charAt(i);
-            if(Character.isDigit(ch)){
+            if (Character.isDigit(ch)) {
                 isItANewNumber = false;
                 prev = ch;
                 continue;
             }
-            if(ch == '.'){
-                if(isThereADot)
+            if (ch == '.') {
+                if (isThereADot)
                     return true;
                 else {
                     if (isItANewNumber)
@@ -188,9 +198,10 @@ public class MyCalculator implements Calculator{
                     isThereADot = true;
                 }
             }
-            else{
-                if(prev == '.')
+            else {
+                if (prev == '.') {
                     return true;
+                }
                 isThereADot = false;
                 isItANewNumber = true;
             }
@@ -202,37 +213,43 @@ public class MyCalculator implements Calculator{
 
     private int countBracketBalance(String expression) {
         int count = 0;
-        for(int i = 0; i < expression.length(); i++){
-            if(expression.charAt(i) == '(')
+        for (int i = 0; i < expression.length(); i++) {
+            if (expression.charAt(i) == '(') {
                 count++;
-            else if(expression.charAt(i) == ')')
-                count --;
-            if(count < 0)
+            }
+            else if (expression.charAt(i) == ')') {
+                count--;
+            }
+            if (count < 0) {
                 return -1;
+            }
 
         }
         return count;
     }
 
     private boolean checkInvalidSymbols (String expression) {
-        for(int i = 0; i < expression.length(); i++){
+        for (int i = 0; i < expression.length(); i++) {
             char ch = expression.charAt(i);
-            if(!(Character.isDigit(ch) || isAnOperator(ch) || isABracket(ch) || ch == '.'
-                    || ch == ' ' || ch =='\n' || ch =='\t'))
+            if (!(Character.isDigit(ch) || isAnOperator(ch) || isABracket(ch) || ch == '.'
+                    || ch == ' ' || ch =='\n' || ch =='\t')) {
                 return true;
+            }
         }
         return false;
     }
 
     private boolean isABracket(char ch) {
-        if(ch == '(' || ch == ')')
+        if (ch == '(' || ch == ')') {
             return true;
+        }
         return false;
     }
 
     private boolean isAnOperator(char ch) {
-        if(ch == '+' || ch == '-' || ch == '*' || ch == '/')
+        if (ch == '+' || ch == '-' || ch == '*' || ch == '/') {
             return true;
+        }
         return false;
     }
 }
