@@ -2,8 +2,8 @@ package ru.mipt.java2016.homework.g597.kasimova.task2;
 
 import ru.mipt.java2016.homework.tests.task2.Student;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Date;
 
@@ -12,7 +12,7 @@ import java.util.Date;
  */
 public class StudentSerialization implements MSerialization<Student> {
     @Override
-    public void serializeToStream(Student value, DataOutputStream outStream) {
+    public void serializeToStream(Student value, DataOutput outStream) {
         try {
             outStream.writeInt(value.getGroupId());
             outStream.writeUTF(value.getName());
@@ -26,7 +26,7 @@ public class StudentSerialization implements MSerialization<Student> {
     }
 
     @Override
-    public Student deserializeFromStream(DataInputStream inStream) {
+    public Student deserializeFromStream(DataInput inStream) {
         try {
             return new Student(
                     inStream.readInt(),

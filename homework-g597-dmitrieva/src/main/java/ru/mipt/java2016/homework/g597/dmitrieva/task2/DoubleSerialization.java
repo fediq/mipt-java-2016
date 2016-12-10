@@ -6,7 +6,7 @@ import java.io.RandomAccessFile;
 /**
  * Created by macbook on 30.10.16.
  */
-public class DoubleSerialization extends SerializationStrategy<Double> {
+public class DoubleSerialization implements SerializationStrategy<Double> {
 
     @Override
     public Double read(RandomAccessFile file) throws IOException {
