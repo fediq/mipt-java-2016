@@ -193,15 +193,14 @@ public class MyCalculator implements Calculator {
             }
             if (ch == '.') {
                 if (isThereADot) {
-                    return true;}
-                else {
+                    return true;
+                } else {
                     if (isItANewNumber) {
                         return true;
                     }
                     isThereADot = true;
                 }
-            }
-            else {
+            } else {
                 if (prev == '.') {
                     return true;
                 }
@@ -219,8 +218,7 @@ public class MyCalculator implements Calculator {
         for (int i = 0; i < expression.length(); i++) {
             if (expression.charAt(i) == '(') {
                 count++;
-            }
-            else if (expression.charAt(i) == ')') {
+            } else if (expression.charAt(i) == ')') {
                 count--;
             }
             if (count < 0) {
