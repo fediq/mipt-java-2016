@@ -5,10 +5,10 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 class StudentKeyFileWorker implements FileWorker<StudentKey> {
+    private static final IntegerFileWorker integerFileWorker = new IntegerFileWorker();
+    private static final StringFileWorker stringSerializer = new StringFileWorker();
     @Override
     public StudentKey read(RandomAccessFile file, long position) throws IOException {
-        IntegerFileWorker integerFileWorker = new IntegerFileWorker();
-        StringFileWorker stringSerializer = new StringFileWorker();
         file.seek(position);
         int groupId = integerFileWorker.read(file, file.getFilePointer());
         String name = stringSerializer.read(file, file.getFilePointer());
@@ -16,8 +16,6 @@ class StudentKeyFileWorker implements FileWorker<StudentKey> {
     }
     @Override
     public void write(RandomAccessFile file, StudentKey object, long position) throws IOException {
-        IntegerFileWorker integerFileWorker = new IntegerFileWorker();
-        StringFileWorker stringSerializer = new StringFileWorker();
         file.seek(position);
         integerFileWorker.write(file, object.getGroupId(), file.getFilePointer());
         stringSerializer.write(file, object.getName(), file.getFilePointer());

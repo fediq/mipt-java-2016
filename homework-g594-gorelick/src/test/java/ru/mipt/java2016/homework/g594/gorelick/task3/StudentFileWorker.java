@@ -6,13 +6,13 @@ import java.io.RandomAccessFile;
 import java.util.Date;
 
 class StudentFileWorker implements FileWorker<Student> {
+    public static final IntegerFileWorker integerFileWorker = new IntegerFileWorker();
+    public static final StringFileWorker stringSerializer = new StringFileWorker();
+    public static final DateFileWorker dateFileWorker = new DateFileWorker();
+    public static final BooleanFileWorker booleanFileWorker = new BooleanFileWorker();
+    public static final DoubleFileWorker doubleFileWorker = new DoubleFileWorker();
     @Override
     public Student read(RandomAccessFile file, long position) throws IOException {
-        IntegerFileWorker integerFileWorker = new IntegerFileWorker();
-        StringFileWorker stringSerializer = new StringFileWorker();
-        DateFileWorker dateFileWorker = new DateFileWorker();
-        BooleanFileWorker booleanFileWorker = new BooleanFileWorker();
-        DoubleFileWorker doubleFileWorker = new DoubleFileWorker();
         file.seek(position);
         int groupId = integerFileWorker.read(file, file.getFilePointer());
         String name = stringSerializer.read(file, file.getFilePointer());
@@ -24,11 +24,6 @@ class StudentFileWorker implements FileWorker<Student> {
     }
     @Override
     public void write(RandomAccessFile file, Student object, long position) throws IOException {
-        IntegerFileWorker integerFileWorker = new IntegerFileWorker();
-        StringFileWorker stringSerializer = new StringFileWorker();
-        DateFileWorker dateFileWorker = new DateFileWorker();
-        BooleanFileWorker booleanFileWorker = new BooleanFileWorker();
-        DoubleFileWorker doubleFileWorker = new DoubleFileWorker();
         file.seek(position);
         integerFileWorker.write(file, object.getGroupId(), file.getFilePointer());
         stringSerializer.write(file, object.getName(), file.getFilePointer());
