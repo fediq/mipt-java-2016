@@ -93,12 +93,6 @@ public class BigDataStorage<K, V> implements KeyValueStorage<K, V> {
     private int addWeight;
 
     /**
-     * Twin for the main file. We will use them alternately during working with database.
-     * Switch from one file to another will happen while cleaning file from waste data.
-     */
-    private RandomAccessFile twinFile;
-
-    /**
      * Name of our twin file.
      */
     private String twinFilePath;
@@ -166,7 +160,6 @@ public class BigDataStorage<K, V> implements KeyValueStorage<K, V> {
 
         String twinName = name + "_twin";
         twinFilePath = path + File.separator + twinName;
-        twinFile = new RandomAccessFile(twinFilePath, "rw");
 
         Weigher<K, V> weigher = (key, value) -> (int) ObjectSize.deepSizeOf(key) + (int) ObjectSize
                 .deepSizeOf(value);
@@ -313,8 +306,8 @@ public class BigDataStorage<K, V> implements KeyValueStorage<K, V> {
             throw new MalformedDataException("Storage is closed.");
         }
 
+        RandomAccessFile twinFile = new RandomAccessFile(twinFilePath, "rw");
         twinFile.setLength(0);
-        twinFile.seek(0);
 
         FileOutputStream outputStream = new FileOutputStream(twinFile.getFD());
         BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(outputStream);
@@ -333,11 +326,12 @@ public class BigDataStorage<K, V> implements KeyValueStorage<K, V> {
         }
 
         dataOutputStream.close();
-        file = new RandomAccessFile(filePath, "rw");
+        twinFile.close();
+        file.close();
         Files.move(Paths.get(twinFilePath), Paths.get(twinFilePath).resolveSibling(filePath),
                 REPLACE_EXISTING);
-        twinFile = new RandomAccessFile(twinFilePath, "rw");
 
+        file = new RandomAccessFile(filePath, "rw");
         deleteCount = 0;
 
     }
@@ -398,10 +392,6 @@ public class BigDataStorage<K, V> implements KeyValueStorage<K, V> {
                 writeToFile();
             }
 
-            twinFile.close();
-
-            File twin = new File(twinFilePath, "");
-            twin.delete();
             file.close();
             map.clear();
             offsets.clear();
