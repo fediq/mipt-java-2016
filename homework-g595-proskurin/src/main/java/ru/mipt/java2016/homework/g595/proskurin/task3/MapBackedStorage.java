@@ -24,6 +24,7 @@ public class MapBackedStorage<K, V> implements KeyValueStorage<K, V> {
     private RandomAccessFile base;
     private RandomAccessFile inout;
     private RandomAccessFile temp;
+    private RandomAccessFile myLockFile;
     private String theirPath;
     private ArrayList<Pair<K, V>> cache = new ArrayList<Pair<K, V>>();
     private int maxSize = 0;
@@ -103,7 +104,8 @@ public class MapBackedStorage<K, V> implements KeyValueStorage<K, V> {
         theirPath = path;
         lockPath = path + File.separator + "database.lock";
         try {
-            lock = new RandomAccessFile(lockPath, "rw").getChannel().lock();
+            myLockFile = new RandomAccessFile(lockPath, "rw");
+            lock = myLockFile.getChannel().lock();
         }
         catch (IOException err) {
             System.out.println("Error with creating lock!");
@@ -176,6 +178,8 @@ public class MapBackedStorage<K, V> implements KeyValueStorage<K, V> {
             temp.close();
             closed = true;
             lock.release();
+            lock.close();
+            myLockFile.close();
         } catch (IOException err) {
             System.out.println("Input/Output error occured!");
         }
