@@ -79,7 +79,7 @@ public class MyBackedStorage<K, V> implements KeyValueStorage<K, V> {
 
         int pos = 0;
 
-        mySeek(file, (long)0);
+        mySeek(file, (long) 0);
 
         while (pos != file.length()) {
             h *= base;
@@ -88,7 +88,7 @@ public class MyBackedStorage<K, V> implements KeyValueStorage<K, V> {
             h %= mod;
         }
 
-        mySeek(file, (long)0);
+        mySeek(file, (long) 0);
 
         return h;
     }
@@ -128,7 +128,7 @@ public class MyBackedStorage<K, V> implements KeyValueStorage<K, V> {
             in.serialize(it.getValue(), file);
         }
 
-        mySeek(hash, (long)0);
+        mySeek(hash, (long) 0);
 
         in.serialize(getHash(), hash);
 
