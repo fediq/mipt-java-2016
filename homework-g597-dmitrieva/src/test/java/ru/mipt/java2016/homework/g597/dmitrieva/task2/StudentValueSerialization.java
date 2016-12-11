@@ -9,7 +9,7 @@ import java.util.Date;
 /**
  * Created by macbook on 30.10.16.
  */
-public class StudentValueSerialization extends SerializationStrategy<Student> {
+public class StudentValueSerialization implements SerializationStrategy<Student> {
     @Override
     public Student read(RandomAccessFile file) throws IOException {
         try {
