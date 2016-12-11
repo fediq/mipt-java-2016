@@ -1,7 +1,8 @@
 package ru.mipt.java2016.homework.g597.zakharkin.task2;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.util.Date;
 
 /**
@@ -23,12 +24,12 @@ public class DateSerializer implements Serializer<Date> {
     }
 
     @Override
-    public void write(RandomAccessFile file, Date data) throws IOException {
+    public void write(DataOutput file, Date data) throws IOException {
         file.writeLong(data.getTime());
     }
 
     @Override
-    public Date read(RandomAccessFile file) throws IOException {
+    public Date read(DataInput file) throws IOException {
         Date date = new Date(file.readLong());
         return date;
     }

@@ -50,4 +50,21 @@ public interface SerializationStrategy<Value> {
         ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes, offset, bytes.length - offset);
         return deserializeFromStream(byteArrayInputStream);
     }
+
+    /**
+     * Прочесть сериализованное значение из текущего места в потоке без дессериализации
+     *
+     * @return
+     */
+    default byte[] readValueAsBytes(InputStream inputStream) throws IOException {
+        Integer totalSize = IntegerSerializer.getInstance().deserializeFromStream(inputStream);
+        byte[] bytes = new byte[totalSize];
+        Integer length = totalSize - IntegerSerializer.getInstance().cntBYTES;
+        inputStream.read(bytes, IntegerSerializer.getInstance().cntBYTES, length);
+        byte[] lenBytes = IntegerSerializer.getInstance().serializeToBytes(totalSize);
+        for (int i = 0; i < IntegerSerializer.getInstance().cntBYTES; i++) {
+            bytes[i] = lenBytes[i];
+        }
+        return bytes;
+    }
 }
