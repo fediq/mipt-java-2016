@@ -2,6 +2,7 @@ package ru.mipt.java2016.homework.g595.rodin.task3;
 
 import java.io.*;
 import java.nio.ByteBuffer;
+import java.util.zip.Adler32;
 
 
 class CFileHandler implements Closeable {
@@ -14,17 +15,30 @@ class CFileHandler implements Closeable {
 
     private long currOffset = 0;
 
+    private Adler32 adler32 = new Adler32();
+
     CFileHandler(String fileName) {
         this.file = new File(fileName);
+        adler32.reset();
     }
 
     public void createFile() {
         try {
             file.createNewFile();
+            adler32.reset();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
+
+    public long getCheckSum() {
+        return adler32.getValue();
+    }
+
+    public void addToCheckSum(byte[] bytes) {
+        adler32.update(bytes);
+    }
+
 
     public void appMode() {
         try {

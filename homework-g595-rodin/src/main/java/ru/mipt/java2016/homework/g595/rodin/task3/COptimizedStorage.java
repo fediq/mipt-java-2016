@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.util.*;
 
 
-
 public class COptimizedStorage<KeyType, ValueType> implements KeyValueStorage<KeyType, ValueType> {
 
     private final HashMap<KeyType, Long> keyMap = new HashMap<>();
@@ -26,11 +25,17 @@ public class COptimizedStorage<KeyType, ValueType> implements KeyValueStorage<Ke
 
     private final CFileHandler configurationFile;
 
+    private final CFileHandler lockFile;
+
+    private final CFileHandler validationFile;
+
     private boolean pointerOnEnd = false;
 
     private boolean closeFlag = false;
 
     private long currentOffset = 0;
+
+    private boolean newDatabase = false;
 
     public COptimizedStorage(String directoryPath, ISerialize<KeyType> keySerializer,
                              ISerialize<ValueType> valueSerializer) {
@@ -39,7 +44,17 @@ public class COptimizedStorage<KeyType, ValueType> implements KeyValueStorage<Ke
         String directory = buildDirectory(directoryPath);
         databaseFile = new CFileHandler(directory + "storage.db");
         configurationFile = new CFileHandler(directory + "config.db");
-        if (!configurationFile.exists()) {
+        lockFile = new CFileHandler(directory + "lock.db");
+        validationFile = new CFileHandler(directory + "valid.db");
+        if (lockFile.exists()) {
+            throw new RuntimeException("found another worker");
+        } else {
+            lockFile.createFile();
+        }
+
+        if (!validationFile.exists()) {
+            newDatabase = true;
+            validationFile.createFile();
             configurationFile.createFile();
             databaseFile.createFile();
         }
@@ -62,8 +77,19 @@ public class COptimizedStorage<KeyType, ValueType> implements KeyValueStorage<Ke
         while (key != null) {
             Long offset = longSerializer.deserialize(configurationFile.readNextToken());
             keyMap.put(keySerializer.deserialize(key), offset);
+            configurationFile.addToCheckSum(key.getBytes());
+            configurationFile.addToCheckSum(longSerializer.serialize(offset).getBytes());
+
             key = configurationFile.readNextToken();
         }
+        if (!newDatabase) {
+            long checkSum = configurationFile.getCheckSum();
+            long sum = Long.parseLong(validationFile.readNextToken());
+            if (checkSum != sum) {
+                throw new RuntimeException("validation error");
+            }
+        }
+
         configurationFile.close();
         configurationFile.appMode();
     }
@@ -84,28 +110,33 @@ public class COptimizedStorage<KeyType, ValueType> implements KeyValueStorage<Ke
         }
         databaseFile.reposition(offset);
         return valueSerializer.deserialize(databaseFile.readNextToken());
-
     }
 
 
     @Override
     public ValueType read(KeyType key) {
-        checkClosed();
-        Long offset = keyMap.get(key);
-        return loadKey(offset);
+        synchronized (configurationFile) {
+            checkClosed();
+            Long offset = keyMap.get(key);
+            return loadKey(offset);
+        }
     }
 
     @Override
     public boolean exists(KeyType key) {
-        checkClosed();
-        return keyMap.containsKey(key);
+        synchronized (configurationFile) {
+            checkClosed();
+            return keyMap.containsKey(key);
+        }
     }
 
     @Override
     public void write(KeyType key, ValueType value) {
-        checkClosed();
-        keyMap.put(key, currentOffset);
-        writeToDisk(value);
+        synchronized (configurationFile) {
+            checkClosed();
+            keyMap.put(key, currentOffset);
+            writeToDisk(value);
+        }
     }
 
     private void writeToDisk(ValueType value) {
@@ -119,36 +150,55 @@ public class COptimizedStorage<KeyType, ValueType> implements KeyValueStorage<Ke
 
     @Override
     public void delete(KeyType key) {
-        checkClosed();
-        keyMap.remove(key);
+        synchronized (configurationFile) {
+            checkClosed();
+            keyMap.remove(key);
+        }
     }
 
     @Override
     public Iterator<KeyType> readKeys() {
-        checkClosed();
-        return keyMap.keySet().iterator();
+        synchronized (configurationFile) {
+            checkClosed();
+            return keyMap.keySet().iterator();
+        }
     }
 
     @Override
     public int size() {
-        checkClosed();
-        return keyMap.size();
+        synchronized (configurationFile) {
+            checkClosed();
+            return keyMap.size();
+        }
     }
 
     @Override
     public void close() throws IOException {
-        rewriteConfiguration();
-        closeFlag = true;
+        synchronized (configurationFile) {
+            if (!closeFlag) {
+                rewriteConfiguration();
+                closeFlag = true;
+                lockFile.delete();
+            }
+        }
     }
 
     private void rewriteConfiguration() {
         configurationFile.close();
         configurationFile.delete();
+
         configurationFile.createFile();
         for (KeyType item : keyMap.keySet()) {
             configurationFile.write(keySerializer.serialize(item));
             configurationFile.write(longSerializer.serialize(keyMap.get(item)));
+            configurationFile.addToCheckSum(keySerializer.serialize(item).getBytes());
+            configurationFile.addToCheckSum(longSerializer.serialize(keyMap.get(item)).getBytes());
         }
+        validationFile.delete();
+        validationFile.createFile();
+        validationFile.write(String.valueOf(configurationFile.getCheckSum()));
+        validationFile.close();
         configurationFile.close();
     }
 }
+
