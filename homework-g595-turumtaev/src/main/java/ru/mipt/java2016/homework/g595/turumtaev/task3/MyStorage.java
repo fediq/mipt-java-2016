@@ -28,7 +28,8 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
     private int removeCounter; //сколько отложенных удалений
     private K cacheKey; //одноэлементный
     private V cacheValue; //кэщ
-    private boolean cacheUsed = false;private String path; //название хранилища
+    private boolean cacheUsed = false;
+    private String path; //название хранилища
 
 
     public MyStorage(String pathArg, MySerializationStrategy<K> keySerializationStrategyArg,
@@ -51,7 +52,7 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
         if (storageFile.exists() && mapFile.exists()) { //если уже были записаны смещения
             try (RandomAccessFile checksumTempFile = new RandomAccessFile(checksumFile, "rw")) {
                 long hash = checksumTempFile.readLong(); //хэш
-                if(hash != getChecksums()){
+                if (hash != getChecksums()) {
                     throw new RuntimeException("Checksums don't equals");
                 }
             } catch (IOException e) {
@@ -264,18 +265,18 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
 
     private Long getChecksums() throws IOException {
         Long hash;
-        byte[] buffer = new byte[1024*1024]; //мегабайт
+        byte[] tempBuffer = new byte[1024 * 1024]; //мегабайт
 
-        hash=(signFile(new File(path + storageName), buffer));
-        hash+=(signFile(new File(path + mapName), buffer));
+        hash = (signFile(new File(path + storageName), tempBuffer));
+        hash += (signFile(new File(path + mapName), tempBuffer));
 
         return hash;
     }
 
-    private long signFile(File file, byte[] buffer) throws IOException {
+    private long signFile(File file, byte[] buff) throws IOException {
         try (CheckedInputStream input = new CheckedInputStream(new FileInputStream(file), new Adler32())) {
             while (true) {
-                if (input.read(buffer) == -1) {
+                if (input.read(buff) == -1) {
                     break;
                 }
             }
