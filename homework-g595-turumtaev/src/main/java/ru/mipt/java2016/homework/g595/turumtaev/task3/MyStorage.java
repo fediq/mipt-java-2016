@@ -3,6 +3,7 @@ package ru.mipt.java2016.homework.g595.turumtaev.task3;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 
 import java.io.*;
+import java.nio.channels.FileLock;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -30,6 +31,7 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
     private V cacheValue; //кэщ
     private boolean cacheUsed = false;
     private String path; //название хранилища
+    private final FileLock lock;
 
 
     public MyStorage(String pathArg, MySerializationStrategy<K> keySerializationStrategyArg,
@@ -37,10 +39,20 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
         keySerializationStrategy = keySerializationStrategyArg;
         valueSerializationStrategy = valueSerializationStrategyArg;
         path = pathArg;
+
         File tryFile = new File(path);
         if (tryFile.exists() && tryFile.isDirectory()) { //если с таким названием есть директория
             path += File.separator +  "file";
         }
+
+        synchronized (MyStorage.class) {
+            try {
+                lock = new RandomAccessFile(new File(path + "lock"), "rw").getChannel().lock();
+            } catch (IOException e) {
+                throw new RuntimeException("Can't create lock file");
+            }
+        }
+
         File storageFile = new File(path + storageName); //файл для хранилища
         File mapFile = new File(path + mapName); //файл для смещений по файлу
         File checksumFile = new File(path + checksumName);
@@ -188,7 +200,9 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public void close() throws IOException {
-        checkNotClosed();
+        if (isClosed) {
+            return;
+        }
         dump(); //закинем буффер на диск
         if (removeCounter >= 10000) { //пора подчистить место на диске
             HashMap<K, Long> newOffsets = new HashMap<>(); //новые смещения(будем туда записывать только нужное)
@@ -260,6 +274,7 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
             }
             storage.close();
         }
+        lock.release();
         isClosed = true; //закрылись
     }
 
