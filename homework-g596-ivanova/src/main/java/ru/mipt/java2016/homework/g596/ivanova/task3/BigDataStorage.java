@@ -336,6 +336,7 @@ public class BigDataStorage<K, V> implements KeyValueStorage<K, V> {
         file = new RandomAccessFile(filePath, "rw");
         Files.move(Paths.get(twinFilePath), Paths.get(twinFilePath).resolveSibling(filePath),
                 REPLACE_EXISTING);
+        twinFile = new RandomAccessFile(twinFilePath, "rw");
 
         deleteCount = 0;
 
