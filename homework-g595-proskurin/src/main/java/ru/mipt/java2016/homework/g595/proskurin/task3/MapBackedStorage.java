@@ -3,6 +3,7 @@ package ru.mipt.java2016.homework.g595.proskurin.task3;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 
 import java.io.IOException;
+import java.nio.channels.FileLock;
 import java.util.Iterator;
 import javafx.util.Pair;
 
@@ -26,6 +27,8 @@ public class MapBackedStorage<K, V> implements KeyValueStorage<K, V> {
     private String theirPath;
     private ArrayList<Pair<K, V>> cache = new ArrayList<Pair<K, V>>();
     private int maxSize = 0;
+    private FileLock lock;
+    private String lockPath;
 
     private void isClosed() {
         if (closed) {
@@ -58,7 +61,7 @@ public class MapBackedStorage<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
-    void update() {
+    private void update() {
         if (myMap.size() > maxSize) {
             maxSize = myMap.size();
         }
@@ -98,6 +101,13 @@ public class MapBackedStorage<K, V> implements KeyValueStorage<K, V> {
         this.valueSerializer = valueSerializer;
         closed = false;
         theirPath = path;
+        lockPath = path + File.separator + "database.lock";
+        try {
+            lock = new RandomAccessFile(lockPath, "rw").getChannel().lock();
+        }
+        catch (IOException err) {
+            System.out.println("Error with creating lock!");
+        }
         realPath = path + File.separator + "database.txt";
         base = new RandomAccessFile(realPath, "rw");
         inout = new RandomAccessFile(path + File.separator + "info.txt", "rw");
@@ -107,11 +117,18 @@ public class MapBackedStorage<K, V> implements KeyValueStorage<K, V> {
                 return;
             }
             IntegerSerializer serInt = new IntegerSerializer();
+            int hash = serInt.input(inout);
             int len = serInt.input(inout);
+            int checkHash = len;
             for (int i = 0; i < len; i++) {
                 K key = keySerializer.input(inout);
+                checkHash += key.hashCode();
                 Integer shift = serInt.input(inout);
+                checkHash += shift.hashCode();
                 myMap.put(key, shift);
+            }
+            if (hash != checkHash) {
+                throw new IOException("Hash isn't correct!");
             }
         } catch (IOException err) {
             System.out.println("Input/Output error occured!");
@@ -119,7 +136,7 @@ public class MapBackedStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     @Override
-    public Iterator<K> readKeys() {
+    public synchronized Iterator<K> readKeys() {
         update();
         rebuild();
         isClosed();
@@ -127,7 +144,7 @@ public class MapBackedStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     @Override
-    public boolean exists(K key) {
+    public synchronized boolean exists(K key) {
         update();
         rebuild();
         isClosed();
@@ -135,13 +152,19 @@ public class MapBackedStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     @Override
-    public void close() {
+    public synchronized void close() {
         update();
         rebuild();
         isClosed();
         try {
             inout.seek(0);
             IntegerSerializer serInt = new IntegerSerializer();
+            int hash = myMap.size();
+            for (HashMap.Entry<K, Integer> item:myMap.entrySet()) {
+                hash += item.getKey().hashCode();
+                hash += item.getValue().hashCode();
+            }
+            serInt.output(inout, hash);
             serInt.output(inout, myMap.size());
             for (HashMap.Entry<K, Integer> item : myMap.entrySet()) {
                 keySerializer.output(inout, item.getKey());
@@ -152,13 +175,14 @@ public class MapBackedStorage<K, V> implements KeyValueStorage<K, V> {
             base.close();
             temp.close();
             closed = true;
+            lock.release();
         } catch (IOException err) {
             System.out.println("Input/Output error occured!");
         }
     }
 
     @Override
-    public int size() {
+    public synchronized int size() {
         update();
         rebuild();
         isClosed();
@@ -166,7 +190,7 @@ public class MapBackedStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     @Override
-    public void delete(K key) {
+    public synchronized void delete(K key) {
         update();
         rebuild();
         isClosed();
@@ -175,7 +199,7 @@ public class MapBackedStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     @Override
-    public void write(K key, V value) {
+    public synchronized void write(K key, V value) {
         update();
         rebuild();
         isClosed();
@@ -189,7 +213,7 @@ public class MapBackedStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     @Override
-    public V read(K key) {
+    public synchronized V read(K key) {
         update();
         rebuild();
         isClosed();
