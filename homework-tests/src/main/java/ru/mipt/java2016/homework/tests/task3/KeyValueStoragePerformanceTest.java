@@ -6,6 +6,7 @@ import ru.mipt.java2016.homework.tests.task2.AbstractSingleFileStorageTest;
 import ru.mipt.java2016.homework.tests.task2.StorageTestUtils;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -104,6 +105,81 @@ public abstract class KeyValueStoragePerformanceTest extends AbstractSingleFileS
         print("%5d Writes per second up to 1k", writesPerSecond);
         print("%5d Reads per second from 1k", readsPerSecond);
         print("%5d millis for single 1kW 1kR iteration", iterationTimeMillis);
+    }
+
+    @Test
+    public void myTestDelWrite() {
+        int border = 6;
+
+        AtomicLong summaryWriteTime = new AtomicLong(0L);
+        AtomicLong summaryReadTime = new AtomicLong(0L);
+        long beginTime = System.currentTimeMillis();
+        Random mYRAND = new Random(System.currentTimeMillis());
+        int count = 10000;
+        for (int t = 0; t < 10; ++t) {
+            // Удаленные ключи
+            HashMap<Integer, String> delMemory = new HashMap<Integer, String>();
+            // Номер итерации, ключ - чтобы в Read удалять ключи , идущие после i итерации
+            HashMap<Integer, String> keyMemory = new HashMap<Integer, String>();
+            StorageTestUtils.doInTempDirectory(path -> {
+                doWithStrings(path, storage -> {
+                    Random random = new Random(42);
+                    long writeTime = StorageTestUtils.measureTime(() -> {
+                        for (int i = 0; i < count; ++i) {
+                            String key = randomKey(random);
+                            String value = randomValue(random);
+                            storage.write(key, value);
+                            keyMemory.put(i, key);
+                            //Удаление
+                            int randBorder = mYRAND.nextInt(border * 2);
+                            if (border < randBorder) {
+                                delMemory.put(i, key);
+                                storage.delete(key);
+                            }
+                        }
+                    });
+                    summaryWriteTime.addAndGet(writeTime);
+                });
+
+                doWithStrings(path, storage -> {
+                    Random random = new Random(42);
+                    long readTime = StorageTestUtils.measureTime(() -> {
+                        for (int i = 0; i < count; ++i) {
+                            String key = randomKey(random);
+                            String value = randomValue(random);
+                            if (delMemory.containsKey(i)) {
+                                String returnKey = storage.read(key);
+                                Assert.assertEquals(null, returnKey);
+                            } else {
+                                Assert.assertEquals(value, storage.read(key));
+                            }
+                            // Удаление впереди идущих строк
+                            int right = count - 1 - i;
+                            if (i != count - 1) {
+                                right = mYRAND.nextInt(right) + i + 1;
+                            }
+                            int randBorder = mYRAND.nextInt(border * 2);
+                            if (border < randBorder) {
+                                if (!delMemory.containsKey(right)) {
+                                    String forwardDelKey = keyMemory.get(right);
+                                    delMemory.put(right, forwardDelKey);
+                                    storage.delete(forwardDelKey);
+                                }
+                            }
+                        }
+                    });
+                    summaryReadTime.addAndGet(readTime);
+                });
+            });
+        }
+        long endTime = System.currentTimeMillis();
+        long iterationTimeMillis = (endTime - beginTime) / 10;
+        long readsPerSecond = 10 * 10000 * 1000 / summaryReadTime.get();
+        long writesPerSecond = 10 * 10000 * 1000 / summaryWriteTime.get();
+
+        print("%5d Writes per second up to 10k", writesPerSecond);
+        print("%5d Reads per second from 10k", readsPerSecond);
+        print("%5d millis for single 10kW 10kR iteration", iterationTimeMillis);
     }
 
     @Test
