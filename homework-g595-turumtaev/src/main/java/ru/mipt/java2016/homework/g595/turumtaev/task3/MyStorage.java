@@ -6,50 +6,61 @@ import java.io.*;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.zip.Adler32;
+import java.util.zip.CheckedInputStream;
 
 /**
  * Created by galim on 18.11.2016.
  */
 public class MyStorage<K, V> implements KeyValueStorage<K, V> {
-    private static final long CACHE_SIZE = (long) (10);
     private static final long BUFFER_SIZE = (long) (1000);
     private final String storageName = "myStorage";
     private final String mapName = "myMap";
+    private final String checksumName = "myHash";
 
     private MySerializationStrategy<K> keySerializationStrategy;
     private MySerializationStrategy<V> valueSerializationStrategy;
     private MySerializationStrategy<Long> offsetSerializationStrategy = MyLongSerializationStrategy.getInstance();
-    private HashMap<K, V> buffer = new HashMap<>();
-    private HashMap<K, Long> offsets = new HashMap<>();
-    private boolean isClosed;
-    private RandomAccessFile storage;
-    private int removeCounter;
-    private K cacheKey;
-    private V cacheValue;
-    private boolean cacheUsed = false;
-    private String path;
+    private HashMap<K, V> buffer = new HashMap<>(); //временное хранилище для данных
+    private HashMap<K, Long> offsets = new HashMap<>(); //смещения в файле
+    private boolean isClosed; //закрыты
+    private RandomAccessFile storage; //файл-хранилище
+    private int removeCounter; //сколько отложенных удалений
+    private K cacheKey; //одноэлементный
+    private V cacheValue; //кэщ
+    private boolean cacheUsed = false;private String path; //название хранилища
+
 
     public MyStorage(String pathArg, MySerializationStrategy<K> keySerializationStrategyArg,
-                     MySerializationStrategy<V> valueSerializationStrategyArg) {
+        MySerializationStrategy<V> valueSerializationStrategyArg) {
         keySerializationStrategy = keySerializationStrategyArg;
         valueSerializationStrategy = valueSerializationStrategyArg;
         path = pathArg;
         File tryFile = new File(path);
-        if (tryFile.exists() && tryFile.isDirectory()) {
+        if (tryFile.exists() && tryFile.isDirectory()) { //если с таким названием есть директория
             path += File.separator +  "file";
         }
-        File storageFile = new File(path + storageName);
-        File mapFile = new File(path + mapName);
+        File storageFile = new File(path + storageName); //файл для хранилища
+        File mapFile = new File(path + mapName); //файл для смещений по файлу
+        File checksumFile = new File(path + checksumName);
         try {
             storage = new RandomAccessFile(storageFile, "rw");
         } catch (IOException e) {
             throw new RuntimeException("Can not read from file");
         }
-        if (storageFile.exists() && mapFile.exists()) {
+        if (storageFile.exists() && mapFile.exists()) { //если уже были записаны смещения
+            try (RandomAccessFile checksumTempFile = new RandomAccessFile(checksumFile, "rw")) {
+                long hash = checksumTempFile.readLong(); //хэш
+                if(hash != getChecksums()){
+                    throw new RuntimeException("Checksums don't equals");
+                }
+            } catch (IOException e) {
+                throw new RuntimeException("Can not read from file");
+            }
             try (RandomAccessFile mapTempFile = new RandomAccessFile(mapFile, "rw")) {
-                int n = mapTempFile.readInt();
-                removeCounter = mapTempFile.readInt();
-                for (int i = 0; i < n; i++) {
+                int n = mapTempFile.readInt(); //сколько смещений
+                removeCounter = mapTempFile.readInt(); //сколько отложенных удалений
+                for (int i = 0; i < n; i++) { //считывание
                     K key = keySerializationStrategy.read(mapTempFile);
                     Long offset = offsetSerializationStrategy.read(mapTempFile);
                     offsets.put(key, offset);
@@ -64,22 +75,22 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
     public V read(K key) {
         V result;
         checkNotClosed();
-        if (cacheUsed && cacheKey == key) {
+        if (cacheUsed && cacheKey == key) { //попробуем найти в кэше
             return cacheValue;
         }
-        Long offset = offsets.get(key);
-        if (offset == null) {
+        Long offset = offsets.get(key); //нашли смещения для value
+        if (offset == null) { //по такому ключу ничего нет
             return null;
-        } else if (offset == -1) {
+        } else if (offset == -1) { //значит еще не успели перенести с буффера, считаем из буфера
             result = buffer.get(key);
             cacheUsed = true;
             cacheKey = key;
             cacheValue = result;
         } else {
             try {
-                storage.seek(offset);
-                result = valueSerializationStrategy.read(storage);
-                cacheUsed = true;
+                storage.seek(offset); //сместимся
+                result = valueSerializationStrategy.read(storage); //считываем value
+                cacheUsed = true; //обновляем "кэш"
                 cacheKey = key;
                 cacheValue = result;
             } catch (IOException e) {
@@ -93,23 +104,23 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
     public boolean exists(K key) {
         checkNotClosed();
 
-        return offsets.containsKey(key);
+        return offsets.containsKey(key); //если есть в смещениях, то есть и в хранилище
     }
 
     @Override
     public void write(K key, V value) {
         checkNotClosed();
 
-        V resultFromBuffer = buffer.put(key, value);
-        Long resultFromOffsets = offsets.put(key, (long) (-1));
-        if (resultFromBuffer == null && resultFromOffsets != null) {
-            removeCounter++;
+        V resultFromBuffer = buffer.put(key, value); //добавим в буффер
+        Long resultFromOffsets = offsets.put(key, (long) (-1)); //добавим в смещения(пока -1, потому что в буффере)
+        if (resultFromBuffer == null && resultFromOffsets != null) { //перезаписали по старому ключу
+            removeCounter++; //новое значение, потеряли место на диске
         }
 
-        cacheUsed = true;
+        cacheUsed = true; //обновили "кэш"
         cacheKey = key;
         cacheValue = value;
-        if (buffer.size() >= BUFFER_SIZE) {
+        if (buffer.size() >= BUFFER_SIZE) { //буфер переполнен, нужно скинуть на диск
             dump();
         }
         return;
@@ -118,10 +129,10 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public void delete(K key) {
         checkNotClosed();
-        V resultFromBuffer = buffer.remove(key);
-        Long resultFromOffsets = offsets.remove(key);
-        if (resultFromBuffer == null && resultFromOffsets != null) {
-            removeCounter++;
+        V resultFromBuffer = buffer.remove(key); //пытаемся удалить с буффера
+        Long resultFromOffsets = offsets.remove(key); //удаляем смещение
+        if (resultFromBuffer == null && resultFromOffsets != null) { //если в буффере не было, но в смещениях было,
+            removeCounter++; //то мы потеряли место на диске
         }
         return;
     }
@@ -129,14 +140,14 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public Iterator<K> readKeys() {
         checkNotClosed();
-        return offsets.keySet().iterator();
+        return offsets.keySet().iterator(); //все ключи в смещениях
     }
 
     @Override
     public int size() {
         checkNotClosed();
 
-        return offsets.size();
+        return offsets.size(); //все ключи в смещениях
     }
 
     private void checkNotClosed() {
@@ -147,13 +158,13 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
 
     private void dump() {
         try {
-            storage.seek((long) (storage.length()));
+            storage.seek((long) (storage.length())); //сместимся в конец файла
             for (Map.Entry<K, V> entry : buffer.entrySet()) {
-                Long offset = valueSerializationStrategy.write(entry.getValue(), storage);
-                keySerializationStrategy.write(entry.getKey(), storage);
-                offsets.put(entry.getKey(), offset);
+                Long offset = valueSerializationStrategy.write(entry.getValue(), storage); //значение
+                keySerializationStrategy.write(entry.getKey(), storage); //потом ключ(нужно позже)
+                offsets.put(entry.getKey(), offset); //обновляем смещения(было -1)
             }
-            buffer.clear();
+            buffer.clear(); //теперь он пустой
         } catch (IOException e) {
             throw new RuntimeException("Can not read from file");
         }
@@ -161,7 +172,7 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
 
     private void dumpToNewFile(RandomAccessFile newStorage, HashMap<K, Long> newOffsets) {
         try {
-            newStorage.seek((long) (-1));
+            newStorage.seek((long) (-1)); //сместимся в конец файла
             for (Map.Entry<K, V> entry : buffer.entrySet()) {
                 Long offset = valueSerializationStrategy.write(entry.getValue(), newStorage);
                 keySerializationStrategy.write(entry.getKey(), newStorage);
@@ -177,10 +188,10 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public void close() throws IOException {
         checkNotClosed();
-        dump();
-        if (removeCounter >= 10000) {
-            HashMap<K, Long> newOffsets = new HashMap<>();
-            File newStorageFile = new File(path + storageName + "new");
+        dump(); //закинем буффер на диск
+        if (removeCounter >= 10000) { //пора подчистить место на диске
+            HashMap<K, Long> newOffsets = new HashMap<>(); //новые смещения(будем туда записывать только нужное)
+            File newStorageFile = new File(path + storageName + "new"); //новый файл
             RandomAccessFile newStorage = new RandomAccessFile(newStorageFile, "rw");
             storage.seek(0);
             Long offset = (long) 0;
@@ -190,9 +201,9 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
             while (offset != endOffset) {
                 value = valueSerializationStrategy.read(storage);
                 key = keySerializationStrategy.read(storage);
-                if (offsets.get(key) == offset) {
-                    buffer.put(key, value);
-                    if (buffer.size() >= BUFFER_SIZE) {
+                if (offsets.get(key) == offset) { //актуальные данные
+                    buffer.put(key, value); //надо записать в новый файл
+                    if (buffer.size() >= BUFFER_SIZE) { //буффер переполнен
                         dumpToNewFile(newStorage, newOffsets);
                     }
                 }
@@ -203,41 +214,72 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
             storage.close();
             newStorage.close();
             File storageFile = new File(path + storageName);
-            storageFile.delete();
+            storageFile.delete(); //удалим старый файл
             storageFile = new File(path + storageName);
-            newStorageFile.renameTo(storageFile);
+            newStorageFile.renameTo(storageFile); //новому файлу старое имя
             removeCounter = 0;
             File mapFile = new File(path + mapName);
-            mapFile.delete();
+            mapFile.delete(); //удаляем старые смещения
             mapFile = new File(path + mapName);
             try (RandomAccessFile mapTempFile = new RandomAccessFile(mapFile, "rw")) {
                 int n = newOffsets.size();
                 mapTempFile.writeInt(n);
                 mapTempFile.writeInt(removeCounter);
-                for (Map.Entry<K, Long> entry : newOffsets.entrySet()) {
+                for (Map.Entry<K, Long> entry : newOffsets.entrySet()) { //запись новых смещений
                     keySerializationStrategy.write(entry.getKey(), mapTempFile);
                     offsetSerializationStrategy.write(entry.getValue(), mapTempFile);
                 }
+            } catch (IOException e) {
+                throw new RuntimeException("Can not read from file");
+            }
+            try (RandomAccessFile checksumTempFile = new RandomAccessFile(new File(path + checksumName), "rw")) {
+                checksumTempFile.writeLong(getChecksums());
             } catch (IOException e) {
                 throw new RuntimeException("Can not read from file");
             }
         } else {
             File mapFile = new File(path + mapName);
-            mapFile.delete();
+            mapFile.delete(); //удаляем старые смещения
             mapFile = new File(path + mapName);
             try (RandomAccessFile mapTempFile = new RandomAccessFile(mapFile, "rw")) {
                 int n = offsets.size();
                 mapTempFile.writeInt(n);
                 mapTempFile.writeInt(removeCounter);
-                for (Map.Entry<K, Long> entry : offsets.entrySet()) {
+                for (Map.Entry<K, Long> entry : offsets.entrySet()) { //запись новых смещений
                     keySerializationStrategy.write(entry.getKey(), mapTempFile);
                     offsetSerializationStrategy.write(entry.getValue(), mapTempFile);
                 }
             } catch (IOException e) {
                 throw new RuntimeException("Can not read from file");
             }
+            try (RandomAccessFile checksumTempFile = new RandomAccessFile(new File(path + checksumName), "rw")) {
+                checksumTempFile.writeLong(getChecksums());
+            } catch (IOException e) {
+                throw new RuntimeException("Can not read from file");
+            }
             storage.close();
         }
-        isClosed = true;
+        isClosed = true; //закрылись
+    }
+
+    private Long getChecksums() throws IOException {
+        Long hash;
+        byte[] buffer = new byte[1024*1024]; //мегабайт
+
+        hash=(signFile(new File(path + storageName), buffer));
+        hash+=(signFile(new File(path + mapName), buffer));
+
+        return hash;
+    }
+
+    private long signFile(File file, byte[] buffer) throws IOException {
+        try (CheckedInputStream input = new CheckedInputStream(new FileInputStream(file), new Adler32())) {
+            while (true) {
+                if (input.read(buffer) == -1) {
+                    break;
+                }
+            }
+            return input.getChecksum().getValue();
+        }
     }
 }
