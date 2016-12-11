@@ -1,11 +1,17 @@
 package ru.mipt.java2016.homework.g596.ivanova.task3;
 
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.Weigher;
+import java.io.BufferedOutputStream;
+import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
@@ -67,7 +73,7 @@ public class BigDataStorage<K, V> implements KeyValueStorage<K, V> {
      * This map will be initialised at the beginning of work, when file is opened.
      * After the process of working with storage, elements from map will be written to the file.
      */
-    private Map<K, V> map;
+    private Map<K, V> map = new HashMap<>();
 
     /**
      * File where all the data stored.
@@ -91,11 +97,6 @@ public class BigDataStorage<K, V> implements KeyValueStorage<K, V> {
     private RandomAccessFile twinFile;
 
     /**
-     * Indicates if we are using main file - then true, or fileTwin - then false.
-     */
-    private boolean mainFileInUse;
-
-    /**
      * Name of our twin file.
      */
     private String twinFilePath;
@@ -104,11 +105,6 @@ public class BigDataStorage<K, V> implements KeyValueStorage<K, V> {
      * Collection that stores keys and relevant values of offset in file.
      */
     private Map<K, Long> offsets;
-
-    /**
-     * Entries we add to map, but didn't write to file are stored in map.
-     */
-    //private Map<K, V> lastAdded;
 
     /**
      * Cache for last accessed elements;
@@ -131,7 +127,7 @@ public class BigDataStorage<K, V> implements KeyValueStorage<K, V> {
             long offset = file.getFilePointer();
 
             try {
-                V value = valueSerialisation.read(file);
+                valueSerialisation.read(file);
             } catch (EOFException e) {
                 throw new RuntimeException("No value for some key.");
             }
@@ -156,7 +152,6 @@ public class BigDataStorage<K, V> implements KeyValueStorage<K, V> {
             throw new FileNotFoundException("No such directory.");
         }
 
-        map = new HashMap<>();
         filePath = path + File.separator + name;
         keySerialisation = kSerialisation;
         valueSerialisation = vSerialisation;
@@ -167,19 +162,19 @@ public class BigDataStorage<K, V> implements KeyValueStorage<K, V> {
         twinFilePath = path + File.separator + twinName;
         twinFile = new RandomAccessFile(twinFilePath, "rw");
 
-        deleteCount = 0;
-        addWeight = 0;
-        mainFileInUse = true;
-
         Weigher<K, V> weigher = (key, value) -> (int) ObjectSize.deepSizeOf(key) + (int) ObjectSize
                 .deepSizeOf(value);
-        cache = CacheBuilder.newBuilder().maximumWeight(maxCachedWeight).weigher(weigher).build();
+        cache = CacheBuilder
+                .newBuilder()
+                .maximumWeight(maxCachedWeight)
+                .weigher(weigher)
+                .build();
 
         offsets = new HashMap<>();
         initStorage();
     }
 
-    public final V read(final K key) throws MalformedDataException {
+    public final V read(final K key) {
         if (!isInitialized) {
             throw new MalformedDataException("Storage is closed.");
         }
@@ -191,23 +186,16 @@ public class BigDataStorage<K, V> implements KeyValueStorage<K, V> {
                     return null;
                 }
                 long offset = offsets.get(key);
-                RandomAccessFile usedFile;
-                if (mainFileInUse) {
-                    usedFile = file;
-                } else {
-                    usedFile = twinFile;
-                }
 
                 try {
-                    usedFile.seek(offset);
+                    file.seek(offset);
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    throw new MalformedDataException(e);
                 }
-
                 try {
-                    value = valueSerialisation.read(usedFile);
+                    value = valueSerialisation.read(file);
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    throw new MalformedDataException(e);
                 }
             }
         }
@@ -217,7 +205,7 @@ public class BigDataStorage<K, V> implements KeyValueStorage<K, V> {
         return value;
     }
 
-    public final boolean exists(final K key) throws MalformedDataException {
+    public final boolean exists(final K key) {
         if (!isInitialized) {
             throw new MalformedDataException("Storage is closed.");
         }
@@ -227,21 +215,16 @@ public class BigDataStorage<K, V> implements KeyValueStorage<K, V> {
     /**
      * @throws IOException
      */
-    private void writeToFile() throws IOException, MalformedDataException {
+    private void writeToFile() throws IOException {
         if (!isInitialized) {
             throw new MalformedDataException("Storage is closed.");
         }
-        RandomAccessFile usedFile;
-        if (mainFileInUse) {
-            usedFile = file;
-        } else {
-            usedFile = twinFile;
-        }
-        usedFile.seek(usedFile.length());
+
+        file.seek(file.length());
         for (Map.Entry<K, V> entry : map.entrySet()) {
-            keySerialisation.write(usedFile, entry.getKey());
-            offsets.put(entry.getKey(), usedFile.getFilePointer());
-            valueSerialisation.write(usedFile, entry.getValue());
+            keySerialisation.write(file, entry.getKey());
+            offsets.put(entry.getKey(), file.getFilePointer());
+            valueSerialisation.write(file, entry.getValue());
         }
 
         map.clear();
@@ -259,9 +242,12 @@ public class BigDataStorage<K, V> implements KeyValueStorage<K, V> {
             try {
                 writeToFile();
             } catch (IOException e) {
-                e.printStackTrace();
+                throw new MalformedDataException(e);
             }
             addWeight = (int) (ObjectSize.deepSizeOf(key) + ObjectSize.deepSizeOf(value));
+        }
+        if (exists(key)) {
+            ++deleteCount;
         }
         map.put(key, value);
         offsets.put(key, -1L);
@@ -270,39 +256,44 @@ public class BigDataStorage<K, V> implements KeyValueStorage<K, V> {
     /**
      * Cleans file up when maxDeleteCount is reached.
      */
-    private void fileCleaner() throws IOException, MalformedDataException {
+    private void fileCleaner() throws IOException {
         if (!isInitialized) {
             throw new MalformedDataException("Storage is closed.");
         }
         RandomAccessFile newFile;
         RandomAccessFile oldFile;
-        if (mainFileInUse) {
-            oldFile = file;
-            newFile = twinFile;
-        } else {
-            oldFile = twinFile;
-            newFile = file;
-        }
-        mainFileInUse = !mainFileInUse;
+
+        oldFile = file;
+        newFile = twinFile;
 
         newFile.setLength(0);
         newFile.seek(0);
+
+        FileOutputStream outputStream = new FileOutputStream(newFile.getFD());
+        BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(outputStream);
+        DataOutputStream dataOutputStream = new DataOutputStream(bufferedOutputStream);
+        long newOffset = 0;
         for (Map.Entry<K, Long> entry : offsets.entrySet()) {
             if (entry.getValue() == -1) {
                 continue;
             }
-            keySerialisation.write(newFile, entry.getKey());
+
             long offset = entry.getValue();
             oldFile.seek(offset);
-            offsets.put(entry.getKey(), newFile.getFilePointer());
-            valueSerialisation.write(newFile, valueSerialisation.read(oldFile));
+            newOffset += keySerialisation.write(dataOutputStream, entry.getKey());
+            offsets.put(entry.getKey(), newOffset);
+            valueSerialisation.write(dataOutputStream, valueSerialisation.read(oldFile));
         }
+
+        dataOutputStream.close();
+        file = new RandomAccessFile(filePath, "rw");
+        Files.move(Paths.get(twinFilePath), Paths.get(twinFilePath).resolveSibling(filePath), REPLACE_EXISTING);
 
         oldFile.setLength(0);
         deleteCount = 0;
     }
 
-    public final void delete(final K key) throws MalformedDataException {
+    public final void delete(final K key) {
         if (!isInitialized) {
             throw new MalformedDataException("Storage is closed.");
         }
@@ -314,31 +305,31 @@ public class BigDataStorage<K, V> implements KeyValueStorage<K, V> {
             try {
                 fileCleaner();
             } catch (IOException e) {
-                e.printStackTrace();
+                throw new MalformedDataException(e);
             }
         }
     }
 
-    public final Iterator<K> readKeys() throws MalformedDataException {
+    public final Iterator<K> readKeys() {
         if (!isInitialized) {
             throw new MalformedDataException("Storage is closed.");
         }
         try {
             writeToFile();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new MalformedDataException(e);
         }
         return offsets.keySet().iterator();
     }
 
-    public final int size() throws MalformedDataException {
+    public final int size() {
         if (!isInitialized) {
             throw new MalformedDataException("Storage is closed.");
         }
         return offsets.size();
     }
 
-    public final void close() throws IOException, MalformedDataException {
+    public final void close() throws IOException {
         if (!isInitialized) {
             throw new MalformedDataException("Storage is closed.");
         }
@@ -354,16 +345,8 @@ public class BigDataStorage<K, V> implements KeyValueStorage<K, V> {
         twinFile.close();
 
         File twin = new File(twinFilePath, "");
-        if (mainFileInUse) {
-            twin.delete();
-            file.close();
-        } else {
-            file.close();
-            File mainFile = new File(filePath);
-            twin.renameTo(mainFile);
-        }
-
-        mainFileInUse = true;
+        twin.delete();
+        file.close();
         map.clear();
         offsets.clear();
         isInitialized = false;
