@@ -1,7 +1,6 @@
 package ru.mipt.java2016.homework.g595.murzin.task3;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
-import ru.mipt.java2016.homework.g595.murzin.task3slow.LSMStorage;
 import ru.mipt.java2016.homework.g595.murzin.task3slow.MyException;
 
 import java.io.BufferedOutputStream;
@@ -78,7 +77,7 @@ public class FunnyStorage<Key, Value> implements KeyValueStorage<Key, Value> {
         this.keySerializationStrategy = keySerializationStrategy;
         this.valueSerializationStrategy = valueSerializationStrategy;
 
-        synchronized (LSMStorage.class) {
+        synchronized (FunnyStorage.class) {
             try {
                 // It is between processes lock!!!
                 lock = new RandomAccessFile(new File(path, ".lock"), "rw").getChannel().lock();
