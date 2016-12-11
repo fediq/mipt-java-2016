@@ -106,8 +106,7 @@ public class MapBackedStorage<K, V> implements KeyValueStorage<K, V> {
         try {
             myLockFile = new RandomAccessFile(lockPath, "rw");
             lock = myLockFile.getChannel().lock();
-        }
-        catch (IOException err) {
+        } catch (IOException err) {
             System.out.println("Error with creating lock!");
         }
         realPath = path + File.separator + "database.txt";
