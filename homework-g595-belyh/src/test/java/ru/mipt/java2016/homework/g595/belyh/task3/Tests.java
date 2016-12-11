@@ -67,8 +67,8 @@ public class Tests extends KeyValueStoragePerformanceTest {
 
         return null;
     }
-
-    /*@Test
+/*
+    @Test
     @Ignore
     @Override
     public void measure100kWDump100kR() {

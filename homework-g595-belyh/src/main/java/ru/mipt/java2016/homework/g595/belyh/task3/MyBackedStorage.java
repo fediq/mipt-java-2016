@@ -8,6 +8,8 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.HashMap;
 import javafx.util.Pair;
+import java.nio.channels.FileLock;
+import java.io.File;
 
 /**
  * Created by white2302 on 26.11.2016.
@@ -15,15 +17,20 @@ import javafx.util.Pair;
 public class MyBackedStorage<K, V> implements KeyValueStorage<K, V> {
     private static final Integer SZ = 10;
     private boolean closed;
+    private FileLock lock;
     private HashMap<K, Integer> map = new HashMap<>();
     private HashMap<K, V> cache = new HashMap<>();
     private RandomAccessFile file;
     private RandomAccessFile info;
+    private RandomAccessFile hash;
+    private int base = 1234;
+    private int mod = 10007;
     private Serializer<K> keySerializer;
     private Serializer<V> valueSerializer;
     private Serializer<Integer> in;
     private String realPath;
     private Integer maxSize;
+    private RandomAccessFile lockFile;
 
     public MyBackedStorage(String path, Serializer<K> serializerK, Serializer<V> serializerV) throws IOException {
         realPath = path;
@@ -31,11 +38,25 @@ public class MyBackedStorage<K, V> implements KeyValueStorage<K, V> {
         valueSerializer = serializerV;
         info = new RandomAccessFile(path + File.separator + "DataBase", "rw");
         file = new RandomAccessFile(path + File.separator + "StorageInfo", "rw");
+        hash = new RandomAccessFile(path + File.separator + "Hash", "rw");
         in = new MySerializer.IntegerSerializer();
+
+        try {
+            lockFile = new RandomAccessFile(path + File.separator + "lock", "rw");
+            lock = lockFile.getChannel().lock();
+        } catch (IOException error) {
+            System.out.println("Error");
+        }
 
         int size = 0;
 
         if (file.length() != 0) {
+            int h = in.deserialize(hash);
+
+            if (h != getHash()) {
+                throw new IOException("BAD HASH");
+            }
+
             size = in.deserialize(file);
         }
 
@@ -49,7 +70,27 @@ public class MyBackedStorage<K, V> implements KeyValueStorage<K, V> {
         maxSize = map.size();
 
         closed = false;
+        hash.close();
         file.close();
+    }
+
+    private int getHash() throws IOException {
+        int h = 0;
+
+        int pos = 0;
+
+        mySeek(file, (long)0);
+
+        while (pos != file.length()) {
+            h *= base;
+            h += file.readByte();
+            pos++;
+            h %= mod;
+        }
+
+        mySeek(file, (long)0);
+
+        return h;
     }
 
     private void isClosed() {
@@ -72,10 +113,13 @@ public class MyBackedStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public void close() throws IOException {
-        isClosed();
+        if (closed) {
+            return;
+        }
         closed = true;
 
         file = new RandomAccessFile(realPath + File.separator + "StorageInfo", "rw");
+        hash = new RandomAccessFile(realPath + File.separator + "Hash", "rw");
 
         in.serialize(map.size(), file);
 
@@ -84,8 +128,16 @@ public class MyBackedStorage<K, V> implements KeyValueStorage<K, V> {
             in.serialize(it.getValue(), file);
         }
 
+        mySeek(hash, (long)0);
+
+        in.serialize(getHash(), hash);
+
+        lock.release();
+
+        hash.close();
         file.close();
         info.close();
+        lockFile.close();
     }
 
     @Override
