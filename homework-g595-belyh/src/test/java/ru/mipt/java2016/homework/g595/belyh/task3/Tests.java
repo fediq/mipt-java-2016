@@ -1,4 +1,4 @@
-package ru.mipt.java2016.homework.g000.lavrentyev.task3;
+package ru.mipt.java2016.homework.g595.belyh.task3;
 
 import org.junit.Ignore;
 import org.junit.Test;
