@@ -138,7 +138,7 @@ public class BigDataStorage<K, V> implements KeyValueStorage<K, V> {
                 throw new RuntimeException("No value for some key.");
             }
 
-                offsets.put(key, offset);
+            offsets.put(key, offset);
         }
 
         isInitialized = true;
