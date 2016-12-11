@@ -85,7 +85,7 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     @Override
-    public V read(K key) {
+    public synchronized V read(K key) {
         V result;
         checkNotClosed();
         if (cacheUsed && cacheKey == key) { //попробуем найти в кэше
@@ -114,14 +114,14 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     @Override
-    public boolean exists(K key) {
+    public synchronized boolean exists(K key) {
         checkNotClosed();
 
         return offsets.containsKey(key); //если есть в смещениях, то есть и в хранилище
     }
 
     @Override
-    public void write(K key, V value) {
+    public synchronized void write(K key, V value) {
         checkNotClosed();
 
         V resultFromBuffer = buffer.put(key, value); //добавим в буффер
@@ -136,28 +136,26 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
         if (buffer.size() >= BUFFER_SIZE) { //буфер переполнен, нужно скинуть на диск
             dump();
         }
-        return;
     }
 
     @Override
-    public void delete(K key) {
+    public synchronized void delete(K key) {
         checkNotClosed();
         V resultFromBuffer = buffer.remove(key); //пытаемся удалить с буффера
         Long resultFromOffsets = offsets.remove(key); //удаляем смещение
         if (resultFromBuffer == null && resultFromOffsets != null) { //если в буффере не было, но в смещениях было,
             removeCounter++; //то мы потеряли место на диске
         }
-        return;
     }
 
     @Override
-    public Iterator<K> readKeys() {
+    public synchronized Iterator<K> readKeys() {
         checkNotClosed();
         return offsets.keySet().iterator(); //все ключи в смещениях
     }
 
     @Override
-    public int size() {
+    public synchronized int size() {
         checkNotClosed();
 
         return offsets.size(); //все ключи в смещениях
@@ -171,7 +169,7 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
 
     private void dump() {
         try {
-            storage.seek((long) (storage.length())); //сместимся в конец файла
+            storage.seek(storage.length()); //сместимся в конец файла
             for (Map.Entry<K, V> entry : buffer.entrySet()) {
                 Long offset = valueSerializationStrategy.write(entry.getValue(), storage); //значение
                 keySerializationStrategy.write(entry.getKey(), storage); //потом ключ(нужно позже)
@@ -195,11 +193,10 @@ public class MyStorage<K, V> implements KeyValueStorage<K, V> {
         } catch (IOException e) {
             throw new RuntimeException("Can not read from file");
         }
-        return;
     }
 
     @Override
-    public void close() throws IOException {
+    public synchronized void close() throws IOException {
         if (isClosed) {
             return;
         }
