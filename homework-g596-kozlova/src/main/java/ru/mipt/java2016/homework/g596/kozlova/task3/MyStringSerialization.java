@@ -6,12 +6,12 @@ import java.io.IOException;
 
 public class MyStringSerialization implements MySerialization<String> {
     @Override
-    public String read(DataInput input) throws IOException {
-        return input.readUTF();
-    }
-
-   @Override
     public void write(String obj, DataOutput output) throws IOException {
         output.writeUTF(obj);
+    }
+
+    @Override
+    public String read(DataInput input) throws IOException {
+        return input.readUTF();
     }
 }
