@@ -1,6 +1,7 @@
 package ru.mipt.java2016.homework.g596.kozlova.task3;
 
 import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 
 public class MyStringSerialization implements MySerialization<String> {
@@ -9,8 +10,8 @@ public class MyStringSerialization implements MySerialization<String> {
         return input.readUTF();
     }
 
-    @Override
-    public String write(String s) throws IOException {
-        return s;
+   @Override
+    public void write(String obj, DataOutput output) throws IOException {
+        output.writeUTF(obj);
     }
 }

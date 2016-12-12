@@ -2,354 +2,257 @@ package ru.mipt.java2016.homework.g596.kozlova.task3;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.base.task2.MalformedDataException;
-
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.io.FileNotFoundException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.InputStream;
 import java.io.BufferedInputStream;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.Lock;
-
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.zip.Adler32;
-import java.util.zip.CheckedInputStream;
-import java.util.Set;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import java.io.BufferedOutputStream;
 
 public class KeyValueStorageMyNewRealization<K, V> implements KeyValueStorage<K, V> {
-    /*
-    *  Данные хранятся следующим образом:
-    *
-    *   1) Глобальный файл:
-    *   Типы хранящихся пар key-value в формате: "<тип key> --- <тип value>"
-    *   Количество файлов с данными = k
-    *   Количество данных - пар key-value = n
-    *   n строк с тройками вида: ключ key; номер файла, содержащего key; строчка в данном файле, соответствующая key
-    *
-    *   2) Каждый из n файлов с данными(их именя - имя глобального + уникальный номер):
-    *   Значения value, соответствующие ключам keys, для которых указаны данный файл и строка(отступ)
-    *
-    *   3) Вспомогательный файл с hash-значениями, соответствующими файлам с данными:
-    *   Количество фойлов с данными = k
-    *   k строк с числами, сопоставленными каждому файлу
-    * */
-    private String fileName; // имя файла базы данных (глобальный файл)
-    private String hashFileName; // имя hash файла для вспомогательных данных
-    private String typeOfData;  // типы хранящихся значений в формате: "<тип 1> --- <тип 2>"
-    private Map<K, LocationOfKey> mapPlace = new HashMap<>();  // местонахождения ключей
-    private Map<K, V> mapData = new HashMap<>();   // данные - пары (ключ-значение)
-    private Set<K> setKeys = new HashSet<>();    // множество всех кючей
+
+    private final String fileName;
+    private final String fileWithKeysName;
+    private final String fileWithValuesName;
+    private String typeOfData;
+    private Map<K, Long> mapPlace = new HashMap<>();
+    private LoadingCache<K, V> cacheData =
+            CacheBuilder.newBuilder().maximumSize(50).softValues().build(new CacheLoader<K, V>() {
+                @Override
+                public V load(K key) {
+                    try {
+                        fileWithValues.seek(mapPlace.get(key));
+                        V result = valueSerializator.read(fileWithValues);
+                        fileWithValues.seek(fileWithValues.length());
+                        return result;
+                    } catch (IOException e) {
+                        throw new MalformedDataException("");
+                    }
+                }
+            });
     private MySerialization<K> keySerializator;
     private MySerialization<V> valueSerializator;
-    private ArrayList<RandomAccessFile> files = new ArrayList<>();  // файлы, в которых кранятся данные
-    private Adler32 validate = new Adler32();
+    private DataInputStream keysDataInputStream;
+    private DataOutputStream valuesOutputStream;
+    private File file;
+    private RandomAccessFile fileWithKeys;
+    private RandomAccessFile fileWithValues;
     private ReentrantReadWriteLock globalLock = new ReentrantReadWriteLock();
-
-    private static class LocationOfKey {
-        private int fileNumber; // номер файла
-        private long shift; // отступ в файле
-
-        LocationOfKey(int fileNumber, long shift) {
-            this.fileNumber = fileNumber;
-            this.shift = shift;
-        }
-    }
+    private boolean isClosed;
+    private long storageSize;
 
     public KeyValueStorageMyNewRealization(String path, MySerialization<K> serKey, MySerialization<V> serValue)
             throws IOException {
         typeOfData = serKey.getClass() + " --- " + serValue.getClass();
-        fileName = path + File.separator + "store";
-        hashFileName = path + File.separator + "hash.txt";
+        isClosed = false;
+        fileName = path + File.separator + "storage.txt";
+        fileWithKeysName = path + File.separator + "fileWithKeys.db";
+        fileWithValuesName = path + File.separator + "fileWithValues.db";
         keySerializator = serKey;
         valueSerializator = serValue;
+        File directory = new File(path);
+        if (!directory.isDirectory() || !directory.exists()) {
+            throw new MalformedDataException("Path doesn't exist");
+        }
 
-        String nameCurrentFile = getFileName(-1);
-        File file = new File(nameCurrentFile);
-        File hashFile = new File(hashFileName);
+        file = new File(fileName);
 
         if (!file.exists()) {
-            createFile(file, hashFile);
+            createFile();
         } else {
-            getAllData(hashFile, nameCurrentFile);
+            getAllData();
         }
+
+        storageSize = fileWithValues.length();
     }
 
-    private void createFile(File file, File hashFile) { // если файла не существует - создаем его
+    private void createFile() {
         try {
             file.createNewFile();
-            if (!hashFile.exists()) {
-                hashFile.createNewFile();
+            File fileK = new File(fileWithKeysName);
+            File fileV = new File(fileWithValuesName);
+            if (!fileK.exists()) {
+                fileK.createNewFile();
             }
+            if (!fileV.exists()) {
+                fileV.createNewFile();
+            }
+            fileWithKeys = new RandomAccessFile(fileK, "rw");
+            fileWithValues = new RandomAccessFile(fileV, "rw");
+
+            keysDataInputStream = new DataInputStream(new BufferedInputStream(
+                    new FileInputStream(fileWithKeys.getFD())));
+            fileWithValues.seek(fileWithValues.length());
+            valuesOutputStream = new DataOutputStream(new BufferedOutputStream(
+                    new FileOutputStream(fileWithValues.getFD())));
         } catch (IOException e) {
             throw new MalformedDataException("We can't create file");
         }
     }
 
-    private void getAllData(File hashFile, String nameCurrentFile) { // считываем все ключи
-        if (!hashFile.exists()) {
-            throw new MalformedDataException("We can't find file");
-        }
+    private void getAllData() {
         try (DataInputStream readFromFile = new DataInputStream(
-                new BufferedInputStream(new FileInputStream(nameCurrentFile)))) {
-            if (!readFromFile.readUTF().equals(typeOfData)) { // наши типы и хранящиеся в базе данных не совпадают
+                new BufferedInputStream(new FileInputStream(file)))) {
+            File fileK = new File(fileWithKeysName);
+            File fileV = new File(fileWithValuesName);
+            if (!fileK.exists() || !fileV.exists()) {
+                throw new MalformedDataException("We can't find file");
+            }
+            fileWithKeys = new RandomAccessFile(fileK, "rw");
+            fileWithValues = new RandomAccessFile(fileV, "rw");
+            keysDataInputStream = new DataInputStream(new BufferedInputStream(
+                    new FileInputStream(fileWithKeys.getFD())));
+            fileWithValues.seek(fileWithValues.length());
+            valuesOutputStream = new DataOutputStream(new BufferedOutputStream(
+                    new FileOutputStream(fileWithValues.getFD())));
+            if (!readFromFile.readUTF().equals(typeOfData) || !keysDataInputStream.readUTF().equals(typeOfData)) {
                 throw new MalformedDataException("This is invalid file");
             }
-            int numberOfFiles = readFromFile.readInt(); // количество файлов с данными
-            try (DataInputStream readFromHashFile = new DataInputStream(
-                    new BufferedInputStream(new FileInputStream(hashFileName)))) {
-                if (numberOfFiles != readFromHashFile.readInt()) {
-                    throw new MalformedDataException("There are invalid data base");
-                }
-                for (int i = 0; i < numberOfFiles; ++i) {
-                    getFileHash(validate, getFileName(i));
-                }
-                if (numberOfFiles != 0 && validate.getValue() != readFromHashFile.readLong()) {
-                    throw new MalformedDataException("There are invalid Data base");
-                }
-            } catch (IOException e) {
-                throw new MalformedDataException("We can't find or read file");
-            }
-
-            for (int i = 0; i < numberOfFiles; ++i) {
-                File currentFile = new File(getFileName(i));
-                if (!currentFile.exists()) {
-                    throw new MalformedDataException("We can't find file with data");
-                }
-                files.add(new RandomAccessFile(currentFile, "rw"));
-            }
-            int numberOfLines = readFromFile.readInt();
-            for (int i = 0; i < numberOfLines; ++i) {
-                K key = keySerializator.read(readFromFile);
-                int fileNumber = readFromFile.readInt();
-                long shift = readFromFile.readLong();
-                mapPlace.put(key, new LocationOfKey(fileNumber, shift));
-                setKeys.add(key);
+            int numberOfKeys = keysDataInputStream.readInt();
+            for (int i = 0; i < numberOfKeys; ++i) {
+                K key = keySerializator.read(keysDataInputStream);
+                Long shift = keysDataInputStream.readLong();
+                mapPlace.put(key, shift);
             }
         } catch (IOException e) {
             throw new MalformedDataException("We can't read from file");
         }
     }
 
-    private static final int MAX_SIZE_OF_DATA = 1300;
-
-    private void getFileHash(Adler32 adler, String name) { // сопоставление каждому файлу его hash-значение
-        try (InputStream inputStream = new BufferedInputStream(new FileInputStream(new File(name)));
-             CheckedInputStream checkedInputStream = new CheckedInputStream(inputStream, adler)) {
-            byte[] buffer = new byte[MAX_SIZE_OF_DATA * 100];
-            while (checkedInputStream.read(buffer) != -1) {
-                continue;
-            }
-        } catch (FileNotFoundException e) {
-            throw new MalformedDataException("We can't find file");
-        } catch (IOException e) {
-            throw new MalformedDataException("We can't read file");
-        }
-    }
-
-    private void decreaseData(boolean isClose) {
-        if (!isClose && mapData.size() < MAX_SIZE_OF_DATA) {
-            return;
-        }
-        int numberNewFile = files.size();
-        String nameNewFile = getFileName(numberNewFile);
-        File file = new File(nameNewFile);
-
-        if (!file.exists()) {
-            try {
-                file.createNewFile();
-            } catch (IOException e) {
-                throw new MalformedDataException("We can't create new file");
-            }
-        }
-        try {
-            files.add(new RandomAccessFile(nameNewFile, "rw"));
-            RandomAccessFile currentFile = files.get(numberNewFile);
-            currentFile.setLength(0);
-            currentFile.seek(0);
-            for (Map.Entry<K, V> entry: mapData.entrySet()) {
-                if (entry.getValue().equals(null)) {
-                    mapPlace.remove(entry.getKey());
-                    continue;
-                }
-                LocationOfKey newLocation = new LocationOfKey(numberNewFile, currentFile.getFilePointer());
-                mapPlace.put(entry.getKey(), newLocation);
-                currentFile.writeUTF(valueSerializator.write(entry.getValue()));
-            }
-            mapData.clear();
-            getFileHash(validate, nameNewFile);
-        } catch (IOException e) {
-            throw new MalformedDataException("We can't get RandomAccessFile");
-        }
-    }
-
-    /*
-    * взятие нужного файла
-    * */
-    private String getFileName(int i) {
-        if (i == -1) {
-            return fileName + ".txt";
-        }
-        return fileName + i + ".txt";
-    }
-
-    /*
-    * проверка, что наша директория открыта
-    * */
     private void checkOpenedStorage() {
-        if (mapData == null) {
+        if (isClosed) {
             throw new MalformedDataException("Storage already closed");
         }
     }
 
-    /*
-    * взятие значения по ключу key
-    * */
     @Override
     public V read(K key) {
         checkOpenedStorage();
         Lock lock = globalLock.writeLock();
         lock.lock();
         try {
-            if (mapData.keySet().contains(key)) {
-                return mapData.get(key);
-            }
-            if (mapPlace.keySet().contains(key)) {
-                int fileNumber = mapPlace.get(key).fileNumber;
-                long shift = mapPlace.get(key).shift;
-                RandomAccessFile currentFile = files.get(fileNumber);
-                try {
-                    currentFile.seek(shift);
-                    return valueSerializator.read(currentFile);
-                } catch (IOException e) {
-                    throw new MalformedDataException("There aren't necessary data");
-                }
-            }
+            return cacheData.get(key);
+        } catch (Exception e) {
             return null;
         } finally {
             lock.unlock();
         }
     }
 
-    /*
-    * существование ключа key
-    * */
     @Override
     public boolean exists(K key) {
         checkOpenedStorage();
         Lock lock = globalLock.readLock();
         lock.lock();
         try {
-            return (setKeys.contains(key));
+            return mapPlace.containsKey(key);
         } finally {
             lock.unlock();
         }
     }
 
-    /*
-    * добавить пару ключ key - значение value
-    * */
     @Override
     public void write(K key, V value) {
         checkOpenedStorage();
         Lock lock = globalLock.writeLock();
         lock.lock();
         try {
-            mapData.put(key, value);
-            setKeys.add(key);
-            decreaseData(false);
+            mapPlace.put(key, storageSize);
+            long writtenSize = valuesOutputStream.size();
+            valueSerializator.write(value, valuesOutputStream);
+            valuesOutputStream.flush();
+            storageSize += valuesOutputStream.size() - writtenSize;
+
+            if (cacheData.asMap().containsKey(key)) {
+                cacheData.put(key, value);
+            }
+        } catch (IOException e) {
+            throw new MalformedDataException("Can't write");
         } finally {
             lock.unlock();
         }
+
     }
 
-    /*
-    * удалить ключ key и соответствующее значение value
-    * */
     @Override
     public void delete(K key) {
         checkOpenedStorage();
         Lock lock = globalLock.writeLock();
         lock.lock();
         try {
-            mapPlace.remove(key);
-            setKeys.remove(key);
+            if (exists(key)) {
+                cacheData.invalidate(key);
+                mapPlace.remove(key);
+            }
         } finally {
             lock.unlock();
         }
     }
 
-    /*
-    * итератор по ключам
-    * */
     @Override
     public Iterator<K> readKeys() {
         checkOpenedStorage();
         Lock lock = globalLock.readLock();
         lock.lock();
         try {
-            return setKeys.iterator();
+            return mapPlace.keySet().iterator();
         } finally {
             lock.unlock();
         }
-
     }
 
-    /*
-    * количество пар ключ - значение
-    * */
     @Override
     public int size() {
         checkOpenedStorage();
         Lock lock = globalLock.readLock();
         lock.lock();
         try {
-            return setKeys.size();
+            return mapPlace.size();
         } finally {
             lock.unlock();
         }
     }
 
-    /*
-    * закрытие директории
-    * */
     @Override
-    public void close() throws IOException {
+    public void close() {
         checkOpenedStorage();
-        decreaseData(true);
         Lock lock = globalLock.writeLock();
         lock.lock();
-        try {
-            // запись всего имеющегося в базу данных
-            String currentFile = getFileName(-1);
-            try (DataOutputStream writeToFile = new DataOutputStream(new FileOutputStream(currentFile))) {
-                writeToFile.writeUTF(typeOfData);
-                writeToFile.writeInt(files.size());
-                writeToFile.writeInt(mapPlace.size());
-                for (Map.Entry<K, LocationOfKey> entry : mapPlace.entrySet()) {
-                    writeToFile.writeUTF(keySerializator.write(entry.getKey()));
-                    writeToFile.writeInt(entry.getValue().fileNumber);
-                    writeToFile.writeLong(entry.getValue().shift);
-                }
+        try (DataOutputStream writeToFile = new DataOutputStream(new FileOutputStream(file))) {
+            writeToFile.writeUTF(typeOfData);
+            writeToFile.close();
+            valuesOutputStream.close();
+            keysDataInputStream.close();
+            fileWithKeys.close();
+            File fileK = new File(fileWithKeysName);
+            fileWithKeys = new RandomAccessFile(fileK, "rw");
+            DataOutputStream keysDataOutputStream = new DataOutputStream(new BufferedOutputStream(
+                    new FileOutputStream(fileWithKeys.getFD())));
+            keysDataOutputStream.writeUTF(typeOfData);
+            keysDataOutputStream.writeInt(mapPlace.size());
+            for (K key : mapPlace.keySet()) {
+                keySerializator.write(key, keysDataOutputStream);
+                keysDataOutputStream.writeLong(mapPlace.get(key));
             }
+            mapPlace.clear();
 
-            // запись вспомогательных данных в hash файл
-            try (DataOutputStream writeToHashFile = new DataOutputStream(new FileOutputStream(hashFileName))) {
-                writeToHashFile.writeInt(files.size());
-                for (RandomAccessFile file: files) {
-                    file.close();
-                }
-                writeToHashFile.writeLong(validate.getValue());
-            }
-            mapData = null;
+            keysDataOutputStream.close();
+            fileWithKeys.close();
+            fileWithValues.close();
+            isClosed = true;
+        } catch (IOException e) {
+            throw new MalformedDataException("Can't close");
         } finally {
             lock.unlock();
         }
