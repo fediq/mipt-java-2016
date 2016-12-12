@@ -6,7 +6,6 @@ import ru.mipt.java2016.homework.base.task1.ParsingException;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Stack;
 
 
 
@@ -121,4 +120,3 @@ public class MyCalculator implements Calculator {
         return result;
     }
 }
-
