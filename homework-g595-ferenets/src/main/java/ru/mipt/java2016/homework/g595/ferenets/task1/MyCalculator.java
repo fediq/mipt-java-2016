@@ -60,7 +60,7 @@ public class MyCalculator implements Calculator {
         boolean isReadingNumber = false;
         boolean isDotInNumber = false;
         boolean wasOperator = true;
-        String Number = "";
+        String number = "";
         expression = expressionOutOfBrackets;
         for (char currentCharacter : expression.toCharArray()) {
             if (DIGITS.contains(currentCharacter) || currentCharacter == '.') {
@@ -69,7 +69,7 @@ public class MyCalculator implements Calculator {
                     if (currentCharacter == '.') {
                         throw new ParsingException("Dot is in the beginning of number");
                     } else {
-                        Number = "" + currentCharacter;
+                        number = "" + currentCharacter;
                         isDotInNumber = false;
                         isReadingNumber = true;
                     }
@@ -81,15 +81,15 @@ public class MyCalculator implements Calculator {
                             isDotInNumber = true;
                         }
                     }
-                    Number += currentCharacter;
+                    number += currentCharacter;
                 }
             } else if (OPERATORS.contains(currentCharacter)) {
                 if (wasOperator) {
                     if (currentCharacter == '-') {
-                        if (Number.equals("-")) {
-                            Number = "";
+                        if (number.equals("-")) {
+                            number = "";
                         } else {
-                            Number = "-";
+                            number = "-";
                         }
                         isReadingNumber = true;
                         isDotInNumber = false;
@@ -99,13 +99,13 @@ public class MyCalculator implements Calculator {
                     continue;
                 }
                 wasOperator = true;
-                numberArrayDeque.add(Double.valueOf(Number));
+                numberArrayDeque.add(Double.valueOf(number));
                 isReadingNumber = false;
                 operatorArrayDeque.add(currentCharacter);
             }
         }
         if (isReadingNumber) {
-            numberArrayDeque.add(Double.valueOf(Number));
+            numberArrayDeque.add(Double.valueOf(number));
         }
         if (numberArrayDeque.isEmpty()) {
             throw new ParsingException("Too Few Numbers");
