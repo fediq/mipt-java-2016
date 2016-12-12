@@ -16,7 +16,7 @@ public class MyDisabledKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private File lock;
     private final SerializationStrategy<K> keyStrategy;
     private final SerializationStrategy<V> valueStrategy;
-    private String mode = "rw"; // По умолчанию выставлили чтение/запись
+    private String mode = "rw"; // По умолчанию выставили чтение/запись
     private boolean isFileOpened;
 
     MyDisabledKeyValueStorage(String path, SerializationStrategy<K> key, SerializationStrategy<V> value)
@@ -30,8 +30,8 @@ public class MyDisabledKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
         isFileOpened = true;
         map = new HashMap<>();
-        this.keyStrategy = key;
-        this.valueStrategy = value;
+        keyStrategy = key;
+        valueStrategy = value;
         String pathname = path + File.separator + "storage.txt";
         try {
             File file = new File(pathname);
@@ -97,15 +97,16 @@ public class MyDisabledKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public void close() throws IOException {
-        checkFileNotClosed();
         try {
-            lock.delete();
-            raFile.setLength(0);
-            raFile.seek(0); // на всякий случай
-            raFile.writeInt(map.size());
-            for (HashMap.Entry<K, V> entry : map.entrySet()) {
-                keyStrategy.write(raFile, entry.getKey());
-                valueStrategy.write(raFile, entry.getValue());
+            if (isFileOpened) {
+                lock.delete();
+                raFile.setLength(0);
+                raFile.seek(0); // на всякий случай
+                raFile.writeInt(map.size());
+                for (HashMap.Entry<K, V> entry : map.entrySet()) {
+                    keyStrategy.write(raFile, entry.getKey());
+                    valueStrategy.write(raFile, entry.getValue());
+                }
             }
             isFileOpened = false;
 

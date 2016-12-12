@@ -1,6 +1,5 @@
 package ru.mipt.java2016.homework.g597.zakharkin.task2;
 
-import java.io.RandomAccessFile;
 import java.io.*;
 
 /**
@@ -22,7 +21,7 @@ public class StringSerializer implements Serializer<String> {
     }
 
     @Override
-    public void write(RandomAccessFile file, String data) throws IOException {
+    public void write(DataOutput file, String data) throws IOException {
         byte[] bytesOfString = data.getBytes();
         IntegerSerializer lengthWriter = IntegerSerializer.getInstance();
         lengthWriter.write(file, bytesOfString.length);
@@ -30,7 +29,7 @@ public class StringSerializer implements Serializer<String> {
     }
 
     @Override
-    public String read(RandomAccessFile file) throws IOException {
+    public String read(DataInput file) throws IOException {
         IntegerSerializer lengthReader = IntegerSerializer.getInstance();
         int length = lengthReader.read(file);
         byte[] bytesOfString = new byte[length];
