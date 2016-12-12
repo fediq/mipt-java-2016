@@ -19,6 +19,7 @@
         <module>homework-g596-kravets</module>
         <module>homework-g596-litvinov</module>
         <module>homework-g594-kozlov</module>
+        <module>homework-g595-ferenets</module>
         <module>homework-g000-lavrentyev</module>
         <module>homework-g594-stepanov</module>
         <module>homework-g595-kireev</module>
@@ -65,6 +66,7 @@
         <module>homework-g597-spirin</module>
         <module>homework-g597-bogdanov</module>
         <module>homework-g596-egorov</module>
+        <module>homework-g595-ferenets</module>
     </modules>
 
     <build>
