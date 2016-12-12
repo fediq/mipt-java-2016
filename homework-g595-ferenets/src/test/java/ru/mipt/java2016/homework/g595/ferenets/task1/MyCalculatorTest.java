@@ -10,3 +10,4 @@ public class MyCalculatorTest extends AbstractCalculatorTest {
         return new MyCalculator();
     }
 }
+
