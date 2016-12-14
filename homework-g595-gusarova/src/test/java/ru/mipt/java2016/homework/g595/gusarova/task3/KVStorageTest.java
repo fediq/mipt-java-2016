@@ -48,9 +48,4 @@ public class KVStorageTest extends KeyValueStoragePerformanceTest {
         }
         return temp;
     }
-
-
-
-
-
 }
