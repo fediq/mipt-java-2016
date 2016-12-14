@@ -18,7 +18,7 @@ public class KVStorage<K, V> implements KeyValueStorage<K, V> {
     private RandomAccessFile temperary;
     private final FileLock lockFile;
     private final RandomAccessFile fileForLock;
-    static final Object objectForLock = new Object();
+    static final Object LOCK_OBJECT = new Object();
 
 
     private SerializerAndDeserializer<K> serializerAndDeserializerForKey;
@@ -83,7 +83,7 @@ public class KVStorage<K, V> implements KeyValueStorage<K, V> {
             throw new MalformedDataException("this path is incorrect");
         }
         try {
-            synchronized (objectForLock) {
+            synchronized (LOCK_OBJECT) {
                 fileForLock = new RandomAccessFile(path + File.separator + "Lock.txt", "rw");
                 lockFile = fileForLock.getChannel().lock();
             }
