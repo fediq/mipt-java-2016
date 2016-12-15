@@ -1,4 +1,4 @@
-package ru.mipt.java2016.homework.g000.lavrentyev.task4;
+package ru.mipt.java2016.homework.g594.kalinichenko.task4;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -12,9 +12,9 @@ import javax.sql.DataSource;
 public class BillingDatabaseConfiguration {
     @Bean
     public DataSource billingDataSource(
-            @Value("${ru.mipt.java2016.homework.g000.lavrentyev.task4.jdbcUrl}") String jdbcUrl,
-            @Value("${ru.mipt.java2016.homework.g000.lavrentyev.task4.username:}") String username,
-            @Value("${ru.mipt.java2016.homework.g000.lavrentyev.task4.password:}") String password
+            @Value("${ru.mipt.java2016.homework.g594.kalinichenko.task4.jdbcUrl}") String jdbcUrl,
+            @Value("${ru.mipt.java2016.homework.g594.kalinichenko.task4.username:}") String username,
+            @Value("${ru.mipt.java2016.homework.g594.kalinichenko.task4.password:}") String password
     ) {
         HikariConfig config = new HikariConfig();
         config.setDriverClassName(org.h2.Driver.class.getName());

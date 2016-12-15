@@ -1,4 +1,4 @@
-package ru.mipt.java2016.homework.g000.lavrentyev.task4;
+package ru.mipt.java2016.homework.g594.kalinichenko.task4;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +13,10 @@ public class CalculatorController {
     @Autowired
     private Calculator calculator;
 
+    @Autowired
+    private BillingDao database;
+
+
     @RequestMapping(path = "/ping", method = RequestMethod.GET, produces = "text/plain")
     public String echo() {
         return "OK\n";
@@ -25,8 +29,26 @@ public class CalculatorController {
         }
         return "<html>" +
                 "<head><title>FediqApp</title></head>" +
-                "<body><h1>Hello, " + name + "!</h1></body>" +
+                "<body><h1>Hello, " + name + "! If you are not registered, go to reg </h1></body>" +
                 "</html>";
+    }
+
+    @RequestMapping(path = "/reg", method = RequestMethod.POST, consumes = "text/plain", produces = "text/plain")
+    public String register(@RequestBody String user) {
+        LOG.debug("Registration request: [" + user + "]");
+        try
+        {
+            database.setUser(user);
+            return "Registration completed\n";
+        }
+        catch (ParsingException exp)
+        {
+            return "Unable to register\n";
+        }
+        catch (IllegalStateException exp)
+        {
+            return "Name occupied. Choose another\n";
+        }
     }
 
     @RequestMapping(path = "/eval", method = RequestMethod.POST, consumes = "text/plain", produces = "text/plain")

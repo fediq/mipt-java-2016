@@ -1,4 +1,4 @@
-package ru.mipt.java2016.homework.g000.lavrentyev.task4;
+package ru.mipt.java2016.homework.g594.kalinichenko.task4;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.Banner;
@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import ru.mipt.java2016.homework.base.task1.Calculator;
-import ru.mipt.java2016.homework.g000.lavrentyev.task1.CachedJEvalCalculator;
+import ru.mipt.java2016.homework.g594.kalinichenko.task1.MyCalculator;
 
 /**
  * curl http://localhost:9001/eval \
@@ -20,12 +20,12 @@ import ru.mipt.java2016.homework.g000.lavrentyev.task1.CachedJEvalCalculator;
  */
 @EnableAutoConfiguration
 @Configuration
-@ComponentScan(basePackageClasses = FediqApplication.class)
-public class FediqApplication {
+@ComponentScan(basePackageClasses = MyApplication.class)
+public class MyApplication {
 
     @Bean
     public Calculator calculator() {
-        return CachedJEvalCalculator.INSTANCE;
+        return MyCalculator.INSTANCE;
     }
 
     @Bean
@@ -35,7 +35,7 @@ public class FediqApplication {
     }
 
     public static void main(String[] args) {
-        SpringApplication application = new SpringApplication(FediqApplication.class);
+        SpringApplication application = new SpringApplication(MyApplication.class);
         application.setBannerMode(Banner.Mode.OFF);
         application.run(args);
     }

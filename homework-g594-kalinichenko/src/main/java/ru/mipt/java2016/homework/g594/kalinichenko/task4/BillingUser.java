@@ -1,4 +1,4 @@
-package ru.mipt.java2016.homework.g000.lavrentyev.task4;
+package ru.mipt.java2016.homework.g594.kalinichenko.task4;
 
 public class BillingUser {
     private final String username;
