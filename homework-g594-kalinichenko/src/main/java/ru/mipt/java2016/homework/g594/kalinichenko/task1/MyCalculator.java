@@ -6,7 +6,8 @@ import java.util.*;
 
 import static java.lang.Character.*;
 
-class MyCalculator implements Calculator {
+public class MyCalculator implements Calculator {
+    public static final Calculator INSTANCE = new MyCalculator();
     private interface StackItem { }
 
     private interface CalcItem { }
