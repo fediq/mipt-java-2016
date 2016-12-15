@@ -51,6 +51,20 @@ public class CalculatorController {
         }
     }
 
+    @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.GET, produces = "text/plain")
+    public String getVar(@PathVariable String variableName){
+        LOG.trace("Getting variable " + variableName);
+        return database.loadVariableValue(variableName) + '\n';
+    }
+
+    @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.PUT, consumes = "text/plain", produces = "text/plain")
+    public void putVar(@PathVariable String variableName, @RequestBody String expression){
+        LOG.trace("Putting variable " + variableName);
+        LOG.trace("Putting value " + expression);
+        database.putVariableValue(variableName, expression);
+        LOG.trace("Put variable " + variableName);
+    }
+
     @RequestMapping(path = "/eval", method = RequestMethod.POST, consumes = "text/plain", produces = "text/plain")
     public String eval(@RequestBody String expression) throws ParsingException {
         LOG.debug("Evaluation request: [" + expression + "]");

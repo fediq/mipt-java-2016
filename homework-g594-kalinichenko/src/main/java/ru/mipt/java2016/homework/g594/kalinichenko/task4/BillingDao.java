@@ -25,8 +25,11 @@ public class BillingDao {
 
     private JdbcTemplate jdbcTemplate;
 
+    private BillingUser curUser;
+
     @PostConstruct
     public void postConstruct() {
+        curUser = new BillingUser("username", "password", true);
         jdbcTemplate = new JdbcTemplate(dataSource, false);
         initSchema();
     }
@@ -42,7 +45,7 @@ public class BillingDao {
         }
         catch (EmptyResultDataAccessException exp)
         {
-            jdbcTemplate.update("INSERT INTO billing.users VALUES ('username', 'password', TRUE)");
+            addUserToDb("username", "password");
         }
     }
 
@@ -62,9 +65,18 @@ public class BillingDao {
         }
         catch (EmptyResultDataAccessException exp)
         {
-            jdbcTemplate.update("INSERT INTO billing.users VALUES (?, ?, TRUE)", name, pass);
+            addUserToDb(name, pass);
         }
         LOG.trace("Set user " + name);
+    }
+
+    private void addUserToDb(String name, String pass) {
+        jdbcTemplate.update("INSERT INTO billing.users VALUES (?, ?, TRUE)", name, pass);
+        jdbcTemplate.execute("CREATE SCHEMA IF NOT EXISTS " + name);
+        jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS " + name + ".variables" +
+                "(variable VARCHAR PRIMARY KEY, expression VARCHAR)");
+        jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS " + name + ".functions" +
+                "(function VARCHAR PRIMARY KEY, num INT, args VARCHAR, expression VARCHAR)");
     }
 
     private Pair<String,String> parse(String user) throws ParsingException {
@@ -74,7 +86,7 @@ public class BillingDao {
         for(int i = 0; i < user.length(); ++i) {
             Character c = user.charAt(i);
             if (c.equals(',')) {
-                if (!mode)
+                if (!mode && i > 0)
                 {
                     mode = true;
                     continue;
@@ -104,13 +116,31 @@ public class BillingDao {
                 new RowMapper<BillingUser>() {
                     @Override
                     public BillingUser mapRow(ResultSet rs, int rowNum) throws SQLException {
-                        return new BillingUser(
+                        curUser = new BillingUser(
                                 rs.getString("username"),
                                 rs.getString("password"),
                                 rs.getBoolean("enabled")
                         );
+                        return curUser;
                     }
                 }
         );
+    }
+
+    public String loadVariableValue(String variableName) {
+        return jdbcTemplate.queryForObject(
+                "SELECT variable, expression FROM "+ curUser.getUsername() + ".variables WHERE variable = ?",
+                new Object[]{variableName},
+                new RowMapper<String>() {
+                    @Override
+                    public String mapRow(ResultSet rs, int rowNum) throws SQLException {
+                        return rs.getString("expression");
+                    }
+                }
+        );
+    }
+
+    public void putVariableValue(String variableName, String expression) {
+        jdbcTemplate.update("INSERT INTO " + curUser.getUsername() + ".variables VALUES (?, ?)", variableName, expression);
     }
 }
