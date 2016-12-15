@@ -85,7 +85,15 @@ public class CalculatorController {
             LOG.warn("Invalid expression");
             return "Invalid expression\n";
         }
-        database.putVariableValue(variableName, result);
+        try
+        {
+            database.putVariableValue(variableName, result);
+        }
+        catch (Exception exp)
+        {
+            LOG.warn("Another type");
+            return "Another type\n";
+        }
         LOG.trace("Put variable " + variableName);
         return "Succesfully put variable\n";
     }
@@ -165,7 +173,12 @@ public class CalculatorController {
         {
             return "Invalid name\n";
         }
-        database.putFunctionValue(functionName, expression);
+        try {
+            database.putFunctionValue(functionName, expression);
+        } catch (Exception exp) {
+            LOG.warn("Another type");
+            return "Another type\n";
+        }
         LOG.trace("Put function " + functionName);
         return "Successfully put function\n";
     }

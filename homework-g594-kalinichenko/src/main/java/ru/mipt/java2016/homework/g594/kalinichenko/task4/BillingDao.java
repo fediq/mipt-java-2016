@@ -142,24 +142,40 @@ public class BillingDao {
     public void putVariableValue(String variableName, double value) {
         try
         {
-            loadVariableValue(variableName);
-            jdbcTemplate.update("UPDATE " + curUser.getUsername() + ".variables SET value = " + value + " WHERE variable = '" + variableName +"'");
+            loadFunctionValue(variableName);
+            throw new IllegalStateException("Another type");
         }
-        catch (EmptyResultDataAccessException exp)
+        catch (EmptyResultDataAccessException ex)
         {
-            jdbcTemplate.update("INSERT INTO " + curUser.getUsername() + ".variables VALUES (?, ?)", variableName, value);
+            try
+            {
+                loadVariableValue(variableName);
+                jdbcTemplate.update("UPDATE " + curUser.getUsername() + ".variables SET value = " + value + " WHERE variable = '" + variableName +"'");
+            }
+            catch (EmptyResultDataAccessException exp)
+            {
+                jdbcTemplate.update("INSERT INTO " + curUser.getUsername() + ".variables VALUES (?, ?)", variableName, value);
+            }
         }
     }
 
     public void putFunctionValue(String functionName, String expression) {
         try
         {
-            loadFunctionValue(functionName);
-            jdbcTemplate.update("UPDATE " + curUser.getUsername() + ".functions SET expression = '" + expression + "' WHERE function = '" + functionName +"'");
+            loadVariableValue(functionName);
+            throw new IllegalStateException("Another type");
         }
-        catch (EmptyResultDataAccessException exp)
+        catch (EmptyResultDataAccessException ex)
         {
-            jdbcTemplate.update("INSERT INTO " + curUser.getUsername() + ".functions VALUES (?, 0, '', ?)", functionName, expression);
+            try
+            {
+                loadFunctionValue(functionName);
+                jdbcTemplate.update("UPDATE " + curUser.getUsername() + ".functions SET expression = '" + expression + "' WHERE function = '" + functionName +"'");
+            }
+            catch (EmptyResultDataAccessException exp)
+            {
+                jdbcTemplate.update("INSERT INTO " + curUser.getUsername() + ".functions VALUES (?, 0, '', ?)", functionName, expression);
+            }
         }
     }
 
