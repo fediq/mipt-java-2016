@@ -6,9 +6,16 @@ import ru.mipt.java2016.homework.base.task1.ParsingException;
 import java.util.ArrayList;
 import java.util.Stack;
 
+
+import org.springframework.beans.factory.annotation.Autowired;
+
 import static java.lang.Character.*;
 
+
 public class MyCalculator implements Calculator {
+
+    @Autowired
+    private BillingDao database;
 
     public static final Calculator INSTANCE = new MyCalculator();
 
@@ -75,7 +82,9 @@ public class MyCalculator implements Calculator {
             return null;
         }
     }
-
+    private static boolean isLatin(char c) {
+        return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
+    }
     private ArrayList<CalcItem> getPolishNotation(String expression) throws ParsingException {
         ArrayList<CalcItem> polishNotation = new ArrayList<>();
         Stack<StackItem> stack  = new Stack<>();
@@ -83,8 +92,35 @@ public class MyCalculator implements Calculator {
         double curNumber = 0;
         double sign = 1;
         boolean prevIsNumber = false;
+        StringBuilder name =  new StringBuilder();;
+        boolean mode = false;
         for (int i = 0; i < expression.length(); ++i) {
             Character c = expression.charAt(i);
+            if (mode && (c.equals('_') || isLatin(c) || isDigit(c)))
+            {
+                name.append(c);
+                continue;
+            }
+            if (c.equals('_') || isLatin(c))
+            {
+                if (prevIsNumber) {
+                    throw new ParsingException("Invalid Expression");
+                }
+                name =  new StringBuilder();
+                mode = true;
+                name.append(c);
+                continue;
+            }
+            if (mode)
+            {
+                polishNotation.add(new Number(sign * getResult(name)));
+                System.out.println(name);
+                mode = false;
+                sign = 1;
+                curNumber = 0;
+                prevIsNumber = true;
+                unary = false;
+            }
             if (isDigit(c) || c.equals('.')) {
                 if (prevIsNumber) {
                     throw new ParsingException("Invalid Expression");
@@ -153,7 +189,7 @@ public class MyCalculator implements Calculator {
                     unary = false;
                 } else {
                     if (!prevIsNumber) {
-                        throw new ParsingException("Invalid Expression");
+                        throw new ParsingException("Invalid Expression, not number before binary operation");
                     }
                     Operator current = new Operator(c);
                     while (!stack.empty()) {
@@ -169,9 +205,17 @@ public class MyCalculator implements Calculator {
                     unary = true;
                 }
                 prevIsNumber = false;
-            } else if (!isWhitespace(c)) {
-                throw new ParsingException("Invalid Symbol");
+            } else
+            {
+                if (!isWhitespace(c)) {
+                    throw new ParsingException("Invalid Symbol");
+                }
             }
+        }
+        if (mode)
+        {
+            polishNotation.add(new Number(getResult(name)));
+            System.out.println(name);
         }
         while (!stack.empty()) {
             StackItem top = stack.peek();
@@ -187,6 +231,10 @@ public class MyCalculator implements Calculator {
             throw new ParsingException("Empty input");
         }
         return polishNotation;
+    }
+
+    private double getResult(StringBuilder name) {
+        return database.loadVariableValue(String.valueOf(name));
     }
 
     private double getValue(ArrayList<CalcItem> polishNotation) throws ParsingException {

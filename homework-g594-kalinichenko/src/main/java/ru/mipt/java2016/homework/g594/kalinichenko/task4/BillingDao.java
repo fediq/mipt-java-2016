@@ -74,7 +74,7 @@ public class BillingDao {
         jdbcTemplate.update("INSERT INTO billing.users VALUES (?, ?, TRUE)", name, pass);
         jdbcTemplate.execute("CREATE SCHEMA IF NOT EXISTS " + name);
         jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS " + name + ".variables" +
-                "(variable VARCHAR PRIMARY KEY, expression VARCHAR)");
+                "(variable VARCHAR PRIMARY KEY, value DOUBLE)");
         jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS " + name + ".functions" +
                 "(function VARCHAR PRIMARY KEY, num INT, args VARCHAR, expression VARCHAR)");
     }
@@ -126,11 +126,47 @@ public class BillingDao {
                 }
         );
     }
-
-    public String loadVariableValue(String variableName) {
+    public Double loadVariableValue(String variableName) {
         return jdbcTemplate.queryForObject(
-                "SELECT variable, expression FROM "+ curUser.getUsername() + ".variables WHERE variable = ?",
+                "SELECT variable, value FROM "+ curUser.getUsername() + ".variables WHERE variable = ?",
                 new Object[]{variableName},
+                new RowMapper<Double>() {
+                    @Override
+                    public Double mapRow(ResultSet rs, int rowNum) throws SQLException {
+                        return rs.getDouble("value");
+                    }
+                }
+        );
+    }
+
+    public void putVariableValue(String variableName, double value) {
+        try
+        {
+            loadVariableValue(variableName);
+            jdbcTemplate.update("UPDATE " + curUser.getUsername() + ".variables SET value = " + value + " WHERE variable = '" + variableName +"'");
+        }
+        catch (EmptyResultDataAccessException exp)
+        {
+            jdbcTemplate.update("INSERT INTO " + curUser.getUsername() + ".variables VALUES (?, ?)", variableName, value);
+        }
+    }
+
+    public void putFunctionValue(String functionName, String expression) {
+        try
+        {
+            loadFunctionValue(functionName);
+            jdbcTemplate.update("UPDATE " + curUser.getUsername() + ".functions SET expression = '" + expression + "' WHERE function = '" + functionName +"'");
+        }
+        catch (EmptyResultDataAccessException exp)
+        {
+            jdbcTemplate.update("INSERT INTO " + curUser.getUsername() + ".functions VALUES (?, 0, '', ?)", functionName, expression);
+        }
+    }
+
+    public String loadFunctionValue(String functionName) {
+        return jdbcTemplate.queryForObject(
+                "SELECT function, expression FROM "+ curUser.getUsername() + ".functions WHERE function = ?",
+                new Object[]{functionName},
                 new RowMapper<String>() {
                     @Override
                     public String mapRow(ResultSet rs, int rowNum) throws SQLException {
@@ -140,7 +176,5 @@ public class BillingDao {
         );
     }
 
-    public void putVariableValue(String variableName, String expression) {
-        jdbcTemplate.update("INSERT INTO " + curUser.getUsername() + ".variables VALUES (?, ?)", variableName, expression);
-    }
+
 }
