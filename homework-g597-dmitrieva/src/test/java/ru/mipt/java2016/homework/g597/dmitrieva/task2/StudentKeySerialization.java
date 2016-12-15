@@ -9,7 +9,7 @@ import java.io.RandomAccessFile;
  * Created by macbook on 30.10.16.
  */
 
-public class StudentKeySerialization extends SerializationStrategy<StudentKey> {
+public class StudentKeySerialization implements SerializationStrategy<StudentKey> {
     @Override
     public StudentKey read(RandomAccessFile file) throws IOException {
         try {
