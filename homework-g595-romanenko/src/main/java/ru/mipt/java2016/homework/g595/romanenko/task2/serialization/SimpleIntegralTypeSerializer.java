@@ -18,6 +18,7 @@ public abstract class SimpleIntegralTypeSerializer<IntegralType>
     }
 
     protected int cntBYTES = 0;
+    protected byte[] binaryRepresentation = null;
 
     protected Long getLongRepresentation(IntegralType value) {
         return 0L;
@@ -29,7 +30,6 @@ public abstract class SimpleIntegralTypeSerializer<IntegralType>
 
     @Override
     public void serializeToStream(IntegralType value, OutputStream outputStream) throws IOException {
-        byte[] binaryRepresentation = new byte[cntBYTES];
         Long longValue = getLongRepresentation(value);
         for (int i = 0; i < cntBYTES; i++) {
             binaryRepresentation[cntBYTES - i - 1] = longValue.byteValue();
@@ -45,12 +45,18 @@ public abstract class SimpleIntegralTypeSerializer<IntegralType>
 
     @Override
     public IntegralType deserializeFromStream(InputStream inputStream) throws IOException {
-        byte[] bytes = new byte[cntBYTES];
-        inputStream.read(bytes);
+        inputStream.read(binaryRepresentation);
         long value = 0;
         for (int i = 0; i < cntBYTES; i++) {
-            value = (value << 8) + getAbsoluteValueOfByte(bytes[i]);
+            value = (value << 8) + getAbsoluteValueOfByte(binaryRepresentation[i]);
         }
         return convertFromLong(value);
+    }
+
+    @Override
+    public byte[] readValueAsBytes(InputStream inputStream) throws IOException {
+        byte[] bytes = new byte[cntBYTES];
+        inputStream.read(bytes);
+        return bytes;
     }
 }

@@ -1,8 +1,11 @@
 package ru.mipt.java2016.homework.g595.romanenko.task1;
 
 /**
- * Created by Ilya on 12.10.2016.
- */
+ * ru.mipt.java2016.homework.g595.romanenko.task1
+ *
+ * @author Ilya I. Romanenko
+ * @since 12.10.2016
+ **/
 
 class Token {
 
