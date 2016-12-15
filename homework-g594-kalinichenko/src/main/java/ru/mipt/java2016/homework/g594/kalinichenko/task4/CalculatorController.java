@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.*;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
+import static java.lang.Character.isDigit;
+
 @RestController
 public class CalculatorController {
     private static final Logger LOG = LoggerFactory.getLogger(CalculatorController.class);
@@ -70,6 +72,10 @@ public class CalculatorController {
     public String putVar(@PathVariable String variableName, @RequestBody String expression){
         LOG.trace("Putting variable " + variableName);
         LOG.trace("Putting value " + expression);
+        if (!checkName(variableName))
+        {
+            return "Invalid name\n";
+        }
         double result;
         try {
             result = calculator.calculate(expression);
@@ -82,6 +88,29 @@ public class CalculatorController {
         database.putVariableValue(variableName, result);
         LOG.trace("Put variable " + variableName);
         return "Succesfully put variable\n";
+    }
+
+    private static boolean isLatin(char c)
+    {
+        return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
+    }
+
+    private static boolean checkName(String name) {
+        Character cc = name.charAt(0);
+        System.out.println(name);
+        if (! (isLatin(cc) || (cc.equals('_'))))
+        {
+            return false;
+        }
+        for(int i = 1; i < name.length(); ++i)
+        {
+            cc = name.charAt(i);
+            if (!(isLatin(cc) || (cc.equals('_') || isDigit(cc))))
+            {
+                return false;
+            }
+        }
+        return true;
     }
 
     @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.DELETE, consumes = "text/plain", produces = "text/plain")
@@ -129,11 +158,16 @@ public class CalculatorController {
     }
 
     @RequestMapping(path = "/function/{functionName}", method = RequestMethod.PUT, consumes = "text/plain", produces = "text/plain")
-    public void putFunc(@PathVariable String functionName, @RequestBody String expression){
+    public String putFunc(@PathVariable String functionName, @RequestBody String expression){
         LOG.trace("Putting function " + functionName);
         LOG.trace("Putting value " + expression);
+        if (!checkName(functionName))
+        {
+            return "Invalid name\n";
+        }
         database.putFunctionValue(functionName, expression);
         LOG.trace("Put function " + functionName);
+        return "Successfully put function\n";
     }
 
     @RequestMapping(path = "/eval", method = RequestMethod.POST, consumes = "text/plain", produces = "text/plain")
