@@ -13,7 +13,8 @@ public class LazyMergedKeyValueStorageTest extends AbstractSingleFileStorageTest
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String path) {
         try {
-            return new LazyMergedKeyValueStorage<>("String", "String", path);
+            return new LazyMergedKeyValueStorage<>(new BinarySerializator<String>("String"),
+                    new BinarySerializator<String>("String"), path);
         } catch (Exception e) {
             return null;
         }
@@ -22,7 +23,8 @@ public class LazyMergedKeyValueStorageTest extends AbstractSingleFileStorageTest
     @Override
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) {
         try {
-            return new LazyMergedKeyValueStorage<>("Integer", "Double", path);
+            return new LazyMergedKeyValueStorage<>(new BinarySerializator<Integer>("Integer"),
+                    new BinarySerializator<Double>("Double"), path);
         } catch (Exception e) {
             return null;
         }
@@ -31,7 +33,8 @@ public class LazyMergedKeyValueStorageTest extends AbstractSingleFileStorageTest
     @Override
     protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) {
         try {
-            return new LazyMergedKeyValueStorage<>("StudentKey", "Student", path);
+            return new LazyMergedKeyValueStorage<>(new BinarySerializator<StudentKey>("StudentKey"),
+                    new BinarySerializator<Student>("Student"), path);
         } catch (Exception e) {
             return null;
         }

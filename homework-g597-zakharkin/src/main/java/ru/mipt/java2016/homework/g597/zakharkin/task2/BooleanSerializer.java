@@ -1,7 +1,8 @@
 package ru.mipt.java2016.homework.g597.zakharkin.task2;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 
 /**
  * Serialization strategy for Boolean type
@@ -22,12 +23,12 @@ public class BooleanSerializer implements Serializer<Boolean> {
     }
 
     @Override
-    public void write(RandomAccessFile file, Boolean data) throws IOException {
+    public void write(DataOutput file, Boolean data) throws IOException {
         file.writeBoolean(data);
     }
 
     @Override
-    public Boolean read(RandomAccessFile file) throws IOException {
+    public Boolean read(DataInput file) throws IOException {
         Boolean data = file.readBoolean();
         return data;
     }

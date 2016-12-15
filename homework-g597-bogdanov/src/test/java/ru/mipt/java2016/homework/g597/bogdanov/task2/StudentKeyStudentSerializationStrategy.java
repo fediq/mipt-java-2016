@@ -3,8 +3,9 @@ package ru.mipt.java2016.homework.g597.bogdanov.task2;
 import ru.mipt.java2016.homework.tests.task2.Student;
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.util.Date;
 
 public class StudentKeyStudentSerializationStrategy implements SerializationStrategy<StudentKey, Student> {
@@ -18,13 +19,13 @@ public class StudentKeyStudentSerializationStrategy implements SerializationStra
     private StudentKeyStudentSerializationStrategy() {
     }
 
-    private void writeString(RandomAccessFile file, String string) throws IOException {
+    private void writeString(DataOutput file, String string) throws IOException {
         byte[] bytes = string.getBytes();
         file.writeInt(bytes.length);
         file.write(bytes);
     }
 
-    private String readString(RandomAccessFile file) throws IOException {
+    private String readString(DataInput file) throws IOException {
         int length = file.readInt();
         byte[] bytes = new byte[length];
         file.readFully(bytes);
@@ -32,7 +33,13 @@ public class StudentKeyStudentSerializationStrategy implements SerializationStra
     }
 
     @Override
-    public void write(RandomAccessFile file, StudentKey key, Student value) throws IOException {
+    public void writeKey(DataOutput file, StudentKey key) throws IOException {
+        file.writeInt(key.getGroupId());
+        writeString(file, key.getName());
+    }
+
+    @Override
+    public void writeValue(DataOutput file, Student value) throws IOException {
         file.writeInt(value.getGroupId());
         writeString(file, value.getName());
         writeString(file, value.getHometown());
@@ -42,16 +49,14 @@ public class StudentKeyStudentSerializationStrategy implements SerializationStra
     }
 
     @Override
-    public StudentKey readKey(RandomAccessFile file) throws IOException {
-        long startPos = file.getFilePointer();
+    public StudentKey readKey(DataInput file) throws IOException {
         int groupId = file.readInt();
         String name = readString(file);
-        file.seek(startPos);
         return new StudentKey(groupId, name);
     }
 
     @Override
-    public Student readValue(RandomAccessFile file) throws IOException {
+    public Student readValue(DataInput file) throws IOException {
         int groupId = file.readInt();
         String name = readString(file);
         String homeTown = readString(file);
