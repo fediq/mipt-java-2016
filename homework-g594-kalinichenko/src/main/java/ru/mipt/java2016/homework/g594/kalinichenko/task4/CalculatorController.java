@@ -67,7 +67,7 @@ public class CalculatorController {
     }
 
     @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.PUT, consumes = "text/plain", produces = "text/plain")
-    public void putVar(@PathVariable String variableName, @RequestBody String expression){
+    public String putVar(@PathVariable String variableName, @RequestBody String expression){
         LOG.trace("Putting variable " + variableName);
         LOG.trace("Putting value " + expression);
         double result;
@@ -77,10 +77,42 @@ public class CalculatorController {
         catch (Exception exp)
         {
             LOG.warn("Invalid expression");
-            return;
+            return "Invalid expression\n";
         }
         database.putVariableValue(variableName, result);
         LOG.trace("Put variable " + variableName);
+        return "Succesfully put variable\n";
+    }
+
+    @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.DELETE, consumes = "text/plain", produces = "text/plain")
+    public String deleteVar(@PathVariable String variableName){
+        LOG.trace("Deleting variable " + variableName);
+        double result;
+        try {
+            database.delVariable(variableName);
+        }
+        catch (Exception exp)
+        {
+            LOG.warn("No such variable");
+            return "No such variable\n";
+        }
+        LOG.trace("Deleted variable " + variableName);
+        return "Succesful delete\n";
+    }
+    @RequestMapping(path = "/function/{functionName}", method = RequestMethod.DELETE, consumes = "text/plain", produces = "text/plain")
+    public String deleteFunc(@PathVariable String functionName){
+        LOG.trace("Deleting function " + functionName);
+        double result;
+        try {
+            database.delFunction(functionName);
+        }
+        catch (Exception exp)
+        {
+            LOG.warn("No such function");
+            return "No such function\n";
+        }
+        LOG.trace("Deleted function " + functionName);
+        return "Succesful delete\n";
     }
 
     @RequestMapping(path = "/function/{functionName}", method = RequestMethod.GET, produces = "text/plain")

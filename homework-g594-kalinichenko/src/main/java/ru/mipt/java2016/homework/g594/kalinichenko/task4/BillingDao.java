@@ -177,4 +177,14 @@ public class BillingDao {
     }
 
 
+    public void delVariable(String variableName) {
+        System.out.println(variableName);
+        System.out.println(loadVariableValue(variableName));
+        jdbcTemplate.update("DELETE FROM " + curUser.getUsername() + ".variables WHERE variable = '" + variableName + "'");
+    }
+    public void delFunction(String functionName) {
+        System.out.println(functionName);
+        System.out.println(loadFunctionValue(functionName));
+        jdbcTemplate.update("DELETE FROM " + curUser.getUsername() + ".functions WHERE function = '" + functionName + "'");
+    }
 }
