@@ -10,10 +10,30 @@ import static java.util.Arrays.copyOfRange;
  * @author Artem K. Topilskiy
  * @since 30.10.16
  */
-public class StringSerializer implements ISerializer<String> {
+public class StringSerializerSingleton implements ISerializer<String> {
+    /* The single allowed instance of a singleton class */
+    private static StringSerializerSingleton instance;
+
+    /* FORBID: direct instantiation of a singleton class */
+    private StringSerializerSingleton() { }
+
+    /**
+     * Return (and create if needed) the only instance of this singleton
+     *
+     * @return a valid instance of the singleton
+     */
+    public static StringSerializerSingleton getInstance() {
+        if (instance == null) {
+            instance = new StringSerializerSingleton();
+        }
+
+        return instance;
+    }
+
+
     /* An IntegerSerializer for serializing and deserializing within the class */
-    private static final IntegerSerializer INTEGER_SERIALIZER = (IntegerSerializer)
-                                SerializerFactory.getSerializer("Integer");
+    private static final IntegerSerializerSingleton INTEGER_SERIALIZER =
+                         IntegerSerializerSingleton.getInstance();
 
     /**
      * Serialize a String object into Bytes
@@ -23,11 +43,9 @@ public class StringSerializer implements ISerializer<String> {
      */
     @Override
     public byte[] serialize(String value) {
-        JoinArraysPrimitiveByte joinArraysPrimitiveByte = new JoinArraysPrimitiveByte();
-
         byte[] lenBytes = INTEGER_SERIALIZER.serialize(value.length());
         byte[] valueBytes = value.getBytes();
-        return joinArraysPrimitiveByte.joinArrays(lenBytes, valueBytes);
+        return JoinArraysPrimitiveByte.joinArrays(lenBytes, valueBytes);
     }
 
     /**
@@ -39,18 +57,18 @@ public class StringSerializer implements ISerializer<String> {
      */
     @Override
     public String deserialize(byte[] valueBytes) throws IllegalArgumentException {
-        if (valueBytes.length < IntegerSerializer.getIntegerByteSize()) {
+        if (valueBytes.length < IntegerSerializerSingleton.getIntegerByteSize()) {
             throw new IllegalArgumentException("Illegal Deserialization");
         }
 
         int stringSize = INTEGER_SERIALIZER.deserialize(
-                copyOfRange(valueBytes, 0, IntegerSerializer.getIntegerByteSize()));
+                copyOfRange(valueBytes, 0, IntegerSerializerSingleton.getIntegerByteSize()));
 
-        if (IntegerSerializer.getIntegerByteSize() + stringSize != valueBytes.length) {
+        if (IntegerSerializerSingleton.getIntegerByteSize() + stringSize != valueBytes.length) {
             throw new IllegalArgumentException("Illegal Deserialization");
         }
 
         return new String(
-                copyOfRange(valueBytes, IntegerSerializer.getIntegerByteSize(), valueBytes.length));
+                copyOfRange(valueBytes, IntegerSerializerSingleton.getIntegerByteSize(), valueBytes.length));
     }
 }

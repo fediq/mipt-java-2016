@@ -16,6 +16,7 @@ public class IntegerSerializer extends SimpleIntegralTypeSerializer<Integer> {
 
     IntegerSerializer() {
         super.cntBYTES = Integer.BYTES;
+        super.binaryRepresentation = new byte[Integer.BYTES];
     }
 
     protected Long getLongRepresentation(Integer value) {
