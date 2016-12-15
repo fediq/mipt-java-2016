@@ -57,6 +57,7 @@ public class BillingDao {
         try
         {
             loadUser(name);
+            LOG.trace("Occupied user " + name);
             throw new IllegalStateException("Already in database");
         }
         catch (EmptyResultDataAccessException exp)
