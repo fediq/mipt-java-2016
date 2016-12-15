@@ -15,7 +15,6 @@ import java.util.zip.CheckedInputStream;
  * Created by Nina on 14.11.16.
  */
 
-
 /**
  В структуре хранятся все ключи хранилища.
  Для кадого коюча из map можно получить обьект класса Location,
@@ -57,20 +56,102 @@ public class UpgKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private String intFileName;
     private String lockFileName;
     private String type;
-    private HashMap<K, Location> mapPlace;
-    private Cash<K, V> tableCash;
-    private HashMap<K, V> tableFresh;
-    private HashSet<K> setExist;
+    private Adler32 validate;
     private NewSerializationStrategy<K> keySerializator;
     private NewSerializationStrategy<V> valSerializator;
-    private boolean opened;
-    private ArrayList<RandomAccessFile> files;
-    private Adler32 validate;
-    private ReadWriteLock lock;
-    private Lock readLock;
-    private Lock writeLock;
+    private HashMap<K, Location> mapPlace = new HashMap<K, Location>();
+    private Cash<K, V> tableCash = new Cash<K, V>();
+    private HashMap<K, V> tableFresh = new HashMap<K, V>();
+    private HashSet<K> setExist = new HashSet<K>();
+    private boolean opened = true;
+    private ArrayList<RandomAccessFile> files = new ArrayList<RandomAccessFile>();
+
+    private ReadWriteLock lock = new ReentrantReadWriteLock();
+    private Lock readLock = lock.readLock();
+    private Lock writeLock = lock.writeLock();
 
     private static final int MAX_SIZE_OF_FRESH = 1300;
+
+    public UpgKeyValueStorage(String typ, String path, NewSerializationStrategy sKey, NewSerializationStrategy sVal) {
+        type = typ;
+        fileName = path + "/store";
+        intFileName = path + "/hash.txt";
+        lockFileName = path + "/lock.txt";
+        keySerializator = sKey;
+        valSerializator = sVal;
+
+        File lockFile = new File(lockFileName);
+        writeLock.lock();
+        try {
+            if (!lockFile.exists()) {
+                lockFile.createNewFile();
+            } else {
+                throw new MalformedDataException("Somebody else is working with data base now");
+            }
+        } catch (IOException e) {
+            throw new MalformedDataException("Couldn't create new file", e);
+        } finally {
+            writeLock.unlock();
+        }
+
+        String mainFile = getFileName(-1);
+        File file = new File(mainFile);
+        File integrityFile = new File(intFileName);
+
+        writeLock.lock();
+        try {
+            if (!file.exists()) {
+                try {
+                    file.createNewFile();
+                    if (!integrityFile.exists()) {
+                        integrityFile.createNewFile();
+                    }
+                } catch (IOException e) {
+                    throw new MalformedDataException("Couldn't create new file", e);
+                }
+                try (DataOutputStream wr = new DataOutputStream(new FileOutputStream(mainFile));
+                     DataOutputStream wrInt = new DataOutputStream(new FileOutputStream(intFileName))) {
+                    wr.writeUTF(type);
+                    wr.writeInt(0);
+                    wr.writeInt(0);
+                    wrInt.writeInt(0);
+                } catch (IOException e) {
+                    throw new MalformedDataException("Couldn't write to file", e);
+                }
+            }
+
+            if (!integrityFile.exists()) {
+                throw new MalformedDataException("Couldn't find file");
+            }
+
+            try (DataInputStream rd = new DataInputStream(new FileInputStream(mainFile))) {
+                if (!rd.readUTF().equals(type)) {
+                    throw new MalformedDataException("Invalid file");
+                }
+                int numberOfFiles = rd.readInt();
+                checkIntegrity(numberOfFiles);
+                for (int i = 0; i < numberOfFiles; ++i) {
+                    File curFile = new File(getFileName(i));
+                    if (!curFile.exists()) {
+                        throw new MalformedDataException("Couldn't find file with data");
+                    }
+                    files.add(new RandomAccessFile(curFile, "rw"));
+                }
+                int numberOfLines = rd.readInt();
+                for (int i = 0; i < numberOfLines; ++i) {
+                    K key = keySerializator.deserialize(rd.readUTF());
+                    int fileNum = rd.readInt();
+                    long offset = rd.readLong();
+                    mapPlace.put(key, new Location(fileNum, offset));
+                    setExist.add(key);
+                }
+            } catch (IOException e) {
+                throw new MalformedDataException("Couldn't read from file", e);
+            }
+        } finally {
+            writeLock.unlock();
+        }
+    }
 
     private void getFileHash(Adler32 md, String name) {
         writeLock.lock();
@@ -88,25 +169,6 @@ public class UpgKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             writeLock.unlock();
         }
     }
-
-    /* works long
-    private String getFileHash(String name) {
-        MessageDigest md = null;
-        try {
-            md = MessageDigest.getInstance("SHA1");
-        } catch (NoSuchAlgorithmException e) {
-            throw new MalformedDataException("Couldn't find algorithm to count hash of file", e);
-        }
-        try (FileInputStream fis = new FileInputStream(name);
-             BufferedInputStream bis = new BufferedInputStream(fis);
-             DigestInputStream dis = new DigestInputStream(bis, md)) {
-            while (dis.read() != -1) {}
-            return DatatypeConverter.printHexBinary(md.digest());
-        } catch (IOException e) {
-            throw new MalformedDataException("Couldn't find or read file", e);
-        }
-    }
-    */
 
     //Проверка, что хеш-сумма по всем файлам базы данных на диске
     // совпадает с сохраненным в отдельном файле значением
@@ -178,97 +240,6 @@ public class UpgKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 } catch (IOException e) {
                     throw new MalformedDataException("Couldn't get RandomAccessFile", e);
                 }
-            }
-        } finally {
-            writeLock.unlock();
-        }
-    }
-
-    public UpgKeyValueStorage(String typ, String path, NewSerializationStrategy sKey, NewSerializationStrategy sVal) {
-        type = typ;
-        fileName = path + "/store";
-        intFileName = path + "/hash.txt";
-        lockFileName = path + "/lock.txt";
-        keySerializator = sKey;
-        valSerializator = sVal;
-        mapPlace = new HashMap<K, Location>();
-        tableCash = new Cash<K, V>();
-        tableFresh = new HashMap<K, V>();
-        setExist = new HashSet<K>();
-        opened = true;
-        files = new ArrayList<RandomAccessFile>();
-        opened = true;
-        lock = new ReentrantReadWriteLock();
-        readLock = lock.readLock();
-        writeLock = lock.writeLock();
-
-        File lockFile = new File(lockFileName);
-        writeLock.lock();
-        try {
-            if (!lockFile.exists()) {
-                lockFile.createNewFile();
-            } else {
-                throw new MalformedDataException("Somebody else is working with data base now");
-            }
-        } catch (IOException e) {
-            throw new MalformedDataException("Couldn't create new file", e);
-        } finally {
-            writeLock.unlock();
-        }
-
-        String mainFile = getFileName(-1);
-        File file = new File(mainFile);
-        File integrityFile = new File(intFileName);
-
-        writeLock.lock();
-        try {
-            if (!file.exists()) {
-                try {
-                    file.createNewFile();
-                    if (!integrityFile.exists()) {
-                        integrityFile.createNewFile();
-                    }
-                } catch (IOException e) {
-                    throw new MalformedDataException("Couldn't create new file", e);
-                }
-                try (DataOutputStream wr = new DataOutputStream(new FileOutputStream(mainFile));
-                     DataOutputStream wrInt = new DataOutputStream(new FileOutputStream(intFileName))) {
-                    wr.writeUTF(type);
-                    wr.writeInt(0);
-                    wr.writeInt(0);
-                    wrInt.writeInt(0);
-                } catch (IOException e) {
-                    throw new MalformedDataException("Couldn't write to file", e);
-                }
-            }
-
-            if (!integrityFile.exists()) {
-                throw new MalformedDataException("Couldn't find file");
-            }
-
-            try (DataInputStream rd = new DataInputStream(new FileInputStream(mainFile))) {
-                if (!rd.readUTF().equals(type)) {
-                    throw new MalformedDataException("Invalid file");
-                }
-                int numberOfFiles = rd.readInt();
-                checkIntegrity(numberOfFiles);
-                for (int i = 0; i < numberOfFiles; ++i) {
-                    File curFile = new File(getFileName(i));
-                    if (!curFile.exists()) {
-                        throw new MalformedDataException("Couldn't find file with data");
-                    }
-                    files.add(new RandomAccessFile(curFile, "rw"));
-                }
-                int numberOfLines = rd.readInt();
-                for (int i = 0; i < numberOfLines; ++i) {
-                    K key = keySerializator.deserialize(rd.readUTF());
-                    int fileNum = rd.readInt();
-                    long offset = rd.readLong();
-                    mapPlace.put(key, new Location(fileNum, offset));
-                    setExist.add(key);
-                }
-            } catch (IOException e) {
-                throw new MalformedDataException("Couldn't read from file", e);
             }
         } finally {
             writeLock.unlock();
@@ -366,7 +337,9 @@ public class UpgKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public void close() throws IOException {
-        checkIfNotOpened();
+        if (!opened) {
+            return;
+        }
         reduceFresh(true);
         opened = false;
         writeLock.lock();
