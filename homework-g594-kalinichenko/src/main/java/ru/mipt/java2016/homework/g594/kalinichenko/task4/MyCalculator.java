@@ -111,6 +111,7 @@ public class MyCalculator implements Calculator {
                 name.append(c);
                 continue;
             }
+
             if (mode)
             {
                 polishNotation.add(new Number(sign * getResult(name)));
