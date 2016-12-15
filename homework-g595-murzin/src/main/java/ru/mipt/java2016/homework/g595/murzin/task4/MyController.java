@@ -16,9 +16,13 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Created by malchun on 11/26/16.
+ * Created by dima on 11/26/16.
  */
 
+// DONE калькулятор
+// TODO авторизация
+// TODO сохранение данных на диск
+// TODO Web интерфейс
 @RestController
 public class MyController {
     private static boolean checkName(String identifier) {
