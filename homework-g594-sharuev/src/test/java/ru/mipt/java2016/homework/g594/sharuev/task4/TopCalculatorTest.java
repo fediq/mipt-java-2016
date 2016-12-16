@@ -2,16 +2,29 @@ package ru.mipt.java2016.homework.g594.sharuev.task4;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 import ru.mipt.java2016.homework.tests.task1.AbstractCalculatorTest;
 
+import java.sql.Array;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = Application.class)
 public class TopCalculatorTest extends AbstractCalculatorTest {
 
+    @Autowired
     TopCalculator calculator;
-    {
-        calculator = new TopCalculator();
-    }
+    @Autowired
+    Dao dao;
+
     @Override
     protected Calculator calc() {
         return calculator;
@@ -21,10 +34,38 @@ public class TopCalculatorTest extends AbstractCalculatorTest {
     }
 
     @Test
+    public void testFunctionDao()  {
+        String[] args = {"a", "b"};
+        TopCalculatorFunction f = new TopCalculatorFunction("test", "4", Arrays.asList(args));
+        dao.insertFunction(f);
+        Assert.assertTrue(dao.loadFunction("test").equals(f));
+        Assert.assertTrue(dao.removeFunction("test"));
+        Assert.assertFalse(dao.removeFunction("test"));
+    }
+
+    @Test
     public void testVariables() throws ParsingException {
-        topCalc().putVariable("pi", "3.14");
+        dao.insertVariable(new TopCalculatorVariable("pi", topCalc().calculate("3.14")));
+        dao.insertVariable(new TopCalculatorVariable("e", topCalc().calculate("2.71")));
         test("pi", 3.14);
-        Assert.assertEquals("Shit", topCalc().getVariable("pi"), 3.14, 1e-6);
-        Assert.assertTrue(topCalc().deleteVariable("pi"));
+        test("pi*pi+2", 3.14*3.14+2);
+        Assert.assertEquals("Nope", dao.loadVariable("pi").getValue(), 3.14, 1e-6);
+        Assert.assertEquals("Nope", dao.loadVariable("e").getValue(), 2.71, 1e-6);
+        String[] expectedArray = {"pi", "e"};
+        Set<String> expectedSet = new HashSet<String>(Arrays.asList(expectedArray));
+        Assert.assertEquals(new HashSet<>(dao.getVariablesNames()), expectedSet);
+        Assert.assertTrue(dao.removeVariable("pi"));
+        Assert.assertFalse(dao.removeVariable("pi"));
+    }
+
+    @Test
+    public void testBuiltinFunctions() throws ParsingException {
+        test("sqrt(4)", 2);
+    }
+
+    @Test
+    public void testPower() throws ParsingException {
+        test("2^2", 4);
+        test("2^1^2", 2);
     }
 }

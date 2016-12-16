@@ -13,57 +13,54 @@ import java.util.List;
 public class CalculatorController {
     private static final Logger LOG = LoggerFactory.getLogger(CalculatorController.class);
 
+    @Autowired
+    private Dao dao;
+
+    @Autowired
+    private TopCalculator calculator;
+
     @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.GET)
     public @ResponseBody Double getVariable(@PathVariable String variableName) {
-        return calculator.getVariable(variableName);
+        return dao.loadVariable(variableName).getValue();
     }
 
     @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.PUT, consumes = "text/plain", produces = "text/plain")
     public @ResponseBody Boolean putVariable(@PathVariable String variableName,
                                @RequestBody String value) throws ParsingException {
-        return calculator.putVariable(variableName, value);
+        return dao.insertVariable(new TopCalculatorVariable(variableName, calculator.calculate(value)));
     }
 
     @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.DELETE)
     public Boolean deleteVariable(String variableName) {
-        return calculator.deleteVariable(variableName);
+        return dao.removeVariable(variableName);
     }
 
     @RequestMapping(path = "/variable", method = RequestMethod.GET)
-    public @ResponseBody
-    List<String> getVariables() {
-        return calculator.getVariablesNames();
+    public @ResponseBody List<String> getVariables() {
+        return dao.getVariablesNames();
     }
 
     @RequestMapping(path = "/function/{functionName}", method = RequestMethod.GET)
     public @ResponseBody TopCalculatorFunction getFunction(@PathVariable String functionName) {
-        return calculator.getFunction(functionName);
+        return dao.loadFunction(functionName);
     }
 
     @RequestMapping(path = "/function/{functionName}", method = RequestMethod.PUT)
     public Boolean putFunction(@PathVariable String functionName,
                                @RequestParam(value = "args") List<String> args,
                                @RequestBody String functionBody) throws ParsingException {
-        return calculator.putFunction(functionName, functionBody, args);
+        return dao.insertFunction(new TopCalculatorFunction(functionName, functionBody, args));
     }
 
     @RequestMapping(path = "/function/{functionName}", method = RequestMethod.DELETE)
     public Boolean deleteFunction(@PathVariable String functionName) {
-        return calculator.deleteFunction(functionName);
+        return dao.removeFunction(functionName);
     }
 
     @RequestMapping(path = "/function", method = RequestMethod.GET)
     public @ResponseBody List<String> getFunctionsNames() {
-        return calculator.getFunctionsNames();
+        return dao.getFunctionsNames();
     }
-
-    @RequestMapping(path = "/eval", method = RequestMethod.POST)
-    public @ResponseBody Double evaluate(@RequestBody String expression) throws ParsingException {
-        return calculator.calculate(expression);
-    }
-
-    @Autowired
-    private TopCalculator calculator;
 
     @RequestMapping(path = "/ping", method = RequestMethod.GET, produces = "text/plain")
     public String echo() {

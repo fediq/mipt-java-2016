@@ -1,18 +1,35 @@
 package ru.mipt.java2016.homework.g594.sharuev.task4;
 
-import org.slf4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Stack;
+import java.util.*;
 
+@Component
 public class TopCalculator implements ru.mipt.java2016.homework.base.task1.Calculator {
 
-    private Logger LOG;
+    private Stack<Double> numbers = new Stack<>();
+    private StringBuilder sb = new StringBuilder();
+    private Stack<Operator> operators = new Stack<>();
+    private Stack<PredefinedFunction> predefinedFunctions = new Stack<>();
+    private boolean unary;
+    private ParserState state;
+    private int i;
+    private String expr;
+
+    private static TopCalculator innerCalculator;
+
+    static {
+        innerCalculator = new TopCalculator();
+    }
+
+    @Autowired
+    private Dao dao;
 
     public double calculate(String expression) throws ParsingException {
+
+        /*TopCalculatorFunction main = new TopCalculatorFunction(expression, new ArrayList<String>(), 0);*/
         sb.setLength(0);
         numbers.clear();
         operators.clear();
@@ -22,25 +39,50 @@ public class TopCalculator implements ru.mipt.java2016.homework.base.task1.Calcu
             throw new ParsingException("Empty string");
         }
 
-        return eval(expression);
+        return eval(expression, new HashMap<>());
+
+        //return evalFunction(main, new HashMap<>());
     }
 
     private enum ParserState {
-        NUMBER, LITERAL, NONE
-    }
+        NUMBER {
+            @Override
+            boolean isAcceptableChar(char c) {
+                return Character.isDigit(c) || c == '.';
+            }
+        }, OPERATOR {
+            @Override
+            boolean isAcceptableChar(char c) {
+                //return Character.isAlphabetic(c) || Character.isDigit(c) || c == '_';
+                return true;
+            }
+        }, LETTERS {
+            @Override
+            boolean isAcceptableChar(char c) {
+                return Character.isAlphabetic(c) || Character.isDigit(c) || c == '_';
+            }
+        }, PARAMETER {
+            @Override
+            boolean isAcceptableChar(char c) {
+                return false;
+            }
+        }, NONE {
+            @Override
+            boolean isAcceptableChar(char c) {
+                return false;
+            }
+        };
 
-    private Stack<Double> numbers = new Stack<>();
-    private StringBuilder sb = new StringBuilder();
-    private Stack<Operator> operators = new Stack<>();
-    private boolean unary;
-    private ParserState state;
+        abstract boolean isAcceptableChar(char c);
+    }
 
     private void performOperation(Operator oper) throws ParsingException {
         double[] args = new double[oper.getArity()];
         for (int i = 0; i < args.length; ++i) {
             if (numbers.isEmpty()) {
                 throw new ParsingException(
-                        String.format("Not enough operands for operator %s", "a")); // TODO
+                        String.format("Not enough operands for operator %s",
+                                "a")); // TODO: в обратном направлении
             }
             args[i] = numbers.pop();
         }
@@ -48,6 +90,9 @@ public class TopCalculator implements ru.mipt.java2016.homework.base.task1.Calcu
     }
 
     private void pushBuffer() throws ParsingException {
+        if (sb.length() == 0) {
+            return;
+        }
         switch (state) {
             case NUMBER:
                 try {
@@ -56,19 +101,55 @@ public class TopCalculator implements ru.mipt.java2016.homework.base.task1.Calcu
                     throw new ParsingException(
                             String.format("Number \"%s\" is not valid", sb.toString()));
                 }
-                //LOG.trace("Push number "+numbers.peek());
+
                 sb.setLength(0);
                 unary = false;
                 break;
-            case LITERAL:
+            case LETTERS:
+                boolean accepted = false;
+                TopCalculatorVariable var = dao.loadVariable(sb.toString());
+                if (var != null) {
+                    numbers.push(var.getValue());
+                    accepted = true;
+                }
+
+                PredefinedFunction predef = PredefinedFunction.getFunction(sb.toString());
+                if (predef != null) {
+                    sb.setLength(0);
+                    state = ParserState.PARAMETER;
+
+                }
+
+                if (!accepted) {
+                    throw new ParsingException(String.format("Unknown literal %s", sb.toString()));
+                }
+                sb.setLength(0);
+                state = ParserState.NONE;
+                break;
+            case OPERATOR:
                 String operatorStr = unary ? "U" + sb.toString() : sb.toString();
                 Operator operator = Operator.getOperator(operatorStr);
+
                 if (operator == null) {
                     throw new ParsingException(
                             String.format("Unknown operator \"%s\"", operatorStr));
                 }
+                if (operator == Operator.LBRACKET) {
+                    operators.push(Operator.LBRACKET);
+                    unary = true;
+                } else if (operator == Operator.RBRACKET) {
+                    if (state == ParserState.PARAMETER) {
+                        PredefinedFunction func = predefinedFunctions.pop();
+                        ArrayList<Double> args = new ArrayList<>();
+                        for (int j = 0; j<func.getArity(); ++j) {
+                            if (numbers.size() == 0) {
+                                throw new ParsingException(String.format("Not enough arguments for function % s" /*,func.getName()*/));
+                            }
+                            args.add(numbers.pop());
 
-                if (operator == Operator.RBRACKET) {
+                        }
+                        numbers.push(func.evaluate(args));
+                    }
                     while (!operators.isEmpty() && operators.peek() != Operator.LBRACKET) {
                         performOperation(operators.pop());
                     }
@@ -78,6 +159,8 @@ public class TopCalculator implements ru.mipt.java2016.homework.base.task1.Calcu
                         throw new ParsingException("Closing bracket without opening one");
                     }
                     unary = false;
+                } else if (operator == Operator.UNARY_PLUS && operators.peek() == Operator.UNARY_PLUS) {
+                    throw new ParsingException("Two unary + in a row");
                 } else {
                     while (!operators.empty() && operators.peek() != Operator.LBRACKET
                             && ((operators.peek().getAssociativity() == Operator.Associativity.LEFT) ?
@@ -86,23 +169,28 @@ public class TopCalculator implements ru.mipt.java2016.homework.base.task1.Calcu
                         performOperation(operators.pop());
                     }
                     operators.push(operator);
-                    state = ParserState.NONE;
                     unary = true;
                 }
+
                 sb.setLength(0);
+                state = ParserState.NONE;
                 break;
             default:
                 // nop
         }
     }
 
-    private double eval(String str) throws ParsingException {
+
+    private double eval(String str, Map<String, Double> args) throws ParsingException {
         state = ParserState.NONE;
         unary = true;
-        for (int i = 0; i < str.length(); ++i) {
-            char c = str.charAt(i);
-            if (Character.isDigit(c) || c == '.') {
-                if (state != ParserState.NUMBER) {
+        expr = str;
+        for (i = 0; i < expr.length(); ++i) {
+            char c = expr.charAt(i);
+
+            // Число, если оно не относится к литералу
+            if (ParserState.NUMBER.isAcceptableChar(c) && state != ParserState.LETTERS) {
+                if (state == ParserState.NONE) {
                     pushBuffer();
                     state = ParserState.NUMBER;
                 }
@@ -110,6 +198,7 @@ public class TopCalculator implements ru.mipt.java2016.homework.base.task1.Calcu
                 continue;
             }
 
+            // Пробел
             if (Character.isWhitespace(c)) {
                 if (state != ParserState.NONE) {
                     pushBuffer();
@@ -118,28 +207,32 @@ public class TopCalculator implements ru.mipt.java2016.homework.base.task1.Calcu
                 continue;
             }
 
-            if (state != ParserState.LITERAL) {
-                pushBuffer();
-                state = ParserState.LITERAL;
-            }
-            sb.append(c);
-
-            Operator oper = Operator.getOperator(sb.toString());
-            if (oper != null) {
-                if (oper == Operator.LBRACKET) {
-                    unary = false; // скобку пушим не унарную
-
-                    //operators.push(Operator.LBRACKET);
+            // Литерал из букв и цифр (начинается всегда с буквы) читаем до пробела или оператора.
+            if (ParserState.LETTERS.isAcceptableChar(c)) {
+                if (state != ParserState.LETTERS) {
                     pushBuffer();
-                    unary = true;
-                    continue;
+                    state = ParserState.LETTERS;
+                    unary = false;
                 }
-                if (oper == Operator.UNARY_PLUS && operators.peek() == Operator.UNARY_PLUS) {
-                    throw new ParsingException("Two unary + in a row");
-                }
-                pushBuffer();
+                sb.append(c);
+                continue;
+            }
 
-                state = ParserState.NONE;
+            // Если это не буква, не цифра и не пробел, то это оператор.
+            if (ParserState.OPERATOR.isAcceptableChar(c)) {
+                if (state != ParserState.OPERATOR) {
+                    pushBuffer();
+                    state = ParserState.OPERATOR;
+                } else if (Operator.getOperator(Character.toString(c)) != null) {
+                    pushBuffer();
+                    state = ParserState.OPERATOR;
+                    unary = false;
+                }
+                sb.append(c);
+                if (Operator.getOperator(sb.toString()) != null) {
+                    pushBuffer();
+                }
+                continue;
             }
         }
         pushBuffer();
@@ -256,80 +349,121 @@ public class TopCalculator implements ru.mipt.java2016.homework.base.task1.Calcu
         }
     }
 
-    private HashMap<String, Double> variables;
-    private HashMap<String, TopCalculatorFunction> functions;
-    private HashMap<String, TopCalculatorFunction> predefinedFunctions;
-    {
-        variables = new HashMap<>();
-        functions = new HashMap<>();
-        predefinedFunctions = new HashMap<>();
-    }
+    private enum PredefinedFunction {
+        SIN(1) {
+            @Override
+            Double evaluate(List<Double> args) {
+                return Math.sin(args.get(0));
+            }
+        },
+        COS(1) {
+            @Override
+            Double evaluate(List<Double> args) {
+                return Math.cos(args.get(0));
+            }
+        },
+        TG(1) {
+            @Override
+            Double evaluate(List<Double> args) {
+                return Math.tan(args.get(0));
+            }
+        },
+        SQRT(1) {
+            @Override
+            Double evaluate(List<Double> args) {
+                return Math.sqrt(args.get(0));
+            }
+        },
+        POW(2) {
+            @Override
+            Double evaluate(List<Double> args) {
+                return Math.pow(args.get(0), args.get(1));
+            }
+        },
+        ABS(1) {
+            @Override
+            Double evaluate(List<Double> args) {
+                return Math.abs(args.get(0));
+            }
+        },
+        SIGN(1) {
+            @Override
+            Double evaluate(List<Double> args) {
+                return Math.signum(args.get(0));
+            }
+        },
+        LOG(2) {
+            @Override
+            Double evaluate(List<Double> args) {
+                return Math.log(args.get(0)) / Math.log(args.get(1));
+            }
+        },
+        LOG2(1) {
+            @Override
+            Double evaluate(List<Double> args) {
+                return Math.log(args.get(0)) / Math.log(2);
+            }
+        },
+        RND(0) {
+            @Override
+            Double evaluate(List<Double> args) {
+                return Math.random();
+            }
+        },
+        MAX(2) {
+            @Override
+            Double evaluate(List<Double> args) {
+                return Math.max(args.get(0), args.get(1));
+            }
+        },
+        MIN(2) {
+            @Override
+            Double evaluate(List<Double> args) {
+                return Math.min(args.get(0), args.get(1));
+            }
+        };
 
-    {
-        /*
-        sin(a)
-cos(a)
-tg(a)
-sqrt(a)
-pow(m, e)
-abs(a)
-sign(a)
-log(a, n)
-log2(a)
-rnd()
-max(a, b)
-min(a, b)
-         */
-        //predefinedFunctions.put()
-    }
-
-    public Double getVariable(String variableName) {
-        return variables.get(variableName);
-    }
-
-    public boolean putVariable(String variableName,
-                               String variableValueExpr) throws ParsingException {
-        return variables.put(variableName, eval(variableValueExpr)) != null;
-    }
-
-    public boolean deleteVariable(String variableName) {
-        return variables.remove(variableName) != null;
-    }
-
-    public List<String> getVariablesNames() {
-        return new ArrayList<>(variables.keySet());
-    }
-
-    public TopCalculatorFunction getFunction(String name) {
-        TopCalculatorFunction f = predefinedFunctions.get(name);
-        if (f == null) {
-            f = functions.get(name);
+        public static PredefinedFunction getFunction(String funcName) {
+            return funcs.get(funcName);
         }
-        return f;
-    }
 
-    public boolean putFunction
-            (String name, String body, List<String> args) throws ParsingException {
-
-        if (predefinedFunctions.containsKey(name)) {
-            throw new ParsingException(
-                    String.format("Can't redefine predefined function \"%s\"", name));
+        PredefinedFunction(int arity) {
+            this.arity = arity;
         }
 
-        return functions.put(name, new TopCalculatorFunction(body, args)) != null;
+        private static HashMap<String, PredefinedFunction> funcs;
+        private int arity;
+
+        static {
+            funcs = new HashMap<>();
+            funcs.put("sin", PredefinedFunction.SIN);
+            funcs.put("sqrt", PredefinedFunction.SQRT);
+        }
+
+        abstract Double evaluate(List<Double> args);
+
+        public int getArity() {
+            return arity;
+        }
     }
 
-    public boolean deleteFunction(String name) {
-        return functions.remove(name) != null;
-    }
+    private double evalFunction(TopCalculatorFunction function,
+                                Map<String, Double> args) throws ParsingException {
+        if (args.size() != function.getArity()) {
+            throw new ParsingException("");
+        }
 
-    public List<String> getFunctionsNames() {
-        return new ArrayList<>(functions.keySet());
-    }
+        sb.setLength(0);
+        numbers.clear();
+        operators.clear();
+        if (function.getFunc() == null) {
+            throw new ParsingException("Null expression");
+        } else if (function.getFunc().equals("")) {
+            throw new ParsingException("Empty string");
+        }
 
-    private double evalFunction(TopCalculatorFunction function) {
-        return 0;
-    }
+        return eval(function.getFunc(), args);
 
+    }
 
 }
