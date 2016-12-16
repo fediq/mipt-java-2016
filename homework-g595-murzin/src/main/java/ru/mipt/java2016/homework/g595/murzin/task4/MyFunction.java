@@ -13,7 +13,7 @@ import java.util.List;
  */
 public class MyFunction implements IFunction {
     private final String[] argumentsNames;
-    public final String expression;
+    private final String expression;
     private transient MyContext context;
 
     public MyFunction(List<String> argumentsNames, String expression, MyContext context) {
@@ -25,6 +25,15 @@ public class MyFunction implements IFunction {
     // for Gson-constructed objects
     public void setContext(MyContext context) {
         this.context = context;
+    }
+
+    // геттеры чтобы метод "public ResponseEntity<MyFunction> getFunction(...) {...}" возвращал непустой объект
+    public String[] getArgumentsNames() {
+        return argumentsNames;
+    }
+
+    public String getExpression() {
+        return expression;
     }
 
     @Override

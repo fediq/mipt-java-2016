@@ -78,11 +78,11 @@ public class BillingDao {
     }
 
     // for junit
-    public void deleteContext() {
+    public void clearContext() {
         putContext(SecurityContextHolder.getContext().getAuthentication().getName(), null);
     }
 
-    public void deleteAll() {
+    public void clearAll() {
         jdbcTemplate.execute("TRUNCATE TABLE billing.users");
     }
 }

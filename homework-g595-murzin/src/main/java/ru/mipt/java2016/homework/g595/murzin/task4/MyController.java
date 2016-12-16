@@ -134,16 +134,25 @@ public class MyController {
     }
 
     @RequestMapping(value = "/eval/", method = RequestMethod.POST)
-    public ResponseEntity<Double> eval(@RequestBody String expression) {
+    public ResponseEntity<String> eval(@RequestBody String expression) {
         try (ContextProvider provider = getContextProvider()) {
             MyContext context = provider.context;
             try {
                 double value = new SimpleCalculator().calculate(expression, context, null);
-                return new ResponseEntity<>(value, HttpStatus.OK);
+                return new ResponseEntity<>(String.valueOf(value), HttpStatus.OK);
             } catch (ParsingException | StackOverflowError e) {
-                // TODO как-нибудь добавить в создаваемую ResponseEntity строку e.getMessage()
-                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+                return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
             }
         }
+    }
+
+    @RequestMapping(value = "/clearContext", method = RequestMethod.POST)
+    public void clearContext() {
+        billingDao.clearContext();
+    }
+
+    @RequestMapping(value = "/clearAll", method = RequestMethod.POST)
+    public void clearAll() {
+        billingDao.clearAll();
     }
 }

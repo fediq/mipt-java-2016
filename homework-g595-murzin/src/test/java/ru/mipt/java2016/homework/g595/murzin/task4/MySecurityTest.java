@@ -1,15 +1,8 @@
 package ru.mipt.java2016.homework.g595.murzin.task4;
 
-import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.junit4.SpringRunner;
-
-import static org.junit.Assert.assertArrayEquals;
 
 /**
  * Created by dima on 16.12.16.
@@ -17,7 +10,7 @@ import static org.junit.Assert.assertArrayEquals;
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = MyApplication.class)
 public class MySecurityTest {
-    @Autowired
+    /*@Autowired
     private MyController controller;
     @Autowired
     private BillingDao billingDao;
@@ -36,7 +29,7 @@ public class MySecurityTest {
     }
 
     private void doWith(String username, String password, MyControllerTest.Callback callback) throws Exception {
-        billingDao.deleteAll();
+        billingDao.clearAll();
         controller.register(username, password);
         SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(username, password));
         callback.callback();
@@ -66,5 +59,5 @@ public class MySecurityTest {
             controller.register("b", "");
             assertArrayEquals(billingDao.getAllUserNames(), new String[]{"a", "b"});
         });
-    }
+    }*/
 }
