@@ -101,14 +101,11 @@ public class MyCalculator implements Calculator {
         double degree = 1;
         for (int i = 0; i < expression.length(); ++i) {
             Character c = expression.charAt(i);
-            System.out.println("CUR" + i + ',' + c);
-            if (mode && (c.equals('_') || isLatin(c) || isDigit(c)))
-            {
+            if (mode && (c.equals('_') || isLatin(c) || isDigit(c))) {
                 name.append(c);
                 continue;
             }
-            if (c.equals('_') || isLatin(c) || c.equals('|'))
-            {
+            if (c.equals('_') || isLatin(c) || c.equals('|')) {
                 if (prevIsNumber) {
                     throw new ParsingException("Invalid Expression");
                 }
@@ -118,71 +115,46 @@ public class MyCalculator implements Calculator {
                 continue;
             }
 
-            if (mode)
-            {
-                /*if (isWhitespace(c))
-                {
-                    //i++;
-                    continue;
-                }*/
-                //int decr = -1;
-                if (c.equals('('))
-                {
+            if (mode) {
+                if (c.equals('(')) {
                     name.append(c);
                     i++;
                     int balance = 1;
-                    while(i < expression.length())
-                    {
+                    while(i < expression.length()) {
                         c = expression.charAt(i);
                         name.append(c);
                         System.out.println(c);
                         System.out.println("I" + i);
-                        if (c.equals('('))
-                        {
+                        if (c.equals('(')) {
                             balance++;
                         }
-                        if (c.equals(')'))
-                        {
+                        if (c.equals(')')) {
                             balance--;
                         }
-                        if (balance == 0)
-                        {
+                        if (balance == 0) {
                             break;
                         }
                         i++;
                     }
                     i++;
-                    System.out.println("NEW" + i);
-                    //i--;
-                    //continue;
                 }
-                String namestr = String.valueOf(name);
+                String nameString = String.valueOf(name);
                 double number;
-                if (((Character)namestr.charAt(0)).equals('|'))
-                {
-                    if (args.containsKey(namestr))
-                    {
-                        number = args.get(namestr);
-                    }
-                    else {
+                if (((Character)nameString.charAt(0)).equals('|')) {
+                    if (args.containsKey(nameString)) {
+                        number = args.get(nameString);
+                    } else {
                         throw new ParsingException("Invalid name");
                     }
-                }
-                else
-                {
+                } else {
                     number = sign * getResult(name);
                 }
                 polishNotation.add(new Number(number));
-                System.out.println(name);
                 mode = false;
                 sign = 1;
                 curNumber = 0;
                 prevIsNumber = true;
                 unary = false;
-                //continue;
-                System.out.println("I:");
-                System.out.println(i);
-                System.out.println(expression.length());
                 i--;
                 continue;
             }
@@ -217,7 +189,6 @@ public class MyCalculator implements Calculator {
                 }
                 i--;
                 polishNotation.add(new Number(sign * curNumber));
-                System.out.println("WE" + sign*curNumber);
                 sign = 1;
                 curNumber = 0;
                 prevIsNumber = true;
@@ -280,26 +251,19 @@ public class MyCalculator implements Calculator {
                 }
             }
         }
-        if (mode)
-        {
-            String namestr = String.valueOf(name);
+        if (mode) {
+            String nameString = String.valueOf(name);
             double number;
-            if (((Character)namestr.charAt(0)).equals('|'))
-            {
-                if (args.containsKey(namestr))
-                {
-                    number = args.get(namestr);
-                }
-                else {
+            if (((Character)nameString.charAt(0)).equals('|')) {
+                if (args.containsKey(nameString)) {
+                    number = args.get(nameString);
+                } else {
                     throw new ParsingException("Invalid name");
                 }
-            }
-            else
-            {
+            } else {
                 number = sign * getResult(name);
             }
             polishNotation.add(new Number(number));
-            System.out.println(name);
         }
         while (!stack.empty()) {
             StackItem top = stack.peek();
@@ -322,108 +286,62 @@ public class MyCalculator implements Calculator {
         StringBuilder cur = new StringBuilder();;
         ArrayList<String> args = new ArrayList<>();
         int i = 0;
-        boolean closed = false;
         System.out.println(name);
-        while(i < name.length() && name.charAt(i) != '(')
-        {
+        while(i < name.length() && name.charAt(i) != '(') {
             func.append(name.charAt(i));
             i++;
         }
         i++;
-        System.out.println(func);
-        System.out.println(i);
-        //System.out.println("AAA" + name.charAt(i));
         int balance = 0;
-        while(i < name.length() - 1)
-        {
+        while(i < name.length() - 1) {
             Character c = name.charAt(i);
             System.out.println(c);
-            /*if (isWhitespace(c)) {
-                i++;
-                continue;
-            }*/
-            if (c.equals('('))
-            {
+            if (c.equals('(')) {
                 balance++;
             }
-            if(c.equals(')'))
-            {
+            if(c.equals(')')) {
                 balance--;
             }
-            if (c.equals(',') && balance == 0)
-            {
-                System.out.println(cur);
+            if (c.equals(',') && balance == 0) {
                 args.add(String.valueOf(cur));
                 cur = new StringBuilder();
-            }
-            else
-            {
+            } else {
                 cur.append(c);
             }
             i++;
         }
-        System.out.println(i);
-        System.out.println(name.length());
-        System.out.println(cur);
-        if (balance != 0)
-        {
+        if (balance != 0) {
             throw new ParsingException("Wrong balance of brackets");
         }
-        if (cur.length() > 0)
-        {
+        if (cur.length() > 0) {
             args.add(String.valueOf(cur));
         }
         Character back = name.charAt(name.length() - 1);
-        if (!back.equals(')'))
-        {
+        if (!back.equals(')')) {
             throw new ParsingException("Invalid function name");
         }
-        System.out.println("HERE");
-        Pair kek = new Pair(String.valueOf(func), args);
-        System.out.println(kek.getKey());
-        System.out.println("LAL");
-        return kek;
+        return new Pair(String.valueOf(func), args);
     }
 
     private double getResult(StringBuilder name) throws ParsingException{
-        System.out.println("Request name " + name);
-        try
-        {
+        try {
             return database.loadVariableCalculation(String.valueOf(name));
-        }
-        catch (EmptyResultDataAccessException exp)
-        {
-            System.out.println("Request func " + name);
+        } catch (EmptyResultDataAccessException exp) {
             Pair<String, ArrayList<String> > parsed = parseFunc(name);
-            System.out.println("LOL");
-            System.out.println(parsed.getKey());
-            System.out.println("LOOOOL");
             ArrayList<Double> args = new ArrayList<>();
-            System.out.println("Y");
-            System.out.println(parsed.getValue().size());
-            for(String arg:parsed.getValue())
-            {
-                System.out.println(arg);
+            for(String arg:parsed.getValue()) {
                 double res = calculate(arg);
-                System.out.println("UUU");
-                System.out.println(res);
                 args.add(res);
             }
-            System.out.println("COME");
-            if (BuiltInFunction.find(parsed.getKey(), args.size()))
-            {
+            if (BuiltInFunction.find(parsed.getKey(), args.size())) {
                 return BuiltInFunction.execute(parsed.getKey(), args);
-            }
-            else
-            {
+            } else {
                 Pair<String, Integer> toCalc = database.loadFunctionCalculation(parsed.getKey());
-                int numargs = toCalc.getValue();
-                if (numargs != args.size())
-                {
+                int numArguments = toCalc.getValue();
+                if (numArguments != args.size()) {
                     throw new ParsingException("Error number of arguments");
                 }
-                double ans = calculate(toCalc.getKey(), args);
-                return ans;
+                return calculate(toCalc.getKey(), args);
             }
         }
     }
@@ -459,8 +377,7 @@ public class MyCalculator implements Calculator {
             throw new ParsingException("NullExpression");
         }
         HashMap<String, Double> argValues = new HashMap<>();
-        for(int i = 0; i < args.size(); ++i)
-        {
+        for(int i = 0; i < args.size(); ++i) {
             argValues.put("|"+i, args.get(i));
         }
         ArrayList<CalcItem> polishNotation = getPolishNotation(expression, argValues);

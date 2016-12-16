@@ -42,29 +42,10 @@ public class BillingDao {
         jdbcTemplate.execute("CREATE SCHEMA IF NOT EXISTS billing");
         jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS billing.users " +
                 "(username VARCHAR PRIMARY KEY, password VARCHAR, enabled BOOLEAN)");
-        try
-        {
-            loadUser("username");
-        }
-        catch (EmptyResultDataAccessException exp)
+        if (!findUser("username"))
         {
             addUserToDb("username", "password");
         }
-    }
-
-    public void setUser(String name, String pass)
-    {
-        LOG.trace("Setting user " + name);
-        if (findUser(name))
-        {
-            LOG.trace("Occupied user " + name);
-            throw new IllegalStateException("Already in database");
-        }
-        else
-        {
-            addUserToDb(name, pass);
-        }
-        LOG.trace("Set user " + name);
     }
 
     private void addUserToDb(String name, String pass) {
@@ -77,7 +58,7 @@ public class BillingDao {
     }
 
     public boolean findUser(String username) {
-        LOG.trace("Finding user " + username);
+        LOG.debug("Finding user " + username);
         try {
             return jdbcTemplate.queryForObject(
                     "SELECT username FROM billing.users WHERE username = ?",
@@ -89,52 +70,24 @@ public class BillingDao {
                         }
                     }
             );
-        }
-        catch (EmptyResultDataAccessException exp)
-        {
+        } catch (EmptyResultDataAccessException exp) {
             return false;
         }
     }
 
-    public boolean findVariable(String name) {
-        LOG.trace("Finding variable " + name);
-        try {
-            return jdbcTemplate.queryForObject(
-                    "SELECT variable FROM " + curUser.getUsername() + ".variables WHERE variable = ?",
-                    new Object[]{name},
-                    new RowMapper<Boolean>() {
-                        @Override
-                        public Boolean mapRow(ResultSet rs, int rowNum) throws SQLException {
-                            return true;
-                        }
-                    }
-            );
+    public void setUser(String name, String pass)
+    {
+        LOG.debug("Setting user " + name);
+        if (findUser(name)) {
+            LOG.trace("Occupied user " + name);
+            throw new IllegalStateException("Already in database");
+        } else {
+            addUserToDb(name, pass);
         }
-        catch (EmptyResultDataAccessException exp)
-        {
-            return false;
-        }
+        LOG.trace("Set user " + name);
     }
 
-    public boolean findFunction(String name) {
-        LOG.trace("Finding function " + name);
-        try {
-            return jdbcTemplate.queryForObject(
-                    "SELECT function FROM " + curUser.getUsername() + ".functions WHERE function = ?",
-                    new Object[]{name},
-                    new RowMapper<Boolean>() {
-                        @Override
-                        public Boolean mapRow(ResultSet rs, int rowNum) throws SQLException {
-                            return true;
-                        }
-                    }
-            );
-        }
-        catch (EmptyResultDataAccessException exp)
-        {
-            return false;
-        }
-    }
+
 
     public BillingUser loadUser(String username) throws EmptyResultDataAccessException {
         LOG.trace("Querying for user " + username);
@@ -154,6 +107,25 @@ public class BillingDao {
                 }
         );
     }
+
+    public boolean findVariable(String name) {
+        LOG.trace("Finding variable " + name);
+        try {
+            return jdbcTemplate.queryForObject(
+                    "SELECT variable FROM " + curUser.getUsername() + ".variables WHERE variable = ?",
+                    new Object[]{name},
+                    new RowMapper<Boolean>() {
+                        @Override
+                        public Boolean mapRow(ResultSet rs, int rowNum) throws SQLException {
+                            return true;
+                        }
+                    }
+            );
+        } catch (EmptyResultDataAccessException exp) {
+            return false;
+        }
+    }
+
 
     public Double loadVariableCalculation(String variableName) {
         LOG.trace("Request get variable value " + variableName + " from database");
@@ -185,12 +157,8 @@ public class BillingDao {
 
     public void putVariableValue(String variableName, double value, String expression) {
         LOG.trace("Request put variable value " + variableName + " to database");
-        /*jdbcTemplate.execute("DROP TABLE " + curUser.getUsername() + ".variables");
-        jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS " + curUser.getUsername() + ".variables" +
-                "(variable VARCHAR PRIMARY KEY, value DOUBLE, expression VARCHAR)");*/
         if(findFunction(variableName))
         {
-
             throw new IllegalStateException("Another type");
         }
         else
@@ -206,26 +174,34 @@ public class BillingDao {
         }
     }
 
+    public boolean findFunction(String name) {
+        LOG.trace("Finding function " + name);
+        try {
+            return jdbcTemplate.queryForObject(
+                    "SELECT function FROM " + curUser.getUsername() + ".functions WHERE function = ?",
+                    new Object[]{name},
+                    new RowMapper<Boolean>() {
+                        @Override
+                        public Boolean mapRow(ResultSet rs, int rowNum) throws SQLException {
+                            return true;
+                        }
+                    }
+            );
+        } catch (EmptyResultDataAccessException exp) {
+            return false;
+        }
+    }
+
     public void putFunctionValue(String functionName, int numargs, String vars, String expression, String real) {
         LOG.trace("Request put function value " + functionName + " to database");
-        /*jdbcTemplate.execute("DROP TABLE " + curUser.getUsername() + ".functions");
-        jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS " + curUser.getUsername() + ".functions" +
-                "(function VARCHAR PRIMARY KEY, num INT, args VARCHAR, expression VARCHAR, real VARCHAR)");
-        */
-        if (findVariable(functionName))
-        {
+        if (findVariable(functionName)) {
             throw new IllegalStateException("Another type");
-        }
-        else
-        {
-            if (findFunction(functionName))
-            {
+        } else {
+            if (findFunction(functionName)) {
                 jdbcTemplate.update("UPDATE " + curUser.getUsername() + ".functions SET "
                         + "num = " + numargs + ", args = '" + vars + "', expression = '" + expression +
                         "', real = '" + real + "' WHERE function = '" + functionName +"'");
-            }
-            else
-            {
+            } else {
                 jdbcTemplate.update("INSERT INTO " + curUser.getUsername() + ".functions VALUES (?, ?, ?, ?, ?)", functionName, numargs, vars, expression, real);
             }
         }
@@ -259,20 +235,18 @@ public class BillingDao {
         );
     }
 
-
     public void delVariable(String variableName) {
-        System.out.println(variableName);
-        System.out.println(loadVariableCalculation(variableName));
+        LOG.trace("Deleting " + variableName);
         jdbcTemplate.update("DELETE FROM " + curUser.getUsername() + ".variables WHERE variable = '" + variableName + "'");
     }
+
     public void delFunction(String functionName) {
-        System.out.println(functionName);
-        System.out.println(loadFunctionCalculation(functionName));
+        LOG.trace("Deleting " + functionName);
         jdbcTemplate.update("DELETE FROM " + curUser.getUsername() + ".functions WHERE function = '" + functionName + "'");
     }
 
     public List<String> loadAllVariables() {
-        List<String> res = new ArrayList<>();
+        LOG.trace("Load all variables");
         return jdbcTemplate.query(
                 "SELECT variable FROM "+ curUser.getUsername() + ".variables",
                 new Object[] {},
@@ -285,7 +259,7 @@ public class BillingDao {
     }
 
     public List<String> loadAllFunctions() {
-        List<String> res = new ArrayList<>();
+        LOG.trace("Load all functions");
         return jdbcTemplate.query(
                 "SELECT function FROM "+ curUser.getUsername() + ".functions",
                 new Object[] {},

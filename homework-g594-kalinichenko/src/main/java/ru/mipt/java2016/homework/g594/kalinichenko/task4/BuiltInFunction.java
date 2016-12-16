@@ -111,14 +111,12 @@ public class BuiltInFunction {
     }
     
     private static HashMap<String, Func0> map0 = new HashMap<>();
-    static
-    {
+    static {
         map0.put("rnd", RND);
     }
 
     private static HashMap<String, Func1> map1 = new HashMap<>();
-    static
-    {
+    static {
         map1.put("sin", SIN);
         map1.put("cos", COS);
         map1.put("tg", TG);
@@ -129,26 +127,19 @@ public class BuiltInFunction {
     }
 
     private static HashMap<String, Func2> map2 = new HashMap<>();
-    static
-    {
+    static {
         map2.put("pow", POW);
         map2.put("log", LOG);
         map2.put("max", MAX);
         map2.put("min", MIN);
     }
 
-    public static boolean find(String name, int args)
-    {
-        if (args == 0)
-        {
+    public static boolean find(String name, int args) {
+        if (args == 0) {
             return map0.containsKey(name);
-        }
-        else if (args == 1)
-        {
+        } else if (args == 1) {
             return map1.containsKey(name);
-        }
-        else if (args == 2)
-        {
+        } else if (args == 2) {
             return map2.containsKey(name);
         }
         return false;
@@ -168,9 +159,6 @@ public class BuiltInFunction {
         }
         else if (args.size() == 1)
         {
-            System.out.println(name);
-            System.out.println(map1.containsKey("sin"));
-            System.out.println(map1.containsKey(name));
             return map1.get(name).calc(args.get(0));
         }
         else if (args.size() == 2)
