@@ -221,7 +221,7 @@ public class KVStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public void close() throws IOException {
         if (baseClosed) {
-            throw new RuntimeException("base closed");
+            return;
         }
         try {
             temperary.close();
