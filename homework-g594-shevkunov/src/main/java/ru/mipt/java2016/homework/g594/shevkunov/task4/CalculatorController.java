@@ -116,8 +116,8 @@ public class CalculatorController {
     @RequestMapping(path = "/function/{functionName}", method = RequestMethod.GET, produces = "text/html")
     public String funcGet(Authentication authentication, @PathVariable String functionName) throws ParsingException {
         String username = authentication.getName();
-        return "Requested: " + functionName + "\n" +
-                "This function doesn't implemented yet.\n";
+        FunctionWrapper func = billingDao.getFunction(username, functionName);
+        return func.toString() + "\n";
     }
 
     @RequestMapping(path = "/function/{functionName}", method = RequestMethod.PUT, produces = "text/html")
@@ -125,23 +125,40 @@ public class CalculatorController {
                           @RequestParam(value = "args") List<String> arguments,
                           @RequestBody String request) throws ParsingException {
         String username = authentication.getName();
-        return "An attempt to put: " + functionName + "\n" +
-                "With request = " + request + "\n" +
-                "This function doesn't implemented yet.\n";
+        String result = "OK\n";
+        try {
+            billingDao.setFunction(username, new FunctionWrapper(functionName, arguments, request));
+        } catch (Exception e) {
+            result = "Server Internal Error.\n";
+        }
+        return result;
     }
 
     @RequestMapping(path = "/function/{functionName}", method = RequestMethod.DELETE, produces = "text/html")
     public String funcDel(Authentication authentication, @PathVariable String functionName) throws ParsingException {
         String username = authentication.getName();
-        return "An attempt to delete: " + functionName + "\n" +
-                "This function doesn't implemented yet.\n";
+        String result = "OK\n";
+        try {
+            billingDao.delFunction(username, functionName);
+        } catch (Exception e) {
+            result = "Server Internal Error.\n";
+        }
+        return result;
     }
 
     @RequestMapping(path = "/function/", method = RequestMethod.GET, produces = "text/html")
     public String allFuncGet(Authentication authentication) throws ParsingException {
         String username = authentication.getName();
-        return "Requested all functions \n" +
-                "This function doesn't implemented yet.\n";
+        List<String> allVar = billingDao.getAllFunctionNames(username);
+        String all = "'";
+        for (Iterator<String> i = allVar.iterator(); i.hasNext(); ) {
+            all += i.next();
+            if (i.hasNext()) {
+                all += "', '";
+            }
+        }
+
+        return all + "'\n";
     }
 
     private boolean isVariableChar(char ch) {
