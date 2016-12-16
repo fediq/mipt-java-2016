@@ -21,7 +21,7 @@ public class CalculatorController {
     private static final Logger LOG = LoggerFactory.getLogger(CalculatorController.class);
 
     @Autowired
-    private Calculator calculator;
+    private MyCalculator calculator;
 
     @Autowired
     private BillingDao database;
@@ -342,13 +342,15 @@ public class CalculatorController {
         String newexpr;
         try {
             newexpr = convert(expression, vars);
+            ArrayList<Double> params = new ArrayList<Double>(vars.size());
+            calculator.calculate(expression, params);
         }
         catch(Exception ex)
         {
-            LOG.warn("Invalid convert");
-            return "Invalid convert\n";
-        }
 
+            LOG.warn("Invalid expression");
+            return "Invalid expression\n";
+        }
         try {
             LOG.trace("Putting converted value " + newexpr);
             String varstring = String.valueOf(vars);
@@ -356,8 +358,8 @@ public class CalculatorController {
         }
         catch(Exception exp)
         {
-        LOG.warn("Another type");
-        return exp.getMessage();//"Another type\n";
+            LOG.warn("Can't put");
+            return exp.getMessage() + '\n';//"Another type\n";
         }
 
         LOG.trace("Put function " + functionName);

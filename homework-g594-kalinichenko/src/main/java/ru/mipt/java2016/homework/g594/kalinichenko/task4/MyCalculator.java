@@ -1,6 +1,7 @@
 package ru.mipt.java2016.homework.g594.kalinichenko.task4;
 
 import javafx.util.Pair;
+import org.springframework.context.annotation.Bean;
 import org.springframework.dao.EmptyResultDataAccessException;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
@@ -20,7 +21,7 @@ public class MyCalculator implements Calculator {
     @Autowired
     private BillingDao database;
 
-    public static final Calculator INSTANCE = new MyCalculator();
+    public static final MyCalculator INSTANCE = new MyCalculator();
 
     private interface StackItem { }
 
@@ -421,12 +422,7 @@ public class MyCalculator implements Calculator {
                 {
                     throw new ParsingException("Error number of arguments");
                 }
-                HashMap<String, Double> argValues = new HashMap<>();
-                for(int i = 0; i < numargs; ++i)
-                {
-                    argValues.put("|"+i, args.get(i));
-                }
-                double ans = calculate(toCalc.getKey(), argValues);
+                double ans = calculate(toCalc.getKey(), args);
                 return ans;
             }
         }
@@ -458,11 +454,16 @@ public class MyCalculator implements Calculator {
         return getValue(polishNotation);
     }
 
-    public double calculate(String expression, HashMap<String, Double> map) throws ParsingException {
+    public double calculate(String expression, ArrayList<Double> args) throws ParsingException {
         if (expression == null) {
             throw new ParsingException("NullExpression");
         }
-        ArrayList<CalcItem> polishNotation = getPolishNotation(expression, map);
+        HashMap<String, Double> argValues = new HashMap<>();
+        for(int i = 0; i < args.size(); ++i)
+        {
+            argValues.put("|"+i, args.get(i));
+        }
+        ArrayList<CalcItem> polishNotation = getPolishNotation(expression, argValues);
         return getValue(polishNotation);
     }
 }

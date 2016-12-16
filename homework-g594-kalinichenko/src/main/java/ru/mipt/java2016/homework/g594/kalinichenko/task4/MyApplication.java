@@ -23,7 +23,7 @@ import ru.mipt.java2016.homework.base.task1.Calculator;
 public class MyApplication {
 
     @Bean
-    public Calculator calculator() {
+    public MyCalculator calculator() {
         return MyCalculator.INSTANCE;
     }
 
