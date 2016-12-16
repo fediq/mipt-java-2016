@@ -310,13 +310,19 @@ public class MyCalculator implements Calculator {
                 args.add(String.valueOf(cur));
                 cur = new StringBuilder();
             }
-            cur.append(c);
+            else
+            {
+                cur.append(c);
+            }
             i++;
         }
         System.out.println(i);
         System.out.println(name.length());
         System.out.println(cur);
-        args.add(String.valueOf(cur));
+        if (cur.length() > 0)
+        {
+            args.add(String.valueOf(cur));
+        }
         Character back = name.charAt(name.length() - 1);
         if (!back.equals(')'))
         {
@@ -343,6 +349,8 @@ public class MyCalculator implements Calculator {
             System.out.println(parsed.getKey());
             System.out.println("LOOOOL");
             ArrayList<Double> args = new ArrayList<>();
+            System.out.println("Y");
+            System.out.println(parsed.getValue().size());
             for(String arg:parsed.getValue())
             {
                 System.out.println(arg);
@@ -351,6 +359,7 @@ public class MyCalculator implements Calculator {
                 System.out.println(res);
                 args.add(res);
             }
+            System.out.println("COME");
             try
             {
                 return BuiltInFunction.execute(parsed.getKey(), args);
