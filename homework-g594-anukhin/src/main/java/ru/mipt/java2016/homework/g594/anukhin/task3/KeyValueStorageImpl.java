@@ -27,6 +27,8 @@ public class KeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
     private Serializable<V> value;
     private int offsetSize;
     private int numberOfDel = 0;
+    private File lockFile;
+    private String lockFileName = "lock.db";
 
     public KeyValueStorageImpl(String path, Serializable<K> key, Serializable<V> value)  {
 
@@ -39,6 +41,17 @@ public class KeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
         pathToStorage = path + "/storage.txt";
         pathToConf = path + "/config.txt";
         String tmpPath = path;
+        String lockFilePath = path + File.separator + lockFileName;
+        lockFile = new File(lockFilePath);
+        if (!lockFile.exists()) {
+            try {
+                lockFile.createNewFile();
+            } catch (Exception e) {
+                throw new IllegalStateException("Failed to create lock file");
+            }
+        } else {
+            throw new IllegalStateException("Somebody is working w/ db right now.");
+        }
 
         if (!data.exists() || !data.isDirectory()) {
             throw new IllegalStateException("path isn't available");
@@ -151,6 +164,13 @@ public class KeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
         for (Entry<K,  Long> i : offsetTable.entrySet()) {
             key.serialize(configOut, i.getKey());
             configOut.writeLong(i.getValue());
+        }
+        if (lockFile.exists()) {
+            try {
+                lockFile.delete();
+            } catch (Exception e) {
+                throw new IOException("Failed to delete lock file");
+            }
         }
         configOut.close();
         out.close();
