@@ -22,6 +22,8 @@ public class CalculatorController  {
     private Calculator calculator;
     @Autowired
     private Database database;
+    @Autowired
+    private Database clients;
 
     private static final Set<Character> SYMBOLS =
             new TreeSet<>(Arrays.asList('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h',
@@ -96,5 +98,19 @@ public class CalculatorController  {
         LOG.debug("Check for existence of [" + argument + "] element");
         Double answer = database.loadMeaning(argument);
         return answer.toString();
+    }
+
+    @RequestMapping(path = "/addUser", method = RequestMethod.POST, consumes = "text/plain", produces = "text/plain")
+    public String addUser(@RequestBody String data) {
+        LOG.debug("Add new user [" + data + "]");
+        clients.addUser(data);
+        return "OK\n";
+    }
+
+    @RequestMapping(path = "/deleteUser", method = RequestMethod.DELETE, consumes = "text/plain", produces = "text/plain")
+    public String deleteUser(@RequestBody String data) {
+        LOG.debug("Delete user [" + data + "]");
+        clients.deleteUser(data);
+        return "OK\n";
     }
 }

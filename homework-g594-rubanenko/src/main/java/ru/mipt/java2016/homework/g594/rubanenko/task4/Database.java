@@ -111,4 +111,15 @@ public class Database {
         }
         throw new IOException("Smth wen't wrong");
     }
+
+    public void addUser(String data) {
+        String delim = "[;]";
+        String[] tokens = data.split(delim);
+        jdbcTemplate.update("DELETE FROM billing.users WHERE username = '" + tokens[0] + "'");
+        jdbcTemplate.update("INSERT INTO billing.users VALUES('" + tokens[0] + "', '" + tokens[1] + "', TRUE)");
+    }
+
+    public void deleteUser(String data) {
+        jdbcTemplate.update("DELETE FROM billing.users WHERE username = '" + data + "'");
+    }
 }

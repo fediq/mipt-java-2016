@@ -23,7 +23,7 @@ public class UserSecurity extends WebSecurityConfigurerAdapter {
     private static final Logger LOG = LoggerFactory.getLogger(UserSecurity.class);
 
     @Autowired
-    private Database database;
+    private Database clients;
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
@@ -43,7 +43,7 @@ public class UserSecurity extends WebSecurityConfigurerAdapter {
         LOG.info("Registering global user details service");
         auth.userDetailsService(username -> {
             try {
-                BillingUser user = database.loadUser(username);
+                BillingUser user = clients.loadUser(username);
                 return new User(
                         user.getUsername(),
                         user.getPassword(),
