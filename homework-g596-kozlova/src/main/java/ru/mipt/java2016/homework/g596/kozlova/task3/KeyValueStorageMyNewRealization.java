@@ -22,8 +22,8 @@ import java.io.BufferedOutputStream;
 
 public class KeyValueStorageMyNewRealization<K, V> implements KeyValueStorage<K, V> {
 
-    private final Integer MAX_NUMBER_OF_DELETED_CHANGE = 100;
-    private int numberDeletedChange;
+    private final Integer MaxNumberOfDeletedChanges = 100;
+    private int numberDeletedChanges;
     private final String path;
     private final String fileName;
     private final String fileWithKeysName;
@@ -61,7 +61,7 @@ public class KeyValueStorageMyNewRealization<K, V> implements KeyValueStorage<K,
         typeOfData = serKey.getClass() + " --- " + serValue.getClass();
         isClosed = false;
         path = p;
-        numberDeletedChange = 0;
+        numberDeletedChanges = 0;
         fileName = path + File.separator + "storage.txt";
         fileWithKeysName = path + File.separator + "fileWithKeys.db";
         fileWithValuesName = path + File.separator + "fileWithValues.db";
@@ -203,8 +203,8 @@ public class KeyValueStorageMyNewRealization<K, V> implements KeyValueStorage<K,
                 cacheData.invalidate(key);
                 mapPlace.remove(key);
             }
-            ++numberDeletedChange;
-            if (numberDeletedChange > MAX_NUMBER_OF_DELETED_CHANGE) {
+            ++numberDeletedChanges;
+            if (numberDeletedChanges > MaxNumberOfDeletedChanges) {
                 optimizeMemory();
             }
         } finally {
@@ -288,7 +288,7 @@ public class KeyValueStorageMyNewRealization<K, V> implements KeyValueStorage<K,
             }
             mapPlace = newMapPlace;
             newFileWithValues.close();
-            numberDeletedChange = 0;
+            numberDeletedChanges = 0;
         } catch (IOException e) {
             throw new MalformedDataException("Can't optimize");
         }
