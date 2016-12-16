@@ -22,7 +22,7 @@ import ru.mipt.java2016.homework.g594.ishkhanyan.task2.Serializations;
 
 public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
-    private Object obj = new Object();
+    private final Object obj = new Object();
     private String keyType;
     private String valueType;
     private int maxSize = 900;
@@ -171,6 +171,10 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 FileInputStream in = new FileInputStream(pathToConfigurations);
                 DataInputStream configIn = new DataInputStream(in);
                 fileIsNotEmpty = true;
+                String s = configIn.readUTF();
+                if (s.equals("lock")) {
+                    throw new MalformedDataException("Storage has already been launched");
+                }
                 int numKeys = configIn.readInt();
                 numOfAdditions = configIn.readInt();
                 numOfDeletions = configIn.readInt();
@@ -189,6 +193,11 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 }
                 configIn.close();
                 in.close();
+                FileOutputStream out = new FileOutputStream(pathToConfigurations);
+                DataOutputStream configOut = new DataOutputStream(out);
+                configOut.writeUTF("lock");
+                configOut.close();
+                out.close();
                 storageFile = new RandomAccessFile(intToPath(fileNameEnd), "rw");
             }
             isOpen = true;
@@ -263,6 +272,7 @@ public class MyImprovedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private void writeToConfig() throws IOException {
         FileOutputStream out = new FileOutputStream(pathToConfigurations);
         DataOutputStream configOut = new DataOutputStream(out);
+        configOut.writeUTF("ready");
         configOut.writeInt(pathToValue.size());
         configOut.writeInt(numOfAdditions);
         configOut.writeInt(numOfDeletions);
