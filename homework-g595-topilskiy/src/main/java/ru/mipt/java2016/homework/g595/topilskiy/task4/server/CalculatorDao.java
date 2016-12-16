@@ -34,7 +34,11 @@ public class CalculatorDao {
         jdbcTemplate.execute("CREATE SCHEMA IF NOT EXISTS calculator");
         jdbcTemplate.execute("CREATE TABLE  IF NOT EXISTS calculator.users " +
                              "(username VARCHAR PRIMARY KEY, password VARCHAR, enabled BOOLEAN)");
-        //jdbcTemplate.update("INSERT INTO calculator.users VALUES ('supersanic', 'gottagofast', TRUE)");
+        try {
+            loadUser("supersanic");
+        } catch (EmptyResultDataAccessException e) {
+            jdbcTemplate.update("INSERT INTO calculator.users VALUES ('supersanic', 'gottagofast', TRUE)");
+        }
     }
 
 
