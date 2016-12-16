@@ -12,7 +12,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import static java.lang.Character.getNumericValue;
 import static java.lang.Character.isDigit;
+import static java.lang.Character.isWhitespace;
 
 @RestController
 public class CalculatorController {
@@ -203,23 +205,147 @@ public class CalculatorController {
         }
     }
 
+    private String convert(String expression, List<String> vars) throws ParsingException{
+
+        HashMap<String, String> newval = new HashMap<>();
+        int ind = 0;
+        for(String elem: vars)
+        {
+            if (newval.containsKey(elem))
+            {
+                throw new ParsingException("Same arguments");
+            }
+            newval.put(elem, "/" + ind);
+            System.out.println(elem);
+            System.out.println("EEwwEE" + newval.get(elem));
+            ind++;
+        }
+
+        StringBuilder ans = new StringBuilder();
+        boolean mode = false;
+        StringBuilder name = new StringBuilder();
+        for (int i = 0; i < expression.length(); ++i) {
+            Character c = expression.charAt(i);
+            System.out.println("CUR" + i + ',' + c);
+            if (mode && (c.equals('_') || isLatin(c) || isDigit(c)))
+            {
+                name.append(c);
+                continue;
+            }
+            if (c.equals('_') || isLatin(c))
+            {
+                name =  new StringBuilder();
+                mode = true;
+                name.append(c);
+                continue;
+            }
+            if (mode)
+            {
+                int decr = 0;
+                /*if (c.equals('('))
+                {
+                    name.append(c);
+                    i++;
+                    decr = -1;
+                    int balance = 1;
+                    while(i < expression.length())
+                    {
+                        c = expression.charAt(i);
+                        name.append(c);
+                        //System.out.println(c);
+                        //System.out.println("I" + i);
+                        if (c.equals('('))
+                        {
+                            balance++;
+                        }
+                        if (c.equals(')'))
+                        {
+                            balance--;
+                        }
+                        if (balance == 0)
+                        {
+                            break;
+                        }
+                        i++;
+                    }
+                    i++;
+                    //System.out.println("NEW" + i);
+                }*/
+                String key = String.valueOf(name);
+                if (newval.containsKey(key))
+                {
+                    System.out.println(newval.get(key));
+                    ans.append(newval.get(key));
+                }
+                else
+                {
+                    ans.append(name);
+                    System.out.println(name);
+                }
+
+                mode = false;
+                //continue;
+                System.out.println("I:");
+                System.out.println(i);
+                System.out.println(expression.length());
+                i--;
+                continue;
+            }
+            ans.append(c);
+        }
+        if (mode)
+        {
+            String key = String.valueOf(name);
+            if (newval.containsKey(key))
+            {
+                System.out.println(newval.get(key));
+                ans.append(newval.get(key));
+            }
+            else
+            {
+                ans.append(name);
+                System.out.println(name);
+            }
+            System.out.println(name);
+        }
+        System.out.println(ans);
+        return String.valueOf(ans);
+    }
+
     @RequestMapping(path = "/function/{functionName}", method = RequestMethod.PUT, consumes = "text/plain", produces = "text/plain")
-    public String putFunc(@PathVariable String functionName, @RequestBody String expression){
+    public String putFunc(@PathVariable String functionName, @RequestParam(value = "args") List<String> vars, @RequestBody String expression){
         LOG.trace("Putting function " + functionName);
         LOG.trace("Putting value " + expression);
         if (!checkName(functionName))
         {
             return "Invalid name\n";
         }
+        String newexpr;
         try {
-            database.putFunctionValue(functionName, expression);
-        } catch (Exception exp) {
-            LOG.warn("Another type");
-            return "Another type\n";
+            newexpr = convert(expression, vars);
         }
+        catch(Exception ex)
+        {
+            LOG.warn("Invalid convert");
+            return "Invalid convert\n";
+        }
+
+        try {
+            LOG.trace("Putting converted value " + newexpr);
+            String varstring = String.valueOf(vars);
+            database.putFunctionValue(functionName, varstring.substring(1, varstring.length()- 1), expression, newexpr);
+        }
+        catch(Exception exp)
+        {
+        LOG.warn("Another type");
+        return exp.getMessage();//"Another type\n";
+        }
+
         LOG.trace("Put function " + functionName);
         return "Successfully put function\n";
     }
+
+
 
     @RequestMapping(path = "/eval", method = RequestMethod.POST, consumes = "text/plain", produces = "text/plain")
     public String eval(@RequestBody String expression) throws ParsingException {

@@ -122,12 +122,11 @@ public class MyCalculator implements Calculator {
                     //i++;
                     continue;
                 }*/
-                int decr = 0;
+                //int decr = -1;
                 if (c.equals('('))
                 {
                     name.append(c);
                     i++;
-                    decr = -1;
                     int balance = 1;
                     while(i < expression.length())
                     {
@@ -165,7 +164,7 @@ public class MyCalculator implements Calculator {
                 System.out.println("I:");
                 System.out.println(i);
                 System.out.println(expression.length());
-                i += decr;
+                i--;
                 continue;
             }
             if (isDigit(c) || c.equals('.')) {

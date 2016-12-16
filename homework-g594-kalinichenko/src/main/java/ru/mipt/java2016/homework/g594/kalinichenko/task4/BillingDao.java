@@ -78,7 +78,7 @@ public class BillingDao {
         jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS " + name + ".variables" +
                 "(variable VARCHAR PRIMARY KEY, value DOUBLE)");
         jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS " + name + ".functions" +
-                "(function VARCHAR PRIMARY KEY, num INT, args VARCHAR, expression VARCHAR)");
+                "(function VARCHAR PRIMARY KEY, args VARCHAR, expression VARCHAR, real VARCHAR)");
     }
 
     private Pair<String,String> parse(String user) throws ParsingException {
@@ -163,8 +163,8 @@ public class BillingDao {
         }
     }
 
-    public void putFunctionValue(String functionName, String expression) {
-        LOG.trace("Request put variable value " + functionName + "to database");
+    public void putFunctionValue(String functionName, String vars, String expression, String real) {
+        LOG.trace("Request put function value " + functionName + "to database");
         try
         {
             loadVariableValue(functionName);
@@ -175,11 +175,13 @@ public class BillingDao {
             try
             {
                 loadFunctionValue(functionName);
-                jdbcTemplate.update("UPDATE " + curUser.getUsername() + ".functions SET expression = '" + expression + "' WHERE function = '" + functionName +"'");
+                jdbcTemplate.update("UPDATE " + curUser.getUsername() + ".functions SET "
+                        + "args = '" + vars + "', expression = '" + expression +
+                        "', real = '" + real + "' WHERE function = '" + functionName +"'");
             }
             catch (EmptyResultDataAccessException exp)
             {
-                jdbcTemplate.update("INSERT INTO " + curUser.getUsername() + ".functions VALUES (?, 0, '', ?)", functionName, expression);
+                jdbcTemplate.update("INSERT INTO " + curUser.getUsername() + ".functions VALUES (?, ?, ?, ?)", functionName, vars, expression, real);
             }
         }
     }
@@ -187,12 +189,12 @@ public class BillingDao {
     public String loadFunctionValue(String functionName) {
         LOG.trace("Request get function value " + functionName + "from database");
         return jdbcTemplate.queryForObject(
-                "SELECT function, expression FROM "+ curUser.getUsername() + ".functions WHERE function = ?",
+                "SELECT function, args, expression FROM "+ curUser.getUsername() + ".functions WHERE function = ?",
                 new Object[]{functionName},
                 new RowMapper<String>() {
                     @Override
                     public String mapRow(ResultSet rs, int rowNum) throws SQLException {
-                        return rs.getString("expression");
+                        return "Args: " + rs.getString("args") + " Value: " + rs.getString("expression");
                     }
                 }
         );
