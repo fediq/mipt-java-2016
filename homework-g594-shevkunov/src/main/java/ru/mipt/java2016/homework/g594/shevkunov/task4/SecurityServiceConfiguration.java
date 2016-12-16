@@ -31,7 +31,7 @@ public class SecurityServiceConfiguration extends WebSecurityConfigurerAdapter {
                 .logout().disable()
                 .csrf().disable()
                 .authorizeRequests()
-                .antMatchers("/eval/**").authenticated()
+                .antMatchers("/**").authenticated()
                 .anyRequest().permitAll();
     }
 

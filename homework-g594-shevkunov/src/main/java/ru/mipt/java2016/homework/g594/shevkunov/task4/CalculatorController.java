@@ -3,6 +3,7 @@ package ru.mipt.java2016.homework.g594.shevkunov.task4;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
@@ -21,28 +22,19 @@ public class CalculatorController {
     @Autowired
     private Calculator calculator;
 
-    @RequestMapping(path = "/ping", method = RequestMethod.GET, produces = "text/plain")
-    public String echo() {
-        return "OK\n";
-    }
-
     @RequestMapping(path = "/", method = RequestMethod.GET, produces = "text/html")
-    public String main(@RequestParam(required = false) String name) {
-        if (name == null) {
-            name = "world";
-        }
-        return "<html>" +
-                "<head><title>FediqApp</title></head>" +
-                "<body><h1>Hello, " + name + "!</h1></body>" +
-                "</html>";
+    public String main(Authentication authentication, @RequestParam(required = false) String name) {
+        String username = authentication.getName();
+        return "Hello, " + username + ".\n";
     }
 
     @RequestMapping(path = "/eval", method = RequestMethod.POST, consumes = "text/plain", produces = "text/plain")
-    public String evalPost(@RequestBody String expression) throws ParsingException {
-        LOG.debug("Evaluation request: [" + expression + "]");
+    public String evalPost(Authentication authentication, @RequestBody String expression) throws ParsingException {
+        String username = authentication.getName();
+        LOG.debug("Evaluation request: [" + expression + "] for user: " + username);
         String result;
         try {
-            double dResult = rebuildAndCalculate(expression, billingDao.getAllVariables("username")); // TODO username
+            double dResult = rebuildAndCalculate(expression, billingDao.getAllVariables(username)); // TODO username
             result = Double.toString(dResult) + "\n";
         } catch (Throwable e)  {
             result = "InvalidExpression.\n";
@@ -50,11 +42,6 @@ public class CalculatorController {
 
         LOG.trace("Result: " + result);
         return result;
-    }
-
-    @RequestMapping(path = "/eval", method = RequestMethod.GET, produces = "text/html")
-    public String evalGet() throws ParsingException {
-        return "You should use POST method.\n";
     }
 
     /*** Variables functions
@@ -70,15 +57,17 @@ public class CalculatorController {
      * TODO Remove this*/
 
     @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.GET, produces = "text/html")
-    public String varGet(@PathVariable String variableName) throws ParsingException {
-        return billingDao.getVariable("username", variableName) + "\n";
+    public String varGet(Authentication authentication, @PathVariable String variableName) throws ParsingException {
+        String username = authentication.getName();
+        return billingDao.getVariable(username, variableName) + "\n";
     }
 
     @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.PUT, produces = "text/html")
-    public String varPut(@PathVariable String variableName, @RequestBody String value) throws ParsingException {
+    public String varPut(Authentication authentication, @PathVariable String variableName, @RequestBody String value) throws ParsingException {
+        String username = authentication.getName();
         String result = "OK\n";
         try {
-            billingDao.setVariable("username", variableName, value);
+            billingDao.setVariable(username, variableName, value);
         } catch (Exception e) {
             result = "Server Internal Error.\n";
         }
@@ -86,10 +75,11 @@ public class CalculatorController {
     }
 
     @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.DELETE, produces = "text/html")
-    public String varDel(@PathVariable String variableName) throws ParsingException {
+    public String varDel(Authentication authentication, @PathVariable String variableName) throws ParsingException {
+        String username = authentication.getName();
         String result = "OK\n";
         try {
-            billingDao.delVariable("username", variableName);
+            billingDao.delVariable(username, variableName);
         } catch (Exception e) {
             result = "Server Internal Error.\n";
         }
@@ -97,19 +87,18 @@ public class CalculatorController {
     }
 
     @RequestMapping(path = "/variable/", method = RequestMethod.GET, produces = "text/html")
-    public String allVarGet() throws ParsingException {
-        List<String> allVar = billingDao.getAllVariableNames("username"); // TODO Normal user
+    public String allVarGet(Authentication authentication) throws ParsingException {
+        String username = authentication.getName();
+        List<String> allVar = billingDao.getAllVariableNames(username);
         String all = "'";
         for (Iterator<String> i = allVar.iterator(); i.hasNext(); ) {
             all += i.next();
             if (i.hasNext()) {
                 all += "', '";
-            } else {
-                all += "'";
             }
         }
 
-        return all + "\n";
+        return all + "'\n";
     }
 
     /*** Function functions
@@ -125,28 +114,32 @@ public class CalculatorController {
      * TODO Remove this*/
 
     @RequestMapping(path = "/function/{functionName}", method = RequestMethod.GET, produces = "text/html")
-    public String funcGet(@PathVariable String functionName) throws ParsingException {
+    public String funcGet(Authentication authentication, @PathVariable String functionName) throws ParsingException {
+        String username = authentication.getName();
         return "Requested: " + functionName + "\n" +
                 "This function doesn't implemented yet.\n";
     }
 
     @RequestMapping(path = "/function/{functionName}", method = RequestMethod.PUT, produces = "text/html")
-    public String funcPut(@PathVariable String functionName,
+    public String funcPut(Authentication authentication, @PathVariable String functionName,
                           @RequestParam(value = "args") List<String> arguments,
                           @RequestBody String request) throws ParsingException {
+        String username = authentication.getName();
         return "An attempt to put: " + functionName + "\n" +
                 "With request = " + request + "\n" +
                 "This function doesn't implemented yet.\n";
     }
 
     @RequestMapping(path = "/function/{functionName}", method = RequestMethod.DELETE, produces = "text/html")
-    public String funcDel(@PathVariable String functionName) throws ParsingException {
+    public String funcDel(Authentication authentication, @PathVariable String functionName) throws ParsingException {
+        String username = authentication.getName();
         return "An attempt to delete: " + functionName + "\n" +
                 "This function doesn't implemented yet.\n";
     }
 
     @RequestMapping(path = "/function/", method = RequestMethod.GET, produces = "text/html")
-    public String allFuncGet() throws ParsingException {
+    public String allFuncGet(Authentication authentication) throws ParsingException {
+        String username = authentication.getName();
         return "Requested all functions \n" +
                 "This function doesn't implemented yet.\n";
     }

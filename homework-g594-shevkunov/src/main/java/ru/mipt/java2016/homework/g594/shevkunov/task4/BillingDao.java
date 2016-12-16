@@ -41,7 +41,9 @@ public class BillingDao {
                 " value VARCHAR)");
 
         jdbcTemplate.execute("DELETE FROM billing.users  WHERE username = 'username'");
+        jdbcTemplate.execute("DELETE FROM billing.users  WHERE username = 'sudoname'");
         jdbcTemplate.update("INSERT INTO billing.users VALUES ('username', 'password', TRUE) ");
+        jdbcTemplate.update("INSERT INTO billing.users VALUES ('sudoname', 'aptitude', TRUE) ");
     }
 
 
@@ -86,7 +88,7 @@ public class BillingDao {
 
     public List<String> getAllVariableNames(String username) {
         LOG.trace("Getting all variables for user " + username);
-        String querry = "SELECT variable FROM billing.vars"; // TODO make faster
+        String querry = "SELECT variable FROM billing.vars WHERE username = '" + username + "'";
 
         List<String> vars = new ArrayList<String>();
 
@@ -100,7 +102,7 @@ public class BillingDao {
 
     public Map<String, String> getAllVariables(String username) {
         LOG.trace("Getting all variables for user " + username);
-        String querry = "SELECT * FROM billing.vars"; // TODO make faster
+        String querry = "SELECT * FROM billing.vars WHERE username = '" + username + "'";
 
         Map<String, String> vars = new HashMap<>();
 
@@ -113,7 +115,7 @@ public class BillingDao {
 
     public void delVariable(String username, String variable) {
         LOG.trace("Deletting variable " + variable + " for user " + username); // TODO check valid
-        String querry = "DELETE FROM billing.vars WHERE username = '" +username + "' AND variable = '" + variable +"'";
+        String querry = "DELETE FROM billing.vars WHERE username = '" + username + "' AND variable = '" + variable +"'";
         jdbcTemplate.execute(querry);
     }
 }
