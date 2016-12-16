@@ -8,7 +8,6 @@ import javafx.util.Pair;
 import org.springframework.web.bind.annotation.*;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
-import javax.websocket.server.PathParam;
 import java.util.ArrayList;
 
 @RestController
@@ -40,7 +39,7 @@ public class RestCalculator {
     }
 
     @RequestMapping(path = "/function/{functionName}", method = RequestMethod.GET)
-    public Pair<String, ArrayList<String> > getFunction(@PathVariable String functionName) {
+    public Pair<String, ArrayList<String>>getFunction(@PathVariable String functionName) {
         return calc.getFunction(functionName);
     }
 

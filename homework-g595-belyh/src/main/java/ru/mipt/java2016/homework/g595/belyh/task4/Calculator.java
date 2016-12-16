@@ -2,7 +2,6 @@ package ru.mipt.java2016.homework.g595.belyh.task4;
 
 import javafx.util.Pair;
 
-import java.io.IOException;
 import java.util.*;
 
 /**
@@ -13,9 +12,9 @@ import ru.mipt.java2016.homework.base.task1.ParsingException;
 
 
 public class Calculator {
-    private HashMap <String, Function> map = new HashMap<>();
+    private HashMap<String, Function> map = new HashMap<>();
     private HashMap<String, Integer> s = new HashMap<>();
-    private HashMap <String, Double> variable = new HashMap<>();
+    private HashMap<String, Double> variable = new HashMap<>();
 
     public Calculator() {
         s.put("sin", 1);
@@ -171,7 +170,7 @@ public class Calculator {
                     throw new ParsingException("Incorrect Argument");
                 }
             } else if (map.containsKey(tmp)) {
-                int num = map.get(tmp).variable.size();
+                int num = map.get(tmp).getVariable().size();
 
                 ArrayList<Double> arg = new ArrayList<>();
                 for (int i = 0; i < num; i++) {
@@ -187,7 +186,7 @@ public class Calculator {
 
                 getChar();
 
-                return map.get(tmp).Calculate(arg);
+                return map.get(tmp).calculate(arg);
             } else {
                 throw new ParsingException("Incorrect name");
             }
@@ -260,8 +259,8 @@ public class Calculator {
         return false;
     }
 
-    ArrayList <String> getVariable() {
-        ArrayList <String> tmp = new ArrayList<>();
+    ArrayList<String> getVariable() {
+        ArrayList<String> tmp = new ArrayList<>();
         for (Map.Entry<String, Double> it : variable.entrySet()) {
             tmp.add(it.getKey());
         }
@@ -269,8 +268,8 @@ public class Calculator {
         return tmp;
     }
 
-    ArrayList <String> getFunction() {
-        ArrayList <String> tmp = new ArrayList<>();
+    ArrayList<String> getFunction() {
+        ArrayList<String> tmp = new ArrayList<>();
         for (Map.Entry<String, Function> it : map.entrySet()) {
             tmp.add(it.getKey());
         }
@@ -280,7 +279,7 @@ public class Calculator {
 
     Pair<String, ArrayList<String>> getFunction(String name) {
         if (map.containsKey(name)) {
-            return new Pair(map.get(name).s, map.get(name).variable);
+            return new Pair(map.get(name).getS(), map.get(name).getVariable());
         }
 
         return null;

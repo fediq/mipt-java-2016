@@ -9,10 +9,10 @@ import ru.mipt.java2016.homework.base.task1.ParsingException;
 import java.util.ArrayList;
 
 public class Function {
-    public ArrayList<String> variable = new ArrayList<>();
-    public String s;
+    private ArrayList<String> variable = new ArrayList<>();
+    private String s;
 
-    public Function(ArrayList <String> l, String t) {
+    public Function(ArrayList<String> l, String t) {
         for (int i = 0; i < l.size(); i++) {
             variable.add(l.get(i));
         }
@@ -20,7 +20,15 @@ public class Function {
         s = t;
     }
 
-    public double Calculate(ArrayList <Double> arg) throws ParsingException {
+    public ArrayList<String> getVariable() {
+        return variable;
+    }
+
+    public String getS() {
+        return s;
+    }
+
+    public double calculate(ArrayList<Double> arg) throws ParsingException {
         Calculator copy = new Calculator();
 
         for (int i = 0; i < arg.size(); i++) {
