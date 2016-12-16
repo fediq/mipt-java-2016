@@ -6,6 +6,7 @@ import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Stack;
 
 
@@ -87,7 +88,7 @@ public class MyCalculator implements Calculator {
     private static boolean isLatin(char c) {
         return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
     }
-    private ArrayList<CalcItem> getPolishNotation(String expression) throws ParsingException {
+    private ArrayList<CalcItem> getPolishNotation(String expression, HashMap<String, Double> args) throws ParsingException {
         ArrayList<CalcItem> polishNotation = new ArrayList<>();
         Stack<StackItem> stack  = new Stack<>();
         boolean unary = true;
@@ -104,7 +105,7 @@ public class MyCalculator implements Calculator {
                 name.append(c);
                 continue;
             }
-            if (c.equals('_') || isLatin(c))
+            if (c.equals('_') || isLatin(c) || c.equals('|'))
             {
                 if (prevIsNumber) {
                     throw new ParsingException("Invalid Expression");
@@ -153,7 +154,23 @@ public class MyCalculator implements Calculator {
                     //i--;
                     //continue;
                 }
-                polishNotation.add(new Number(sign * getResult(name)));
+                String namestr = String.valueOf(name);
+                double number;
+                if (((Character)namestr.charAt(0)).equals('|'))
+                {
+                    if (args.containsKey(namestr))
+                    {
+                        number = args.get(namestr);
+                    }
+                    else {
+                        throw new ParsingException("Invalid name");
+                    }
+                }
+                else
+                {
+                    number = sign * getResult(name);
+                }
+                polishNotation.add(new Number(number));
                 System.out.println(name);
                 mode = false;
                 sign = 1;
@@ -260,7 +277,23 @@ public class MyCalculator implements Calculator {
         }
         if (mode)
         {
-            polishNotation.add(new Number(getResult(name)));
+            String namestr = String.valueOf(name);
+            double number;
+            if (((Character)namestr.charAt(0)).equals('|'))
+            {
+                if (args.containsKey(namestr))
+                {
+                    number = args.get(namestr);
+                }
+                else {
+                    throw new ParsingException("Invalid name");
+                }
+            }
+            else
+            {
+                number = sign * getResult(name);
+            }
+            polishNotation.add(new Number(number));
             System.out.println(name);
         }
         while (!stack.empty()) {
@@ -295,6 +328,7 @@ public class MyCalculator implements Calculator {
         System.out.println(func);
         System.out.println(i);
         //System.out.println("AAA" + name.charAt(i));
+        int balance = 0;
         while(i < name.length() - 1)
         {
             Character c = name.charAt(i);
@@ -303,7 +337,15 @@ public class MyCalculator implements Calculator {
                 i++;
                 continue;
             }*/
-            if (c.equals(','))
+            if (c.equals('('))
+            {
+                balance++;
+            }
+            if(c.equals(')'))
+            {
+                balance--;
+            }
+            if (c.equals(',') && balance == 0)
             {
                 System.out.println(cur);
                 args.add(String.valueOf(cur));
@@ -318,6 +360,10 @@ public class MyCalculator implements Calculator {
         System.out.println(i);
         System.out.println(name.length());
         System.out.println(cur);
+        if (balance != 0)
+        {
+            throw new ParsingException("Wrong balance of brackets");
+        }
         if (cur.length() > 0)
         {
             args.add(String.valueOf(cur));
@@ -359,13 +405,25 @@ public class MyCalculator implements Calculator {
                 args.add(res);
             }
             System.out.println("COME");
-            try
+            if (BuiltInFunction.find(parsed.getKey(), args.size()))
             {
                 return BuiltInFunction.execute(parsed.getKey(), args);
             }
-            catch (Exception exc)
+            else
             {
-                throw new ParsingException("No such function");
+                Pair<String, Integer> toCalc = database.loadFunctionCalculation(parsed.getKey());
+                int numargs = toCalc.getValue();
+                if (numargs != args.size())
+                {
+                    throw new ParsingException("Error number of arguments");
+                }
+                HashMap<String, Double> argValues = new HashMap<>();
+                for(int i = 0; i < numargs; ++i)
+                {
+                    argValues.put("|"+i, args.get(i));
+                }
+                double ans = calculate(toCalc.getKey(), argValues);
+                return ans;
             }
         }
     }
@@ -392,7 +450,15 @@ public class MyCalculator implements Calculator {
         if (expression == null) {
             throw new ParsingException("NullExpression");
         }
-        ArrayList<CalcItem> polishNotation = getPolishNotation(expression);
+        ArrayList<CalcItem> polishNotation = getPolishNotation(expression, new HashMap<String, Double>());
+        return getValue(polishNotation);
+    }
+
+    public double calculate(String expression, HashMap<String, Double> map) throws ParsingException {
+        if (expression == null) {
+            throw new ParsingException("NullExpression");
+        }
+        ArrayList<CalcItem> polishNotation = getPolishNotation(expression, map);
         return getValue(polishNotation);
     }
 }

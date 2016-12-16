@@ -215,7 +215,7 @@ public class CalculatorController {
             {
                 throw new ParsingException("Same arguments");
             }
-            newval.put(elem, "/" + ind);
+            newval.put(elem, "|" + ind);
             System.out.println(elem);
             System.out.println("EEwwEE" + newval.get(elem));
             ind++;
@@ -333,7 +333,7 @@ public class CalculatorController {
         try {
             LOG.trace("Putting converted value " + newexpr);
             String varstring = String.valueOf(vars);
-            database.putFunctionValue(functionName, varstring.substring(1, varstring.length()- 1), expression, newexpr);
+            database.putFunctionValue(functionName, vars.size(), varstring.substring(1, varstring.length()- 1), expression, newexpr);
         }
         catch(Exception exp)
         {
