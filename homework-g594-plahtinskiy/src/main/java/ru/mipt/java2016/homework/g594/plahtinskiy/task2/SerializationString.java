@@ -18,11 +18,8 @@ public class SerializationString extends Serialization<String> {
     @Override
     public String read(RandomAccessFile file) throws IOException {
         Integer length = file.readInt();
-        byte[] buffer = new byte[length];
-        for (Integer i = 0; i < length; ++i) {
-            buffer[i] = file.readByte();
-        }
-
-        return new String(buffer);
+        byte[] bytes = new byte[length];
+        file.readFully(bytes);
+        return new String(bytes);
     }
 }
