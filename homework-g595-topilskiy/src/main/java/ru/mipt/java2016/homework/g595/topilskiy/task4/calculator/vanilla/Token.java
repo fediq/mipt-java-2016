@@ -1,4 +1,4 @@
-package ru.mipt.java2016.homework.g595.topilskiy.task4.calculator;
+package ru.mipt.java2016.homework.g595.topilskiy.task4.calculator.vanilla;
 
 /**
  * Token class for parsing the expression in TokenCalculator

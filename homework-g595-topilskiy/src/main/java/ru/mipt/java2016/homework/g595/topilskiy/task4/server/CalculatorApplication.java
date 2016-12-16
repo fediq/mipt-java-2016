@@ -10,7 +10,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
 import ru.mipt.java2016.homework.base.task1.Calculator;
-import ru.mipt.java2016.homework.g595.topilskiy.task4.calculator.TokenCalculator;
+import ru.mipt.java2016.homework.g595.topilskiy.task4.calculator.vanilla.TokenCalculator;
 
 /**
  * curl http://localhost:9001/eval \
