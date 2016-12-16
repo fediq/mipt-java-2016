@@ -1,7 +1,6 @@
 package ru.mipt.java2016.homework.g594.kalinichenko.task4;
 
 import javafx.util.Pair;
-import org.springframework.context.annotation.Bean;
 import org.springframework.dao.EmptyResultDataAccessException;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
@@ -86,17 +85,70 @@ public class MyCalculator implements Calculator {
             return null;
         }
     }
+
     private static boolean isLatin(char c) {
         return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
     }
-    private ArrayList<CalcItem> getPolishNotation(String expression, HashMap<String, Double> args) throws ParsingException {
+
+    private static int processFuncBody(String expression, StringBuilder name, int i, Character c) {
+        name.append(c);
+        i++;
+        int balance = 1;
+        while (i < expression.length()) {
+            c = expression.charAt(i);
+            name.append(c);
+            if (c.equals('(')) {
+                balance++;
+            }
+            if (c.equals(')')) {
+                balance--;
+            }
+            if (balance == 0) {
+                break;
+            }
+            i++;
+        }
+        i++;
+        return i;
+    }
+
+    private static Pair<Double, Integer> processNumber(String expression, double curNumber,
+                                                       boolean haveDot, double degree, int i) throws ParsingException {
+        Character c;
+        while (i < expression.length()) {
+            c = expression.charAt(i);
+            if (!isDigit(c) && !c.equals('.')) {
+                break;
+            }
+            if (!haveDot) {
+                if (isDigit(c)) {
+                    curNumber = curNumber * 10 + getNumericValue(c);
+                } else {
+                    haveDot = true;
+                }
+            } else {
+                if (isDigit(c)) {
+                    degree *= 10;
+                    curNumber = curNumber + ((double) getNumericValue(c)) / degree;
+                } else {
+                    throw new ParsingException("Invalid Expression");
+                }
+            }
+            i++;
+        }
+        i--;
+        return new Pair(curNumber, i);
+    }
+
+    private ArrayList<CalcItem> getPolishNotation(String expression,
+                                                  HashMap<String, Double> args) throws ParsingException {
         ArrayList<CalcItem> polishNotation = new ArrayList<>();
         Stack<StackItem> stack  = new Stack<>();
         boolean unary = true;
         double curNumber = 0;
         double sign = 1;
         boolean prevIsNumber = false;
-        StringBuilder name =  new StringBuilder();;
+        StringBuilder name =  new StringBuilder();
         boolean mode = false;
         double degree = 1;
         for (int i = 0; i < expression.length(); ++i) {
@@ -114,33 +166,13 @@ public class MyCalculator implements Calculator {
                 name.append(c);
                 continue;
             }
-
             if (mode) {
                 if (c.equals('(')) {
-                    name.append(c);
-                    i++;
-                    int balance = 1;
-                    while(i < expression.length()) {
-                        c = expression.charAt(i);
-                        name.append(c);
-                        System.out.println(c);
-                        System.out.println("I" + i);
-                        if (c.equals('(')) {
-                            balance++;
-                        }
-                        if (c.equals(')')) {
-                            balance--;
-                        }
-                        if (balance == 0) {
-                            break;
-                        }
-                        i++;
-                    }
-                    i++;
+                    i = processFuncBody(expression, name, i, c);
                 }
                 String nameString = String.valueOf(name);
                 double number;
-                if (((Character)nameString.charAt(0)).equals('|')) {
+                if (((Character) nameString.charAt(0)).equals('|')) {
                     if (args.containsKey(nameString)) {
                         number = args.get(nameString);
                     } else {
@@ -166,28 +198,9 @@ public class MyCalculator implements Calculator {
                 if (c.equals('.')) {
                     haveDot = true;
                 }
-                while (i < expression.length()) {
-                    c = expression.charAt(i);
-                    if (!isDigit(c) && !c.equals('.')) {
-                        break;
-                    }
-                    if (!haveDot) {
-                        if (isDigit(c)) {
-                            curNumber = curNumber * 10 + getNumericValue(c);
-                        } else {
-                            haveDot = true;
-                        }
-                    } else {
-                        if (isDigit(c)) {
-                            degree *= 10;
-                            curNumber = curNumber + ((double) getNumericValue(c)) / degree;
-                        } else {
-                            throw new ParsingException("Invalid Expression");
-                        }
-                    }
-                    i++;
-                }
-                i--;
+                Pair<Double, Integer> getNum = processNumber(expression, curNumber, haveDot, degree, i);
+                curNumber = getNum.getKey();
+                i = getNum.getValue();
                 polishNotation.add(new Number(sign * curNumber));
                 sign = 1;
                 curNumber = 0;
@@ -244,19 +257,17 @@ public class MyCalculator implements Calculator {
                     unary = true;
                 }
                 prevIsNumber = false;
-            } else
-            {
+            } else {
                 if (!isWhitespace(c)) {
                     throw new ParsingException("Invalid Symbol");
                 }
             }
         }
         if (mode) {
-            String nameString = String.valueOf(name);
             double number;
-            if (((Character)nameString.charAt(0)).equals('|')) {
-                if (args.containsKey(nameString)) {
-                    number = args.get(nameString);
+            if (((Character) name.charAt(0)).equals('|')) {
+                if (args.containsKey(String.valueOf(name))) {
+                    number = args.get(String.valueOf(name));
                 } else {
                     throw new ParsingException("Invalid name");
                 }
@@ -281,25 +292,28 @@ public class MyCalculator implements Calculator {
         return polishNotation;
     }
 
-    private Pair<String, ArrayList<String>> parseFunc(StringBuilder name)  throws ParsingException{
+
+
+
+    private Pair<String, ArrayList<String>> parseFunc(StringBuilder name)  throws ParsingException {
         StringBuilder func = new StringBuilder();
-        StringBuilder cur = new StringBuilder();;
+        StringBuilder cur = new StringBuilder();
         ArrayList<String> args = new ArrayList<>();
         int i = 0;
         System.out.println(name);
-        while(i < name.length() && name.charAt(i) != '(') {
+        while (i < name.length() && name.charAt(i) != '(') {
             func.append(name.charAt(i));
             i++;
         }
         i++;
         int balance = 0;
-        while(i < name.length() - 1) {
+        while (i < name.length() - 1) {
             Character c = name.charAt(i);
             System.out.println(c);
             if (c.equals('(')) {
                 balance++;
             }
-            if(c.equals(')')) {
+            if (c.equals(')')) {
                 balance--;
             }
             if (c.equals(',') && balance == 0) {
@@ -323,13 +337,13 @@ public class MyCalculator implements Calculator {
         return new Pair(String.valueOf(func), args);
     }
 
-    private double getResult(StringBuilder name) throws ParsingException{
+    private double getResult(StringBuilder name) throws ParsingException {
         try {
             return database.loadVariableCalculation(String.valueOf(name));
         } catch (EmptyResultDataAccessException exp) {
-            Pair<String, ArrayList<String> > parsed = parseFunc(name);
+            Pair<String, ArrayList<String>> parsed = parseFunc(name);
             ArrayList<Double> args = new ArrayList<>();
-            for(String arg:parsed.getValue()) {
+            for (String arg:parsed.getValue()) {
                 double res = calculate(arg);
                 args.add(res);
             }
@@ -345,8 +359,6 @@ public class MyCalculator implements Calculator {
             }
         }
     }
-
-
 
     private double getValue(ArrayList<CalcItem> polishNotation) throws ParsingException {
         Stack<Number> stack = new Stack<>();
@@ -377,8 +389,8 @@ public class MyCalculator implements Calculator {
             throw new ParsingException("NullExpression");
         }
         HashMap<String, Double> argValues = new HashMap<>();
-        for(int i = 0; i < args.size(); ++i) {
-            argValues.put("|"+i, args.get(i));
+        for (int i = 0; i < args.size(); ++i) {
+            argValues.put("|" + i, args.get(i));
         }
         ArrayList<CalcItem> polishNotation = getPolishNotation(expression, argValues);
         return getValue(polishNotation);

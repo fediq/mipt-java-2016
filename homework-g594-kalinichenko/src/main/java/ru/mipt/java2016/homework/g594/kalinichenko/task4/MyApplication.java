@@ -8,7 +8,6 @@ import org.springframework.boot.context.embedded.EmbeddedServletContainerCustomi
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import ru.mipt.java2016.homework.base.task1.Calculator;
 
 /**
  * curl http://localhost:9001/eval \

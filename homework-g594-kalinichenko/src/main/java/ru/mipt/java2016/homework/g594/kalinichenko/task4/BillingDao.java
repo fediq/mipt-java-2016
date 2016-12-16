@@ -4,19 +4,15 @@ import javafx.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.propertyeditors.CurrencyEditor;
 import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.expression.ParseException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
-import ru.mipt.java2016.homework.base.task1.ParsingException;
 
 import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 @Repository
@@ -42,8 +38,7 @@ public class BillingDao {
         jdbcTemplate.execute("CREATE SCHEMA IF NOT EXISTS billing");
         jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS billing.users " +
                 "(username VARCHAR PRIMARY KEY, password VARCHAR, enabled BOOLEAN)");
-        if (!findUser("username"))
-        {
+        if (!findUser("username")) {
             addUserToDb("username", "password");
         }
     }
@@ -75,8 +70,7 @@ public class BillingDao {
         }
     }
 
-    public void setUser(String name, String pass)
-    {
+    public void setUser(String name, String pass) {
         LOG.debug("Setting user " + name);
         if (findUser(name)) {
             LOG.trace("Occupied user " + name);
@@ -130,8 +124,8 @@ public class BillingDao {
     public Double loadVariableCalculation(String variableName) {
         LOG.trace("Request get variable value " + variableName + " from database");
         return jdbcTemplate.queryForObject(
-                "SELECT variable, value FROM "+ curUser.getUsername() + ".variables WHERE variable = ?",
-                new Object[]{variableName},
+                "SELECT variable, value FROM " + curUser.getUsername() + ".variables WHERE variable = ?",
+                new Object[] {variableName},
                 new RowMapper<Double>() {
                     @Override
                     public Double mapRow(ResultSet rs, int rowNum) throws SQLException {
@@ -144,7 +138,7 @@ public class BillingDao {
     public String loadVariableExpression(String variableName) {
         LOG.trace("Request get variable expression " + variableName + " from database");
         return jdbcTemplate.queryForObject(
-                "SELECT variable, value, expression FROM "+ curUser.getUsername() + ".variables WHERE variable = ?",
+                "SELECT variable, value, expression FROM " + curUser.getUsername() + ".variables WHERE variable = ?",
                 new Object[]{variableName},
                 new RowMapper<String>() {
                     @Override
@@ -157,19 +151,16 @@ public class BillingDao {
 
     public void putVariableValue(String variableName, double value, String expression) {
         LOG.trace("Request put variable value " + variableName + " to database");
-        if(findFunction(variableName))
-        {
+        if (findFunction(variableName)) {
             throw new IllegalStateException("Another type");
-        }
-        else
-        {
-            if (findVariable(variableName))
-            {
-                jdbcTemplate.update("UPDATE " + curUser.getUsername() + ".variables SET value = " + value + ", expression = '" +expression+"' WHERE variable = '" + variableName +"'");
-            }
-            else
-            {
-                jdbcTemplate.update("INSERT INTO " + curUser.getUsername() + ".variables VALUES (?, ?, ?)", variableName, value, expression);
+        } else {
+            if (findVariable(variableName)) {
+                jdbcTemplate.update("UPDATE " + curUser.getUsername() + ".variables SET value = " +
+                        value + ", expression = '" + expression +
+                        "' WHERE variable = '" + variableName + "'");
+            } else {
+                jdbcTemplate.update("INSERT INTO " + curUser.getUsername() +
+                        ".variables VALUES (?, ?, ?)", variableName, value, expression);
             }
         }
     }
@@ -200,9 +191,10 @@ public class BillingDao {
             if (findFunction(functionName)) {
                 jdbcTemplate.update("UPDATE " + curUser.getUsername() + ".functions SET "
                         + "num = " + numargs + ", args = '" + vars + "', expression = '" + expression +
-                        "', real = '" + real + "' WHERE function = '" + functionName +"'");
+                        "', real = '" + real + "' WHERE function = '" + functionName + "'");
             } else {
-                jdbcTemplate.update("INSERT INTO " + curUser.getUsername() + ".functions VALUES (?, ?, ?, ?, ?)", functionName, numargs, vars, expression, real);
+                jdbcTemplate.update("INSERT INTO " + curUser.getUsername() +
+                        ".functions VALUES (?, ?, ?, ?, ?)", functionName, numargs, vars, expression, real);
             }
         }
     }
@@ -210,7 +202,7 @@ public class BillingDao {
     public String loadFunctionExpression(String functionName) {
         LOG.trace("Request get function value " + functionName + "from database");
         return jdbcTemplate.queryForObject(
-                "SELECT function, args, expression FROM "+ curUser.getUsername() + ".functions WHERE function = ?",
+                "SELECT function, args, expression FROM " + curUser.getUsername() + ".functions WHERE function = ?",
                 new Object[]{functionName},
                 new RowMapper<String>() {
                     @Override
@@ -224,7 +216,7 @@ public class BillingDao {
     public Pair<String, Integer> loadFunctionCalculation(String functionName) {
         LOG.trace("Request get function to calculate " + functionName + "from database");
         return jdbcTemplate.queryForObject(
-                "SELECT function, num, real FROM "+ curUser.getUsername() + ".functions WHERE function = ?",
+                "SELECT function, num, real FROM " + curUser.getUsername() + ".functions WHERE function = ?",
                 new Object[]{functionName},
                 new RowMapper<Pair<String, Integer>>() {
                     @Override
@@ -237,18 +229,20 @@ public class BillingDao {
 
     public void delVariable(String variableName) {
         LOG.trace("Deleting " + variableName);
-        jdbcTemplate.update("DELETE FROM " + curUser.getUsername() + ".variables WHERE variable = '" + variableName + "'");
+        jdbcTemplate.update("DELETE FROM " + curUser.getUsername() +
+                ".variables WHERE variable = '" + variableName + "'");
     }
 
     public void delFunction(String functionName) {
         LOG.trace("Deleting " + functionName);
-        jdbcTemplate.update("DELETE FROM " + curUser.getUsername() + ".functions WHERE function = '" + functionName + "'");
+        jdbcTemplate.update("DELETE FROM " + curUser.getUsername() +
+                ".functions WHERE function = '" + functionName + "'");
     }
 
     public List<String> loadAllVariables() {
         LOG.trace("Load all variables");
         return jdbcTemplate.query(
-                "SELECT variable FROM "+ curUser.getUsername() + ".variables",
+                "SELECT variable FROM " + curUser.getUsername() + ".variables",
                 new Object[] {},
                 new RowMapper<String>() {
                     public String mapRow(ResultSet rs, int rowNum) throws SQLException {
@@ -261,7 +255,7 @@ public class BillingDao {
     public List<String> loadAllFunctions() {
         LOG.trace("Load all functions");
         return jdbcTemplate.query(
-                "SELECT function FROM "+ curUser.getUsername() + ".functions",
+                "SELECT function FROM " + curUser.getUsername() + ".functions",
                 new Object[] {},
                 new RowMapper<String>() {
                     public String mapRow(ResultSet rs, int rowNum) throws SQLException {

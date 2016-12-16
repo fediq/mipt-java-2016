@@ -33,7 +33,7 @@ public class CalculatorController {
         if (!(isLatin(ch) || (ch.equals('_')))) {
             return false;
         }
-        for(int i = 1; i < name.length(); ++i) {
+        for (int i = 1; i < name.length(); ++i) {
             ch = name.charAt(i);
             if (!(isLatin(ch) || (ch.equals('_') || isDigit(ch)))) {
                 return false;
@@ -46,7 +46,7 @@ public class CalculatorController {
 
         HashMap<String, String> newValue = new HashMap<>();
         int ind = 0;
-        for(String elem: vars) {
+        for (String elem: vars) {
             if (newValue.containsKey(elem)) {
                 throw new ParsingException("Same arguments");
             }
@@ -84,8 +84,7 @@ public class CalculatorController {
             }
             ans.append(ch);
         }
-        if (mode)
-        {
+        if (mode) {
             String key = String.valueOf(name);
             if (newValue.containsKey(key)) {
                 ans.append(newValue.get(key));
@@ -115,7 +114,7 @@ public class CalculatorController {
     }
 
     @RequestMapping(path = "/reg", method = RequestMethod.POST, consumes = "text/plain", produces = "text/plain")
-    public String reg(@RequestParam(value = "name") String name, @RequestParam(value = "password") String pass){
+    public String reg(@RequestParam(value = "name") String name, @RequestParam(value = "password") String pass) {
 
         LOG.debug("Registration request: [" + name + ' ' + pass + "]");
         if (!checkName(name)) {
@@ -133,7 +132,7 @@ public class CalculatorController {
     }
 
     @RequestMapping(path = "/variable/", method = RequestMethod.GET, produces = "text/plain")
-    public String getAllVar(){
+    public String getAllVar() {
         LOG.trace("Getting all variables");
         List<String> res = database.loadAllVariables();
         String ret = String.valueOf(res);
@@ -142,7 +141,7 @@ public class CalculatorController {
     }
 
     @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.GET, produces = "text/plain")
-    public String getVar(@PathVariable String variableName){
+    public String getVar(@PathVariable String variableName) {
         LOG.trace("Getting variable " + variableName);
         if (BuiltInFunction.find(variableName)) {
             LOG.trace("Can't get expression of builtin function");
@@ -156,8 +155,9 @@ public class CalculatorController {
         }
     }
 
-    @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.PUT, consumes = "text/plain", produces = "text/plain")
-    public String putVar(@PathVariable String variableName, @RequestBody String expression){
+    @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.PUT,
+            consumes = "text/plain", produces = "text/plain")
+    public String putVar(@PathVariable String variableName, @RequestBody String expression) {
         LOG.trace("Putting variable " + variableName);
         LOG.trace("Putting value " + expression);
         if (!checkName(variableName)) {
@@ -177,8 +177,7 @@ public class CalculatorController {
         }
         try {
             database.putVariableValue(variableName, result, expression);
-        } catch (Exception exp)
-        {
+        } catch (Exception exp) {
             LOG.trace("Another type");
             return "There already is a function with such a name\n";
         }
@@ -186,14 +185,13 @@ public class CalculatorController {
         return "Successfully put variable\n";
     }
 
-    @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.DELETE, consumes = "text/plain", produces = "text/plain")
-    public String deleteVar(@PathVariable String variableName){
+    @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.DELETE,
+            consumes = "text/plain", produces = "text/plain")
+    public String deleteVar(@PathVariable String variableName) {
         LOG.trace("Deleting variable " + variableName);
         try {
             database.delVariable(variableName);
-        }
-        catch (Exception exp)
-        {
+        } catch (Exception exp) {
             LOG.trace("No such variable");
             return "No such variable\n";
         }
@@ -202,7 +200,7 @@ public class CalculatorController {
     }
 
     @RequestMapping(path = "/function/", method = RequestMethod.GET, produces = "text/plain")
-    public String getAllFunc(){
+    public String getAllFunc() {
         LOG.trace("Getting all functions");
         List<String> res = database.loadAllFunctions();
         String ret = String.valueOf(res);
@@ -228,17 +226,18 @@ public class CalculatorController {
     }
 
 
-    @RequestMapping(path = "/function/{functionName}", method = RequestMethod.PUT, consumes = "text/plain", produces = "text/plain")
-    public String putFunc(@PathVariable String functionName, @RequestParam(value = "args", defaultValue = "") List<String> vars, @RequestBody String expression){
+    @RequestMapping(path = "/function/{functionName}", method = RequestMethod.PUT,
+            consumes = "text/plain", produces = "text/plain")
+    public String putFunc(@PathVariable String functionName,
+                          @RequestParam(value = "args", defaultValue = "") List<String> vars,
+                          @RequestBody String expression) {
         LOG.trace("Putting function " + functionName);
         LOG.trace("Putting value " + expression);
-        if (!checkName(functionName))
-        {
+        if (!checkName(functionName)) {
             LOG.trace("Invalid name " + functionName);
             return "Invalid name\n";
         }
-        if (BuiltInFunction.find(functionName))
-        {
+        if (BuiltInFunction.find(functionName)) {
             LOG.trace("Can't change builtin function");
             return ("Can't change builtin function\n");
         }
@@ -247,9 +246,7 @@ public class CalculatorController {
             newExpression = convert(expression, vars);
             ArrayList<Double> params = new ArrayList<>(vars.size());
             calculator.calculate(expression, params);
-        }
-        catch(Exception ex)
-        {
+        } catch (Exception ex) {
             LOG.trace("Invalid expression " + expression);
             LOG.debug(ex.getMessage());
             return "Invalid expression\n";
@@ -257,9 +254,9 @@ public class CalculatorController {
         try {
             LOG.trace("Putting converted value " + newExpression);
             String varString = String.valueOf(vars);
-            database.putFunctionValue(functionName, vars.size(), varString.substring(1, varString.length()- 1), expression, newExpression);
-        } catch(Exception exp)
-        {
+            database.putFunctionValue(functionName, vars.size(),
+                    varString.substring(1, varString.length() - 1), expression, newExpression);
+        } catch (Exception exp) {
             LOG.trace("Another type");
             return "There is a variable with this name\n";
         }
@@ -268,8 +265,9 @@ public class CalculatorController {
         return "Successfully put function\n";
     }
 
-    @RequestMapping(path = "/function/{functionName}", method = RequestMethod.DELETE, consumes = "text/plain", produces = "text/plain")
-    public String deleteFunc(@PathVariable String functionName){
+    @RequestMapping(path = "/function/{functionName}", method = RequestMethod.DELETE,
+            consumes = "text/plain", produces = "text/plain")
+    public String deleteFunc(@PathVariable String functionName) {
         LOG.trace("Deleting function " + functionName);
         try {
             database.delFunction(functionName);
