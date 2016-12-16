@@ -97,6 +97,7 @@ public class MyCalculator implements Calculator {
         boolean prevIsNumber = false;
         StringBuilder name =  new StringBuilder();;
         boolean mode = false;
+        double degree = 1;
         for (int i = 0; i < expression.length(); ++i) {
             Character c = expression.charAt(i);
             System.out.println("CUR" + i + ',' + c);
@@ -205,7 +206,8 @@ public class MyCalculator implements Calculator {
                         }
                     } else {
                         if (isDigit(c)) {
-                            curNumber = curNumber + ((double) getNumericValue(c)) / 10;
+                            degree *= 10;
+                            curNumber = curNumber + ((double) getNumericValue(c)) / degree;
                         } else {
                             throw new ParsingException("Invalid Expression");
                         }
@@ -214,9 +216,11 @@ public class MyCalculator implements Calculator {
                 }
                 i--;
                 polishNotation.add(new Number(sign * curNumber));
+                System.out.println("WE" + sign*curNumber);
                 sign = 1;
                 curNumber = 0;
                 prevIsNumber = true;
+                degree = 1;
                 unary = false;
             } else if (c.equals('(')) {
                 unary = true;
@@ -384,7 +388,7 @@ public class MyCalculator implements Calculator {
         System.out.println("Request name " + name);
         try
         {
-            return database.loadVariableValue(String.valueOf(name));
+            return database.loadVariableCalculation(String.valueOf(name));
         }
         catch (EmptyResultDataAccessException exp)
         {

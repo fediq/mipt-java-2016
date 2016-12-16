@@ -19,6 +19,7 @@ import static java.lang.Character.isWhitespace;
 @RestController
 public class CalculatorController {
     private static final Logger LOG = LoggerFactory.getLogger(CalculatorController.class);
+
     @Autowired
     private Calculator calculator;
 
@@ -95,9 +96,14 @@ public class CalculatorController {
     @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.GET, produces = "text/plain")
     public String getVar(@PathVariable String variableName){
         LOG.trace("Getting variable " + variableName);
+        if (BuiltInFunction.find(variableName))
+        {
+            LOG.warn("Can't get expression of builtin function");
+            return ("Can't get expression of builtin function\n");
+        }
         try
         {
-            return String.valueOf(database.loadVariableValue(variableName)) + '\n';
+            return database.loadVariableExpression(variableName) + '\n';
         }
         catch (EmptyResultDataAccessException exp)
         {
@@ -115,6 +121,11 @@ public class CalculatorController {
         {
             return "Invalid name\n";
         }
+        if (BuiltInFunction.find(variableName))
+        {
+            LOG.warn("Can't change builtin function");
+            return ("Can't change builtin function\n");
+        }
         double result;
         try {
             result = calculator.calculate(expression);
@@ -126,7 +137,7 @@ public class CalculatorController {
         }
         try
         {
-            database.putVariableValue(variableName, result);
+            database.putVariableValue(variableName, result, expression);
         }
         catch (Exception exp)
         {
@@ -163,7 +174,6 @@ public class CalculatorController {
     @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.DELETE, consumes = "text/plain", produces = "text/plain")
     public String deleteVar(@PathVariable String variableName){
         LOG.trace("Deleting variable " + variableName);
-        double result;
         try {
             database.delVariable(variableName);
         }
@@ -179,7 +189,6 @@ public class CalculatorController {
     @RequestMapping(path = "/function/{functionName}", method = RequestMethod.DELETE, consumes = "text/plain", produces = "text/plain")
     public String deleteFunc(@PathVariable String functionName){
         LOG.trace("Deleting function " + functionName);
-        double result;
         try {
             database.delFunction(functionName);
         }
@@ -195,9 +204,14 @@ public class CalculatorController {
     @RequestMapping(path = "/function/{functionName}", method = RequestMethod.GET, produces = "text/plain")
     public String getFunc(@PathVariable String functionName){
         LOG.trace("Getting function " + functionName);
+        if (BuiltInFunction.find(functionName))
+        {
+            LOG.warn("Can't get expression of builtin function");
+            return ("Can't get expression of builtin function\n");
+        }
         try
         {
-            return database.loadFunctionValue(functionName) + '\n';
+            return database.loadFunctionExpression(functionName) + '\n';
         }
         catch (EmptyResultDataAccessException exp)
         {
@@ -241,7 +255,6 @@ public class CalculatorController {
             }
             if (mode)
             {
-                int decr = 0;
                 /*if (c.equals('('))
                 {
                     name.append(c);
@@ -313,12 +326,18 @@ public class CalculatorController {
     }
 
     @RequestMapping(path = "/function/{functionName}", method = RequestMethod.PUT, consumes = "text/plain", produces = "text/plain")
-    public String putFunc(@PathVariable String functionName, @RequestParam(value = "args") List<String> vars, @RequestBody String expression){
+    public String putFunc(@PathVariable String functionName, @RequestParam(value = "args", defaultValue = "") List<String> vars, @RequestBody String expression){
         LOG.trace("Putting function " + functionName);
         LOG.trace("Putting value " + expression);
         if (!checkName(functionName))
         {
+            LOG.warn("Invalid name");
             return "Invalid name\n";
+        }
+        if (BuiltInFunction.find(functionName))
+        {
+            LOG.warn("Can't change builtin function");
+            return ("Can't change builtin function\n");
         }
         String newexpr;
         try {
@@ -351,16 +370,16 @@ public class CalculatorController {
     public String eval(@RequestBody String expression) throws ParsingException {
         LOG.debug("Evaluation request: [" + expression + "]");
         double result;
-        //try
-        //{
-            result = calculator.calculate(expression);
-        //}
-        /*catch (Exception exp)
+        try
         {
-            LOG.debug("Wrong expression");
+            result = calculator.calculate(expression);
+        }
+        catch (Exception exp)
+        {
+            LOG.warn("Wrong expression");
             LOG.debug(exp.getMessage());
             return "Wrong expression\n";
-        }*/
+        }
         LOG.trace("Result: " + result);
         return Double.toString(result) + "\n";
     }

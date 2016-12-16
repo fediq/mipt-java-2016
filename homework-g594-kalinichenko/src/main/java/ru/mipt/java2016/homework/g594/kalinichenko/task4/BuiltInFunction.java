@@ -251,6 +251,10 @@ public class BuiltInFunction {
         }
         return false;
     }
+    public static boolean find(String name)
+    {
+        return map0.containsKey(name) || map1.containsKey(name) || map2.containsKey(name);
+    }
 
     public static double execute(String name, ArrayList<Double> args)
     {
