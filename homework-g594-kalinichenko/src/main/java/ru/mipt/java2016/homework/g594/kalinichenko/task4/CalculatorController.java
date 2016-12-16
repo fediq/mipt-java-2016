@@ -45,6 +45,8 @@ public class CalculatorController {
     private static String convert(String expression, List<String> vars) throws ParsingException {
 
         HashMap<String, String> newValue = new HashMap<>();
+        System.out.println(expression);
+        System.out.println(vars);
         int ind = 0;
         for (String elem: vars) {
             if (newValue.containsKey(elem)) {
@@ -72,11 +74,11 @@ public class CalculatorController {
             if (mode) {
                 String key = String.valueOf(name);
                 if (newValue.containsKey(key)) {
-                    System.out.println(newValue.get(key));
+                    //System.out.println(newValue.get(key));
                     ans.append(newValue.get(key));
                 } else {
                     ans.append(name);
-                    System.out.println(name);
+                    //System.out.println(name);
                 }
                 mode = false;
                 i--;
@@ -92,6 +94,7 @@ public class CalculatorController {
                 ans.append(name);
             }
         }
+        System.out.println(ans);
         return String.valueOf(ans);
     }
 
@@ -244,8 +247,15 @@ public class CalculatorController {
         String newExpression;
         try {
             newExpression = convert(expression, vars);
-            ArrayList<Double> params = new ArrayList<>(vars.size());
-            calculator.calculate(expression, params);
+            ArrayList<Double> params = new ArrayList<>();
+            for(int i = 0; i < vars.size(); ++i)
+            {
+                params.add(new Double(0));
+            }
+            System.out.println("VARS " + vars);
+            System.out.println("VARS " + vars.size());
+            System.out.println("PARAMS " + params);
+            calculator.calculate(newExpression, params);
         } catch (Exception ex) {
             LOG.trace("Invalid expression " + expression);
             LOG.debug(ex.getMessage());

@@ -1,6 +1,8 @@
 package ru.mipt.java2016.homework.g594.kalinichenko.task4;
 
 import javafx.util.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.EmptyResultDataAccessException;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
@@ -13,12 +15,16 @@ import java.util.Stack;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import static java.lang.Character.*;
+import static java.lang.Double.NaN;
+import static jdk.nashorn.internal.objects.Global.Infinity;
 
 
 public class MyCalculator implements Calculator {
 
     @Autowired
     private BillingDao database;
+
+    private static final Logger LOG = LoggerFactory.getLogger(CalculatorController.class);
 
     public static final MyCalculator INSTANCE = new MyCalculator();
 
@@ -144,6 +150,7 @@ public class MyCalculator implements Calculator {
                                                   HashMap<String, Double> args) throws ParsingException {
         ArrayList<CalcItem> polishNotation = new ArrayList<>();
         Stack<StackItem> stack  = new Stack<>();
+        System.out.println("ARGS " + args);
         boolean unary = true;
         double curNumber = 0;
         double sign = 1;
@@ -179,7 +186,7 @@ public class MyCalculator implements Calculator {
                         throw new ParsingException("Invalid name");
                     }
                 } else {
-                    number = sign * getResult(name);
+                    number = sign * getResult(name, args);
                 }
                 polishNotation.add(new Number(number));
                 mode = false;
@@ -272,7 +279,7 @@ public class MyCalculator implements Calculator {
                     throw new ParsingException("Invalid name");
                 }
             } else {
-                number = sign * getResult(name);
+                number = sign * getResult(name, args);
             }
             polishNotation.add(new Number(number));
         }
@@ -295,11 +302,49 @@ public class MyCalculator implements Calculator {
 
 
 
-    private Pair<String, ArrayList<String>> parseFunc(StringBuilder name)  throws ParsingException {
+    private Pair<String, ArrayList<String>> parseFunc(StringBuilder base, HashMap<String, Double> params)  throws ParsingException {
+        StringBuilder name = new StringBuilder();
+        System.out.println("BASE: "+ base);
+        System.out.println("param: "+ params);
+        int i = 0;
+        while(i < base.length())
+        {
+            Character c = base.charAt(i);
+            if (c.equals('|'))
+            {
+                StringBuilder now = new StringBuilder();
+                now.append(base.charAt(i));
+                i++;
+                while(i < base.length())
+                {
+                    c = base.charAt(i);
+                    if (isDigit(c))
+                    {
+                        now.append(c);
+                        i++;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+                if (!params.containsKey(String.valueOf(now)))
+                {
+                    throw new ParsingException("Wrong expr");
+                }
+                name.append(params.get(String.valueOf(now)));
+            }
+            else
+            {
+                name.append(c);
+                i++;
+            }
+        }
+        System.out.println("NAME" + name);
         StringBuilder func = new StringBuilder();
         StringBuilder cur = new StringBuilder();
         ArrayList<String> args = new ArrayList<>();
-        int i = 0;
+        i = 0;
         System.out.println(name);
         while (i < name.length() && name.charAt(i) != '(') {
             func.append(name.charAt(i));
@@ -309,7 +354,7 @@ public class MyCalculator implements Calculator {
         int balance = 0;
         while (i < name.length() - 1) {
             Character c = name.charAt(i);
-            System.out.println(c);
+            //System.out.println(c);
             if (c.equals('(')) {
                 balance++;
             }
@@ -337,11 +382,24 @@ public class MyCalculator implements Calculator {
         return new Pair(String.valueOf(func), args);
     }
 
-    private double getResult(StringBuilder name) throws ParsingException {
+    private double getResult(StringBuilder name, HashMap<String, Double> params) throws ParsingException {
+        LOG.trace("Request name ." + name + ".");
+        if (String.valueOf(name).equals("NaN"))
+        {
+            return NaN;
+        }
+        if (String.valueOf(name).equals("Infinity"))
+        {
+            return Infinity;
+        }
         try {
+            LOG.trace("Try variable");
             return database.loadVariableCalculation(String.valueOf(name));
         } catch (EmptyResultDataAccessException exp) {
-            Pair<String, ArrayList<String>> parsed = parseFunc(name);
+            LOG.trace("Try func");
+            System.out.println(params);
+            Pair<String, ArrayList<String>> parsed = parseFunc(name, params);
+            LOG.trace("Parsed");
             ArrayList<Double> args = new ArrayList<>();
             for (String arg:parsed.getValue()) {
                 double res = calculate(arg);
@@ -355,6 +413,7 @@ public class MyCalculator implements Calculator {
                 if (numArguments != args.size()) {
                     throw new ParsingException("Error number of arguments");
                 }
+                LOG.trace("Completed filling with arguments. Now execute.");
                 return calculate(toCalc.getKey(), args);
             }
         }
@@ -388,6 +447,7 @@ public class MyCalculator implements Calculator {
         if (expression == null) {
             throw new ParsingException("NullExpression");
         }
+        System.out.println("args" + args);
         HashMap<String, Double> argValues = new HashMap<>();
         for (int i = 0; i < args.size(); ++i) {
             argValues.put("|" + i, args.get(i));
