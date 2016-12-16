@@ -64,9 +64,8 @@ public class CalculatorController implements ICalculator {
     @Override
     @CrossOrigin
     @RequestMapping(path = "/function/{functionName}", method = RequestMethod.GET)
-    public
     @ResponseBody
-    CalculatorFunction getFunction(@PathVariable String functionName) {
+    public CalculatorFunction getFunction(@PathVariable String functionName) {
         return calculator.getFunction(functionName);
     }
 
@@ -89,9 +88,8 @@ public class CalculatorController implements ICalculator {
     @Override
     @CrossOrigin
     @RequestMapping(path = "/function", method = RequestMethod.GET)
-    public
     @ResponseBody
-    List<String> getFunctionsNames() {
+    public List<String> getFunctionsNames() {
         return calculator.getFunctionsNames();
     }
 
@@ -108,8 +106,8 @@ public class CalculatorController implements ICalculator {
         return response;
     }
 
-    @RequestMapping(path = "/", method = RequestMethod.GET)
     @CrossOrigin
+    @RequestMapping(path = "/", method = RequestMethod.GET)
     @ResponseBody
     public FileSystemResource getTestPage() {
         URL url = CalculatorController.class.getResource("/static/index.html");
