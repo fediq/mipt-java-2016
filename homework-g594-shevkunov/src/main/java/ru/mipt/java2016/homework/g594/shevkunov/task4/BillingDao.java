@@ -12,9 +12,7 @@ import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Repository
 public class BillingDao {
@@ -86,9 +84,9 @@ public class BillingDao {
         );
     }
 
-    public List<String> getAllVariables(String username) {
+    public List<String> getAllVariableNames(String username) {
         LOG.trace("Getting all variables for user " + username);
-        String querry = "SELECT * FROM billing.vars"; // TODO make faster
+        String querry = "SELECT variable FROM billing.vars"; // TODO make faster
 
         List<String> vars = new ArrayList<String>();
 
@@ -96,6 +94,19 @@ public class BillingDao {
 
         for (Map row : rows) {
             vars.add((String)row.get("variable"));
+        }
+        return vars;
+    }
+
+    public Map<String, String> getAllVariables(String username) {
+        LOG.trace("Getting all variables for user " + username);
+        String querry = "SELECT * FROM billing.vars"; // TODO make faster
+
+        Map<String, String> vars = new HashMap<>();
+
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList(querry);
+        for (Map row : rows) {
+            vars.put((String)row.get("variable"), (String)row.get("value"));
         }
         return vars;
     }

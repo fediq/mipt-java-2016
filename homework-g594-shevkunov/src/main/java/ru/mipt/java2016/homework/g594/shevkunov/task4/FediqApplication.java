@@ -24,7 +24,7 @@ public class FediqApplication {
 
     @Bean
     public Calculator calculator() {
-        return new AdvancedCalculator();
+        return new PolishCalculator();
     }
 
     @Bean

@@ -9,6 +9,7 @@ import ru.mipt.java2016.homework.base.task1.ParsingException;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 public class CalculatorController {
@@ -41,7 +42,7 @@ public class CalculatorController {
         LOG.debug("Evaluation request: [" + expression + "]");
         String result;
         try {
-            double dResult = calculator.calculate(expression);
+            double dResult = rebuildAndCalculate(expression, billingDao.getAllVariables("username")); // TODO username
             result = Double.toString(dResult) + "\n";
         } catch (Throwable e)  {
             result = "InvalidExpression.\n";
@@ -97,7 +98,7 @@ public class CalculatorController {
 
     @RequestMapping(path = "/variable/", method = RequestMethod.GET, produces = "text/html")
     public String allVarGet() throws ParsingException {
-        List<String> allVar = billingDao.getAllVariables("username"); // TODO Normal user
+        List<String> allVar = billingDao.getAllVariableNames("username"); // TODO Normal user
         String all = "'";
         for (Iterator<String> i = allVar.iterator(); i.hasNext(); ) {
             all += i.next();
@@ -148,5 +149,39 @@ public class CalculatorController {
     public String allFuncGet() throws ParsingException {
         return "Requested all functions \n" +
                 "This function doesn't implemented yet.\n";
+    }
+
+    private boolean isVariableChar(char ch) {
+        return Character.isAlphabetic(ch) || Character.isDigit(ch) || ch == '_';
+    }
+
+    private  double rebuildAndCalculate(String expression, Map<String, String> variables) throws ParsingException {
+        StringBuilder buffer = new StringBuilder();
+        StringBuilder newExpression = new StringBuilder();
+
+
+        for (int i = 0; i < expression.length(); ++i) {
+            if (isVariableChar(expression.charAt(i))) {
+                buffer.append(expression.charAt(i));
+            }
+
+            if (!isVariableChar(expression.charAt(i)) || (expression.length() == i + 1)) {
+                String proceed = buffer.toString();
+                buffer.delete(0, buffer.length());
+
+                if (variables.containsKey(proceed)) {
+                    newExpression.append(variables.get(proceed));
+                } else {
+                    newExpression.append(proceed);
+                }
+
+                if (!isVariableChar(expression.charAt(i))) {
+                    newExpression.append(expression.charAt(i));
+                }
+            }
+
+
+        }
+        return calculator.calculate(newExpression.toString());
     }
 }
