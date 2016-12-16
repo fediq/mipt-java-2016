@@ -8,6 +8,10 @@ import org.springframework.web.bind.annotation.*;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
 import static java.lang.Character.isDigit;
 
 @RestController
@@ -54,6 +58,38 @@ public class CalculatorController {
         }
     }
 
+    @RequestMapping(path = "/variable/", method = RequestMethod.GET, produces = "text/plain")
+    public String getAllVar(){
+        LOG.trace("Getting all variables");
+        try
+        {
+            List<String> res = database.loadAllVariables();
+            String ret = String.valueOf(res);
+            return ret.substring(1, ret.length() - 1) + '\n';
+        }
+        catch (EmptyResultDataAccessException exp)
+        {
+            LOG.warn("Error getting variables");
+            return "Error getting variables\n";
+        }
+    }
+
+    @RequestMapping(path = "/function/", method = RequestMethod.GET, produces = "text/plain")
+    public String getAllFunc(){
+        LOG.trace("Getting all functions");
+        try
+        {
+            List<String> res = database.loadAllFunctions();
+            String ret = String.valueOf(res);
+            return ret.substring(1, ret.length() - 1) + '\n';
+        }
+        catch (EmptyResultDataAccessException exp)
+        {
+            LOG.warn("Error getting functions");
+            return "Error getting functions\n";
+        }
+    }
+
     @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.GET, produces = "text/plain")
     public String getVar(@PathVariable String variableName){
         LOG.trace("Getting variable " + variableName);
@@ -63,6 +99,7 @@ public class CalculatorController {
         }
         catch (EmptyResultDataAccessException exp)
         {
+            LOG.warn("Error getting variable " + variableName);
             return "No such variable\n";
         }
 
@@ -136,6 +173,7 @@ public class CalculatorController {
         LOG.trace("Deleted variable " + variableName);
         return "Succesful delete\n";
     }
+
     @RequestMapping(path = "/function/{functionName}", method = RequestMethod.DELETE, consumes = "text/plain", produces = "text/plain")
     public String deleteFunc(@PathVariable String functionName){
         LOG.trace("Deleting function " + functionName);

@@ -15,6 +15,8 @@ import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 @Repository
 public class BillingDao {
@@ -202,5 +204,31 @@ public class BillingDao {
         System.out.println(functionName);
         System.out.println(loadFunctionValue(functionName));
         jdbcTemplate.update("DELETE FROM " + curUser.getUsername() + ".functions WHERE function = '" + functionName + "'");
+    }
+
+    public List<String> loadAllVariables() {
+        List<String> res = new ArrayList<>();
+        return jdbcTemplate.query(
+                "SELECT variable FROM "+ curUser.getUsername() + ".variables",
+                new Object[] {},
+                new RowMapper<String>() {
+                    public String mapRow(ResultSet rs, int rowNum) throws SQLException {
+                        return rs.getString("variable");
+                    }
+                }
+        );
+    }
+
+    public List<String> loadAllFunctions() {
+        List<String> res = new ArrayList<>();
+        return jdbcTemplate.query(
+                "SELECT function FROM "+ curUser.getUsername() + ".functions",
+                new Object[] {},
+                new RowMapper<String>() {
+                    public String mapRow(ResultSet rs, int rowNum) throws SQLException {
+                        return rs.getString("function");
+                    }
+                }
+        );
     }
 }
