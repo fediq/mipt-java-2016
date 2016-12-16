@@ -23,7 +23,7 @@ public class StudentKeySerializer implements Serializer<StudentKey> {
     }
 
     @Override
-    public void write(RandomAccessFile file, StudentKey student) throws IOException {
+    public void write(DataOutput file, StudentKey student) throws IOException {
         IntegerSerializer integerSerializer = IntegerSerializer.getInstance();
         StringSerializer stringSerializer = StringSerializer.getInstance();
         integerSerializer.write(file, student.getGroupId());
@@ -31,7 +31,7 @@ public class StudentKeySerializer implements Serializer<StudentKey> {
     }
 
     @Override
-    public StudentKey read(RandomAccessFile file) throws IOException {
+    public StudentKey read(DataInput file) throws IOException {
         IntegerSerializer integerSerializer = IntegerSerializer.getInstance();
         StringSerializer stringSerializer = StringSerializer.getInstance();
         int groupId = integerSerializer.read(file);

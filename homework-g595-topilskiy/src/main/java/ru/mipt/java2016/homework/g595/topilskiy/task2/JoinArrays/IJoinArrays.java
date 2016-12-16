@@ -7,7 +7,7 @@ package ru.mipt.java2016.homework.g595.topilskiy.task2.JoinArrays;
  * @since 30.10.16
  * @see "https://www.mkyong.com/java/java-how-to-join-arrays/"
  */
-interface IJoinArrays<ArrayComponentType> {
+public interface IJoinArrays<ArrayComponentType> {
     /**
      * Method to join arraysToJoin into a single continuous Array
      *
