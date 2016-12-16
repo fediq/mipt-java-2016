@@ -9,7 +9,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import ru.mipt.java2016.homework.base.task1.Calculator;
-import ru.mipt.java2016.homework.g594.shevkunov.task1.PolishCalculator;
 
 /**
  * curl http://localhost:9001/eval \
@@ -25,7 +24,7 @@ public class FediqApplication {
 
     @Bean
     public Calculator calculator() {
-        return new PolishCalculator();
+        return new AdvancedCalculator();
     }
 
     @Bean

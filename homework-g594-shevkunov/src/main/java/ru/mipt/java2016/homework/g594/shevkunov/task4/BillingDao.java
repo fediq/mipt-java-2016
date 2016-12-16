@@ -12,6 +12,9 @@ import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 @Repository
 public class BillingDao {
@@ -34,6 +37,11 @@ public class BillingDao {
 
         jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS billing.users " +
                 "(username VARCHAR PRIMARY KEY, password VARCHAR, enabled BOOLEAN)");
+
+        jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS billing.vars " +
+                "(variable VARCHAR PRIMARY KEY, username VARCHAR," +  //TODO FOREIGN KEY
+                " value VARCHAR)");
+
         jdbcTemplate.execute("DELETE FROM billing.users  WHERE username = 'username'");
         jdbcTemplate.update("INSERT INTO billing.users VALUES ('username', 'password', TRUE) ");
     }
@@ -55,5 +63,46 @@ public class BillingDao {
                     }
                 }
         );
+    }
+
+    public void setVariable(String username, String variable, String value) {
+        delVariable(username, variable);
+        String querry = "INSERT INTO billing.vars VALUES ('" + variable + "','" + username + "','" + value + "')";
+        jdbcTemplate.execute(querry);
+    }
+
+    public String getVariable(String username, String variable) {
+        LOG.trace("Getting variable " + variable + " for user " + username);
+        String querry = "SELECT value FROM billing.vars WHERE username = '" +
+                username + "' AND variable = '" + variable + "'";
+        return jdbcTemplate.queryForObject(
+                querry,
+                new RowMapper<String>() {
+                    @Override
+                    public String mapRow(ResultSet rs, int rowNum) throws SQLException {
+                        return rs.getString("value");
+                    }
+                }
+        );
+    }
+
+    public List<String> getAllVariables(String username) {
+        LOG.trace("Getting all variables for user " + username);
+        String querry = "SELECT * FROM billing.vars"; // TODO make faster
+
+        List<String> vars = new ArrayList<String>();
+
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList(querry);
+
+        for (Map row : rows) {
+            vars.add((String)row.get("variable"));
+        }
+        return vars;
+    }
+
+    public void delVariable(String username, String variable) {
+        LOG.trace("Deletting variable " + variable + " for user " + username); // TODO check valid
+        String querry = "DELETE FROM billing.vars WHERE username = '" +username + "' AND variable = '" + variable +"'";
+        jdbcTemplate.execute(querry);
     }
 }
