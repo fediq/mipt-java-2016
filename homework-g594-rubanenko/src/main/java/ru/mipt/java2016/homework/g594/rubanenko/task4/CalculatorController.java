@@ -47,7 +47,7 @@ public class CalculatorController  {
     @RequestMapping(path = "/eval", method = RequestMethod.POST, consumes = "text/plain", produces = "text/plain")
     public String eval(@RequestBody String expression) throws ParsingException {
         LOG.debug("Evaluation request: [" + expression + "]");
-        StringBuilder expression_ = new StringBuilder();
+        StringBuilder expressionNew = new StringBuilder();
         StringBuilder word = new StringBuilder();
         boolean letter = false;
         for (int i = 0; i < expression.length(); ++i) {
@@ -58,19 +58,19 @@ public class CalculatorController  {
                 if (letter) {
                     letter = false;
                     try {
-                        expression_.append(database.loadMeaning(word.toString()));
+                        expressionNew.append(database.loadMeaning(word.toString()));
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                    expression_.append(expression.charAt(i));
+                    expressionNew.append(expression.charAt(i));
                     word = new StringBuilder();
                 } else {
-                    expression_.append(expression.charAt(i));
+                    expressionNew.append(expression.charAt(i));
                 }
             }
         }
-        System.out.println(expression_.toString());
-        double result = calculator.calculate(expression_.toString());
+        System.out.println(expressionNew.toString());
+        double result = calculator.calculate(expressionNew.toString());
         LOG.trace("Result: " + result);
         return Double.toString(result) + "\n";
     }
