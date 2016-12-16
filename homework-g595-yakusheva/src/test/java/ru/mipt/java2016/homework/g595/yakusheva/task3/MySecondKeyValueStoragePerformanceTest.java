@@ -1,7 +1,5 @@
 package ru.mipt.java2016.homework.g595.yakusheva.task3;
 
-import org.junit.Ignore;
-import org.junit.Test;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.base.task2.MalformedDataException;
 import ru.mipt.java2016.homework.tests.task2.Student;
@@ -19,7 +17,7 @@ public class MySecondKeyValueStoragePerformanceTest extends KeyValueStoragePerfo
 
     @Override
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) throws MalformedDataException {
-        return new MySecondKeyValueStorage<Integer, Double>(path, new MyIntegerSerializer(), new MyDoubleSerializer(), 0);
+        return new MySecondKeyValueStorage<Integer, Double>(path, new MyDoubleSerializer.MyIntegerSerializer(), new MyDoubleSerializer(), 0);
     }
 
     @Override

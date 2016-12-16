@@ -19,4 +19,18 @@ public class MyDoubleSerializer implements MySecondSerializerInterface<Double> {
         return dataInputStream.readDouble();
     }
 
+    /**
+     * Created by Софья on 27.10.2016.
+     */
+    public static class MyIntegerSerializer implements MySecondSerializerInterface<Integer> {
+        @Override
+        public void serializeToStream(DataOutputStream dataOutputStream, Integer o) throws IOException {
+            dataOutputStream.writeInt(o);
+        }
+
+        @Override
+        public Integer deserializeFromStream(DataInputStream dataInputStream) throws IOException {
+            return dataInputStream.readInt();
+        }
+    }
 }

@@ -18,7 +18,7 @@ public class MySecondKeyValueStorageTest extends AbstractSingleFileStorageTest
 
     @Override
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) {
-        return new MySecondKeyValueStorage<Integer, Double>(path, new MyIntegerSerializer(), new MyDoubleSerializer(), 0);
+        return new MySecondKeyValueStorage<Integer, Double>(path, new MyDoubleSerializer.MyIntegerSerializer(), new MyDoubleSerializer(), 0);
     }
 
     @Override
