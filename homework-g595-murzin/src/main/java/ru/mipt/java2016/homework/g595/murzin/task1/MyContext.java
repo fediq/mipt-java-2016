@@ -31,4 +31,10 @@ public class MyContext {
         functions.put(functionName, new MyFunction(arguments, functionExpresion, this));
         return true;
     }
+
+    public void resolve() {
+        for (MyFunction function : functions.values()) {
+            function.setContext(this);
+        }
+    }
 }

@@ -14,11 +14,16 @@ import java.util.List;
 public class MyFunction implements IFunction {
     private final String[] argumentsNames;
     public final String expression;
-    private final MyContext context;
+    private transient MyContext context;
 
     public MyFunction(List<String> argumentsNames, String expression, MyContext context) {
         this.argumentsNames = argumentsNames.toArray(new String[argumentsNames.size()]);
         this.expression = expression;
+        this.context = context;
+    }
+
+    // for Gson-constructed objects
+    public void setContext(MyContext context) {
         this.context = context;
     }
 

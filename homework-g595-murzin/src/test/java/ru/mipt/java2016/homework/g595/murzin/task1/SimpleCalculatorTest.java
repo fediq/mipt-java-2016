@@ -38,4 +38,9 @@ public class SimpleCalculatorTest extends AbstractCalculatorTest {
         test("rnd() * 14 - 7", -7, +7);
         test("rnd() * 0", 0, 0);
     }
+
+    @Test
+    public void testLog() throws Exception {
+        test("log(log2(2+2))", Math.log(Math.log(2 + 2) / Math.log(2)));
+    }
 }

@@ -6,10 +6,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.junit4.SpringRunner;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
-import ru.mipt.java2016.homework.tests.task1.AbstractCalculatorTest;
+import ru.mipt.java2016.homework.g595.murzin.task1.SimpleCalculatorTest;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,11 +25,23 @@ import static org.junit.Assert.assertEquals;
  * Created by dima on 01.12.16.
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = MyController.class)
-public class MyControllerTest extends AbstractCalculatorTest {
-
+@SpringBootTest(classes = MyApplication.class)
+@WithMockUser
+public class MyControllerTest extends SimpleCalculatorTest {
     @Autowired
     private MyController controller;
+    @Autowired
+    private BillingDao billingDao;
+
+    @FunctionalInterface
+    public interface Callback {
+        void callback() throws Exception;
+    }
+
+    private void doWith(Callback callback) throws Exception {
+        billingDao.deleteContext();
+        callback.callback();
+    }
 
     @Override
     protected Calculator calc() {
@@ -40,16 +53,6 @@ public class MyControllerTest extends AbstractCalculatorTest {
                 throw new ParsingException(eval.getStatusCode().getReasonPhrase());
             }
         };
-    }
-
-    @FunctionalInterface
-    public interface Callback {
-        void callback() throws Exception;
-    }
-
-    private void doWith(Callback callback) throws Exception {
-//        controller.reset();
-        callback.callback();
     }
 
     private void tryFail(String expression, HttpStatus status) {
