@@ -1,6 +1,6 @@
-package ru.mipt.java2016.homework.g594.kalinichenko.task2;
+package ru.mipt.java2016.homework.g594.kalinichenko.task3;
 
-import java.io.FileInputStream;
+import java.io.RandomAccessFile;
 import java.io.FileOutputStream;
 import java.nio.ByteBuffer;
 
@@ -10,11 +10,11 @@ import java.nio.ByteBuffer;
 
 public abstract class MySerializer<K> {
 
-    public abstract K get(FileInputStream in);
+    public abstract K get(RandomAccessFile in);
 
     public abstract void put(FileOutputStream out, K val);
 
-    protected int getInt(FileInputStream in) {
+    protected int getInt(RandomAccessFile in) {
         int len = Integer.BYTES;
         byte[] data = new byte[len];
         try {
@@ -27,6 +27,19 @@ public abstract class MySerializer<K> {
         return ByteBuffer.wrap(data).getInt();
     }
 
+    protected Long getLong(RandomAccessFile in) {
+        int len = Long.BYTES;
+        byte[] data = new byte[len];
+        try {
+            if (in.read(data) == -1 || data.length != len) {
+                throw new IllegalStateException("Wrong file");
+            }
+        } catch (Exception exc) {
+            throw new IllegalStateException("Invalid work with file");
+        }
+        return ByteBuffer.wrap(data).getLong();
+    }
+
     protected void putInt(FileOutputStream out, int val) {
         ByteBuffer data = ByteBuffer.allocate(Integer.BYTES);
         data.putInt(val);
@@ -37,9 +50,20 @@ public abstract class MySerializer<K> {
         }
     }
 
-    protected String getStr(FileInputStream in) {
+    protected void putLong(FileOutputStream out, Long val) {
+        ByteBuffer data = ByteBuffer.allocate(Long.BYTES);
+        data.putLong(val);
+        try {
+            out.write(data.array());
+        } catch (Exception e) {
+            throw new IllegalStateException("Invalid work with file");
+        }
+    }
+
+
+    protected String getStr(RandomAccessFile in) {
         int len = getInt(in);
-        if (len < 0 || len > 100000) {
+        if (len > 100000) {
             throw new IllegalStateException("Database is invalid");
         }
         byte[] data = new byte[len];
@@ -64,7 +88,7 @@ public abstract class MySerializer<K> {
         }
     }
 
-    protected Double getDouble(FileInputStream in) {
+    protected Double getDouble(RandomAccessFile in) {
         int len = Double.BYTES;
         byte[] data = new byte[len];
         try {
