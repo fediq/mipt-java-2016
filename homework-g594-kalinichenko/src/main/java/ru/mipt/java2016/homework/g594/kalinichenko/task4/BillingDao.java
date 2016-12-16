@@ -55,13 +55,12 @@ public class BillingDao {
     public void setUser(String name, String pass)
     {
         LOG.trace("Setting user " + name);
-        try
+        if (findUser(name))
         {
-            loadUser(name);
             LOG.trace("Occupied user " + name);
             throw new IllegalStateException("Already in database");
         }
-        catch (EmptyResultDataAccessException exp)
+        else
         {
             addUserToDb(name, pass);
         }
@@ -75,6 +74,66 @@ public class BillingDao {
                 "(variable VARCHAR PRIMARY KEY, value DOUBLE, expression VARCHAR)");
         jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS " + name + ".functions" +
                 "(function VARCHAR PRIMARY KEY, num INT, args VARCHAR, expression VARCHAR, real VARCHAR)");
+    }
+
+    public boolean findUser(String username) {
+        LOG.trace("Finding user " + username);
+        try {
+            return jdbcTemplate.queryForObject(
+                    "SELECT username FROM billing.users WHERE username = ?",
+                    new Object[]{username},
+                    new RowMapper<Boolean>() {
+                        @Override
+                        public Boolean mapRow(ResultSet rs, int rowNum) throws SQLException {
+                            return true;
+                        }
+                    }
+            );
+        }
+        catch (EmptyResultDataAccessException exp)
+        {
+            return false;
+        }
+    }
+
+    public boolean findVariable(String name) {
+        LOG.trace("Finding variable " + name);
+        try {
+            return jdbcTemplate.queryForObject(
+                    "SELECT variable FROM " + curUser.getUsername() + ".variables WHERE variable = ?",
+                    new Object[]{name},
+                    new RowMapper<Boolean>() {
+                        @Override
+                        public Boolean mapRow(ResultSet rs, int rowNum) throws SQLException {
+                            return true;
+                        }
+                    }
+            );
+        }
+        catch (EmptyResultDataAccessException exp)
+        {
+            return false;
+        }
+    }
+
+    public boolean findFunction(String name) {
+        LOG.trace("Finding function " + name);
+        try {
+            return jdbcTemplate.queryForObject(
+                    "SELECT function FROM " + curUser.getUsername() + ".functions WHERE function = ?",
+                    new Object[]{name},
+                    new RowMapper<Boolean>() {
+                        @Override
+                        public Boolean mapRow(ResultSet rs, int rowNum) throws SQLException {
+                            return true;
+                        }
+                    }
+            );
+        }
+        catch (EmptyResultDataAccessException exp)
+        {
+            return false;
+        }
     }
 
     public BillingUser loadUser(String username) throws EmptyResultDataAccessException {
@@ -129,19 +188,18 @@ public class BillingDao {
         /*jdbcTemplate.execute("DROP TABLE " + curUser.getUsername() + ".variables");
         jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS " + curUser.getUsername() + ".variables" +
                 "(variable VARCHAR PRIMARY KEY, value DOUBLE, expression VARCHAR)");*/
-        try
+        if(findFunction(variableName))
         {
-            loadFunctionExpression(variableName);
+
             throw new IllegalStateException("Another type");
         }
-        catch (EmptyResultDataAccessException ex)
+        else
         {
-            try
+            if (findVariable(variableName))
             {
-                loadVariableCalculation(variableName);
                 jdbcTemplate.update("UPDATE " + curUser.getUsername() + ".variables SET value = " + value + ", expression = '" +expression+"' WHERE variable = '" + variableName +"'");
             }
-            catch (EmptyResultDataAccessException exp)
+            else
             {
                 jdbcTemplate.update("INSERT INTO " + curUser.getUsername() + ".variables VALUES (?, ?, ?)", variableName, value, expression);
             }
@@ -154,21 +212,19 @@ public class BillingDao {
         jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS " + curUser.getUsername() + ".functions" +
                 "(function VARCHAR PRIMARY KEY, num INT, args VARCHAR, expression VARCHAR, real VARCHAR)");
         */
-        try
+        if (findVariable(functionName))
         {
-            loadVariableCalculation(functionName);
             throw new IllegalStateException("Another type");
         }
-        catch (EmptyResultDataAccessException ex)
+        else
         {
-            try
+            if (findFunction(functionName))
             {
-                loadFunctionExpression(functionName);
                 jdbcTemplate.update("UPDATE " + curUser.getUsername() + ".functions SET "
                         + "num = " + numargs + ", args = '" + vars + "', expression = '" + expression +
                         "', real = '" + real + "' WHERE function = '" + functionName +"'");
             }
-            catch (EmptyResultDataAccessException exp)
+            else
             {
                 jdbcTemplate.update("INSERT INTO " + curUser.getUsername() + ".functions VALUES (?, ?, ?, ?, ?)", functionName, numargs, vars, expression, real);
             }
