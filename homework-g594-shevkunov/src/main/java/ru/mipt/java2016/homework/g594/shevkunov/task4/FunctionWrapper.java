@@ -17,21 +17,7 @@ public class FunctionWrapper {
     FunctionWrapper(String name, String args, String value) {
         this.name = name;
         this.value = value;
-        this.args = new ArrayList<>();
-
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < args.length(); ++i) {
-            if (args.charAt(i) != SEPARATOR) {
-                sb.append(args.charAt(i));
-            } else {
-                this.args.add(sb.toString());
-                sb.delete(0, sb.length());
-            }
-        }
-
-        if (sb.length() > 0) {
-            this.args.add(sb.toString());
-        }
+        this.args = stringToList(args);
     }
 
     static final char SEPARATOR = ',';
@@ -57,13 +43,40 @@ public class FunctionWrapper {
     }
 
     public String argsToString() {
+        return listToString(args);
+    }
+
+    public static List<String> stringToList(String s) {
+        List<String> list = new ArrayList<>();
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < s.length(); ++i) {
+            if (s.charAt(i) != SEPARATOR) {
+                sb.append(s.charAt(i));
+            } else {
+                list.add(sb.toString());
+                sb.delete(0, sb.length());
+            }
+        }
+
+        if (sb.length() > 0) {
+            list.add(sb.toString());
+        }
+        return list;
+    }
+
+    public static String listToString(List<String> list) {
         String all = "";
-        for (Iterator<String> i = args.iterator(); i.hasNext(); ) {
+        for (Iterator<String> i = list.iterator(); i.hasNext(); ) {
             all += i.next();
             if (i.hasNext()) {
                 all += ",";
             }
         }
         return all;
+    }
+
+    public static boolean isVariableChar(char ch) {
+        return Character.isAlphabetic(ch) || Character.isDigit(ch) || ch == '_';
     }
 }

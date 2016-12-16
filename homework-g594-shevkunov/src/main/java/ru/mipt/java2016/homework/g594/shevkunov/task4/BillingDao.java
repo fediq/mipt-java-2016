@@ -186,4 +186,18 @@ public class BillingDao {
         String querry = "DELETE FROM billing.funcs WHERE username = '" + username + "' AND function = '" + function +"'";
         jdbcTemplate.execute(querry);
     }
+
+
+    /** Function functions */
+    public boolean registerUser(String username, String password) {
+        LOG.trace("Registering user " + username); // TODO check valid
+        String querry = "SELECT COUNT(*) FROM billing.users WHERE username = '" + username + "'";
+        int total = jdbcTemplate.queryForObject(querry, Integer.class);
+        if (total != 0) {
+            return false;
+        }
+        querry = "INSERT INTO billing.users VALUES ('" + username + "', '" + password + "', TRUE) ";
+        jdbcTemplate.execute(querry);
+        return true;
+    }
 }

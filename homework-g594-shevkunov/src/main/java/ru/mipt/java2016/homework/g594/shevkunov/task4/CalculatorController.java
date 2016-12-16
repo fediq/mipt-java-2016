@@ -24,8 +24,28 @@ public class CalculatorController {
 
     @RequestMapping(path = "/", method = RequestMethod.GET, produces = "text/html")
     public String main(Authentication authentication, @RequestParam(required = false) String name) {
-        String username = authentication.getName();
-        return "Hello, " + username + ".\n";
+        if (authentication != null) {
+            String username = authentication.getName();
+            return "Hello, " + username + ".\n";
+        } else {
+            return "Hello, noname.\n";
+        }
+    }
+
+    @RequestMapping(path = "/user/{username}", method = RequestMethod.PUT, produces = "text/html")
+    public String userPut(Authentication authentication, @PathVariable String username,
+                         @RequestBody String password) throws ParsingException {
+        String result;
+        try {
+            if (billingDao.registerUser(username, password)) {
+                result = "Registered.";
+            } else {
+                result = "Change username.";
+            }
+        } catch (Exception e) {
+            result = "Can't register this user.";
+        }
+        return result + "\n";
     }
 
     @RequestMapping(path = "/eval", method = RequestMethod.POST, consumes = "text/plain", produces = "text/plain")
@@ -34,7 +54,8 @@ public class CalculatorController {
         LOG.debug("Evaluation request: [" + expression + "] for user: " + username);
         String result;
         try {
-            double dResult = rebuildAndCalculate(expression, billingDao.getAllVariables(username)); // TODO username
+            double dResult = rebuildAndCalculate(expression, billingDao.getAllVariables(username),
+                    billingDao.getAllFunctions(username)); // TODO username
             result = Double.toString(dResult) + "\n";
         } catch (Throwable e)  {
             result = "InvalidExpression.\n";
@@ -65,13 +86,17 @@ public class CalculatorController {
     @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.PUT, produces = "text/html")
     public String varPut(Authentication authentication, @PathVariable String variableName, @RequestBody String value) throws ParsingException {
         String username = authentication.getName();
-        String result = "OK\n";
+        String result = "OK";
         try {
+            value = Double.toString(rebuildAndCalculate(value, billingDao.getAllVariables(username),
+                    billingDao.getAllFunctions(username)));
             billingDao.setVariable(username, variableName, value);
+        } catch (ParsingException e){
+            result = e.toString();
         } catch (Exception e) {
-            result = "Server Internal Error.\n";
+            result = "Server Internal Error.";
         }
-        return result;
+        return result + "\n";
     }
 
     @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.DELETE, produces = "text/html")
@@ -161,37 +186,9 @@ public class CalculatorController {
         return all + "'\n";
     }
 
-    private boolean isVariableChar(char ch) {
-        return Character.isAlphabetic(ch) || Character.isDigit(ch) || ch == '_';
-    }
-
-    private  double rebuildAndCalculate(String expression, Map<String, String> variables) throws ParsingException {
-        StringBuilder buffer = new StringBuilder();
-        StringBuilder newExpression = new StringBuilder();
-
-
-        for (int i = 0; i < expression.length(); ++i) {
-            if (isVariableChar(expression.charAt(i))) {
-                buffer.append(expression.charAt(i));
-            }
-
-            if (!isVariableChar(expression.charAt(i)) || (expression.length() == i + 1)) {
-                String proceed = buffer.toString();
-                buffer.delete(0, buffer.length());
-
-                if (variables.containsKey(proceed)) {
-                    newExpression.append(variables.get(proceed));
-                } else {
-                    newExpression.append(proceed);
-                }
-
-                if (!isVariableChar(expression.charAt(i))) {
-                    newExpression.append(expression.charAt(i));
-                }
-            }
-
-
-        }
-        return calculator.calculate(newExpression.toString());
+    private  double rebuildAndCalculate(String expression, Map<String, String> variables,
+                                        Map<String, FunctionWrapper> functions) throws ParsingException {
+        Substitutor sub = new Substitutor(variables, functions);
+        return calculator.calculate(sub.substitute(expression));
     }
 }
