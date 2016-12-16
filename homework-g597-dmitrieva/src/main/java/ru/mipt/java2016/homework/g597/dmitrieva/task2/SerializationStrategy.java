@@ -7,10 +7,10 @@ import java.io.RandomAccessFile;
  * Created by macbook on 30.10.16.
  */
 
-public abstract class SerializationStrategy<T> {
+public interface SerializationStrategy<T> {
 
-    abstract T read(RandomAccessFile file) throws IOException;
+    T read(RandomAccessFile file) throws IOException;
 
-    abstract void write(RandomAccessFile file, T value) throws IOException;
+    void write(RandomAccessFile file, T value) throws IOException;
 }
 

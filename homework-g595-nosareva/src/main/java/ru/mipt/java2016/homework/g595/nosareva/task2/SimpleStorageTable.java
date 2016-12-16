@@ -24,7 +24,7 @@ class SimpleStorageTable<K, V> {
 
     private void getKeysAndValues() throws IOException {
         try {
-            DataInputStream fileInput  = new DataInputStream(new FileInputStream(source));
+            DataInputStream fileInput  = new DataInputStream(new BufferedInputStream(new FileInputStream(source)));
             size = fileInput.readInt();
             for (int i = 0; i < size; i++) {
                 K key = keySerializer.deserializeFromStream(fileInput);
@@ -66,7 +66,7 @@ class SimpleStorageTable<K, V> {
         }
     }
 
-    V read(K key) {
+    public V read(K key) {
         chekingForClosed();
         if (!keyValueMap.containsKey(key)) {
             return null;
@@ -74,12 +74,12 @@ class SimpleStorageTable<K, V> {
         return keyValueMap.get(key);
     }
 
-    boolean exists(K key) {
+    public boolean exists(K key) {
         chekingForClosed();
         return keyValueMap.containsKey(key);
     }
 
-    void write(K key, V value) {
+    public void write(K key, V value) {
         chekingForClosed();
         if (keyValueMap.containsKey(key)) {
             keyValueMap.replace(key, value);
@@ -89,14 +89,14 @@ class SimpleStorageTable<K, V> {
         }
     }
 
-    void delete(K key) {
+    public void delete(K key) {
         if (keyValueMap.containsKey(key)) {
             size -= 1;
         }
         keyValueMap.remove(key);
     }
 
-    int getSize() {
+    public int getSize() {
         return size;
     }
 
@@ -105,13 +105,14 @@ class SimpleStorageTable<K, V> {
         return keyValueMap.keySet().iterator();
     }
 
-    void close() {
+    public void close() {
         if (closed) {
             return;
         }
 
         try {
-            DataOutputStream fileOutput = new DataOutputStream(new FileOutputStream(pathToFile));
+            DataOutputStream fileOutput = new DataOutputStream(
+                    new BufferedOutputStream(new FileOutputStream(pathToFile)));
             fileOutput.writeInt(keyValueMap.size());
 
             for (Map.Entry<K, V> entry : keyValueMap.entrySet()) {
