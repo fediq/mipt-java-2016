@@ -11,4 +11,5 @@ public interface SerializerInterface<T> {
 
     T deserialize(String inputString) throws StorageException;
 
+    String getClassString();
 }

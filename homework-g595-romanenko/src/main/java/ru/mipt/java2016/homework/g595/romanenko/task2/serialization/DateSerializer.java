@@ -18,6 +18,7 @@ public class DateSerializer extends SimpleIntegralTypeSerializer<Date> {
 
     DateSerializer() {
         super.cntBYTES = Long.BYTES;
+        super.binaryRepresentation = new byte[Long.BYTES];
     }
 
     protected Long getLongRepresentation(Date value) {

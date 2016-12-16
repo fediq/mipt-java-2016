@@ -2,6 +2,7 @@ package ru.mipt.java2016.homework.g595.romanenko.task2;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.g595.romanenko.task2.serialization.SerializationStrategy;
+import ru.mipt.java2016.homework.g595.romanenko.utils.FileDigitalSignatureRSA;
 
 import java.io.IOException;
 import java.util.ConcurrentModificationException;
@@ -26,7 +27,8 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                       SerializationStrategy<K> keySerializationStrategy,
                       SerializationStrategy<V> valueSerializationStrategy) throws IOException {
 
-        table = new SSTable<>(path, keySerializationStrategy, valueSerializationStrategy);
+        table = new SSTable<>(path, keySerializationStrategy,
+                valueSerializationStrategy, FileDigitalSignatureRSA.getInstance());
         totalAmount = table.size();
     }
 
@@ -68,7 +70,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         if (cachedValues.containsKey(key)) {
             cachedValues.remove(key);
         }
-        table.removeKeyFromIndexes(key);
+        table.removeKeyFromIndices(key);
     }
 
     @Override
@@ -83,11 +85,12 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public void close() {
+        epochNumber += 1;
         Iterator<K> keySet = table.readKeys();
         while (keySet.hasNext()) {
             read(keySet.next());
         }
-        table.rewrite(cachedValues);
+        table.rewrite(new MapProducer<>(cachedValues));
         table.close();
     }
 
