@@ -1,7 +1,7 @@
 package ru.mipt.java2016.homework.g594.petrov.task3;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.DataInput;
+import java.io.DataOutput;
 
 /**
  * Created by philipp on 14.11.16.
@@ -9,7 +9,7 @@ import java.io.DataOutputStream;
 
 public class SerializeInteger implements InterfaceSerialization<Integer> {
     @Override
-    public Integer readValue(DataInputStream inputStream) throws IllegalStateException {
+    public Integer readValue(DataInput inputStream) throws IllegalStateException {
         try {
             return inputStream.readInt();
         } catch (Exception e) {
@@ -18,7 +18,7 @@ public class SerializeInteger implements InterfaceSerialization<Integer> {
     }
 
     @Override
-    public void writeValue(Integer obj, DataOutputStream outputStream) throws IllegalStateException {
+    public void writeValue(Integer obj, DataOutput outputStream) throws IllegalStateException {
         try {
             outputStream.writeInt(obj);
         } catch (Exception e) {
