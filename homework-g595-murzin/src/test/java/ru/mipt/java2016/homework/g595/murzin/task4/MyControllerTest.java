@@ -48,7 +48,7 @@ public class MyControllerTest extends AbstractCalculatorTest {
     }
 
     private void doWith(Callback callback) throws Exception {
-        controller.reset();
+//        controller.reset();
         callback.callback();
     }
 
