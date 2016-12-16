@@ -16,6 +16,7 @@ public class LongSerializer extends SimpleIntegralTypeSerializer<Long> {
 
     LongSerializer() {
         super.cntBYTES = Long.BYTES;
+        super.binaryRepresentation = new byte[Long.BYTES];
     }
 
     protected Long getLongRepresentation(Long value) {
