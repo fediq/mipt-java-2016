@@ -59,8 +59,8 @@ public class CalculatorController  {
                     letter = false;
                     try {
                         expressionNew.append(database.loadMeaning(word.toString()));
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                    } catch (Exception e) {
+                        throw new ParsingException(e.getMessage(), e.getCause());
                     }
                     expressionNew.append(expression.charAt(i));
                     word = new StringBuilder();
@@ -82,5 +82,19 @@ public class CalculatorController  {
         String[] tokens = argument.split(delim);
         database.register(tokens);
         return "OK\n";
+    }
+
+    @RequestMapping(path = "/delete", method = RequestMethod.DELETE, consumes = "text/plain", produces = "text/plain")
+    public String delete(@RequestBody String argument) throws IOException {
+        LOG.debug("Delete argument: [" + argument + "]");
+        database.deleteArgument(argument);
+        return "OK\n";
+    }
+
+    @RequestMapping(path = "/check", method = RequestMethod.GET, consumes = "text/plain", produces = "text/plain")
+    public String check(@RequestBody String argument) throws IOException {
+        LOG.debug("Check for existence of [" + argument + "] element");
+        Double answer = database.loadMeaning(argument);
+        return answer.toString();
     }
 }

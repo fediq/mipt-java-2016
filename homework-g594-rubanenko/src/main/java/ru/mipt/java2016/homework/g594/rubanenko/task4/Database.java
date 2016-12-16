@@ -81,4 +81,34 @@ public class Database {
                 }
         );
     }
+
+    public void deleteArgument(String argument) throws IOException {
+        jdbcTemplate.update("DELETE FROM billing.arguments WHERE argument = '" + argument + "'");
+    }
+
+    public double check(String argument) throws IOException {
+        int i = jdbcTemplate.queryForObject(
+                "SELECT 1 COUNT * FROM billing.arguments WHERE argument = ?",
+                new Object[]{argument},
+                new RowMapper<Integer>() {
+                    @Override
+                    public Integer mapRow(ResultSet resultSet, int i) throws SQLException {
+                        return resultSet.getInt(1);
+                    }
+                }
+        );
+        if (i > 0) {
+            return jdbcTemplate.queryForObject(
+                    "SELECT argument, meaning FROM billing.arguments WHERE argument = ?",
+                    new Object[]{argument},
+                    new RowMapper<Double>() {
+                        @Override
+                        public Double mapRow(ResultSet resultSet, int i) throws SQLException {
+                            return resultSet.getDouble("meaning");
+                        }
+                    }
+            );
+        }
+        throw new IOException("Smth wen't wrong");
+    }
 }
