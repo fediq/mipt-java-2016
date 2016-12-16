@@ -52,14 +52,9 @@ public class BillingDao {
         }
     }
 
-    public void setUser(String user) throws IllegalStateException, ParsingException
+    public void setUser(String name, String pass)
     {
-        LOG.trace("Setting user " + user);
-        Pair<String, String> pair = parse(user);
-        String name = pair.getKey();
-        String pass = pair.getValue();
-        LOG.trace("Parsed user " + name);
-        LOG.trace("Parsed password " + pass);
+        LOG.trace("Setting user " + name);
         try
         {
             loadUser(name);
@@ -80,35 +75,6 @@ public class BillingDao {
                 "(variable VARCHAR PRIMARY KEY, value DOUBLE, expression VARCHAR)");
         jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS " + name + ".functions" +
                 "(function VARCHAR PRIMARY KEY, num INT, args VARCHAR, expression VARCHAR, real VARCHAR)");
-    }
-
-    private Pair<String,String> parse(String user) throws ParsingException {
-        StringBuilder username = new StringBuilder();
-        StringBuilder userpass = new StringBuilder();
-        boolean mode = false;
-        for(int i = 0; i < user.length(); ++i) {
-            Character c = user.charAt(i);
-            if (c.equals(',')) {
-                if (!mode && i > 0)
-                {
-                    mode = true;
-                    continue;
-                }
-                else
-                {
-                    throw new ParsingException("Invalid username");
-                }
-            }
-            if (mode)
-            {
-                userpass.append(c);
-            }
-            else
-            {
-                username.append(c);
-            }
-        }
-        return new Pair(String.valueOf(username), String.valueOf(userpass));
     }
 
     public BillingUser loadUser(String username) throws EmptyResultDataAccessException {
@@ -147,12 +113,12 @@ public class BillingDao {
     public String loadVariableExpression(String variableName) {
         LOG.trace("Request get variable expression " + variableName + " from database");
         return jdbcTemplate.queryForObject(
-                "SELECT variable, expression FROM "+ curUser.getUsername() + ".variables WHERE variable = ?",
+                "SELECT variable, value, expression FROM "+ curUser.getUsername() + ".variables WHERE variable = ?",
                 new Object[]{variableName},
                 new RowMapper<String>() {
                     @Override
                     public String mapRow(ResultSet rs, int rowNum) throws SQLException {
-                        return rs.getString("expression");
+                        return rs.getString("expression") + " current value: " + rs.getDouble("value");
                     }
                 }
         );

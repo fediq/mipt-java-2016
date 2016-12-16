@@ -44,20 +44,22 @@ public class CalculatorController {
     }
 
     @RequestMapping(path = "/reg", method = RequestMethod.POST, consumes = "text/plain", produces = "text/plain")
-    public String register(@RequestBody String user) {
-        LOG.debug("Registration request: [" + user + "]");
+    public String reg(@RequestParam(value = "name") String name, @RequestParam(value = "password") String pass){
+        LOG.debug("Registration request: [" + name + ' ' + pass + "]");
+
+        if (!checkName(name))
+        {
+            LOG.warn("Invalid name");
+            return "Invalid name\n";
+        }
         try
         {
-            database.setUser(user);
+            database.setUser(name, pass);
             return "Registration completed\n";
-        }
-        catch (ParsingException exp)
-        {
-            return "Unable to register\n";
         }
         catch (IllegalStateException exp)
         {
-            return "Name occupied. Choose another\n";
+            return "Name occupied. Choose another one\n";
         }
     }
 
