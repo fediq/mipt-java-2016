@@ -10,7 +10,10 @@ import java.util.HashMap;
 import java.util.function.Function;
 
 import static java.lang.Math.*;
-import static ru.mipt.java2016.homework.g594.kalinichenko.task4.BuiltInFunction.Func.*;
+
+import static ru.mipt.java2016.homework.g594.kalinichenko.task4.BuiltInFunction.Func0.RND;
+import static ru.mipt.java2016.homework.g594.kalinichenko.task4.BuiltInFunction.Func1.*;
+import static ru.mipt.java2016.homework.g594.kalinichenko.task4.BuiltInFunction.Func2.*;
 
 /**
  * Created by masya on 16.12.16.
@@ -21,200 +24,99 @@ public class BuiltInFunction {
 
     public static final BuiltInFunction INSTANCE = new BuiltInFunction();
 
-    protected enum Func
+    protected enum Func1
     {
         SIN {
             @Override
-            public double calc(double a, double b) {
-                return 0;
-            }
-
             public double calc(double a) {
                 return sin(a);
-            }
-
-            @Override
-            public double calc() {
-                return 0;
             }
         },
         COS {
             @Override
-            public double calc(double a, double b) {
-                return 0;
-            }
-
             public double calc(double a) {
                 return cos(a);
-            }
-
-            @Override
-            public double calc() {
-                return 0;
             }
         },
         TG {
             @Override
-            public double calc(double a, double b) {
-                return 0;
-            }
-
             public double calc(double a) {
                 return tan(a);
-            }
-
-            @Override
-            public double calc() {
-                return 0;
             }
         },
         SQRT {
             @Override
-            public double calc(double a, double b) {
-                return 0;
-            }
-
             public double calc(double a) {
                 return sqrt(a);
-            }
-
-            @Override
-            public double calc() {
-                return 0;
-            }
-        },
-        POW {
-            public double calc(double a, double b) {
-                return pow(a, b);
-            }
-
-            @Override
-            public double calc(double a) {
-                return 0;
-            }
-
-            @Override
-            public double calc() {
-                return 0;
             }
         },
         ABS {
             @Override
-            public double calc(double a, double b) {
-                return 0;
-            }
-
             public double calc(double a) {
                 return abs(a);
-            }
-
-            @Override
-            public double calc() {
-                return 0;
             }
         },
         SIGN {
             @Override
-            public double calc(double a, double b) {
-                return 0;
-            }
-
             public double calc(double a) {
                 return signum(a);
-            }
-
-            @Override
-            public double calc() {
-                return 0;
-            }
-        },
-        LOG {
-            public double calc(double a, double n) {
-                return log(a)/log(n);
-            }
-
-            @Override
-            public double calc(double a) {
-                return 0;
-            }
-
-            @Override
-            public double calc() {
-                return 0;
             }
         },
         LOG2 {
             @Override
-            public double calc(double a, double b) {
-                return 0;
-            }
-
             public double calc(double a) {
                 return log(a)/log(2);
             }
-
-            @Override
-            public double calc() {
-                return 0;
-            }
-        },
+        };
+        public abstract double calc(double a);
+    }
+    protected enum Func0
+    {
         RND {
             @Override
-            public double calc(double a, double b) {
-                return 0;
-            }
-
-            @Override
-            public double calc(double a) {
-                return 0;
-            }
-
             public double calc() {
                 return random();
             }
+        };
+        public abstract double calc();
+    }
+
+    protected enum Func2
+    {
+        POW {
+            @Override
+            public double calc(double a, double b) {
+                return pow(a, b);
+            }
+        },
+        LOG {
+            @Override
+            public double calc(double a, double n) {
+                return log(a)/log(n);
+            }
         },
         MAX {
+            @Override
             public double calc(double a, double b) {
                 return max(a, b);
             }
-
-            @Override
-            public double calc(double a) {
-                return 0;
-            }
-
-            @Override
-            public double calc() {
-                return 0;
-            }
         },
         MIN {
+            @Override
             public double calc(double a, double b) {
                 return min(a, b);
             }
-
-            @Override
-            public double calc(double a) {
-                return 0;
-            }
-
-            @Override
-            public double calc() {
-                return 0;
-            }
         };
         public abstract double calc(double a, double b);
-        public abstract double calc(double a);
-        public abstract double calc();
     }
     
-    private static HashMap<String, Func> map0 = new HashMap<>();
+    private static HashMap<String, Func0> map0 = new HashMap<>();
     static
     {
         map0.put("rnd", RND);
     }
 
-    private static HashMap<String, Func> map1 = new HashMap<>();
+    private static HashMap<String, Func1> map1 = new HashMap<>();
     static
     {
         map1.put("sin", SIN);
@@ -226,7 +128,7 @@ public class BuiltInFunction {
         map1.put("log2", LOG2);
     }
 
-    private static HashMap<String, Func> map2 = new HashMap<>();
+    private static HashMap<String, Func2> map2 = new HashMap<>();
     static
     {
         map2.put("pow", POW);
