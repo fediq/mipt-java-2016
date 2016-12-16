@@ -7,9 +7,6 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
 import javax.annotation.PostConstruct;
@@ -17,7 +14,6 @@ import javax.sql.DataSource;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 
 /**
  * Created by king on 02.12.16.
@@ -69,8 +65,8 @@ public class Database {
     }
 
     public void register(String[] tokens) throws ParsingException {
-        jdbcTemplate.update("DELETE FROM billing.arguments WHERE argument = '"+tokens[0]+"'");
-        jdbcTemplate.update("INSERT INTO billing.arguments VALUES('"+tokens[0]+"', '"+tokens[1]+"')");
+        jdbcTemplate.update("DELETE FROM billing.arguments WHERE argument = '" + tokens[0] + "'");
+        jdbcTemplate.update("INSERT INTO billing.arguments VALUES('" + tokens[0] + "', '" + tokens[1] + "')");
     }
 
     public double loadMeaning(String argument) throws IOException {
