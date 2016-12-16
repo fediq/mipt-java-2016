@@ -39,7 +39,7 @@ public class RestCalculator {
     }
 
     @RequestMapping(path = "/function/{functionName}", method = RequestMethod.GET)
-    public Pair<String, ArrayList<String>>getFunction(@PathVariable String functionName) {
+    public Pair<String, ArrayList<String>> getFunction(@PathVariable String functionName) {
         return calc.getFunction(functionName);
     }
 
