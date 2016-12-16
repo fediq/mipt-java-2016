@@ -1,4 +1,4 @@
-package ru.mipt.java2016.homework.g595.romanenko.task4;
+package ru.mipt.java2016.homework.g595.romanenko.task4.calculator;
 
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 import ru.mipt.java2016.homework.g595.romanenko.task1.Token;

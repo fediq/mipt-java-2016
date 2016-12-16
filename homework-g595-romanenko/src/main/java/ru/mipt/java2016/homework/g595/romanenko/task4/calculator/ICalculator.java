@@ -1,4 +1,4 @@
-package ru.mipt.java2016.homework.g595.romanenko.task4.base;
+package ru.mipt.java2016.homework.g595.romanenko.task4.calculator;
 
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
@@ -43,7 +43,7 @@ public interface ICalculator {
      * Присвоить функции с заданным именем следующее выражение и список аргументов.
      * Предопределенные функции нельзя изменить.
      */
-    boolean putFunction(String functionName, List<String> args, String functionBody) throws ParsingException;
+    boolean putFunction(String functionName, List<String> args, String functionBody);
 
     /**
      * Удалить функцию с заданным именем. Предопределенные функции нельзя удалить.

@@ -1,8 +1,6 @@
-package ru.mipt.java2016.homework.g595.romanenko.task4;
+package ru.mipt.java2016.homework.g595.romanenko.task4.calculator;
 
 import ru.mipt.java2016.homework.base.task1.ParsingException;
-import ru.mipt.java2016.homework.g595.romanenko.task4.base.CalculatorFunction;
-import ru.mipt.java2016.homework.g595.romanenko.task4.base.ICalculator;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -82,17 +80,21 @@ public class RestCalculator implements ICalculator {
     }
 
     @Override
-    public boolean putFunction(String functionName, List<String> args, String functionBody) throws ParsingException {
+    public boolean putFunction(String functionName, List<String> args, String functionBody) {
         if (variablesTable.containsKey(functionName) ||
                 (functionsTable.containsKey(functionName) && functionsTable.get(functionName).isPredefined())) {
             return false;
         }
-        functionsTable.put(functionName,
-                new Function(
-                        functionBody,
-                        args,
-                        Collections.unmodifiableMap(functionsTable),
-                        Collections.unmodifiableMap(variablesTable)));
+        try {
+            functionsTable.put(functionName,
+                    new Function(
+                            functionBody,
+                            args,
+                            Collections.unmodifiableMap(functionsTable),
+                            Collections.unmodifiableMap(variablesTable)));
+        } catch (ParsingException e) {
+            return false;
+        }
         return true;
     }
 

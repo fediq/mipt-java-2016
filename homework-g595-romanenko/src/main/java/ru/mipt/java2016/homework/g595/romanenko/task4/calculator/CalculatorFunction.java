@@ -1,4 +1,4 @@
-package ru.mipt.java2016.homework.g595.romanenko.task4.base;
+package ru.mipt.java2016.homework.g595.romanenko.task4.calculator;
 
 import java.util.ArrayList;
 import java.util.List;

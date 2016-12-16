@@ -7,8 +7,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
-import ru.mipt.java2016.homework.g595.romanenko.task4.base.CalculatorFunction;
-import ru.mipt.java2016.homework.g595.romanenko.task4.base.ICalculator;
+import ru.mipt.java2016.homework.g595.romanenko.task4.calculator.CalculatorFunction;
+import ru.mipt.java2016.homework.g595.romanenko.task4.calculator.ICalculator;
 import ru.mipt.java2016.homework.tests.task1.AbstractCalculatorTest;
 import ru.mipt.java2016.homework.tests.task2.StorageTestUtils;
 
@@ -69,7 +69,6 @@ public class AbstractRestCalculatorTest extends AbstractCalculatorTest {
     @Test
     public void testPutAndGetVariables() throws ParsingException {
         doWithCalculator(calculatorService -> {
-
             assertEquals(calculatorService.putVariable("a", 12.4), true);
             assertEquals(calculatorService.putVariable("b", 7.0), true);
             assertEquals(calculatorService.putVariable("c", 8.0), true);
@@ -207,13 +206,13 @@ public class AbstractRestCalculatorTest extends AbstractCalculatorTest {
             assertEquals(calculatorService.putFunction(f2_name, f2.getArgs(), f2.getBody()), true);
             assertEquals(calculatorService.putFunction(f3_name, f3.getArgs(), f3.getBody()), true);
 
-            assertEquals((Object)calculatorService.evaluate("Func1()"), 132 * 123 /-1.1 + 225.2);
-            assertEquals((Object)calculatorService.evaluate("F_2()"), 1-2-3-4-5*0.001);
-            assertEquals((Object)calculatorService.evaluate("f_n_c_2_()"),
-                    (132 * 123 /-1.1 + 225.2) + (1-2-3-4-5*0.001));
+            assertEquals((Object) calculatorService.evaluate("Func1()"), 132 * 123 / -1.1 + 225.2);
+            assertEquals((Object) calculatorService.evaluate("F_2()"), 1 - 2 - 3 - 4 - 5 * 0.001);
+            assertEquals((Object) calculatorService.evaluate("f_n_c_2_()"),
+                    (132 * 123 / -1.1 + 225.2) + (1 - 2 - 3 - 4 - 5 * 0.001));
 
-            assertEquals((Object)calculatorService.evaluate("Func1() + 231"),
-                    (132 * 123 /-1.1 + 225.2) + 231);
+            assertEquals((Object) calculatorService.evaluate("Func1() + 231"),
+                    (132 * 123 / -1.1 + 225.2) + 231);
 
         });
     }
@@ -235,15 +234,15 @@ public class AbstractRestCalculatorTest extends AbstractCalculatorTest {
             assertEquals(calculatorService.putFunction(f2_name, f2.getArgs(), f2.getBody()), true);
             assertEquals(calculatorService.putFunction(f3_name, f3.getArgs(), f3.getBody()), true);
 
-            assertEquals((Object)calculatorService.evaluate("Func1()"),
+            assertEquals((Object) calculatorService.evaluate("Func1()"),
                     Math.abs(
                             (
                                     Math.log(Math.pow(2, 8) * 32) / Math.log(2)
-                            ) /-(-(-1))) * (Math.max(1, -1) - Math.min(1, -1)));
+                            ) / -(-(-1))) * (Math.max(1, -1) - Math.min(1, -1)));
 
             assertNotNull(calculatorService.evaluate("F_2()"));
 
-            assertEquals((Object)calculatorService.evaluate("f_n_c_2_()"),
+            assertEquals((Object) calculatorService.evaluate("f_n_c_2_()"),
                     Math.sin(Math.cos(Math.tan(0))) + Math.sqrt(2) -
                             Math.signum(-0.01) * Math.log(Math.pow(0.1, -10)));
 
@@ -263,15 +262,15 @@ public class AbstractRestCalculatorTest extends AbstractCalculatorTest {
             assertEquals(calculatorService.putVariable("a", a), true);
             assertEquals(calculatorService.putVariable("b", b), true);
 
-            assertEquals((Object)calculatorService.evaluate("PI * E + a / b"),
+            assertEquals((Object) calculatorService.evaluate("PI * E + a / b"),
                     Math.PI * Math.E + a / b);
 
-            assertEquals((Object)calculatorService.evaluate("inf - a * 213.3 /-1"),
-                    Double.POSITIVE_INFINITY + a * 213.3 /-1);
+            assertEquals((Object) calculatorService.evaluate("inf - a * 213.3 /-1"),
+                    Double.POSITIVE_INFINITY + a * 213.3 / -1);
 
             b = b * b;
             assertEquals(calculatorService.putVariable("b", b), true);
-            assertEquals((Object)calculatorService.evaluate("max(a, b) - min(a, b)"),
+            assertEquals((Object) calculatorService.evaluate("max(a, b) - min(a, b)"),
                     Math.max(a, b) - Math.min(a, b));
 
         });
@@ -310,11 +309,11 @@ public class AbstractRestCalculatorTest extends AbstractCalculatorTest {
                     circle_area.apply(8742.1));
 
 
-            assertEquals((Object)calculatorService.evaluate("second(356.0 - 52 / 1.0 + 2 * 1.001, 42)"),
+            assertEquals((Object) calculatorService.evaluate("second(356.0 - 52 / 1.0 + 2 * 1.001, 42)"),
                     circle_area.apply(356.0 - 52 / 1.0 + 2 * 1.001) /
                             circle_area.apply(circle_area.apply(circle_area.apply(42.0))));
 
-            assertEquals((Object)calculatorService.evaluate("f3(1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2)"),
+            assertEquals((Object) calculatorService.evaluate("f3(1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2)"),
                     1.1 * 1.2 * 1.3 - 1.4 / 1.5 / 1.6 * 1.7 + 1.8 - 1.9 / 2);
 
         });
