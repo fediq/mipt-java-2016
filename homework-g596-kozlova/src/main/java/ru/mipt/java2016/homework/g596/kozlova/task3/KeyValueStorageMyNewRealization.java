@@ -22,6 +22,9 @@ import java.io.BufferedOutputStream;
 
 public class KeyValueStorageMyNewRealization<K, V> implements KeyValueStorage<K, V> {
 
+    private final Integer MAX_NUMBER_OF_DELETED_CHANGE = 100;
+    private int numberDeletedChange;
+    private final String path;
     private final String fileName;
     private final String fileWithKeysName;
     private final String fileWithValuesName;
@@ -32,6 +35,7 @@ public class KeyValueStorageMyNewRealization<K, V> implements KeyValueStorage<K,
                 @Override
                 public V load(K key) {
                     try {
+                        valuesOutputStream.flush();
                         fileWithValues.seek(mapPlace.get(key));
                         V result = valueSerializator.read(fileWithValues);
                         fileWithValues.seek(fileWithValues.length());
@@ -52,10 +56,12 @@ public class KeyValueStorageMyNewRealization<K, V> implements KeyValueStorage<K,
     private boolean isClosed;
     private long storageSize;
 
-    public KeyValueStorageMyNewRealization(String path, MySerialization<K> serKey, MySerialization<V> serValue)
+    public KeyValueStorageMyNewRealization(String p, MySerialization<K> serKey, MySerialization<V> serValue)
             throws IOException {
         typeOfData = serKey.getClass() + " --- " + serValue.getClass();
         isClosed = false;
+        path = p;
+        numberDeletedChange = 0;
         fileName = path + File.separator + "storage.txt";
         fileWithKeysName = path + File.separator + "fileWithKeys.db";
         fileWithValuesName = path + File.separator + "fileWithValues.db";
@@ -168,12 +174,15 @@ public class KeyValueStorageMyNewRealization<K, V> implements KeyValueStorage<K,
         Lock lock = globalLock.writeLock();
         lock.lock();
         try {
-            mapPlace.put(key, storageSize);
-            long writtenSize = valuesOutputStream.size();
-            valueSerializator.write(value, valuesOutputStream);
-            valuesOutputStream.flush();
-            storageSize += valuesOutputStream.size() - writtenSize;
-
+            if (mapPlace.keySet().contains(key)) {
+                fileWithValues.seek(mapPlace.get(key));
+                valueSerializator.write(value, valuesOutputStream);
+            } else {
+                mapPlace.put(key, storageSize);
+                long writtenSize = valuesOutputStream.size();
+                valueSerializator.write(value, valuesOutputStream);
+                storageSize += valuesOutputStream.size() - writtenSize;
+            }
             if (cacheData.asMap().containsKey(key)) {
                 cacheData.put(key, value);
             }
@@ -182,7 +191,6 @@ public class KeyValueStorageMyNewRealization<K, V> implements KeyValueStorage<K,
         } finally {
             lock.unlock();
         }
-
     }
 
     @Override
@@ -194,6 +202,10 @@ public class KeyValueStorageMyNewRealization<K, V> implements KeyValueStorage<K,
             if (exists(key)) {
                 cacheData.invalidate(key);
                 mapPlace.remove(key);
+            }
+            ++numberDeletedChange;
+            if (numberDeletedChange > MAX_NUMBER_OF_DELETED_CHANGE) {
+                optimizeMemory();
             }
         } finally {
             lock.unlock();
@@ -231,30 +243,54 @@ public class KeyValueStorageMyNewRealization<K, V> implements KeyValueStorage<K,
         lock.lock();
         try (DataOutputStream writeToFile = new DataOutputStream(new FileOutputStream(file))) {
             writeToFile.writeUTF(typeOfData);
-            writeToFile.close();
             valuesOutputStream.close();
             keysDataInputStream.close();
             fileWithKeys.close();
             File fileK = new File(fileWithKeysName);
             fileWithKeys = new RandomAccessFile(fileK, "rw");
-            DataOutputStream keysDataOutputStream = new DataOutputStream(new BufferedOutputStream(
-                    new FileOutputStream(fileWithKeys.getFD())));
-            keysDataOutputStream.writeUTF(typeOfData);
-            keysDataOutputStream.writeInt(mapPlace.size());
-            for (K key : mapPlace.keySet()) {
-                keySerializator.write(key, keysDataOutputStream);
-                keysDataOutputStream.writeLong(mapPlace.get(key));
-            }
-            mapPlace.clear();
+            try (DataOutputStream keysDataOutputStream = new DataOutputStream(new BufferedOutputStream(
+                    new FileOutputStream(fileWithKeys.getFD())))) {
+                keysDataOutputStream.writeUTF(typeOfData);
+                keysDataOutputStream.writeInt(mapPlace.size());
+                for (K key : mapPlace.keySet()) {
+                    keySerializator.write(key, keysDataOutputStream);
+                    keysDataOutputStream.writeLong(mapPlace.get(key));
+                }
+                mapPlace.clear();
 
-            keysDataOutputStream.close();
-            fileWithKeys.close();
-            fileWithValues.close();
-            isClosed = true;
+                keysDataOutputStream.close();
+                fileWithKeys.close();
+                fileWithValues.close();
+                isClosed = true;
+            }
         } catch (IOException e) {
             throw new MalformedDataException("Can't close");
         } finally {
             lock.unlock();
+        }
+    }
+
+    private void optimizeMemory() {
+        try {
+            Map<K, Long> newMapPlace = new HashMap<>();
+            File fileWithNewValues = new File(path + File.separator + "values.db");
+            fileWithNewValues.createNewFile();
+
+            RandomAccessFile newFileWithValues = new RandomAccessFile(fileWithNewValues, "rw");
+            newFileWithValues.seek(0);
+            newFileWithValues.setLength(0);
+
+            for (Map.Entry<K, Long> entry : mapPlace.entrySet()) {
+                fileWithValues.seek(entry.getValue());
+                V value = valueSerializator.read(fileWithValues);
+                newMapPlace.put(entry.getKey(), newFileWithValues.length());
+                valueSerializator.write(value, newFileWithValues);
+            }
+            mapPlace = newMapPlace;
+            newFileWithValues.close();
+            numberDeletedChange = 0;
+        } catch (IOException e) {
+            throw new MalformedDataException("Can't optimize");
         }
     }
 }
