@@ -10,7 +10,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
 import ru.mipt.java2016.homework.base.task1.Calculator;
-import ru.mipt.java2016.homework.g595.topilskiy.task4.calculator.CachedJEvalCalculator;
+import ru.mipt.java2016.homework.g595.topilskiy.task4.calculator.TokenCalculator;
 
 /**
  * curl http://localhost:9001/eval \
@@ -26,7 +26,7 @@ public class CalculatorApplication {
 
     @Bean
     public Calculator calculator() {
-        return CachedJEvalCalculator.INSTANCE;
+        return new TokenCalculator();
     }
 
     @Bean
