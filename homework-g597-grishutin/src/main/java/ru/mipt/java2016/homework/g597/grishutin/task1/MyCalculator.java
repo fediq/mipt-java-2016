@@ -1,6 +1,8 @@
 package ru.mipt.java2016.homework.g597.grishutin.task1;
 
-import ru.mipt.java2016.homework.base.task1.*;
+import ru.mipt.java2016.homework.base.task1.Calculator;
+import ru.mipt.java2016.homework.base.task1.ParsingException;
+
 import java.security.InvalidParameterException;
 import java.util.Arrays;
 import java.util.HashSet;

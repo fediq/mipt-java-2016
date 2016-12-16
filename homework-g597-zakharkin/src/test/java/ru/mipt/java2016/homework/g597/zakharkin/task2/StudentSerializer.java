@@ -2,6 +2,8 @@ package ru.mipt.java2016.homework.g597.zakharkin.task2;
 
 import ru.mipt.java2016.homework.tests.task2.Student;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Date;
@@ -25,7 +27,7 @@ public class StudentSerializer implements Serializer<Student> {
     }
 
     @Override
-    public void write(RandomAccessFile file, Student student) throws IOException {
+    public void write(DataOutput file, Student student) throws IOException {
         BooleanSerializer booleanSerializer = BooleanSerializer.getInstance();
         IntegerSerializer integerSerializer = IntegerSerializer.getInstance();
         DateSerializer dateSerializer = DateSerializer.getInstance();
@@ -41,7 +43,7 @@ public class StudentSerializer implements Serializer<Student> {
     }
 
     @Override
-    public Student read(RandomAccessFile file) throws IOException {
+    public Student read(DataInput file) throws IOException {
         BooleanSerializer booleanSerializer = BooleanSerializer.getInstance();
         IntegerSerializer integerSerializer = IntegerSerializer.getInstance();
         DateSerializer dateSerializer = DateSerializer.getInstance();
