@@ -1,5 +1,7 @@
 package ru.mipt.java2016.homework.g594.kalinichenko.task4;
 
+import javafx.util.Pair;
+import org.springframework.dao.EmptyResultDataAccessException;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
@@ -96,6 +98,7 @@ public class MyCalculator implements Calculator {
         boolean mode = false;
         for (int i = 0; i < expression.length(); ++i) {
             Character c = expression.charAt(i);
+            System.out.println("CUR" + i + ',' + c);
             if (mode && (c.equals('_') || isLatin(c) || isDigit(c)))
             {
                 name.append(c);
@@ -114,6 +117,43 @@ public class MyCalculator implements Calculator {
 
             if (mode)
             {
+                /*if (isWhitespace(c))
+                {
+                    //i++;
+                    continue;
+                }*/
+                int decr = 0;
+                if (c.equals('('))
+                {
+                    name.append(c);
+                    i++;
+                    decr = -1;
+                    int balance = 1;
+                    while(i < expression.length())
+                    {
+                        c = expression.charAt(i);
+                        name.append(c);
+                        System.out.println(c);
+                        System.out.println("I" + i);
+                        if (c.equals('('))
+                        {
+                            balance++;
+                        }
+                        if (c.equals(')'))
+                        {
+                            balance--;
+                        }
+                        if (balance == 0)
+                        {
+                            break;
+                        }
+                        i++;
+                    }
+                    i++;
+                    System.out.println("NEW" + i);
+                    //i--;
+                    //continue;
+                }
                 polishNotation.add(new Number(sign * getResult(name)));
                 System.out.println(name);
                 mode = false;
@@ -121,6 +161,12 @@ public class MyCalculator implements Calculator {
                 curNumber = 0;
                 prevIsNumber = true;
                 unary = false;
+                //continue;
+                System.out.println("I:");
+                System.out.println(i);
+                System.out.println(expression.length());
+                i += decr;
+                continue;
             }
             if (isDigit(c) || c.equals('.')) {
                 if (prevIsNumber) {
@@ -234,9 +280,89 @@ public class MyCalculator implements Calculator {
         return polishNotation;
     }
 
-    private double getResult(StringBuilder name) {
-        return database.loadVariableValue(String.valueOf(name));
+    private Pair<String, ArrayList<String>> parseFunc(StringBuilder name)  throws ParsingException{
+        StringBuilder func = new StringBuilder();
+        StringBuilder cur = new StringBuilder();;
+        ArrayList<String> args = new ArrayList<>();
+        int i = 0;
+        boolean closed = false;
+        System.out.println(name);
+        while(i < name.length() && name.charAt(i) != '(')
+        {
+            func.append(name.charAt(i));
+            i++;
+        }
+        i++;
+        System.out.println(func);
+        System.out.println(i);
+        //System.out.println("AAA" + name.charAt(i));
+        while(i < name.length() - 1)
+        {
+            Character c = name.charAt(i);
+            System.out.println(c);
+            /*if (isWhitespace(c)) {
+                i++;
+                continue;
+            }*/
+            if (c.equals(','))
+            {
+                System.out.println(cur);
+                args.add(String.valueOf(cur));
+                cur = new StringBuilder();
+            }
+            cur.append(c);
+            i++;
+        }
+        System.out.println(i);
+        System.out.println(name.length());
+        System.out.println(cur);
+        args.add(String.valueOf(cur));
+        Character back = name.charAt(name.length() - 1);
+        if (!back.equals(')'))
+        {
+            throw new ParsingException("Invalid function name");
+        }
+        System.out.println("HERE");
+        Pair kek = new Pair(String.valueOf(func), args);
+        System.out.println(kek.getKey());
+        System.out.println("LAL");
+        return kek;
     }
+
+    private double getResult(StringBuilder name) throws ParsingException{
+        System.out.println("Request name " + name);
+        try
+        {
+            return database.loadVariableValue(String.valueOf(name));
+        }
+        catch (EmptyResultDataAccessException exp)
+        {
+            System.out.println("Request func " + name);
+            Pair<String, ArrayList<String> > parsed = parseFunc(name);
+            System.out.println("LOL");
+            System.out.println(parsed.getKey());
+            System.out.println("LOOOOL");
+            ArrayList<Double> args = new ArrayList<>();
+            for(String arg:parsed.getValue())
+            {
+                System.out.println(arg);
+                double res = calculate(arg);
+                System.out.println("UUU");
+                System.out.println(res);
+                args.add(res);
+            }
+            try
+            {
+                return BuiltInFunction.execute(parsed.getKey(), args);
+            }
+            catch (Exception exc)
+            {
+                throw new ParsingException("No such function");
+            }
+        }
+    }
+
+
 
     private double getValue(ArrayList<CalcItem> polishNotation) throws ParsingException {
         Stack<Number> stack = new Stack<>();

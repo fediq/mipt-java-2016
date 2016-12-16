@@ -129,6 +129,7 @@ public class BillingDao {
         );
     }
     public Double loadVariableValue(String variableName) {
+        LOG.trace("Request get variable value " + variableName + "from database");
         return jdbcTemplate.queryForObject(
                 "SELECT variable, value FROM "+ curUser.getUsername() + ".variables WHERE variable = ?",
                 new Object[]{variableName},
@@ -142,6 +143,7 @@ public class BillingDao {
     }
 
     public void putVariableValue(String variableName, double value) {
+        LOG.trace("Request put variable value " + variableName + "to database");
         try
         {
             loadFunctionValue(variableName);
@@ -162,6 +164,7 @@ public class BillingDao {
     }
 
     public void putFunctionValue(String functionName, String expression) {
+        LOG.trace("Request put variable value " + functionName + "to database");
         try
         {
             loadVariableValue(functionName);
@@ -182,6 +185,7 @@ public class BillingDao {
     }
 
     public String loadFunctionValue(String functionName) {
+        LOG.trace("Request get function value " + functionName + "from database");
         return jdbcTemplate.queryForObject(
                 "SELECT function, expression FROM "+ curUser.getUsername() + ".functions WHERE function = ?",
                 new Object[]{functionName},

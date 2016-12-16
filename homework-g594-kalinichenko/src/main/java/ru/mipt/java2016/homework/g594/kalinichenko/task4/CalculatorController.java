@@ -225,15 +225,16 @@ public class CalculatorController {
     public String eval(@RequestBody String expression) throws ParsingException {
         LOG.debug("Evaluation request: [" + expression + "]");
         double result;
-        try
-        {
+        //try
+        //{
             result = calculator.calculate(expression);
-        }
-        catch (Exception exp)
+        //}
+        /*catch (Exception exp)
         {
             LOG.debug("Wrong expression");
+            LOG.debug(exp.getMessage());
             return "Wrong expression\n";
-        }
+        }*/
         LOG.trace("Result: " + result);
         return Double.toString(result) + "\n";
     }
