@@ -22,7 +22,7 @@ import java.io.BufferedOutputStream;
 
 public class KeyValueStorageMyNewRealization<K, V> implements KeyValueStorage<K, V> {
 
-    private final Integer MaxNumberOfDeletedChanges = 100;
+    private final Integer maxNumberOfDeletedChanges = 100;
     private int numberDeletedChanges;
     private final String path;
     private final String fileName;
@@ -204,7 +204,7 @@ public class KeyValueStorageMyNewRealization<K, V> implements KeyValueStorage<K,
                 mapPlace.remove(key);
             }
             ++numberDeletedChanges;
-            if (numberDeletedChanges > MaxNumberOfDeletedChanges) {
+            if (numberDeletedChanges > maxNumberOfDeletedChanges) {
                 optimizeMemory();
             }
         } finally {
