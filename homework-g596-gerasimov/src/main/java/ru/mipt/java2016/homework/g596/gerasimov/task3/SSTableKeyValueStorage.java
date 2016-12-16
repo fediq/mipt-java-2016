@@ -82,7 +82,12 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public V read(K key) {
-        checkClosed();
+        readLock.lock();
+        try {
+            checkClosed();
+        } finally {
+            readLock.unlock();
+        }
         writeLock.lock();
         try {
             return cache.get(key);
@@ -95,9 +100,9 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public boolean exists(K key) {
-        checkClosed();
         readLock.lock();
         try {
+            checkClosed();
             return offsetTable.containsKey(key);
         } finally {
             readLock.unlock();
@@ -106,7 +111,12 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public void write(K key, V value) {
-        checkClosed();
+        readLock.lock();
+        try {
+            checkClosed();
+        } finally {
+            readLock.unlock();
+        }
         writeLock.lock();
         try {
             offsetTableIsUpdated = true;
@@ -129,7 +139,12 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public void delete(K key) {
-        checkClosed();
+        readLock.lock();
+        try {
+            checkClosed();
+        } finally {
+            readLock.unlock();
+        }
         writeLock.lock();
         try {
             offsetTableIsUpdated = true;
@@ -146,9 +161,9 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public Iterator<K> readKeys() {
-        checkClosed();
         readLock.lock();
         try {
+            checkClosed();
             return offsetTable.keySet().iterator();
         } finally {
             readLock.unlock();
@@ -157,9 +172,9 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public int size() {
-        checkClosed();
         readLock.lock();
         try {
+            checkClosed();
             return offsetTable.size();
         } finally {
             readLock.unlock();
@@ -168,7 +183,12 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public void close() throws IOException {
-        checkClosed();
+        readLock.lock();
+        try {
+            checkClosed();
+        } finally {
+            readLock.unlock();
+        }
         writeLock.lock();
         try {
             isClosed = true;
@@ -189,13 +209,8 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void checkClosed() {
-        readLock.lock();
-        try {
-            if (isClosed) {
-                throw new RuntimeException("Storage is closed");
-            }
-        } finally {
-            readLock.unlock();
+        if (isClosed) {
+            throw new RuntimeException("Storage is closed");
         }
     }
 
@@ -242,35 +257,36 @@ public class SSTableKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void refreshStorageFile() throws IOException {
-        if (oldNoteCounter > REFRESH_CONST * offsetTable.size()) {
-            try (StorageFileIO storageFileIO = this.storageFileIO.open()) {
-                storageLength = 0;
-                long oldFileOffset = 0;
-                for (int keySize = storageFileIO.copyReadSize();
-                     keySize > 0; keySize = storageFileIO.copyReadSize()) {
+        if (oldNoteCounter <= REFRESH_CONST * offsetTable.size()) {
+            return;
+        }
+        try (StorageFileIO storageFileIO = this.storageFileIO.open()) {
+            storageLength = 0;
+            long oldFileOffset = 0;
+            for (int keySize = storageFileIO.copyReadSize();
+                 keySize > 0; keySize = storageFileIO.copyReadSize()) {
 
-                    ByteBuffer keyCode = storageFileIO.copyReadField(keySize);
-                    int valueSize = storageFileIO.copyReadSize();
-                    ByteBuffer valueCode = storageFileIO.copyReadField(valueSize);
-                    K key = keySerializer.deserialize(keyCode);
+                ByteBuffer keyCode = storageFileIO.copyReadField(keySize);
+                int valueSize = storageFileIO.copyReadSize();
+                ByteBuffer valueCode = storageFileIO.copyReadField(valueSize);
+                K key = keySerializer.deserialize(keyCode);
 
-                    if (offsetTable.containsKey(key) && offsetTable.get(key).equals(oldFileOffset)) {
+                if (offsetTable.containsKey(key) && offsetTable.get(key).equals(oldFileOffset)) {
 
-                        storageFileIO.writeSize(keySize);
-                        storageFileIO.writeField(keyCode);
-                        storageLength += INT_SIZE + keySize;
+                    storageFileIO.writeSize(keySize);
+                    storageFileIO.writeField(keyCode);
+                    storageLength += INT_SIZE + keySize;
 
-                        offsetTable.put(key, storageLength);
+                    offsetTable.put(key, storageLength);
 
-                        storageFileIO.writeSize(valueSize);
-                        storageFileIO.writeField(valueCode);
-                        storageLength += INT_SIZE + valueSize;
-                    }
-
-                    oldFileOffset += 2 * INT_SIZE + keySize + valueSize;
+                    storageFileIO.writeSize(valueSize);
+                    storageFileIO.writeField(valueCode);
+                    storageLength += INT_SIZE + valueSize;
                 }
-                oldNoteCounter = 0;
+
+                oldFileOffset += 2 * INT_SIZE + keySize + valueSize;
             }
+            oldNoteCounter = 0;
         }
     }
 }
