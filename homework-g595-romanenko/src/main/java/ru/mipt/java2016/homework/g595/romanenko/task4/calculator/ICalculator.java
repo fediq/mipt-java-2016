@@ -20,7 +20,7 @@ public interface ICalculator {
     /**
      * Присвоить переменной новое выражение.
      */
-    boolean putVariable(String variableName, Double value);
+    boolean putVariable(String variableName, String value);
 
     /**
      * Удалить переменную с заданным именем.

@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="bootstrap-3.3.6-dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="static_resources/bootstrap-3.3.6-dist/css/bootstrap.min.css" rel="stylesheet">
 
-    <script src="jquery-2.2.4.min.js"></script>
-    <script src="bootstrap-3.3.6-dist/js/bootstrap.min.js"></script>
+    <script src="static_resources/jquery-2.2.4.min.js"></script>
+    <script src="static_resources/bootstrap-3.3.6-dist/js/bootstrap.min.js"></script>
 
     <title>Title</title>
 
@@ -40,8 +40,7 @@
                     }
                 },
                 error: function (data) {
-                    console.log(data);
-                    $('#result2')[0].textContent = data.toString();
+                    console.log(data.responseText);
                 }
             })
         };
@@ -112,7 +111,7 @@
                 },
                 error: function (data) {
                     console.log(data);
-                    $('#result_get_function_body')[0].textContent = data.toString();
+                    $('#result_get_function_body')[0].textContent = data.responseText;
                 }
             });
         };
@@ -131,7 +130,7 @@
                 },
                 error: function (data) {
                     console.log(data);
-                    $('#result_eval')[0].textContent = data.toString();
+                    $('#result_eval')[0].textContent = data.responseText;
                 }
             });
         };
@@ -140,11 +139,10 @@
             var urlHeader = $("#add_function_input_name")[0].value + '?';
             var params = $("#add_function_input_params")[0].value.split(',');
             for (var i = 0; i < params.length; i++) {
-                params[i].trim();
                 if (i != 0) {
                     urlHeader += '&';
                 }
-                urlHeader += 'args=' + params[i];
+                urlHeader += 'args=' + params[i].trim();
             }
             $.ajax({
                 type: "PUT",
@@ -158,7 +156,7 @@
                 },
                 error: function (data) {
                     console.log(data);
-                    $('#result_add_function')[0].textContent = data.toString();
+                    $('#result_add_function')[0].textContent = data.responseText;
                 }
             });
         };
@@ -175,7 +173,7 @@
                 },
                 error: function (data) {
                     console.log(data);
-                    $('#result_delete_function')[0].textContent = data.toString();
+                    $('#result_delete_function')[0].textContent = data.responseText;
                 }
             });
         };
@@ -193,7 +191,7 @@
                 },
                 error: function (data) {
                     console.log(data);
-                    $('#result_add_variable')[0].textContent = data.toString();
+                    $('#result_add_variable')[0].textContent = data.responseText;
                 }
             });
         };
@@ -210,7 +208,7 @@
                 },
                 error: function (data) {
                     console.log(data);
-                    $('#result_delete_variable')[0].textContent = data.toString();
+                    $('#result_delete_variable')[0].textContent = data.responseText;
                 }
             });
         };

@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
  *
  * @author Ilya I. Romanenko
  * @since 26.11.16
- *
+ * <p>
  * <h>Defenitions</h>
  * <p>
  * func_def = name '(' params_def ')'
@@ -50,12 +50,12 @@ public class Function implements IEvaluateFunction {
      * Global Tables
      */
     private Map<String, IEvaluateFunction> functionTable;
-    private Map<String, Double> variableTable;
+    private Map<String, IEvaluateFunction> variableTable;
 
     public Function(String expression,
                     List<String> params,
                     Map<String, IEvaluateFunction> functionTable,
-                    Map<String, Double> variableTable) throws ParsingException {
+                    Map<String, IEvaluateFunction> variableTable) throws ParsingException {
         if (params != null) {
             for (int i = 0; i < params.size(); ++i) {
                 paramsNumberToParam.put(i, params.get(i));
@@ -270,7 +270,7 @@ public class Function implements IEvaluateFunction {
                 if (!variableTable.containsKey(token.getName())) {
                     throw new ParsingException("Unexpected symbol, no such variable.");
                 }
-                result = variableTable.get(token.getName());
+                result = variableTable.get(token.getName()).evaluate();
             }
         }
         return result;
@@ -343,5 +343,13 @@ public class Function implements IEvaluateFunction {
         for (int i = 0; i < args.size(); ++i) {
             params.put(paramsNumberToParam.get(i), args.get(i));
         }
+    }
+
+    public void setVariablesTable(Map<String, IEvaluateFunction> variablesTable) {
+        this.variableTable = variablesTable;
+    }
+
+    public void setFunctionTable(Map<String, IEvaluateFunction> functionTable) {
+        this.functionTable = functionTable;
     }
 }

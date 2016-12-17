@@ -1,17 +1,23 @@
 package ru.mipt.java2016.homework.g595.romanenko.task4;
 
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.view.RedirectView;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
-import ru.mipt.java2016.homework.g595.romanenko.task4.calculator.CalculatorFunction;
-import ru.mipt.java2016.homework.g595.romanenko.task4.calculator.ICalculator;
-import ru.mipt.java2016.homework.g595.romanenko.task4.calculator.RestCalculator;
+import ru.mipt.java2016.homework.g595.romanenko.task4.calculator.*;
 
 import java.net.URL;
+import java.security.Principal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * ru.mipt.java2016.homework.g595.romanenko.task4
@@ -20,85 +26,115 @@ import java.util.List;
  * @since 26.11.16
  **/
 @RestController
-public class CalculatorController implements ICalculator {
+public class CalculatorController {
 
-    private ICalculator calculator = new RestCalculator();
+    private ConcurrentHashMap<Integer, ICalculator> calculators = new ConcurrentHashMap<>();
 
+    @Autowired
+    private RestCalculatorDao restCalculatorDao;
 
-    @Override
+    private Integer getUserID(Principal principal) {
+        User user = (User) ((Authentication) principal).getPrincipal();
+        return restCalculatorDao.loadUser(user.getUsername()).getId();
+    }
+
     @CrossOrigin
     @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.GET)
-    public Double getVariable(@PathVariable String variableName) {
-        return calculator.getVariable(variableName);
+    public Double getVariable(@PathVariable String variableName, Principal principal) {
+        Integer userId = getUserID(principal);
+        return calculators.get(userId).getVariable(variableName);
     }
 
     @CrossOrigin
     @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.PUT)
     public boolean putVariable(@PathVariable String variableName,
-                               @RequestBody String value) {
-        Double doubleValue = 0.0;
-        try {
-            doubleValue = Double.parseDouble(value);
-        } catch (NullPointerException | NumberFormatException e) {
-            System.out.println(e);
-            return false;
+                               @RequestBody String value,
+                               Principal principal) {
+        Integer userId = getUserID(principal);
+        boolean isOk = calculators.get(userId).putVariable(variableName, value);
+        if (isOk) {
+            restCalculatorDao.addVariable(getUserID(principal), variableName, value);
         }
-        return calculator.putVariable(variableName, doubleValue);
+        return isOk;
     }
 
-    @Override
+
     @CrossOrigin
     @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.DELETE)
-    public boolean deleteVariable(@PathVariable String variableName) {
-        return calculator.deleteVariable(variableName);
+    public boolean deleteVariable(@PathVariable String variableName,
+                                  Principal principal) {
+        Integer userId = getUserID(principal);
+        boolean isOk = calculators.get(userId).deleteVariable(variableName);
+        if (isOk) {
+            restCalculatorDao.deleteVariable(getUserID(principal), variableName);
+        }
+        return isOk;
     }
 
-    @Override
+
     @CrossOrigin
     @RequestMapping(path = "/variable", method = RequestMethod.GET)
     @ResponseBody
-    public List<String> getVariables() {
-        return calculator.getVariables();
+    public List<String> getVariables(Principal principal) {
+        Integer userId = getUserID(principal);
+        return calculators.get(userId).getVariables();
     }
 
-    @Override
+
     @CrossOrigin
     @RequestMapping(path = "/function/{functionName}", method = RequestMethod.GET)
     @ResponseBody
-    public CalculatorFunction getFunction(@PathVariable String functionName) {
-        return calculator.getFunction(functionName);
+    public CalculatorFunction getFunction(@PathVariable String functionName,
+                                          Principal principal) {
+        Integer userId = getUserID(principal);
+        return calculators.get(userId).getFunction(functionName);
     }
 
-    @Override
+
     @CrossOrigin
     @RequestMapping(path = "/function/{functionName}", method = RequestMethod.PUT)
     public boolean putFunction(@PathVariable String functionName,
                                @RequestParam(value = "args") List<String> args,
-                               @RequestBody String functionBody) {
-        return calculator.putFunction(functionName, args, functionBody);
+                               @RequestBody String functionBody,
+                               Principal principal) {
+        Integer userId = getUserID(principal);
+        boolean isOk = calculators.get(userId).putFunction(functionName, args, functionBody);
+        if (isOk) {
+            restCalculatorDao.addFunction(getUserID(principal), functionName, args, functionBody);
+        }
+        return isOk;
     }
 
-    @Override
+
     @CrossOrigin
     @RequestMapping(path = "/function/{functionName}", method = RequestMethod.DELETE)
-    public boolean deleteFunction(@PathVariable String functionName) {
-        return calculator.deleteFunction(functionName);
+    public boolean deleteFunction(@PathVariable String functionName,
+                                  Principal principal) {
+        Integer userId = getUserID(principal);
+        boolean isOk = calculators.get(userId).deleteFunction(functionName);
+        if (isOk) {
+            restCalculatorDao.deleteFunction(getUserID(principal), functionName);
+        }
+        return isOk;
     }
 
-    @Override
+
     @CrossOrigin
     @RequestMapping(path = "/function", method = RequestMethod.GET)
     @ResponseBody
-    public List<String> getFunctionsNames() {
-        return calculator.getFunctionsNames();
+    public List<String> getFunctionsNames(Principal principal) {
+        Integer userId = getUserID(principal);
+        return calculators.get(userId).getFunctionsNames();
     }
 
     @CrossOrigin
     @RequestMapping(path = "/eval", method = RequestMethod.POST)
-    public ResponseEntity<Double> evaluate2(@RequestBody String expression) throws ParsingException {
+    public ResponseEntity<Double> evaluate2(@RequestBody String expression,
+                                            Principal principal) throws ParsingException {
+        Integer userId = getUserID(principal);
         ResponseEntity<Double> response;
         try {
-            Double result = evaluate(expression);
+            Double result = calculators.get(userId).evaluate(expression);
             response = new ResponseEntity<>(result, HttpStatus.OK);
         } catch (ParsingException exp) {
             response = new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -114,14 +150,36 @@ public class CalculatorController implements ICalculator {
         return new FileSystemResource(url.getPath());
     }
 
-    @Override
-    public Double evaluate(String expression) throws ParsingException {
-        return calculator.evaluate(expression);
+    @CrossOrigin
+    @RequestMapping(path = "/load", method = RequestMethod.GET)
+    @ResponseBody
+    public RedirectView loadData(Principal principal) {
+        prepareUser(getUserID(principal));
+        return new RedirectView("/");
     }
 
-    @Override
-    public boolean putVariable(String variableName, Double value) {
-        return putVariable(variableName, value.toString());
-    }
+    private void prepareUser(Integer userId) {
+        List<String> functionsNames = restCalculatorDao.loadFunctions(userId);
+        List<String> variablesNames = restCalculatorDao.loadVariables(userId);
+        ICalculator calculator = new RestCalculator();
+        Map<String, IEvaluateFunction> functionsMap = new HashMap<>();
+        Map<String, IEvaluateFunction> variablesMap = new HashMap<>();
 
+        for (String functionName : functionsNames) {
+            Function function = restCalculatorDao.loadFunction(userId, functionName);
+            function.setFunctionTable(functionsMap);
+            function.setVariablesTable(variablesMap);
+            functionsMap.put(functionName, function);
+            calculator.putFunction(functionName, function.getParams(), function.getBody());
+        }
+
+        for (String variableName : variablesNames) {
+            Function function = restCalculatorDao.loadVariable(userId, variableName);
+            function.setFunctionTable(functionsMap);
+            function.setVariablesTable(variablesMap);
+            variablesMap.put(variableName, function);
+            calculator.putVariable(variableName, function.getBody());
+        }
+        calculators.put(userId, calculator);
+    }
 }

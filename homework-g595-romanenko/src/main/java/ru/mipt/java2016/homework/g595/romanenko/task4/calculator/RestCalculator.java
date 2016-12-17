@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 
 public class RestCalculator implements ICalculator {
 
-    private Map<String, Double> variablesTable = new ConcurrentHashMap<>();
+    private Map<String, IEvaluateFunction> variablesTable = new ConcurrentHashMap<>();
     private Map<String, IEvaluateFunction> functionsTable = new ConcurrentHashMap<>();
 
     public RestCalculator() {
@@ -42,16 +42,34 @@ public class RestCalculator implements ICalculator {
 
     @Override
     public Double getVariable(String variableName) {
-        return variablesTable.get(variableName);
+        Double result;
+        try {
+            if (variablesTable.containsKey(variableName)) {
+                result = variablesTable.get(variableName).evaluate();
+            } else {
+                result = null;
+            }
+        } catch (ParsingException e) {
+            result = Double.NaN;
+        }
+        return result;
     }
 
     @Override
-    public boolean putVariable(String variableName, Double value) {
+    public boolean putVariable(String variableName, String value) {
         if (functionsTable.containsKey(variableName)) {
             return false;
         }
-        variablesTable.put(variableName, value);
-        return true;
+        boolean isOk = true;
+        try {
+            variablesTable.put(variableName, new Function(value,
+                    new ArrayList<>(),
+                    Collections.unmodifiableMap(functionsTable),
+                    Collections.unmodifiableMap(variablesTable)));
+        } catch (ParsingException e) {
+            isOk = false;
+        }
+        return isOk;
     }
 
     @Override
