@@ -12,7 +12,10 @@ import ru.mipt.java2016.homework.g595.shakhray.task3.Serialization.Interface.Sto
 import java.io.*;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.zip.Adler32;
 import java.util.zip.CheckedInputStream;
 
@@ -22,7 +25,6 @@ import java.util.zip.CheckedInputStream;
 public class PerformanceStorage<K, V> implements KeyValueStorage<K, V> {
 
     private final String lockRelativeFilename = ".lock";
-    private File lockFile;
 
     private boolean isStorageClosed = false;
 
@@ -46,6 +48,11 @@ public class PerformanceStorage<K, V> implements KeyValueStorage<K, V> {
     private RandomAccessFile keysRandomAccessFile;
     private RandomAccessFile valuesRandomAccessFile;
     private RandomAccessFile checksumRandomAccessFile;
+
+    private final ReadWriteLock lock = new ReentrantReadWriteLock();
+    private final Map<Long, Boolean> gaps = new HashMap<>();
+    private int updateCount = 0;
+    private String dirPath;
 
     private final LoadingCache<K, V> cache = CacheBuilder.newBuilder().maximumSize(32).build(
             new CacheLoader<K, V>() {
@@ -102,12 +109,8 @@ public class PerformanceStorage<K, V> implements KeyValueStorage<K, V> {
         if (!directory.isDirectory()) {
             throw new IOException("Directory not found.");
         }
-
+        dirPath = directoryPath;
         String lockAbsoluteFilename = directoryPath + File.separator + lockRelativeFilename;
-        lockFile = new File(lockAbsoluteFilename);
-        if (!lockFile.createNewFile()) {
-            throw new IOException("Another process is working.");
-        }
 
         keySerialization = passedKeySerialization;
         valueSerialization = passedValueSerialization;
@@ -133,10 +136,12 @@ public class PerformanceStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void createNewStorage() throws IOException {
+        lock.writeLock().lock();
         keysFile.createNewFile();
         valuesFile.createNewFile();
         keysRandomAccessFile = new RandomAccessFile(keysFile, "rw");
         valuesRandomAccessFile = new RandomAccessFile(valuesFile, "rw");
+        lock.writeLock().unlock();
     }
 
     private void loadData() throws IOException {
@@ -155,6 +160,7 @@ public class PerformanceStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void save() throws IOException {
+        lock.writeLock().lock();
         keysRandomAccessFile.seek(0);
         integerSerialization.write(keysRandomAccessFile, keyBuffer.size());
         for (K key: keyBuffer.keySet()) {
@@ -163,6 +169,7 @@ public class PerformanceStorage<K, V> implements KeyValueStorage<K, V> {
         }
         keysRandomAccessFile.close();
         valuesRandomAccessFile.close();
+        lock.writeLock().unlock();
     }
 
     void checkIfStorageIsClosed() {
@@ -173,12 +180,15 @@ public class PerformanceStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public V read(K key) {
+        lock.writeLock().lock();
         checkIfStorageIsClosed();
         try {
             V value = cache.get(key);
             return value;
         } catch (UncheckedExecutionException | ExecutionException e) {
             return null;
+        } finally {
+            lock.writeLock().unlock();
         }
     }
 
@@ -188,22 +198,71 @@ public class PerformanceStorage<K, V> implements KeyValueStorage<K, V> {
         return keyBuffer.keySet().contains(key);
     }
 
+    private void chechCompressionStatus() {
+        updateCount += 1;
+        if (updateCount > 5000) {
+//            update();
+            updateCount = 0;
+        }
+    }
+
+    private void update() {
+        File newFile = new File(dirPath + File.separator + "buffer");
+        try (RandomAccessFile newStorage = new RandomAccessFile(newFile, "rw")) {
+            newStorage.seek(0);
+
+            int initialOffset = 0;
+            valuesRandomAccessFile.seek(initialOffset);
+            while (true) {
+                Long offset = valuesRandomAccessFile.getFilePointer();
+                if (offset >= valuesRandomAccessFile.length()) {
+                    break;
+                }
+                K key = keySerialization.read(valuesRandomAccessFile);
+                V value = valueSerialization.read(valuesRandomAccessFile);
+                if (gaps.keySet().contains(offset)) {
+                    continue;
+                }
+                keyBuffer.put(key, newStorage.getFilePointer());
+                keySerialization.write(newStorage, key);
+                valueSerialization.write(newStorage, value);
+            }
+            valuesRandomAccessFile.close();
+            newFile.renameTo(new File(valuesAbsoluteFilename));
+            valuesRandomAccessFile = new RandomAccessFile(newFile, "rw");
+
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
     @Override
     public void write(K key, V value) {
+        lock.writeLock().lock();
         checkIfStorageIsClosed();
+        chechCompressionStatus();
         try {
             keyBuffer.put(key, valuesRandomAccessFile.length());
             valuesRandomAccessFile.seek(valuesRandomAccessFile.length());
             valueSerialization.write(valuesRandomAccessFile, value);
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            lock.writeLock().unlock();
         }
     }
 
     @Override
     public void delete(K key) {
         checkIfStorageIsClosed();
+        if (!keyBuffer.keySet().contains(key)) {
+            return;
+        }
+        lock.writeLock().lock();
+        chechCompressionStatus();
+        gaps.put(keyBuffer.get(key), true);
         keyBuffer.remove(key);
+        lock.writeLock().unlock();
     }
 
     @Override
@@ -220,10 +279,12 @@ public class PerformanceStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public void close() throws IOException {
-        checkIfStorageIsClosed();
         isStorageClosed = true;
-        lockFile.delete();
+        lock.writeLock().lock();
+        chechCompressionStatus();
+        lock.writeLock().unlock();
         save();
+        keyBuffer.clear();
         checksumRandomAccessFile.setLength(0);
         checksumRandomAccessFile.seek(0);
         long keysHash = adler32Hash(keysAbsoluteFilename);
