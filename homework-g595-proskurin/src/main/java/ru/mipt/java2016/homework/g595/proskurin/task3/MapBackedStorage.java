@@ -4,9 +4,6 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 
 import java.io.IOException;
 import java.nio.channels.FileLock;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Iterator;
 import javafx.util.Pair;
 
@@ -159,7 +156,7 @@ public class MapBackedStorage<K, V> implements KeyValueStorage<K, V> {
     public synchronized void close() {
         update();
         rebuild();
-        if (closed == true) {
+        if (closed) {
             return;
         }
         try {
