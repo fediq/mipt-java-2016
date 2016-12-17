@@ -24,7 +24,7 @@ public class CalculatorController implements IFunctionalCalculator {
     @Autowired
     private CalculatorDao calculatorDao;
     @Autowired
-    static private Map<String, IFunctionalCalculator> userCalculators = new HashMap<>();
+    private static Map<String, IFunctionalCalculator> userCalculators = new HashMap<>();
 
     static {
         userCalculators.put(ADMIN_USERNAME, new RESTCalculator());
