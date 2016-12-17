@@ -42,7 +42,7 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
         }
     }
 
-    private synchronized void touchDB() throws IllegalStateException {
+    private synchronized void checkOpened() throws IllegalStateException {
         if (!isOpened) {
             throw new IllegalStateException("Working with closed DB");
         }
@@ -229,7 +229,7 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
     @Override
     public synchronized V read(K key)  {
         try {
-            touchDB();
+            checkOpened();
         } catch (IllegalStateException e) {
             throw new RuntimeException(e);
         }
@@ -255,7 +255,7 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
     @Override
     public synchronized void write(K key, V value) {
         try {
-            touchDB();
+            checkOpened();
         } catch (IllegalStateException e) {
             throw  new RuntimeException(e);
         }
@@ -270,14 +270,20 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
 
 
     @Override
-    public synchronized boolean exists(K key) {
+    public synchronized boolean exists(K key)
+    {
+        try {
+            checkOpened();
+        } catch (IllegalStateException e) {
+            throw  new RuntimeException(e);
+        }
         return setKeys.contains(key);
     }
 
     @Override
     public synchronized void delete(K key) {
         try {
-            touchDB();
+            checkOpened();
         } catch (IllegalStateException e) {
             throw  new RuntimeException(e);
         }
@@ -297,7 +303,7 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
     @Override
     public synchronized Iterator<K> readKeys() {
         try {
-            touchDB();
+            checkOpened();
         } catch (IllegalStateException e) {
             throw  new RuntimeException(e);
         }
