@@ -1,6 +1,5 @@
 package ru.mipt.java2016.homework.g594.pyrkin.task4;
 
-import org.h2.jdbc.JdbcSQLException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
