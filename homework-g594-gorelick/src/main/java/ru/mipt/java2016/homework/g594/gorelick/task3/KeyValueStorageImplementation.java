@@ -228,7 +228,11 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
 
     @Override
     public synchronized V read(K key)  {
-        touchDB();
+        try {
+            touchDB();
+        } catch (IllegalStateException e) {
+            throw new RuntimeException(e);
+        }
         if (cache.keySet().contains(key)) {
             return cache.get(key);
         } else if (fileMap.containsKey(key)) {
@@ -292,6 +296,11 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
 
     @Override
     public synchronized Iterator<K> readKeys() {
+        try {
+            touchDB();
+        } catch (IllegalStateException e) {
+            throw  new RuntimeException(e);
+        }
         return setKeys.iterator();
     }
 
