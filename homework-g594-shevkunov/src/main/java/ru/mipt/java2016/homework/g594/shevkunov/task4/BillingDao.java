@@ -41,7 +41,7 @@ public class BillingDao {
                 " value VARCHAR)");
 
         jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS billing.funcs " +
-                "(function VARCHAR PRIMARY KEY, username VARCHAR," +  //TODO FOREIGN KEY
+                "(function VARCHAR, username VARCHAR," +  //TODO FOREIGN KEY
                 "args VARCHAR, value VARCHAR)");
 
         jdbcTemplate.execute("DELETE FROM billing.users  WHERE username = 'username'");

@@ -80,7 +80,13 @@ public class CalculatorController {
     @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.GET, produces = "text/html")
     public String varGet(Authentication authentication, @PathVariable String variableName) throws ParsingException {
         String username = authentication.getName();
-        return billingDao.getVariable(username, variableName) + "\n";
+        String value;
+        try {
+            value = billingDao.getVariable(username, variableName);
+        } catch (Exception e) {
+            value = e.toString();
+        }
+        return value + "\n";
     }
 
     @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.PUT, produces = "text/html")
@@ -151,13 +157,13 @@ public class CalculatorController {
                           @RequestParam(value = "args") List<String> arguments,
                           @RequestBody String request) throws ParsingException {
         String username = authentication.getName();
-        String result = "OK\n";
+        String result = "OK";
         try {
             billingDao.setFunction(username, new FunctionWrapper(functionName, arguments, request));
         } catch (Exception e) {
-            result = "Server Internal Error.\n";
+            result = e.toString();
         }
-        return result;
+        return result + "\n";
     }
 
     @RequestMapping(path = "/function/{functionName}", method = RequestMethod.DELETE, produces = "text/html")
