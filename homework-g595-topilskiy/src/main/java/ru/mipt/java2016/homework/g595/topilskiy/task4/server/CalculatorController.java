@@ -3,20 +3,33 @@ package ru.mipt.java2016.homework.g595.topilskiy.task4.server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 import ru.mipt.java2016.homework.g595.topilskiy.task4.calculator.rest.IFunctionalCalculator;
+import ru.mipt.java2016.homework.g595.topilskiy.task4.calculator.rest.RESTCalculator;
 import ru.mipt.java2016.homework.g595.topilskiy.task4.calculator.rest.function.CalculatorFunctionObject;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import static ru.mipt.java2016.homework.g595.topilskiy.task4.server.CalculatorDao.ADMIN_USERNAME;
 
 @RestController
 public class CalculatorController implements IFunctionalCalculator {
     private static final Logger LOG = LoggerFactory.getLogger(CalculatorController.class);
 
     @Autowired
-    private IFunctionalCalculator calculator;
+    CalculatorDao calculatorDao;
+    @Autowired
+    static private Map<String, IFunctionalCalculator> userCalculators = new HashMap<>();
+
+    static {
+        userCalculators.put(ADMIN_USERNAME, new RESTCalculator());
+    }
+
 
     /**
      *  STANDARD Functions
@@ -51,13 +64,16 @@ public class CalculatorController implements IFunctionalCalculator {
      */
     @Override
     public Double getVariable(String variableAlias) {
-        return calculator.getVariable(variableAlias);
+        return userCalculators.get(ADMIN_USERNAME).getVariable(variableAlias);
     }
 
     @RequestMapping(path = "/variable/{variableAlias}", method = RequestMethod.GET, produces = "text/plain")
-    public String getVariableServer(@PathVariable String variableAlias) {
+    public String getVariableServer(Authentication authentication,
+                                    @PathVariable String variableAlias) {
+        String requesterUsername = authentication.getName();
+
         LOG.debug("Attempting to get variable: " + variableAlias);
-        Double result = calculator.getVariable(variableAlias);
+        Double result = userCalculators.get(requesterUsername).getVariable(variableAlias);
         if (result == null) {
             LOG.debug("No such variable: " + variableAlias);
             return "No such variable: " + variableAlias;
@@ -72,11 +88,14 @@ public class CalculatorController implements IFunctionalCalculator {
      */
     @Override
     public boolean putVariable(String variableAlias, Double value) {
-        return calculator.putVariable(variableAlias, value);
+        return userCalculators.get(ADMIN_USERNAME).putVariable(variableAlias, value);
     }
 
     @RequestMapping(path = "/variable/{variableAlias}", method = RequestMethod.PUT)
-    public String putVariableServer(@PathVariable String variableAlias, @RequestBody String value) {
+    public String putVariableServer(Authentication authentication,
+                                    @PathVariable String variableAlias,
+                                    @RequestBody String value) {
+        String requesterUsername = authentication.getName();
         LOG.debug("Attempting to put variable: " + variableAlias + " = " + value);
 
         Double variable = 0.0;
@@ -87,7 +106,7 @@ public class CalculatorController implements IFunctionalCalculator {
             return "Failed to decode into double the value given: " + value;
         }
 
-        if (calculator.putVariable(variableAlias, variable)) {
+        if (userCalculators.get(requesterUsername).putVariable(variableAlias, variable)) {
             LOG.debug("Variable put successfully: " + variableAlias);
             return "Variable put successfully: " + variableAlias;
         } else {
@@ -101,13 +120,15 @@ public class CalculatorController implements IFunctionalCalculator {
      */
     @Override
     public boolean deleteVariable(String variableAlias) {
-        return calculator.deleteVariable(variableAlias);
+        return userCalculators.get(ADMIN_USERNAME).deleteVariable(variableAlias);
     }
 
     @RequestMapping(path = "/variable/{variableAlias}", method = RequestMethod.DELETE)
-    public String deleteVariableServer(@PathVariable String variableAlias) {
+    public String deleteVariableServer(Authentication authentication, @PathVariable String variableAlias) {
+        String requesterUsername = authentication.getName();
+
         LOG.debug("Attempting to delete variable: " + variableAlias);
-        if (calculator.deleteVariable(variableAlias)) {
+        if (userCalculators.get(requesterUsername).deleteVariable(variableAlias)) {
             LOG.debug("Variable deleted successfully: " + variableAlias);
             return "Variable deleted successfully: " + variableAlias;
         } else {
@@ -121,12 +142,13 @@ public class CalculatorController implements IFunctionalCalculator {
      */
     @Override
     public List<String> getVariableList() {
-        return calculator.getVariableList();
+        return userCalculators.get(ADMIN_USERNAME).getVariableList();
     }
 
     @RequestMapping(path = "/variable", method = RequestMethod.GET)
-    public String getVariableServer() {
-        String result = String.join(", ", calculator.getVariableList());
+    public String getVariableServer(Authentication authentication) {
+        String requesterUsername = authentication.getName();
+        String result = String.join(", ", userCalculators.get(requesterUsername).getVariableList());
         LOG.trace("Output VariableList: " + result);
         return "Currently defined variables:\n" + result + '\n';
     }
@@ -141,13 +163,15 @@ public class CalculatorController implements IFunctionalCalculator {
      */
     @Override
     public CalculatorFunctionObject getFunction(@PathVariable String functionAlias) {
-        return calculator.getFunction(functionAlias);
+        return userCalculators.get(ADMIN_USERNAME).getFunction(functionAlias);
     }
 
     @RequestMapping(path = "/function/{functionAlias}", method = RequestMethod.GET)
-    public String getFunctionServer(@PathVariable String functionAlias) {
+    public String getFunctionServer(Authentication authentication,
+                                    @PathVariable String functionAlias) {
+        String requesterUsername = authentication.getName();
         LOG.debug("Attempting to get function: " + functionAlias);
-        CalculatorFunctionObject function = calculator.getFunction(functionAlias);
+        CalculatorFunctionObject function = userCalculators.get(requesterUsername).getFunction(functionAlias);
         if (function == null) {
             LOG.debug("No such function: " + functionAlias);
             return "No such function: " + functionAlias;
@@ -162,18 +186,21 @@ public class CalculatorController implements IFunctionalCalculator {
      */
     @Override
     public boolean putFunction(String functionAlias, String expression, List<String> arguments) {
-        return calculator.putFunction(functionAlias, expression, arguments);
+        return userCalculators.get(ADMIN_USERNAME).putFunction(functionAlias, expression, arguments);
     }
 
     @RequestMapping(path = "/function/{functionAlias}", method = RequestMethod.PUT)
-    public String putFunctionServer(@PathVariable String functionAlias,
+    public String putFunctionServer(Authentication authentication,
+                                    @PathVariable String functionAlias,
                                     @RequestBody  String expression,
                                     @RequestParam(value = "args") List<String> arguments) {
+        String requesterUsername = authentication.getName();
+
         LOG.debug("Attempting to put function: " + functionAlias);
-        if (calculator.putFunction(functionAlias, expression, arguments)) {
+        if (userCalculators.get(requesterUsername).putFunction(functionAlias, expression, arguments)) {
             LOG.debug("Function put successfully: " + functionAlias);
             return "Function put successfully: " + functionAlias + '\n' +
-                    calculator.getFunction(functionAlias).toString();
+                    userCalculators.get(requesterUsername).getFunction(functionAlias).toString();
         } else {
             LOG.debug("Failed to put successfully: " + functionAlias);
             return "Failed to put successfully: " + functionAlias;
@@ -185,13 +212,15 @@ public class CalculatorController implements IFunctionalCalculator {
      */
     @Override
     public boolean deleteFunction(String functionAlias) {
-        return calculator.deleteFunction(functionAlias);
+        return userCalculators.get(ADMIN_USERNAME).deleteFunction(functionAlias);
     }
 
     @RequestMapping(path = "/function/{functionAlias}", method = RequestMethod.DELETE)
-    public String deleteFunctionServer(@PathVariable String functionAlias) {
+    public String deleteFunctionServer(Authentication authentication,
+                                       @PathVariable String functionAlias) {
+        String requesterUsername = authentication.getName();
         LOG.debug("Attempting to delete function: " + functionAlias);
-        if (calculator.deleteFunction(functionAlias)) {
+        if (userCalculators.get(requesterUsername).deleteFunction(functionAlias)) {
             LOG.debug("Function deleted successfully: " + functionAlias);
             return "Function deleted successfully: " + functionAlias;
         } else {
@@ -205,13 +234,15 @@ public class CalculatorController implements IFunctionalCalculator {
      */
     @Override
     public List<String> getFunctionList() {
-        return calculator.getFunctionList();
+        return userCalculators.get(ADMIN_USERNAME).getFunctionList();
     }
 
     @RequestMapping(path = "/function", method = RequestMethod.GET)
     @ResponseBody
-    public String getFunctionListServer() {
-        String result = String.join(", ", calculator.getFunctionList());
+    public String getFunctionListServer(Authentication authentication) {
+        String requesterUsername = authentication.getName();
+
+        String result = String.join(", ", userCalculators.get(requesterUsername).getFunctionList());
         LOG.trace("Output FunctionList: " + result);
         return "Currently defined functions:\n" + result + '\n';
     }
@@ -223,19 +254,45 @@ public class CalculatorController implements IFunctionalCalculator {
      */
     @Override
     public Double calculate(String expression) throws ParsingException {
-        return calculator.calculate(expression);
+        return userCalculators.get(ADMIN_USERNAME).calculate(expression);
     }
 
     @RequestMapping(path = "/eval", method = RequestMethod.POST, consumes = "text/plain", produces = "text/plain")
-    public String eval(@RequestBody String expression) {
+    public String eval(Authentication authentication, @RequestBody String expression) {
+        String requesterUsername = authentication.getName();
+
         try {
             LOG.debug("Evaluation request: [" + expression + "]");
-            Double result = calculator.calculate(expression);
+            Double result = userCalculators.get(requesterUsername).calculate(expression);
             LOG.trace("Result: " + result);
             return "Result: " + result + '\n';
         } catch (ParsingException e) {
             LOG.trace("Evaluation Failed: " + e.getMessage());
             return "Evaluation Failed: " + e.getMessage() + '\n';
+        }
+    }
+
+
+    /**
+     *  User interactions
+     */
+    @RequestMapping(path = "/user/add/{username}", method = RequestMethod.PUT)
+    public String addUser(Authentication authentication,
+                          @PathVariable String username,
+                          @RequestParam String password) {
+        String requesterUsername = authentication.getName();
+
+        if (!requesterUsername.equals(requesterUsername)) {
+            LOG.trace("User " + requesterUsername + " is not an admin.");
+            return "You are not an admin. Cannot add users.";
+        } else {
+            LOG.debug("Attempting to userAdd: " + "[" + username + "," + password + "]");
+            if (calculatorDao.addUserDao(username, password, true)) {
+                userCalculators.put(username, new RESTCalculator());
+                return "User " + username + " successfully created.";
+            } else {
+                return "User " + username + " already exists.";
+            }
         }
     }
 }
