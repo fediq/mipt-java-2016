@@ -12,8 +12,12 @@ public class FileWorker {
 
     private final File file;
 
-    private final BufferedInputStream inputStream;
-    private BufferedOutputStream outputStream;
+    protected final BufferedInputStream inputStream;
+    protected BufferedOutputStream outputStream;
+
+    private boolean wasClear = false;
+
+    protected ByteBuffer tmp = ByteBuffer.allocate(8);
 
     public FileWorker(String directoryPath, String fileName) throws IOException {
         File directory = new File(directoryPath);
@@ -28,21 +32,14 @@ public class FileWorker {
     public ByteBuffer read(int bytesToRead) throws IOException {
         ByteBuffer resultBuffer = ByteBuffer.allocate(bytesToRead);
 
-        while (bytesToRead != 0) {
-            --bytesToRead;
-            resultBuffer.put((byte) inputStream.read());
-        }
+        inputStream.read(resultBuffer.array(), 0, bytesToRead);
 
-        resultBuffer.rewind();
         return resultBuffer;
     }
 
     public int read() throws IOException {
-        int result = 0;
-        for (int i = 0; i < 4; ++i) {
-            result = result * 8 + inputStream.read();
-        }
-        return result;
+        inputStream.read(tmp.array(), 0, 4);
+        return tmp.getInt(0);
     }
 
     public void write(ByteBuffer buffer) throws IOException {
@@ -50,12 +47,12 @@ public class FileWorker {
     }
 
     public void write(int size) throws IOException {
-        ByteBuffer buffer = ByteBuffer.allocate(Integer.SIZE / 8);
-        buffer.putInt(size);
-        outputStream.write(buffer.array());
+        tmp.putInt(0, size);
+        outputStream.write(tmp.array(), 0, 4);
     }
 
     public void clear() throws IOException {
+        wasClear = true;
         inputStream.close();
         file.delete();
         file.createNewFile();
@@ -63,6 +60,12 @@ public class FileWorker {
     }
 
     public void close() throws IOException {
-        outputStream.close();
+        if (wasClear) {
+            tmp.putInt(0, -1);
+            outputStream.write(tmp.array(), 0, 4);
+            outputStream.close();
+        } else {
+            inputStream.close();
+        }
     }
 }

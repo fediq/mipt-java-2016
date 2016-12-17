@@ -2,8 +2,8 @@ package ru.mipt.java2016.homework.g594.petrov.task3;
 
 import ru.mipt.java2016.homework.tests.task2.Student;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.util.Date;
 
 /**
@@ -12,7 +12,7 @@ import java.util.Date;
 
 public class SerializeStudent implements InterfaceSerialization<Student> {
     @Override
-    public void writeValue(Student obj, DataOutputStream outputStream) throws IllegalStateException {
+    public void writeValue(Student obj, DataOutput outputStream) throws IllegalStateException {
         try {
             outputStream.writeInt(obj.getGroupId());
             outputStream.writeUTF(obj.getName());
@@ -26,7 +26,7 @@ public class SerializeStudent implements InterfaceSerialization<Student> {
     }
 
     @Override
-    public Student readValue(DataInputStream inputStream) throws IllegalStateException {
+    public Student readValue(DataInput inputStream) throws IllegalStateException {
         try {
             int studentGroup = inputStream.readInt();
             String studentName = inputStream.readUTF();
