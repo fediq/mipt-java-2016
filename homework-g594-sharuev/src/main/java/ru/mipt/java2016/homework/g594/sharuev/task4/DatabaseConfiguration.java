@@ -13,7 +13,7 @@ import javax.sql.DataSource;
 public class DatabaseConfiguration {
     @Bean
     public DataSource getDataSource(
-            @Value("${ru.mipt.java2016.homework.g594.sharuev.task4.jdbcUrl}") String jdbcUrl,
+            @Value("${ru.mipt.java2016.homework.g594.sharuev.task4.jdbcUrl:~/task4.db}") String jdbcUrl,
             @Value("${ru.mipt.java2016.homework.g594.sharuev.task4.username:}") String username,
             @Value("${ru.mipt.java2016.homework.g594.sharuev.task4.password:}") String password
     ) {
