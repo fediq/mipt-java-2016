@@ -6,6 +6,7 @@ import java.io.*;
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
 
 /**
@@ -29,6 +30,7 @@ public class KeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
     private int numberOfDel = 0;
     private File lockFile;
     private String lockFileName = "lock.db";
+    private int sizeOfStorage = 0;
 
     public KeyValueStorageImpl(String path, Serializable<K> key, Serializable<V> value)  {
 
@@ -47,14 +49,14 @@ public class KeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
             try {
                 lockFile.createNewFile();
             } catch (Exception e) {
-                throw new IllegalStateException("Failed to create lock file");
+                throw new IllegalStateException("Failed to create lock file!");
             }
         } else {
-            throw new IllegalStateException("Somebody is working w/ db right now.");
+            throw new IllegalStateException("Somebody is working right now!");
         }
 
         if (!data.exists() || !data.isDirectory()) {
-            throw new IllegalStateException("path isn't available");
+            throw new IllegalStateException("Path isn't available!");
         }
 
         tmpPath = path + "/config.txt";
@@ -62,7 +64,13 @@ public class KeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
 
         if (conf.exists()) {
             try (DataInputStream confInput = new DataInputStream((new FileInputStream(conf)))) {
+                /*
+                if (!confInput.readUTF().equals(validateString)) {
+                    throw new IllegalStateException("Invalid file");
+                }
+                */
                 offsetSize = confInput.readInt();
+                sizeOfStorage = offsetSize;
                 K keyT;
                 long offset;
                 for (int i = 0; i < offsetSize; ++i) {
@@ -72,11 +80,17 @@ public class KeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
                 }
                 confInput.close();
             } catch (IOException e) {
-                throw new ConcurrentModificationException("Can't read from file");
+                throw new ConcurrentModificationException("Can't read from file!");
             }
         } else {
             try {
                 conf.createNewFile();
+                try (DataOutputStream output = new DataOutputStream(new FileOutputStream(conf))) {
+                    output.writeUTF(validateString);
+                    output.close();
+                } catch (IOException e) {
+                    throw new IllegalStateException("Can't write to file");
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -121,6 +135,7 @@ public class KeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
     public void write(K keyI, V valueI) {
         checkNotClosed();
         try {
+            ++sizeOfStorage;
             File file = new File(pathToStorage);
             RandomAccessFile fileOut = new RandomAccessFile(file, "rw");
             fileOut.seek(file.length());
@@ -129,7 +144,6 @@ public class KeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
             offsetTable.put(keyI, fileOut.getFilePointer());
             value.serialize(fileOut, valueI);
             fileOut.close();
-
         } catch (IOException e) {
             e.getStackTrace();
         }
@@ -156,7 +170,9 @@ public class KeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
     @Override
 
     public void close() throws IOException {
-        checkNotClosed();
+        if (!isOpen){
+            return;
+        }
         isOpen = false;
         FileOutputStream out = new FileOutputStream(pathToConf);
         DataOutputStream configOut = new DataOutputStream(out);
@@ -166,11 +182,7 @@ public class KeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
             configOut.writeLong(i.getValue());
         }
         if (lockFile.exists()) {
-            try {
                 lockFile.delete();
-            } catch (Exception e) {
-                throw new IOException("Failed to delete lock file");
-            }
         }
         configOut.close();
         out.close();
