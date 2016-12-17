@@ -155,7 +155,8 @@ public class NewCalculator {
                     expression = tmp;
                     i = -1;
                 } else {
-                    if (!checkStandart(expression.substring(i, pos)) && !functions.containsKey(expression.substring(i, pos))) {
+                    if (!checkStandart(expression.substring(i, pos)) &&
+                            !functions.containsKey(expression.substring(i, pos))) {
                         throw new ParsingException("There is no such function");
                     }
                     String tname = expression.substring(i, pos);
@@ -167,7 +168,7 @@ public class NewCalculator {
                         if (expression.charAt(pos) == ',') {
                             params.add(String.valueOf(solve(cname)));
                             cname = "";
-                        } else if (bal != 0){
+                        } else if (bal != 0) {
                             cname = cname.concat(expression.substring(pos, pos + 1));
                         }
                         if (bal < 0) {

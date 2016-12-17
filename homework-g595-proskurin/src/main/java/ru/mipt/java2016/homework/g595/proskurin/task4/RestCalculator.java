@@ -14,18 +14,18 @@ public class RestCalculator {
     private NewCalculator solver = new NewCalculator();
 
     @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.GET)
-    public @ResponseBody
-    String getValueOfVariable(@PathVariable String variableName) {
+    @ResponseBody
+    public String getValueOfVariable(@PathVariable String variableName) {
         try {
             return String.valueOf(solver.solve(variableName));
-        } catch(ParsingException err) {
+        } catch (ParsingException err) {
             return "Incorrect expression";
         }
     }
 
     @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.PUT)
     public String putValueOfVariable(@PathVariable String variableName,
-                               @RequestBody String val) {
+                                     @RequestBody String val) {
         String var = "";
         var = var.concat(variableName);
         var = var.concat(" = ");
@@ -51,25 +51,26 @@ public class RestCalculator {
     }
 
     @RequestMapping(path = "/variable", method = RequestMethod.GET)
-    public @ResponseBody
-    List<String> getAllVariables() {
+    @ResponseBody
+    public List<String> getAllVariables() {
         return solver.getVars();
     }
 
     @RequestMapping(path = "/function/{functionName}", method = RequestMethod.GET)
-    public @ResponseBody String getFunctionDescription(@PathVariable String functionName) {
+    @ResponseBody
+    public String getFunctionDescription(@PathVariable String functionName) {
         return solver.getFunc(functionName);
     }
 
     @RequestMapping(path = "/function/{functionName}", method = RequestMethod.PUT)
     public String putFunction(@PathVariable String functionName,
-                               @RequestParam(value = "args") List<String> params,
-                               @RequestBody String expression) {
+                              @RequestParam(value = "args") List<String> params,
+                              @RequestBody String expression) {
         String tmp = functionName;
         tmp = tmp.concat("(");
         for (int i = 0; i < params.size(); i++) {
             tmp = tmp.concat(params.get(i));
-            if (i != params.size() - 1){
+            if (i != params.size() - 1) {
                 tmp = tmp.concat(", ");
             }
         }
@@ -85,20 +86,22 @@ public class RestCalculator {
 
     @RequestMapping(path = "/function/{functionName}", method = RequestMethod.DELETE)
     public String deleteFunction(@PathVariable String functionName) {
-         if (solver.delFunc(functionName)) {
-             return "Function was deleted";
-         } else {
-             return "Function couldn't be deleted";
-         }
+        if (solver.delFunc(functionName)) {
+            return "Function was deleted";
+        } else {
+            return "Function couldn't be deleted";
+        }
     }
 
     @RequestMapping(path = "/function", method = RequestMethod.GET)
-    public @ResponseBody List<String> getAllFunctions() {
+    @ResponseBody
+    public List<String> getAllFunctions() {
         return solver.getFuncs();
     }
 
     @RequestMapping(path = "/eval", method = RequestMethod.POST)
-    public @ResponseBody String calculate(@RequestBody String expression) {
+    @ResponseBody
+    public String calculate(@RequestBody String expression) {
         try {
             return String.valueOf(solver.solve(expression));
         } catch (ParsingException err) {
