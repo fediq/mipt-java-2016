@@ -104,7 +104,7 @@ public class BillingDao {
         try {
             jdbcTemplate.update("DELETE FROM " + username + ".variables WHERE " +
                     "name='" + variableName + "'");
-        } catch (DuplicateKeyException e) {
+        } catch (Exception e) {
             return false;
         }
         return true;
