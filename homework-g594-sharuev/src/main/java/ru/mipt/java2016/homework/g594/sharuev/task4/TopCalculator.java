@@ -64,7 +64,7 @@ public class TopCalculator implements ru.mipt.java2016.homework.base.task1.Calcu
         }, PARAMETER {
             @Override
             boolean isAcceptableChar(char c) {
-                return false;
+                return c != ',' && c != ')'; // T-O-D-O: такое прокатывает только когда параметр тупо число
             }
         }, NONE {
             @Override
@@ -78,13 +78,13 @@ public class TopCalculator implements ru.mipt.java2016.homework.base.task1.Calcu
 
     private void performOperation(Operator oper) throws ParsingException {
         double[] args = new double[oper.getArity()];
-        for (int i = 0; i < args.length; ++i) {
+        for (int j = 0; j < args.length; ++j) {
             if (numbers.isEmpty()) {
                 throw new ParsingException(
                         String.format("Not enough operands for operator %s",
-                                "a")); // TODO: в обратном направлении
+                                "a")); // T-O-D-O: в обратном направлении
             }
-            args[i] = numbers.pop();
+            args[j] = numbers.pop();
         }
         numbers.push(oper.evaluate(args));
     }
@@ -117,7 +117,8 @@ public class TopCalculator implements ru.mipt.java2016.homework.base.task1.Calcu
                 if (predef != null) {
                     sb.setLength(0);
                     state = ParserState.PARAMETER;
-
+                    predefinedFunctions.push(predef);
+                    break;
                 }
 
                 if (!accepted) {
@@ -135,21 +136,12 @@ public class TopCalculator implements ru.mipt.java2016.homework.base.task1.Calcu
                             String.format("Unknown operator \"%s\"", operatorStr));
                 }
                 if (operator == Operator.LBRACKET) {
-                    operators.push(Operator.LBRACKET);
+                    if (state != ParserState.PARAMETER) {
+                        operators.push(Operator.LBRACKET);
+                    }
                     unary = true;
                 } else if (operator == Operator.RBRACKET) {
-                    if (state == ParserState.PARAMETER) {
-                        PredefinedFunction func = predefinedFunctions.pop();
-                        ArrayList<Double> args = new ArrayList<>();
-                        for (int j = 0; j<func.getArity(); ++j) {
-                            if (numbers.size() == 0) {
-                                throw new ParsingException(String.format("Not enough arguments for function % s" /*,func.getName()*/));
-                            }
-                            args.add(numbers.pop());
 
-                        }
-                        numbers.push(func.evaluate(args));
-                    }
                     while (!operators.isEmpty() && operators.peek() != Operator.LBRACKET) {
                         performOperation(operators.pop());
                     }
@@ -159,8 +151,13 @@ public class TopCalculator implements ru.mipt.java2016.homework.base.task1.Calcu
                         throw new ParsingException("Closing bracket without opening one");
                     }
                     unary = false;
+
                 } else if (operator == Operator.UNARY_PLUS && operators.peek() == Operator.UNARY_PLUS) {
                     throw new ParsingException("Two unary + in a row");
+                } else if (operator == Operator.COMMA) {
+                    // T-O-D-O: вычислить
+                    numbers.push(Double.parseDouble(sb.toString()));
+                    unary = true;
                 } else {
                     while (!operators.empty() && operators.peek() != Operator.LBRACKET
                             && ((operators.peek().getAssociativity() == Operator.Associativity.LEFT) ?
@@ -174,12 +171,42 @@ public class TopCalculator implements ru.mipt.java2016.homework.base.task1.Calcu
 
                 sb.setLength(0);
                 state = ParserState.NONE;
+
                 break;
+            case PARAMETER:
+                Operator oper = Operator.getOperator(sb.toString());
+                if (oper == null) {
+                    // T-O-D-O: вычислить
+                    numbers.push(Double.parseDouble(sb.toString()));
+
+                    PredefinedFunction func = predefinedFunctions.pop();
+                    ArrayList<Double> args = new ArrayList<>();
+                    for (int j = 0; j < func.getArity(); ++j) {
+                        if (numbers.size() == 0) {
+                            throw new ParsingException(
+                                    String.format("Not enough arguments for function % s" /*,func.getName()*/));
+                        }
+                        args.add(numbers.pop());
+
+                    }
+                    numbers.push(func.evaluate(args));
+                } else {
+                    switch (oper) {
+                        case LBRACKET:
+                            break;
+                        case RBRACKET:
+                            state = ParserState.NONE;
+                            break;
+                        default:
+                            // nop
+                    }
+                }
+
+                sb.setLength(0);
             default:
                 // nop
         }
     }
-
 
     private double eval(String str, Map<String, Double> args) throws ParsingException {
         state = ParserState.NONE;
@@ -187,6 +214,12 @@ public class TopCalculator implements ru.mipt.java2016.homework.base.task1.Calcu
         expr = str;
         for (i = 0; i < expr.length(); ++i) {
             char c = expr.charAt(i);
+
+            // Если это кусок параметра, то дописываем.
+            if (state == ParserState.PARAMETER && ParserState.PARAMETER.isAcceptableChar(c)) {
+                sb.append(c);
+                continue;
+            }
 
             // Число, если оно не относится к литералу
             if (ParserState.NUMBER.isAcceptableChar(c) && state != ParserState.LETTERS) {
@@ -222,12 +255,14 @@ public class TopCalculator implements ru.mipt.java2016.homework.base.task1.Calcu
             if (ParserState.OPERATOR.isAcceptableChar(c)) {
                 if (state != ParserState.OPERATOR) {
                     pushBuffer();
-                    state = ParserState.OPERATOR;
-                } else if (Operator.getOperator(Character.toString(c)) != null) {
+                    if (state != ParserState.PARAMETER) {
+                        state = ParserState.OPERATOR;
+                    }
+                } /*else if (Operator.getOperator(Character.toString(c)) != null) {
                     pushBuffer();
                     state = ParserState.OPERATOR;
                     unary = false;
-                }
+                }*/
                 sb.append(c);
                 if (Operator.getOperator(sb.toString()) != null) {
                     pushBuffer();
@@ -297,6 +332,9 @@ public class TopCalculator implements ru.mipt.java2016.homework.base.task1.Calcu
         },
         RBRACKET(1, 5, Associativity.LEFT) {
 
+        },
+        COMMA(0, 0, Associativity.LEFT) {
+
         };
 
         private static Operator getOperator(String operStr) {
@@ -329,9 +367,9 @@ public class TopCalculator implements ru.mipt.java2016.homework.base.task1.Calcu
             this.associativity = associativity;
         }
 
-        int arity;
-        int priority;
-        Associativity associativity;
+        private int arity;
+        private int priority;
+        private Associativity associativity;
         private static HashMap<String, Operator> opers;
 
         static {
@@ -437,7 +475,17 @@ public class TopCalculator implements ru.mipt.java2016.homework.base.task1.Calcu
         static {
             funcs = new HashMap<>();
             funcs.put("sin", PredefinedFunction.SIN);
+            funcs.put("cos", PredefinedFunction.COS);
+            funcs.put("tg", PredefinedFunction.TG);
             funcs.put("sqrt", PredefinedFunction.SQRT);
+            funcs.put("pow", PredefinedFunction.POW);
+            funcs.put("abs", PredefinedFunction.ABS);
+            funcs.put("sign", PredefinedFunction.SIGN);
+            funcs.put("log", PredefinedFunction.LOG);
+            funcs.put("log2", PredefinedFunction.LOG2);
+            funcs.put("rnd", PredefinedFunction.RND);
+            funcs.put("max", PredefinedFunction.MAX);
+            funcs.put("min", PredefinedFunction.MIN);
         }
 
         abstract Double evaluate(List<Double> args);
@@ -463,7 +511,6 @@ public class TopCalculator implements ru.mipt.java2016.homework.base.task1.Calcu
         }
 
         return eval(function.getFunc(), args);
-
     }
 
 }

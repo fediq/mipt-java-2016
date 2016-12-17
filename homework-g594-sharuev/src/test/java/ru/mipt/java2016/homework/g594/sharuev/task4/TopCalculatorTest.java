@@ -10,8 +10,6 @@ import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 import ru.mipt.java2016.homework.tests.task1.AbstractCalculatorTest;
 
-import java.sql.Array;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -29,12 +27,13 @@ public class TopCalculatorTest extends AbstractCalculatorTest {
     protected Calculator calc() {
         return calculator;
     }
+
     protected TopCalculator topCalc() {
         return calculator;
     }
 
     @Test
-    public void testFunctionDao()  {
+    public void testFunctionDao() {
         String[] args = {"a", "b"};
         TopCalculatorFunction f = new TopCalculatorFunction("test", "4", Arrays.asList(args));
         dao.insertFunction(f);
@@ -48,7 +47,7 @@ public class TopCalculatorTest extends AbstractCalculatorTest {
         dao.insertVariable(new TopCalculatorVariable("pi", topCalc().calculate("3.14")));
         dao.insertVariable(new TopCalculatorVariable("e", topCalc().calculate("2.71")));
         test("pi", 3.14);
-        test("pi*pi+2", 3.14*3.14+2);
+        test("pi*pi+2", 3.14 * 3.14 + 2);
         Assert.assertEquals("Nope", dao.loadVariable("pi").getValue(), 3.14, 1e-6);
         Assert.assertEquals("Nope", dao.loadVariable("e").getValue(), 2.71, 1e-6);
         String[] expectedArray = {"pi", "e"};
@@ -59,8 +58,18 @@ public class TopCalculatorTest extends AbstractCalculatorTest {
     }
 
     @Test
-    public void testBuiltinFunctions() throws ParsingException {
+    public void testBuiltinFunctions0() throws ParsingException {
+        calc().calculate("rnd()");
+    }
+
+    @Test
+    public void testBuiltinFunctions1() throws ParsingException {
         test("sqrt(4)", 2);
+    }
+
+    @Test
+    public void testBuiltinFunctions2() throws ParsingException {
+        test("max(2, 4)", 4);
     }
 
     @Test

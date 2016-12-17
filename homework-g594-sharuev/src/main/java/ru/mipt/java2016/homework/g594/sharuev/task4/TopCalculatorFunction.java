@@ -1,8 +1,5 @@
 package ru.mipt.java2016.homework.g594.sharuev.task4;
 
-
-import ru.mipt.java2016.homework.base.task1.ParsingException;
-
 import java.util.List;
 import java.util.Objects;
 

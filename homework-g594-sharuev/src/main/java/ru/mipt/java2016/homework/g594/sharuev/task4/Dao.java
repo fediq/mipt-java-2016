@@ -7,14 +7,11 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
-import org.springframework.util.StringUtils;
 
 import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
-import java.sql.Array;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -41,7 +38,7 @@ public class Dao {
         jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS calc.variables " +
                 "(name VARCHAR PRIMARY KEY, value DOUBLE)");
         jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS calc.functions " +
-            "(name VARCHAR PRIMARY KEY, func VARCHAR, args VARCHAR)");
+                "(name VARCHAR PRIMARY KEY, func VARCHAR, args VARCHAR)");
         // TODO jdbcTemplate.update("INSERT IGNORE INTO calc.users VALUES ('username', 'password', TRUE)");
     }
 
@@ -74,14 +71,15 @@ public class Dao {
                         }
                     }
             );
-        } catch(EmptyResultDataAccessException e) {
+        } catch (EmptyResultDataAccessException e) {
             return null;
         }
     }
 
     public boolean insertUser(CalculatorUser var) {
         LOG.trace("Querying for user " + var.getUsername());
-        return jdbcTemplate.update("merge into calc.users KEY (username, password, enabled) values(?,?, ?)",
+        return jdbcTemplate.update(
+                "merge into calc.users KEY (username, password, enabled) values(?,?, ?)",
                 var.getUsername(), var.getPassword(), var.isEnabled()) == 1;
     }
 
@@ -100,7 +98,7 @@ public class Dao {
                     new RowMapper<CalculatorUser>() {
                         @Override
                         public CalculatorUser mapRow(ResultSet rs,
-                                                            int rowNum) throws SQLException {
+                                                     int rowNum) throws SQLException {
                             return new CalculatorUser(
                                     rs.getString("username"),
                                     rs.getString("password"),
@@ -109,14 +107,15 @@ public class Dao {
                         }
                     }
             );
-        } catch(EmptyResultDataAccessException e) {
+        } catch (EmptyResultDataAccessException e) {
             return null;
         }
     }
 
     public boolean insertFunction(TopCalculatorFunction func) {
         LOG.trace("Querying for variable " + func.getName());
-        return jdbcTemplate.update("merge into calc.functions KEY (name, func, args) values(?,?, ?)",
+        return jdbcTemplate.update(
+                "merge into calc.functions KEY (name, func, args) values(?,?, ?)",
                 func.getName(),
                 func.getFunc(),
                 String.join(",", func.getArgs())
@@ -147,25 +146,25 @@ public class Dao {
                         }
                     }
             );
-        } catch(EmptyResultDataAccessException e) {
+        } catch (EmptyResultDataAccessException e) {
             return null;
         }
     }
 
     public List<String> getVariablesNames() {
-        LOG.trace("Querying for all variables" );
+        LOG.trace("Querying for all variables");
         try {
             return jdbcTemplate.queryForList("SELECT name FROM calc.variables", String.class);
-        } catch(EmptyResultDataAccessException e) {
+        } catch (EmptyResultDataAccessException e) {
             return null;
         }
     }
 
     public List<String> getFunctionsNames() {
-        LOG.trace("Querying for all functions" );
+        LOG.trace("Querying for all functions");
         try {
             return jdbcTemplate.queryForList("SELECT name FROM calc.functions", String.class);
-        } catch(EmptyResultDataAccessException e) {
+        } catch (EmptyResultDataAccessException e) {
             return null;
         }
     }
