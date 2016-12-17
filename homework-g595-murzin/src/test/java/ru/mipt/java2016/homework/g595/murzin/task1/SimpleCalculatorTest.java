@@ -44,7 +44,8 @@ public class SimpleCalculatorTest extends AbstractCalculatorTest {
 
     @Test
     public void testLog() throws Exception {
-        test("log(log2(2+2))", Math.log(Math.log(2 + 2) / Math.log(2)));
+        test("loge(log2(2+2))", Math.log(Math.log(2 + 2) / Math.log(2)));
+        test("log2(log(log2(log(4096, 2) + 500), 3))", 1);
     }
 
     @Test

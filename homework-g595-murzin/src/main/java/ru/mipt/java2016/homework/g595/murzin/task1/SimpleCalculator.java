@@ -2,6 +2,7 @@ package ru.mipt.java2016.homework.g595.murzin.task1;
 
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
+import ru.mipt.java2016.homework.g595.murzin.task4.MyVariable;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -9,6 +10,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static ru.mipt.java2016.homework.g595.murzin.task1.IFunction.create0;
 import static ru.mipt.java2016.homework.g595.murzin.task1.IFunction.create1;
@@ -44,6 +47,7 @@ public class SimpleCalculator implements Calculator {
         map.put("sign", create1(Math::signum));
         map.put("log", create2((a, n) -> Math.log(a) / Math.log(n)));
         map.put("log2", create1(a -> Math.log(a) / Math.log(2)));
+        map.put("loge", create1(Math::log));
         map.put("rnd", create0(() -> new Random().nextDouble()));
         map.put("max", create2(Math::max));
         map.put("min", create2(Math::min));
@@ -62,12 +66,14 @@ public class SimpleCalculator implements Calculator {
         try {
             rpn = convertToRPN(input);
         } catch (ParsingException e) {
-            throw new ParsingException(String.format("Error while convertToRPN (input = %s, expression = %s)", input, expression), e);
+            throw new ParsingException(String.format(
+                    "Error while convertToRPN (input = %s, expression = %s)", input, expression), e);
         }
         try {
             return calculateRPN(rpn);
         } catch (ParsingException e) {
-            throw new ParsingException(String.format("Error while calculateRPN (rpn = %s, input = %s, expression = %s)", rpn, input, expression), e);
+            throw new ParsingException(String.format(
+                    "Error while calculateRPN (rpn = %s, input = %s, expression = '%s')", rpn, input, expression), e);
         }
     }
 
@@ -100,38 +106,20 @@ public class SimpleCalculator implements Calculator {
                 } else {
                     Token token = CHARACTERS_TO_TOKENS.get(c);
                     if (token == null) {
-                        // проверяем наличие функции
-                        ArrayList<Map.Entry<String, ? extends IFunction>> allFunctions = new ArrayList<>();
-                        allFunctions.addAll(FUNCTIONS.entrySet());
-                        if (context != null) {
-                            allFunctions.addAll(context.functions.entrySet());
-                        }
-                        for (Map.Entry<String, ? extends IFunction> entry : allFunctions) {
-                            if (expression.startsWith(entry.getKey(), i)) {
-                                token = new TokenFunction(entry.getValue());
-                                i += entry.getKey().length() - 1;
-                                break;
-                            }
-                        }
-                        if (token == null) {
-                            // проверяем наличие переменной
-                            HashMap<String, Double> allVariables = new HashMap<>();
-                            if (context != null) {
-                                context.variables.forEach((name, variable) -> allVariables.put(name, variable.value));
-                            }
-                            if (additionalVariables != null) {
-                                allVariables.putAll(additionalVariables);
-                            }
-                            for (Map.Entry<String, Double> entry : allVariables.entrySet()) {
-                                if (expression.startsWith(entry.getKey(), i)) {
-                                    token = new TokenNumber(entry.getValue());
-                                    i += entry.getKey().length() - 1;
-                                    break;
-                                }
+                        Pattern pattern = Pattern.compile("(^[_a-zA-Z][_0-9a-zA-Z]*)");
+                        Matcher matcher = pattern.matcher(expression.substring(i));
+                        if (matcher.find()) {
+                            String identifier = matcher.group();
+                            token = resolveFunction(identifier, context);
+                            if (token == null) {
+                                token = resolveVariable(identifier, context, additionalVariables);
                             }
                             if (token == null) {
-                                throw new ParsingException("Illegal character: " + c);
+                                throw new ParsingException("Illegal identifier: " + identifier);
                             }
+                            i += identifier.length() - 1;
+                        } else {
+                            throw new ParsingException("Illegal character: " + c);
                         }
                     }
                     token = tryReplaceBinaryToUnary(token, input.isEmpty() ? null : input.get(input.size() - 1));
@@ -142,6 +130,29 @@ public class SimpleCalculator implements Calculator {
         } catch (ParsingException e) {
             throw new ParsingException("Error while parseString " + expression, e);
         }
+    }
+
+    private TokenFunction resolveFunction(String identifier, MyContext context) {
+        IFunction function = FUNCTIONS.get(identifier);
+        if (function == null && context != null) {
+            function = context.functions.get(identifier);
+        }
+        return function == null ? null : new TokenFunction(function);
+    }
+
+    private TokenNumber resolveVariable(String identifier, MyContext context,
+                                        HashMap<String, Double> additionalVariables) {
+        Double number = null;
+        if (context != null) {
+            MyVariable variable = context.variables.get(identifier);
+            if (variable != null) {
+                number = variable.value;
+            }
+        }
+        if (number == null && additionalVariables != null) {
+            number = additionalVariables.get(identifier);
+        }
+        return number == null ? null : new TokenNumber(number);
     }
 
     private Token tryReplaceBinaryToUnary(Token token, Token previousToken) {
