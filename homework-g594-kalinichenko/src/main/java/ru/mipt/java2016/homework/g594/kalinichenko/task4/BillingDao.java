@@ -241,7 +241,7 @@ public class BillingDao {
     public List<String> loadAllVariables() {
         LOG.trace("Load all variables");
         return jdbcTemplate.query(
-                "SELECT variable FROM "+ curUser.getUsername() + ".variables",
+                "SELECT variable FROM " + curUser.getUsername() + ".variables",
                 new Object[] {},
                 new RowMapper<String>() {
                     public String mapRow(ResultSet rs, int rowNum) throws SQLException {
@@ -254,7 +254,7 @@ public class BillingDao {
     public List<String> loadAllFunctions() {
         LOG.trace("Load all functions");
         return jdbcTemplate.query(
-                "SELECT function FROM "+ curUser.getUsername() + ".functions",
+                "SELECT function FROM " + curUser.getUsername() + ".functions",
                 new Object[] {},
                 new RowMapper<String>() {
                     public String mapRow(ResultSet rs, int rowNum) throws SQLException {
