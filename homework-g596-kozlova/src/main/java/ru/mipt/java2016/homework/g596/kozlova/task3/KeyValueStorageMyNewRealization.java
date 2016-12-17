@@ -22,8 +22,8 @@ import java.io.BufferedOutputStream;
 
 public class KeyValueStorageMyNewRealization<K, V> implements KeyValueStorage<K, V> {
 
-    private final Integer maxNumberOfDeletedChanges = 100;
-    private int numberDeletedChanges;
+    private static Integer maxNumberOfChanges = 100;
+    private int numberOfChanges;
     private final String path;
     private final String fileName;
     private final String fileWithKeysName;
@@ -31,7 +31,7 @@ public class KeyValueStorageMyNewRealization<K, V> implements KeyValueStorage<K,
     private String typeOfData;
     private Map<K, Long> mapPlace = new HashMap<>();
     private LoadingCache<K, V> cacheData =
-            CacheBuilder.newBuilder().maximumSize(50).softValues().build(new CacheLoader<K, V>() {
+            CacheBuilder.newBuilder().maximumSize(maxNumberOfChanges).softValues().build(new CacheLoader<K, V>() {
                 @Override
                 public V load(K key) {
                     try {
@@ -61,7 +61,7 @@ public class KeyValueStorageMyNewRealization<K, V> implements KeyValueStorage<K,
         typeOfData = serKey.getClass() + " --- " + serValue.getClass();
         isClosed = false;
         path = p;
-        numberDeletedChanges = 0;
+        numberOfChanges = 0;
         fileName = path + File.separator + "storage.txt";
         fileWithKeysName = path + File.separator + "fileWithKeys.db";
         fileWithValuesName = path + File.separator + "fileWithValues.db";
@@ -144,10 +144,10 @@ public class KeyValueStorageMyNewRealization<K, V> implements KeyValueStorage<K,
 
     @Override
     public V read(K key) {
-        checkOpenedStorage();
         Lock lock = globalLock.writeLock();
         lock.lock();
         try {
+            checkOpenedStorage();
             return cacheData.get(key);
         } catch (Exception e) {
             return null;
@@ -158,10 +158,10 @@ public class KeyValueStorageMyNewRealization<K, V> implements KeyValueStorage<K,
 
     @Override
     public boolean exists(K key) {
-        checkOpenedStorage();
         Lock lock = globalLock.readLock();
         lock.lock();
         try {
+            checkOpenedStorage();
             return mapPlace.containsKey(key);
         } finally {
             lock.unlock();
@@ -170,10 +170,10 @@ public class KeyValueStorageMyNewRealization<K, V> implements KeyValueStorage<K,
 
     @Override
     public void write(K key, V value) {
-        checkOpenedStorage();
         Lock lock = globalLock.writeLock();
         lock.lock();
         try {
+            checkOpenedStorage();
             if (mapPlace.keySet().contains(key)) {
                 fileWithValues.seek(mapPlace.get(key));
                 valueSerializator.write(value, valuesOutputStream);
@@ -185,7 +185,13 @@ public class KeyValueStorageMyNewRealization<K, V> implements KeyValueStorage<K,
             }
             if (cacheData.asMap().containsKey(key)) {
                 cacheData.put(key, value);
+
+                ++numberOfChanges;
+                if (numberOfChanges > maxNumberOfChanges) {
+                    optimizeMemory();
+                }
             }
+
         } catch (IOException e) {
             throw new MalformedDataException("Can't write");
         } finally {
@@ -195,16 +201,16 @@ public class KeyValueStorageMyNewRealization<K, V> implements KeyValueStorage<K,
 
     @Override
     public void delete(K key) {
-        checkOpenedStorage();
         Lock lock = globalLock.writeLock();
         lock.lock();
         try {
+            checkOpenedStorage();
             if (exists(key)) {
                 cacheData.invalidate(key);
                 mapPlace.remove(key);
             }
-            ++numberDeletedChanges;
-            if (numberDeletedChanges > maxNumberOfDeletedChanges) {
+            ++numberOfChanges;
+            if (numberOfChanges > maxNumberOfChanges) {
                 optimizeMemory();
             }
         } finally {
@@ -214,10 +220,10 @@ public class KeyValueStorageMyNewRealization<K, V> implements KeyValueStorage<K,
 
     @Override
     public Iterator<K> readKeys() {
-        checkOpenedStorage();
         Lock lock = globalLock.readLock();
         lock.lock();
         try {
+            checkOpenedStorage();
             return mapPlace.keySet().iterator();
         } finally {
             lock.unlock();
@@ -226,10 +232,10 @@ public class KeyValueStorageMyNewRealization<K, V> implements KeyValueStorage<K,
 
     @Override
     public int size() {
-        checkOpenedStorage();
         Lock lock = globalLock.readLock();
         lock.lock();
         try {
+            checkOpenedStorage();
             return mapPlace.size();
         } finally {
             lock.unlock();
@@ -238,10 +244,10 @@ public class KeyValueStorageMyNewRealization<K, V> implements KeyValueStorage<K,
 
     @Override
     public void close() {
-        checkOpenedStorage();
         Lock lock = globalLock.writeLock();
         lock.lock();
         try (DataOutputStream writeToFile = new DataOutputStream(new FileOutputStream(file))) {
+            checkOpenedStorage();
             writeToFile.writeUTF(typeOfData);
             valuesOutputStream.close();
             keysDataInputStream.close();
@@ -276,19 +282,20 @@ public class KeyValueStorageMyNewRealization<K, V> implements KeyValueStorage<K,
             File fileWithNewValues = new File(path + File.separator + "values.db");
             fileWithNewValues.createNewFile();
 
-            RandomAccessFile newFileWithValues = new RandomAccessFile(fileWithNewValues, "rw");
-            newFileWithValues.seek(0);
-            newFileWithValues.setLength(0);
+            try (RandomAccessFile newFileWithValues = new RandomAccessFile(fileWithNewValues, "rw")) {
+                newFileWithValues.seek(0);
+                newFileWithValues.setLength(0);
 
-            for (Map.Entry<K, Long> entry : mapPlace.entrySet()) {
-                fileWithValues.seek(entry.getValue());
-                V value = valueSerializator.read(fileWithValues);
-                newMapPlace.put(entry.getKey(), newFileWithValues.length());
-                valueSerializator.write(value, newFileWithValues);
+                for (Map.Entry<K, Long> entry : mapPlace.entrySet()) {
+                    fileWithValues.seek(entry.getValue());
+                    V value = valueSerializator.read(fileWithValues);
+                    newMapPlace.put(entry.getKey(), newFileWithValues.length());
+                    valueSerializator.write(value, newFileWithValues);
+                }
+                mapPlace = newMapPlace;
+                newFileWithValues.close();
+                numberOfChanges = 0;
             }
-            mapPlace = newMapPlace;
-            newFileWithValues.close();
-            numberDeletedChanges = 0;
         } catch (IOException e) {
             throw new MalformedDataException("Can't optimize");
         }
