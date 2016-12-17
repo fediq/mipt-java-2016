@@ -10,20 +10,47 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>homework-g595-belyh</artifactId>
-    <packaging>pom</packaging>
-    <version>1.0.0</version>
 
     <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-dependencies</artifactId>
+            <version>1.4.2.RELEASE</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <version>RELEASE</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+            <version>RELEASE</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.jayway.jsonpath</groupId>
+            <artifactId>json-path</artifactId>
+            <scope>test</scope>
+            <version>RELEASE</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <optional>true</optional>
+            <version>RELEASE</version>
+        </dependency>
+
         <dependency>
             <groupId>ru.mipt.java2016</groupId>
             <artifactId>homework-base</artifactId>
             <version>1.0.0</version>
-        </dependency>
-
-        <dependency>
-            <groupId>net.sourceforge.jeval</groupId>
-            <artifactId>jeval</artifactId>
-            <version>0.9.4</version>
         </dependency>
 
         <dependency>
@@ -33,4 +60,15 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <properties>
+        <java.version>1.8</java.version>
+    </properties>
+
+    <repositories>
+        <repository>
+            <id>spring-releases</id>
+            <url>https://repo.spring.io/libs-release</url>
+        </repository>
+    </repositories>
 </project>

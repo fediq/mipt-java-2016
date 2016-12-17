@@ -1,7 +1,7 @@
 package ru.mipt.java2016.homework.g595.ulyanin.task2;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 
 /**
@@ -11,8 +11,8 @@ import java.io.IOException;
 
 public interface Serializer<DataType> {
 
-    void serialize(DataType data, DataOutputStream dataOutputStream) throws IOException;
+    void serialize(DataType data, DataOutput dataOutput) throws IOException;
 
-    DataType deserialize(DataInputStream dataInputStream) throws IOException;
+    DataType deserialize(DataInput dataInput) throws IOException;
 
 }

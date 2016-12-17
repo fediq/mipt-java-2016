@@ -111,6 +111,8 @@ public class MyCalculator implements Calculator {
         if (expression == null) {
             throw new ParsingException("Empty expression!");
         }
+        pos = 0;
+        bal = 0;
         expr = expression;
         expr = expr.replaceAll(" ", "");
         expr = expr.replaceAll("\t", "");
