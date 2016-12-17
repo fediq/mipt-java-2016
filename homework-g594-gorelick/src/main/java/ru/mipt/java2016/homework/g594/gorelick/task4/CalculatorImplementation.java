@@ -1,15 +1,16 @@
-package ru.mipt.java2016.homework.g594.gorelick.task1;
+package ru.mipt.java2016.homework.g594.gorelick.task4;
 
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
+
+import java.security.InvalidParameterException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Scanner;
 import java.util.Stack;
-import java.security.InvalidParameterException;
 
 class CalculatorImplementation implements Calculator {
-
+    static final Calculator INSTANCE = new CalculatorImplementation();
     private static final HashSet<String> OPERATORS = new HashSet<>(Arrays.asList("+", "-", "*", "/"));
 
     @Override
