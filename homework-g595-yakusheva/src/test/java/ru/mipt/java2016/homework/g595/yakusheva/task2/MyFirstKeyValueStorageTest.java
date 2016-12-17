@@ -5,6 +5,8 @@ import ru.mipt.java2016.homework.tests.task2.AbstractSingleFileStorageTest;
 import ru.mipt.java2016.homework.tests.task2.Student;
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
 
+import java.io.IOException;
+
 /**
  * Created by Софья on 27.10.2016.
  */

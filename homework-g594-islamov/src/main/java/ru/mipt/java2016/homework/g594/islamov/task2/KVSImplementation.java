@@ -18,29 +18,43 @@ public class KVSImplementation<K, V> implements KeyValueStorage<K, V> {
 
     public final KVSSerializationInterface<K> keySerialization;
     public final KVSSerializationInterface<V> valueSerialization;
-    public final HashMap<K, V> cache = new HashMap<K, V>();
-    private File file;
+    public final HashMap<K, V> cache = new HashMap<>();
+    private String filePath;
     private boolean closed = false;
 
     public KVSImplementation(String directoryPath, KVSSerializationInterface<K> keySerialization,
                              KVSSerializationInterface<V> valueSerialization) {
         this.keySerialization = keySerialization;
         this.valueSerialization = valueSerialization;
-        file = new File(directoryPath + FILENAME);
-        try {
-            if (file.exists()) {
-                if (!isValidFile()) {
-                    throw new RuntimeException("Invalid File");
-                }
-            }
-        } catch (FileNotFoundException except) {
+        filePath = directoryPath + FILENAME;
+        File file = new File(filePath);
+        if (!file.exists()) {
             try {
                 file.createNewFile();
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                throw new IllegalStateException("File hasn't been created");
+            }
+            try (DataOutputStream out = new DataOutputStream(new FileOutputStream(filePath))) {
+                out.writeUTF(FLAGSTRING);
+                out.writeInt(0);
+            } catch (IOException e) {
+                throw new IllegalStateException("Failed at writing to file");
             }
         }
 
+        try (DataInputStream in = new DataInputStream(new FileInputStream(filePath))) {
+            if (!in.readUTF().equals(FLAGSTRING)) {
+                throw new IllegalStateException("Not a valid file");
+            }
+            int amount = in.readInt();
+            for (int i = 0; i < amount; ++i) {
+                K key = keySerialization.deserialize(in);
+                V value = valueSerialization.deserialize(in);
+                cache.put(key, value);
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException("Couldn't read from to file");
+        }
     }
 
     @Override
@@ -94,77 +108,17 @@ public class KVSImplementation<K, V> implements KeyValueStorage<K, V> {
     @Override
     public void close() throws FileNotFoundException {
         closed = true;
-        StringBuilder storageInString = new StringBuilder(FLAGSTRING + "\n");
-        for (Map.Entry<K, V> entry : cache.entrySet()) {
-            storageInString.append(keySerialization.serialize(entry.getKey()));
-            storageInString.append('\n');
-            storageInString.append(valueSerialization.serialize(entry.getValue()));
-            storageInString.append('\n');
-        }
-        writeToFile(storageInString.toString());
-        cache.clear();
-    }
-
-    public boolean isValidFile() throws FileNotFoundException {
-        String storageInString = readFromFile();
-        String[] splitedStorageInString = storageInString.split("\n");
-        if (splitedStorageInString.length > 0 && !splitedStorageInString[0].equals(FLAGSTRING)) {
-            return false;
-        }
-        cache.clear();
-        int storageSize = splitedStorageInString.length;
-        for (int i = 1; i < storageSize; i += 2) {
-            try {
-                K stringToKeyType = keySerialization.deserialize(splitedStorageInString[i]);
-                V stringToValueType = valueSerialization.deserialize(splitedStorageInString[i + 1]);
-                cache.put(stringToKeyType, stringToValueType);
-            } catch (BadStorageException e) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public String readFromFile() throws FileNotFoundException {
-        StringBuilder storageInString = new StringBuilder();
-        if (!getFile().exists()) {
-            throw new FileNotFoundException("File is not found");
-        }
-        try {
-            BufferedReader readLines = new BufferedReader(new FileReader(getFile().getAbsoluteFile()));
-            try {
-                String inputLine;
-                while ((inputLine = readLines.readLine()) != null) {
-                    storageInString.append(inputLine);
-                    storageInString.append("\n");
-                }
-            } finally {
-                readLines.close();
+        try (DataOutputStream out = new DataOutputStream(new FileOutputStream(filePath))) {
+            out.writeUTF(FLAGSTRING);
+            out.writeInt(cache.size());
+            for (Map.Entry<K, V> entry: cache.entrySet()) {
+                keySerialization.serialize(out, entry.getKey());
+                valueSerialization.serialize(out, entry.getValue());
             }
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new IllegalStateException("Failed at writing storage to file");
         }
-        return storageInString.toString();
-    }
-
-    public void writeToFile(String storageInString) throws FileNotFoundException {
-        try {
-            if (!getFile().exists()) {
-                file.createNewFile();
-            }
-            PrintWriter outputLines = new PrintWriter(getFile().getAbsoluteFile());
-            try {
-                outputLines.write(storageInString);
-            } finally {
-                outputLines.close();
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public File getFile() {
-        return this.file;
+        cache.clear();
     }
 
     public boolean isStorageClosed() {

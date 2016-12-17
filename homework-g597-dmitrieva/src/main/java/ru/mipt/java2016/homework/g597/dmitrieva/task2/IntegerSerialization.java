@@ -6,7 +6,7 @@ import java.io.RandomAccessFile;
 /**
  * Created by macbook on 30.10.16.
  */
-public class IntegerSerialization extends SerializationStrategy<Integer> {
+public class IntegerSerialization implements SerializationStrategy<Integer> {
     @Override
     public Integer read(RandomAccessFile file) throws IOException {
         try {

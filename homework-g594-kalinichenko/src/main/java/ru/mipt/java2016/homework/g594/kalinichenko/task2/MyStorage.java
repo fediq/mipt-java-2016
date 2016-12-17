@@ -23,24 +23,16 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
         FileInputStream in;
         try {
             in = new FileInputStream(file);
-        } catch (Exception exc) {
-            throw new IllegalStateException("Failed creating file");
-        }
-        long len = lengthSerializer.get(in);
-        for (int i = 0; i < len; ++i) {
-            K key = keySerializer.get(in);
-            V val = valSerializer.get(in);
-            map.put(key, val);
-        }
-        byte[] check = new byte[1]; ///check for EOF cause file might be longer
-        try {
+            long len = lengthSerializer.get(in);
+            for (int i = 0; i < len; ++i) {
+                K key = keySerializer.get(in);
+                V val = valSerializer.get(in);
+                map.put(key, val);
+            }
+            byte[] check = new byte[1]; ///check for EOF cause file might be longer
             if (in.read(check) != -1) {
                 throw new IllegalStateException("Invalid file");
             }
-        } catch (Exception exc) {
-            throw new IllegalStateException("Invalid work with file");
-        }
-        try {
             in.close();
         } catch (Exception exc) {
             throw new IllegalStateException("Invalid work with file");
@@ -48,6 +40,7 @@ class MyStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     MyStorage(String path, MySerializer keyS, MySerializer valS) {
+        //I can't make it public, it doesn't pass maven test...
         lengthSerializer = new MyIntSerializer();
         keySerializer = keyS;
         valSerializer = valS;

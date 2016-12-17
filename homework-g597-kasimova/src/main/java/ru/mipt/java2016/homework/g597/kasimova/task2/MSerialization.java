@@ -1,7 +1,7 @@
 package ru.mipt.java2016.homework.g597.kasimova.task2;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 
 /**
@@ -9,13 +9,13 @@ import java.io.IOException;
  */
 
 public interface MSerialization<Type> {
-    void serializeToStream(Type value, DataOutputStream outStream);
+    void serializeToStream(Type value, DataOutput outStream);
 
-    Type deserializeFromStream(DataInputStream inStream);
+    Type deserializeFromStream(DataInput inStream);
 
     MSerialization<String> STRING_SERIALIZER = new MSerialization<String>() {
         @Override
-        public void serializeToStream(String value, DataOutputStream outStream) {
+        public void serializeToStream(String value, DataOutput outStream) {
             try {
                 outStream.writeUTF(value);
             } catch (IOException exp) {
@@ -24,7 +24,7 @@ public interface MSerialization<Type> {
         }
 
         @Override
-        public String deserializeFromStream(DataInputStream inStream) {
+        public String deserializeFromStream(DataInput inStream) {
             try {
                 return inStream.readUTF();
             } catch (IOException exp) {
@@ -36,7 +36,7 @@ public interface MSerialization<Type> {
 
     MSerialization<Integer> INTEGER_SERIALIZER = new MSerialization<Integer>() {
         @Override
-        public void serializeToStream(Integer value, DataOutputStream outStream) {
+        public void serializeToStream(Integer value, DataOutput outStream) {
             try {
                 outStream.writeInt(value);
             } catch (IOException exp) {
@@ -45,7 +45,7 @@ public interface MSerialization<Type> {
         }
 
         @Override
-        public Integer deserializeFromStream(DataInputStream inStream) {
+        public Integer deserializeFromStream(DataInput inStream) {
             try {
                 return inStream.readInt();
             } catch (IOException exp) {
@@ -57,7 +57,7 @@ public interface MSerialization<Type> {
 
     MSerialization<Double> DOUBLE_SERIALIZER = new MSerialization<Double>() {
         @Override
-        public void serializeToStream(Double value, DataOutputStream outStream) {
+        public void serializeToStream(Double value, DataOutput outStream) {
             try {
                 outStream.writeDouble(value);
             } catch (IOException exp) {
@@ -66,9 +66,51 @@ public interface MSerialization<Type> {
         }
 
         @Override
-        public Double deserializeFromStream(DataInputStream inStream) {
+        public Double deserializeFromStream(DataInput inStream) {
             try {
                 return inStream.readDouble();
+            } catch (IOException exp) {
+                System.out.println(exp.getMessage());
+            }
+            return null;
+        }
+    };
+
+    MSerialization<Boolean> BOOLEAN_SERIALIZER = new MSerialization<Boolean>() {
+        @Override
+        public void serializeToStream(Boolean value, DataOutput outStream) {
+            try {
+                outStream.writeBoolean(value);
+            } catch (IOException exp) {
+                System.out.println(exp.getMessage());
+            }
+        }
+
+        @Override
+        public Boolean deserializeFromStream(DataInput inStream) {
+            try {
+                return inStream.readBoolean();
+            } catch (IOException exp) {
+                System.out.println(exp.getMessage());
+            }
+            return null;
+        }
+    };
+
+    MSerialization<Long> LONG_SERIALIZER = new MSerialization<Long>() {
+        @Override
+        public void serializeToStream(Long value, DataOutput outStream) {
+            try {
+                outStream.writeLong(value);
+            } catch (IOException exp) {
+                System.out.println(exp.getMessage());
+            }
+        }
+
+        @Override
+        public Long deserializeFromStream(DataInput inStream) {
+            try {
+                return inStream.readLong();
             } catch (IOException exp) {
                 System.out.println(exp.getMessage());
             }

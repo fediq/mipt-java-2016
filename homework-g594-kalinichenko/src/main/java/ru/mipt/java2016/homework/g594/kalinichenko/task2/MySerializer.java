@@ -39,7 +39,7 @@ public abstract class MySerializer<K> {
 
     protected String getStr(FileInputStream in) {
         int len = getInt(in);
-        if (len > 100000) {
+        if (len < 0 || len > 100000) {
             throw new IllegalStateException("Database is invalid");
         }
         byte[] data = new byte[len];

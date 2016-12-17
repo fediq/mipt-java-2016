@@ -1,0 +1,13 @@
+<configuration>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%date %-5p %20.20c{20} %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="ru.mipt" level="TRACE"/>
+
+    <root level="WARN">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>
