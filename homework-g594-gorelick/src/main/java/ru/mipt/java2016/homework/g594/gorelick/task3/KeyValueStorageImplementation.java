@@ -2,6 +2,7 @@ package ru.mipt.java2016.homework.g594.gorelick.task3;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 
+import java.io.UncheckedIOException;
 import java.util.*;
 import java.io.File;
 import java.nio.file.Files;
@@ -250,7 +251,11 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
 
     @Override
     public synchronized void write(K key, V value) {
-        touchDB();
+        try {
+            touchDB();
+        } catch (IllegalStateException e) {
+            throw  new RuntimeException(e);
+        }
         setKeys.add(key);
         cache.put(key, value);
         try {
@@ -268,7 +273,11 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
 
     @Override
     public synchronized void delete(K key) {
-        touchDB();
+        try {
+            touchDB();
+        } catch (IllegalStateException e) {
+            throw  new RuntimeException(e);
+        }
         if (cache.containsKey(key) || fileMap.containsKey(key)) {
             deletedMap.put(key, fileMap.get(key));
         }
@@ -294,48 +303,53 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
 
     @Override
     public synchronized void close() throws IOException {
-        if (!isOpened) {
-            throw new IOException("Working with closed DB");
-        }
-        if (deletedMap.size() > 0) {
-            deleteHoles();
-            deletedMap.clear();
-        }
-        if (cache.size() > 0) {
-            int id = filesTable.size();
-            File tmp = new File(databasePath + File.separator + DATABASE_NAME_TEMPLATE + "." + id);
-            try {
-                tmp.createNewFile();
-                filesTable.add(tmp);
-                RandomAccessFile current = new RandomAccessFile(tmp, "rw");
-                current.setLength(0);
-                current.seek(0);
-                for (Map.Entry<K, V> entry : cache.entrySet()) {
-                    KeyPosition place = new KeyPosition(id, current.getFilePointer());
-                    fileMap.put(entry.getKey(), place);
-                    valueFileWorker.write(current, entry.getValue(), current.getFilePointer());
-                }
-                cache.clear();
-                current.close();
-            } catch (IOException error) {
-                error.printStackTrace();
+        if (isOpened) {
+            if (deletedMap.size() > 0) {
+                deleteHoles();
+                deletedMap.clear();
             }
+            if (cache.size() > 0) {
+                int id = filesTable.size();
+                File tmp = new File(databasePath + File.separator + DATABASE_NAME_TEMPLATE + "." + id);
+                try {
+                    tmp.createNewFile();
+                    filesTable.add(tmp);
+                    RandomAccessFile current = new RandomAccessFile(tmp, "rw");
+                    current.setLength(0);
+                    current.seek(0);
+                    for (Map.Entry<K, V> entry : cache.entrySet()) {
+                        KeyPosition place = new KeyPosition(id, current.getFilePointer());
+                        fileMap.put(entry.getKey(), place);
+                        valueFileWorker.write(current, entry.getValue(), current.getFilePointer());
+                    }
+                    cache.clear();
+                    current.close();
+                } catch (IOException error) {
+                    throw new IOException("Error on freeing resourses");
+                }
+            }
+            file.setLength(0);
+            file.seek(0);
+            IntegerFileWorker integerFileWorker = new IntegerFileWorker();
+            LLongFileWorker longFileWorker = new LLongFileWorker();
+            integerFileWorker.write(file, filesTable.size(), file.getFilePointer());
+            integerFileWorker.write(file, fileMap.size(), file.getFilePointer());
+            for (Map.Entry<K, KeyPosition> entry : fileMap.entrySet()) {
+                K key = entry.getKey();
+                KeyPosition place = entry.getValue();
+                keyFileWorker.write(file, key, file.getFilePointer());
+                integerFileWorker.write(file, place.getId(), file.getFilePointer());
+                longFileWorker.write(file, place.getPosition(), file.getFilePointer());
+            }
+            try {
+                file.close();
+            } catch (IOException e) {
+                throw new IOException("Error on freeing resourses");
+
+            }
+            Files.delete(lockfile.toPath());
+            isOpened = false;
         }
-        file.setLength(0);
-        file.seek(0);
-        IntegerFileWorker integerFileWorker = new IntegerFileWorker();
-        LLongFileWorker longFileWorker = new LLongFileWorker();
-        integerFileWorker.write(file, filesTable.size(), file.getFilePointer());
-        integerFileWorker.write(file, fileMap.size(), file.getFilePointer());
-        for (Map.Entry<K, KeyPosition> entry : fileMap.entrySet()) {
-            K key = entry.getKey();
-            KeyPosition place = entry.getValue();
-            keyFileWorker.write(file, key, file.getFilePointer());
-            integerFileWorker.write(file, place.getId(), file.getFilePointer());
-            longFileWorker.write(file, place.getPosition(), file.getFilePointer());
-        }
-        file.close();
-        Files.delete(lockfile.toPath());
-        isOpened = false;
     }
+
 }
