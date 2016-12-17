@@ -2,7 +2,7 @@ package ru.mipt.java2016.homework.g595.romanenko.task4;
 
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.FileSystemResource;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -12,7 +12,6 @@ import org.springframework.web.servlet.view.RedirectView;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 import ru.mipt.java2016.homework.g595.romanenko.task4.calculator.*;
 
-import java.net.URL;
 import java.security.Principal;
 import java.util.HashMap;
 import java.util.List;
@@ -143,11 +142,22 @@ public class CalculatorController {
     }
 
     @CrossOrigin
-    @RequestMapping(path = "/", method = RequestMethod.GET)
-    @ResponseBody
-    public FileSystemResource getTestPage() {
-        URL url = CalculatorController.class.getResource("/static/index.html");
-        return new FileSystemResource(url.getPath());
+    @RequestMapping(path = "/register", method = RequestMethod.POST)
+    public RedirectView registerUser(@RequestParam(value = "username") String username,
+                             @RequestParam(value = "password") String password,
+                             @RequestParam(value = "confirmPassword") String confirmPassword) {
+        if (!confirmPassword.equals(password)) {
+            return new RedirectView("/error");
+        }
+        RedirectView result;
+        try {
+            restCalculatorDao.loadUser(username);
+            result = new RedirectView("/error");
+        } catch (EmptyResultDataAccessException ex) {
+            restCalculatorDao.addUser(username, password);
+            result = new RedirectView("/load");
+        }
+        return result;
     }
 
     @CrossOrigin

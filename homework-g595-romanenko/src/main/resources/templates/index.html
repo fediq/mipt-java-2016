@@ -1,220 +1,18 @@
 <!DOCTYPE html>
-<html lang="en">
+<!--<%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>-->
+<html lang="en"
+      xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="static_resources/bootstrap-3.3.6-dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="static_resources/bootstrap-3.3.6-dist/css/bootstrap.min.css" rel="stylesheet" />
 
     <script src="static_resources/jquery-2.2.4.min.js"></script>
     <script src="static_resources/bootstrap-3.3.6-dist/js/bootstrap.min.js"></script>
 
     <title>Title</title>
 
-    <script type="text/javascript">
-
-        var baseUrl = 'http://localhost:8080';
-
-        $(document).ready(function () {
-            updateLists();
-        });
-
-        var updateLists = function () {
-            updateFunctionList();
-            updateVariablesList();
-        };
-
-        var updateFunctionList = function () {
-            $.ajax({
-                type: "GET",
-                url: baseUrl + '/function',
-                success: function (data) {
-                    console.log(data);
-                    var curTable = $("#functionsList")[0];
-                    curTable.innerHTML = "";
-                    for (var i = 0; i < data.length; i++) {
-                        var newRow = curTable.insertRow(curTable.rows.length);
-                        var numberCell = newRow.insertCell(newRow.cells.length);
-                        numberCell.innerText = (i + 1).toString();
-                        var dataCell = newRow.insertCell(newRow.cells.length);
-                        dataCell.innerText = data[i];
-                    }
-                },
-                error: function (data) {
-                    console.log(data.responseText);
-                }
-            })
-        };
-
-        var getVariableValue = function (name, cell) {
-            cell.innerText = 'undefined';
-            $.ajax({
-                type: "GET",
-                url: baseUrl + '/variable/' + name,
-                success: function (data) {
-                    console.log(data);
-                    cell.innerText = data;
-                },
-                error: function (data) {
-                    console.log(data);
-                    cell.innerText = 'fail to load value';
-                }
-            });
-        };
-
-        var updateVariablesList = function () {
-            $.ajax({
-                type: "GET",
-                url: baseUrl + '/variable',
-                success: function (data) {
-                    console.log(data);
-                    var curTable = $("#variablesList")[0];
-                    curTable.innerHTML = "";
-                    for (var i = 0; i < data.length; i++) {
-                        var newRow = curTable.insertRow(curTable.rows.length);
-                        var numberCell = newRow.insertCell(newRow.cells.length);
-                        numberCell.innerText = (i + 1).toString();
-                        newRow.insertCell(newRow.cells.length).innerText = data[i];
-                        getVariableValue(data[i], newRow.insertCell(newRow.cells.length));
-                    }
-                },
-                error: function (data) {
-                    console.log(data);
-                    $('#result2')[0].textContent = data.toString();
-                }
-            });
-        };
-
-        var getFunction = function () {
-            updateLists();
-            $.ajax({
-                type: 'GET',
-                url: baseUrl + '/function/' + $("#get_function_input")[0].value,
-                contentType: "text/plain",
-                success: function (data) {
-                    console.log(data);
-                    $("#result_get_function_name")[0].textContent = 'Function name : ' + $("#get_function_input")[0].value;
-                    $("#result_get_function_body")[0].textContent = data.body;
-                    var argsTable = $("#result_get_function_args")[0];
-                    var cnt = 0, cellsInOneRow = 4;
-                    argsTable.innerHTML = "";
-
-                    while (cnt < data.args.length) {
-                        var newRow = argsTable.insertRow(argsTable.rows.length);
-                        for (var i = 0; i < cellsInOneRow; i++) {
-                            var newCell = newRow.insertCell(i);
-                            if (cnt < data.args.length) {
-                                newCell.innerText = (cnt + 1) + " : " + data.args[i];
-                                cnt += 1;
-                            }
-                        }
-                    }
-                },
-                error: function (data) {
-                    console.log(data);
-                    $('#result_get_function_body')[0].textContent = data.responseText;
-                }
-            });
-        };
-
-        var submitEval = function () {
-            updateLists();
-            $.ajax({
-                type: "POST",
-                url: baseUrl + '/eval',
-                contentType: "text/plain",
-                data: $("#eval_input")[0].value,
-                success: function (data) {
-                    console.log(data);
-                    $("#result_eval")[0].textContent = data.toString();
-                    updateFunctionList();
-                },
-                error: function (data) {
-                    console.log(data);
-                    $('#result_eval')[0].textContent = data.responseText;
-                }
-            });
-        };
-
-        var addFunction = function () {
-            var urlHeader = $("#add_function_input_name")[0].value + '?';
-            var params = $("#add_function_input_params")[0].value.split(',');
-            for (var i = 0; i < params.length; i++) {
-                if (i != 0) {
-                    urlHeader += '&';
-                }
-                urlHeader += 'args=' + params[i].trim();
-            }
-            $.ajax({
-                type: "PUT",
-                url: baseUrl + '/function/' + urlHeader,
-                contentType: "text/plain",
-                data: $("#add_function_input_body")[0].value,
-                success: function (data) {
-                    console.log(data);
-                    $("#result_add_function")[0].textContent = data.toString();
-                    updateFunctionList();
-                },
-                error: function (data) {
-                    console.log(data);
-                    $('#result_add_function')[0].textContent = data.responseText;
-                }
-            });
-        };
-
-        var deleteFunction = function () {
-            $.ajax({
-                type: "DELETE",
-                url: baseUrl + '/function/' + $("#delete_function_input_name")[0].value,
-                contentType: "text/plain",
-                success: function (data) {
-                    console.log(data);
-                    $("#result_delete_function")[0].textContent = data.toString();
-                    updateFunctionList();
-                },
-                error: function (data) {
-                    console.log(data);
-                    $('#result_delete_function')[0].textContent = data.responseText;
-                }
-            });
-        };
-
-        var addVariable = function () {
-            $.ajax({
-                type: "PUT",
-                url: baseUrl + '/variable/' + $("#add_variable_input_name")[0].value,
-                contentType: "text/plain",
-                data: $("#add_variable_input_body")[0].value,
-                success: function (data) {
-                    console.log(data);
-                    $("#result_add_variable")[0].textContent = data.toString();
-                    updateVariablesList();
-                },
-                error: function (data) {
-                    console.log(data);
-                    $('#result_add_variable')[0].textContent = data.responseText;
-                }
-            });
-        };
-
-        var deleteVariable = function () {
-            $.ajax({
-                type: "DELETE",
-                url: baseUrl + '/variable/' + $("#delete_variable_input_name")[0].value,
-                contentType: "text/plain",
-                success: function (data) {
-                    console.log(data);
-                    $("#result_delete_variable")[0].textContent = data.toString();
-                    updateVariablesList();
-                },
-                error: function (data) {
-                    console.log(data);
-                    $('#result_delete_variable')[0].textContent = data.responseText;
-                }
-            });
-        };
-
-
-    </script>
+    <script type="text/javascript" src="/static_resources/index_ajax.js"></script>
 </head>
 <body role="document">
 
@@ -223,6 +21,9 @@
         <div class="navbar-header">
             <div class="navbar-brand">Формочка для тестирования</div>
         </div>
+        <ul class="nav navbar-nav navbar-right">
+            <li><a href="/logout">Logout</a></li>
+        </ul>
     </div>
 </nav>
 
@@ -238,7 +39,7 @@
                     <textarea id="eval_input" class="form-control"></textarea>
                 </div>
                 <button id="eval" type="button" class="btn btn-default" onclick="submitEval()">Eval expression</button>
-                <br><br>
+                <br/><br/>
                 <div class="panel panel-default">
                     <div class="panel-heading">
                         <h3 class="panel-title">Result : </h3>
@@ -275,7 +76,7 @@
                     <!--Get function information -->
                     <div role="tabpanel" class="tab-pane active" id="get_function">
 
-                        <br>
+                        <br/>
                         <div class="container-fluid">
                             <div class="form-group">
                                 <label>Get function information</label>
@@ -287,7 +88,7 @@
                             <button type="button" class="btn btn-default" onclick="getFunction()">
                                 Get Function Information
                             </button>
-                            <br><br>
+                            <br/><br/>
                             <div class="panel panel-default">
                                 <div class="panel-heading">
                                     <h3 class="panel-title" id="result_get_function_name"></h3>
@@ -306,7 +107,7 @@
                     <!-- Add function -->
                     <div role="tabpanel" class="tab-pane" id="add_function">
 
-                        <br>
+                        <br/>
                         <div class="container-fluid">
                             <div class="form-group">
                                 <label for="add_function_input_name">Add Function</label>
@@ -314,12 +115,12 @@
                                     <span class="input-group-addon">Function name : </span>
                                     <input class="form-control" id="add_function_input_name"/>
                                 </div>
-                                <br>
+                                <br/>
                                 <div class="input-group">
                                     <span class="input-group-addon">Function body : </span>
                                     <textarea class="form-control" id="add_function_input_body"> </textarea>
                                 </div>
-                                <br>
+                                <br/>
                                 <div class="input-group">
                                     <span class="input-group-addon">Function params : </span>
                                     <input class="form-control" id="add_function_input_params"/>
@@ -328,7 +129,7 @@
                             <button type="button" class="btn btn-default" onclick="addFunction()">
                                 Add Function
                             </button>
-                            <br><br>
+                            <br/><br/>
                             <div class="panel panel-default">
                                 <div class="panel-heading">
                                     <h3 class="panel-title">Result : </h3>
@@ -342,7 +143,7 @@
 
                     <!-- Add variable -->
                     <div role="tabpanel" class="tab-pane" id="add_variable">
-                        <br>
+                        <br/>
                         <div class="container-fluid">
                             <div class="form-group">
                                 <label for="add_variable_input_name">Add Variable</label>
@@ -350,16 +151,16 @@
                                     <span class="input-group-addon">Variable name : </span>
                                     <input class="form-control" id="add_variable_input_name"/>
                                 </div>
-                                <br>
+                                <br/>
                                 <div class="input-group">
                                     <span class="input-group-addon">Variable value : </span>
-                                    <input class="form-control" id="add_variable_input_body"> </input>
+                                    <input class="form-control" id="add_variable_input_body"/>
                                 </div>
                             </div>
                             <button type="button" class="btn btn-default" onclick="addVariable()">
                                 Add Variable
                             </button>
-                            <br><br>
+                            <br/><br/>
                             <div class="panel panel-default">
                                 <div class="panel-heading">
                                     <h3 class="panel-title">Result : </h3>
@@ -374,7 +175,7 @@
                     <div role="tabpanel" class="tab-pane" id="delete_function_variable">
                         <div class="container-fluid">
 
-                            <br>
+                            <br/>
                             <div class="row">
                                 <div class="col-md-5">
 
@@ -392,7 +193,7 @@
                                                 onclick="deleteVariable()">
                                             Delete Variable
                                         </button>
-                                        <br><br>
+                                        <br/><br/>
                                         <div class="panel panel-default">
                                             <div class="panel-heading">
                                                 <h3 class="panel-title">Result : </h3>
@@ -421,7 +222,7 @@
                                                 onclick="deleteFunction()">
                                             Delete Function
                                         </button>
-                                        <br><br>
+                                        <br/><br/>
                                         <div class="panel panel-default">
                                             <div class="panel-heading">
                                                 <h3 class="panel-title">Result : </h3>

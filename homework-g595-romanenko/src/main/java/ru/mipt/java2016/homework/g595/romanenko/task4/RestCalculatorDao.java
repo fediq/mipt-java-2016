@@ -54,26 +54,27 @@ public class RestCalculatorDao {
         }
         initSchema();
         prepareStatements();
+        addUser("admin", "admin");
     }
 
     private void prepareStatements() {
         try {
             insertUser = connection.prepareStatement(
-                "INSERT INTO RestCalculator.Users(username, password, enabled) " +
-                    "VALUES (?, ?, TRUE)");
+                    "INSERT INTO RestCalculator.Users(username, password, enabled) " +
+                            "VALUES (?, ?, TRUE)");
 
             insertVariable = connection.prepareStatement(
-                "INSERT INTO RestCalculator.Variables(id, name, value) " +
-                    "VALUES (?, ?, ?)");
+                    "INSERT INTO RestCalculator.Variables(id, name, value) " +
+                            "VALUES (?, ?, ?)");
             insertFunction = connection.prepareStatement(
-                "INSERT INTO RestCalculator.Functions(id, name, body, params) " +
-                    "VALUES (?, ?, ?, ?)");
+                    "INSERT INTO RestCalculator.Functions(id, name, body, params) " +
+                            "VALUES (?, ?, ?, ?)");
 
             deleteVariable = connection.prepareStatement(
-                "DELETE FROM RestCalculator.Variables WHERE ID = ? AND NAME = ?");
+                    "DELETE FROM RestCalculator.Variables WHERE ID = ? AND NAME = ?");
 
             deleteFunction = connection.prepareStatement(
-                "DELETE FROM RestCalculator.Functions WHERE ID = ? AND NAME = ?");
+                    "DELETE FROM RestCalculator.Functions WHERE ID = ? AND NAME = ?");
 
         } catch (SQLException ex) {
             LOG.debug(ex.getMessage());
@@ -84,94 +85,102 @@ public class RestCalculatorDao {
         LOG.trace("Initializing schema");
         jdbcTemplate.execute("CREATE SCHEMA IF NOT EXISTS RestCalculator");
         jdbcTemplate.execute(
-            "CREATE TABLE IF NOT EXISTS RestCalculator.Users (" +
-                "id INTEGER NOT NULL AUTO_INCREMENT," +
-                "username VARCHAR NOT NULL," +
-                "password VARCHAR," +
-                "enabled BOOLEAN," +
-                "PRIMARY KEY (username)" +
-                ");"
+                "CREATE TABLE IF NOT EXISTS RestCalculator.Users (" +
+                        "id INTEGER NOT NULL AUTO_INCREMENT," +
+                        "username VARCHAR NOT NULL," +
+                        "password VARCHAR," +
+                        "enabled BOOLEAN," +
+                        "PRIMARY KEY (username)" +
+                        ");"
         );
 
         jdbcTemplate.execute(
-            "CREATE TABLE IF NOT EXISTS RestCalculator.Functions (" +
-                "id INTEGER NOT NULL," +
-                "name VARCHAR NOT NULL," +
-                "body VARCHAR," +
-                "params VARCHAR," +
-                "PRIMARY KEY (id, name)" +
-                ");"
+                "CREATE TABLE IF NOT EXISTS RestCalculator.Functions (" +
+                        "id INTEGER NOT NULL," +
+                        "name VARCHAR NOT NULL," +
+                        "body VARCHAR," +
+                        "params VARCHAR," +
+                        "PRIMARY KEY (id, name)" +
+                        ");"
         );
 
         jdbcTemplate.execute(
-            "CREATE TABLE IF NOT EXISTS RestCalculator.Variables (" +
-                "id INTEGER NOT NULL," +
-                "name VARCHAR NOT NULL," +
-                "value VARCHAR," +
-                "PRIMARY KEY (id, name)" +
-                ");"
+                "CREATE TABLE IF NOT EXISTS RestCalculator.Variables (" +
+                        "id INTEGER NOT NULL," +
+                        "name VARCHAR NOT NULL," +
+                        "value VARCHAR," +
+                        "PRIMARY KEY (id, name)" +
+                        ");"
         );
-
-        try {
-            jdbcTemplate.update("INSERT INTO RestCalculator.Users(username, password, enabled) " +
-                "VALUES ('admin', 'admin', TRUE)");
-        } catch (Exception ex) {
-            LOG.debug(ex.getMessage());
-        }
     }
 
     public RestUser loadUser(String username) throws EmptyResultDataAccessException {
         LOG.trace("Querying for user " + username);
         return jdbcTemplate.queryForObject(
-            "SELECT id, username, password, enabled FROM RestCalculator.users WHERE username = ?",
-            new Object[]{username},
-            (rs, rowNum) ->
-                new RestUser(
-                    rs.getInt("id"),
-                    rs.getString("username"),
-                    rs.getString("password"),
-                    rs.getBoolean("enabled")
-                )
+                "SELECT id, username, password, enabled FROM RestCalculator.users WHERE username = ?",
+                new Object[]{username},
+                (rs, rowNum) -> new RestUser(
+                        rs.getInt("id"),
+                        rs.getString("username"),
+                        rs.getString("password"),
+                        rs.getBoolean("enabled"))
         );
     }
 
-    public Function loadFunction(Integer userId, String functionName) throws EmptyResultDataAccessException {
-        return jdbcTemplate.queryForObject(
-            "SELECT body, params FROM RestCalculator.Functions WHERE id = ? AND name = ?",
-            new Object[]{userId, functionName},
-            (rs, rowNb) -> {
-                String paramsStr = rs.getString("params");
-                List<String> params = Arrays.stream(paramsStr.split("&")).collect(Collectors.toList());
-                Function result;
-                try {
-                    result = new Function(rs.getString("body"), params, null, null);
-                } catch (ParsingException e) {
-                    result = null;
-                }
-                return result;
-            }
-        );
+    public Function loadFunction(Integer userId, String functionName) {
+        Function function;
+        try {
+            function = jdbcTemplate.queryForObject(
+                    "SELECT body, params FROM RestCalculator.Functions WHERE id = ? AND name = ?",
+                    new Object[]{userId, functionName},
+                    (rs, rowNb) -> {
+                        String paramsStr = rs.getString("params");
+                        List<String> params = Arrays.stream(paramsStr.split("&")).collect(Collectors.toList());
+                        Function result;
+                        try {
+                            result = new Function(rs.getString("body"), params, null, null);
+                        } catch (ParsingException e) {
+                            result = null;
+                        }
+                        return result;
+                    });
+
+        } catch (EmptyResultDataAccessException ex) {
+            function = null;
+        }
+        return function;
     }
 
-    public Function loadVariable(Integer userId, String variableName) throws EmptyResultDataAccessException {
-        return jdbcTemplate.queryForObject(
-            "SELECT value FROM RestCalculator.Variables WHERE id = ? AND name = ?",
-            new Object[]{userId, variableName},
-            (rs, rowNb) -> {
-                Function result;
-                try {
-                    result = new Function(rs.getString("value"), null, null, null);
-                } catch (ParsingException e) {
-                    result = null;
-                }
-                return result;
-            }
-        );
+    public Function loadVariable(Integer userId, String variableName) {
+        Function function;
+        try {
+            function = jdbcTemplate.queryForObject(
+                    "SELECT value FROM RestCalculator.Variables WHERE id = ? AND name = ?",
+                    new Object[]{userId, variableName},
+                    (rs, rowNb) -> {
+                        Function result;
+                        try {
+                            result = new Function(rs.getString("value"), null, null, null);
+                        } catch (ParsingException e) {
+                            result = null;
+                        }
+                        return result;
+                    });
+        } catch (EmptyResultDataAccessException ex) {
+            function = null;
+        }
+        return function;
     }
 
-    public List<String> loadFunctions(Integer userId) throws EmptyResultDataAccessException {
-        List<Map<String, Object>> temp = jdbcTemplate.queryForList(
-            "SELECT name FROM RestCalculator.Functions WHERE ID = ?", userId);
+    public List<String> loadFunctions(Integer userId) {
+        List<Map<String, Object>> temp;
+        try {
+            temp = jdbcTemplate.queryForList(
+                    "SELECT name FROM RestCalculator.Functions WHERE ID = ?", userId);
+        } catch (EmptyResultDataAccessException ex) {
+            temp = new ArrayList<>();
+        }
+
         List<String> result = new ArrayList<>();
         for (Map<String, Object> mp : temp) {
             result.add((String) mp.get("name"));
@@ -180,8 +189,13 @@ public class RestCalculatorDao {
     }
 
     public List<String> loadVariables(Integer userId) {
-        List<Map<String, Object>> temp = jdbcTemplate.queryForList(
-            "SELECT name FROM RestCalculator.Variables WHERE ID = ?", userId);
+        List<Map<String, Object>> temp;
+        try {
+            temp = jdbcTemplate.queryForList(
+                    "SELECT name FROM RestCalculator.Variables WHERE ID = ?", userId);
+        } catch (EmptyResultDataAccessException ex) {
+            temp = new ArrayList<>();
+        }
         List<String> result = new ArrayList<>();
         for (Map<String, Object> mp : temp) {
             result.add((String) mp.get("name"));
@@ -211,7 +225,8 @@ public class RestCalculatorDao {
         }
     }
 
-    public void addFunction(Integer userId, String functionName, List<String> functionParams, String functionBody) {
+    public void addFunction(Integer userId, String functionName, List<String> functionParams, String
+            functionBody) {
         try {
             insertFunction.setInt(1, userId);
             insertFunction.setString(2, functionName);

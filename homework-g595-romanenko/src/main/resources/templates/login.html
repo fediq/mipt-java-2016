@@ -1,37 +1,98 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="en"
-      xmlns="http://www.w3.org/1999/xhtml"
->
+<html
+      xmlns:th="http://www.thymeleaf.org" lang="en"
+      xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <meta charset="utf-8"/>
-    <title>Signin Template for Bootstrap</title>
-
+    <meta charset="UTF-8"/>
+    <title>Signin Template for Calculator</title>
     <!-- Bootstrap core CSS -->
     <link href="static_resources/bootstrap-3.3.6-dist/css/bootstrap.min.css" rel="stylesheet"/>
     <!-- Custom styles for this template -->
     <link href="static_resources/signin.css" rel="stylesheet"/>
 
+    <script src="static_resources/jquery-2.2.4.min.js"></script>
+    <script src="static_resources/bootstrap-3.3.6-dist/js/bootstrap.min.js"></script>
 </head>
-
 <body>
 
 <div class="container">
+    <div class="login-area">
+        <div class="bg-image">
+            <div class="login-signup">
+                <div class="container">
+                    <div class="login-header">
+                        <div class="row">
+                            <div class="col-md-6 col-sm-6 col-xs-12">
+                                <div class="login-details">
+                                    <ul class="nav nav-tabs navbar-right">
+                                        <li><a data-toggle="tab" href="#register">Register</a></li>
+                                        <li class="active"><a data-toggle="tab" href="#login">Login</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="col-md-6 col-sm-6 col-xs-12">
+                            </div>
+                        </div>
 
-    <form class="form-signin" th:action="@{/login}" method="post">
-        <h2 class="form-signin-heading">Please sign in</h2>
-        <label for="inputUsername" class="sr-only">Email address</label>
-        <input type="text" id="inputUsername" class="form-control" name="username" placeholder="Email address"/>
-        <label for="inputPassword" class="sr-only">Password</label>
 
-        <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
+                    </div>
 
-        <input type="password" id="inputPassword" class="form-control" name="password" placeholder="Password"/>
+                    <div class="tab-content">
+                        <div id="register" class="tab-pane">
+                            <div class="login-inner">
+                                <div class="title">
+                                    <h1><span>Welcome!</span></h1>
+                                </div>
+                                <div class="login-form">
+                                    <form th:action="@{/register}" method="post">
+                                        <div class="form-details">
+                                            <label class="user">
+                                                <input type="text" name="username" placeholder="Username"
+                                                       id="username"/>
+                                            </label>
+                                            <label class="pass">
+                                                <input type="password" name="password" placeholder="Password"
+                                                       id="password"/>
+                                            </label>
+                                            <label class="pass">
+                                                <input type="password" name="confirmPassword" placeholder="Confirm Password"
+                                                       id="confirmPassword"/>
+                                            </label>
+                                        </div>
+                                        <button type="submit" class="form-btn" onsubmit="">Sign up</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
 
-        <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
-    </form>
-
+                        <div id="login" class="tab-pane fade in active">
+                            <div class="login-inner">
+                                <div class="title">
+                                    <h1>Welcome <span>back!</span></h1>
+                                </div>
+                                <div class="login-form">
+                                    <form th:action="@{/login}" method="post">
+                                        <div class="form-details">
+                                            <label class="user">
+                                                <input type="text" name="username" placeholder="Username"
+                                                       id="username"/>
+                                            </label>
+                                            <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
+                                            <label class="pass">
+                                                <input type="password" name="password" placeholder="Password"
+                                                       id="password"/>
+                                            </label>
+                                        </div>
+                                        <button type="submit" class="form-btn" onsubmit="">Sign in</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
-
-
 </body>
 </html>

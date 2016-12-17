@@ -33,7 +33,7 @@ public class SecurityServiceConfiguration extends WebSecurityConfigurerAdapter {
         LOG.info("Configuring security");
         http
             .authorizeRequests()
-            .antMatchers("/static_resources/**").permitAll()
+            .antMatchers("/static_resources/**", "/register", "/login").permitAll()
             .anyRequest().authenticated()
             .and()
             .csrf().disable()
