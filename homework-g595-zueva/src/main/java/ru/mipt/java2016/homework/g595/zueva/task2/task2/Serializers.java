@@ -1,10 +1,12 @@
-package ru.mipt.java2016.homework.g595.zueva.task2;
+package ru.mipt.java2016.homework.g595.zueva.task2.task2;
 
 /**
  * Created by nestyme on 30.10.2016.
  */
 
-import java.io.*;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 
 
 public class Serializers {

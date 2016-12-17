@@ -1,4 +1,4 @@
-package ru.mipt.java2016.homework.g595.zueva.task2;
+package ru.mipt.java2016.homework.g595.zueva.task2.task2;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
