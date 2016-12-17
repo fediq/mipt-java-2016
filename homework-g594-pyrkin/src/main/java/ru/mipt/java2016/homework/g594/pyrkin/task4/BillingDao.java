@@ -12,6 +12,7 @@ import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 
 @Repository
 public class BillingDao {
@@ -62,6 +63,63 @@ public class BillingDao {
         } catch (Exception e) {
             return false;
         }
+
+        jdbcTemplate.execute("CREATE SCHEMA IF NOT EXISTS " + username);
+        jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS " + username + ".variables" +
+                "(name VARCHAR PRIMARY KEY, value DOUBLE, expression VARCHAR)");
         return true;
+    }
+
+    public BillingVariable loadVariable(String username, String varname) {
+        return jdbcTemplate.queryForObject(
+                "SELECT name, value, expression FROM " + username + ".variables WHERE name='" + varname + "'",
+                new RowMapper<BillingVariable>() {
+                    @Override
+                    public BillingVariable mapRow(ResultSet rs, int rowNum) throws SQLException {
+                        return new BillingVariable(
+                                rs.getString("name"),
+                                rs.getDouble("value"),
+                                rs.getString("expression")
+                        );
+                    }
+                }
+        );
+    }
+
+    public boolean addVariable(String username, BillingVariable variable) {
+        try {
+            jdbcTemplate.update("INSERT INTO " + username + ".variables VALUES ('" +
+                    variable.getName() + "','" + variable.getValue() + "','" +
+                    variable.getExpression() + "')");
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
+    }
+
+    public boolean removeVariable(String username, String variableName) {
+        try {
+            jdbcTemplate.update("DELETE FROM " + username + ".variables WHERE " +
+                    "name='" + variableName + "'");
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
+    }
+
+    public List<BillingVariable> loadAllVariables(String username) {
+        return jdbcTemplate.query(
+                "SELECT name, value, expression FROM " + username + ".variables",
+                new RowMapper<BillingVariable>() {
+                    @Override
+                    public BillingVariable mapRow(ResultSet rs, int rowNum) throws SQLException {
+                        return new BillingVariable(
+                                rs.getString("name"),
+                                rs.getDouble("value"),
+                                rs.getString("expression")
+                        );
+                    }
+                }
+        );
     }
 }

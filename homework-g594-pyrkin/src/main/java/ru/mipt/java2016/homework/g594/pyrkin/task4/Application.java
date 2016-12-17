@@ -12,10 +12,10 @@ import ru.mipt.java2016.homework.base.task1.Calculator;
 
 /**
  * curl http://localhost:9001/eval \
- *     -X POST \
- *     -H "Content-Type: text/plain" \
- *     -H "Authorization: Basic $(echo -n "username:password" | base64)" \
- *     --data-raw "44*3+2"
+ * -X POST \
+ * -H "Content-Type: text/plain" \
+ * -H "Authorization: Basic $(echo -n "username:password" | base64)" \
+ * --data-raw "44*3+2"
  */
 @EnableAutoConfiguration
 @Configuration
