@@ -1,0 +1,40 @@
+ПОСЧИТАТЬ ЗНАЧЕНИЕ
+curl http://localhost:9001/eval \
+             -X POST \
+             -H "Content-Type: text/plain" \
+             -H "Authorization: Basic $(echo -n "username:password" | base64)" \
+             --data-raw "sqrt(10)"
+
+        ДОБАВИТЬ ПОЛЬЗОВАТЕЛЯ
+        curl http://localhost:9001/newuser/dog \
+        -X PUT \
+        -H "Content-Type: text/plain" \
+        --data-raw "dog"
+
+
+        ПОСМОТРЕТЬ ВСЕ ПЕРЕМННЫЕ ПОЛЬЗОВАТЕЛЯ
+        curl http://localhost:9001/var  \
+         -X GET  \
+         -H "Content-Type: text/plain" \
+        -H "Authorization: Basic $(echo -n "dog:dog" | base64)"
+
+    ДОБАВИТЬ ПЕРЕМЕННУЮ
+        curl http://localhost:9001/var/ttt \
+        -X PUT \
+        -H "Content-Type: text/plain" \
+        -H "Authorization: Basic $(echo -n "dog:dog" | base64)" \
+        --data-raw "44"
+
+
+        ПОСМОТРЕТЬ НА ОДНУ ПЕРЕМЕННУЮ
+        curl http://localhost:9001/var/ttt  \
+        -X GET  \
+        -H "Content-Type: text/plain" \
+        -H "Authorization: Basic $(echo -n "dog:dog" | base64)"
+
+
+        УДАЛИТЬ ПЕРЕМЕННУЮ
+        curl http://localhost:9001/var/ttt  \
+        -X DELETE  \
+        -H "Content-Type: text/plain" \
+        -H "Authorization: Basic $(echo -n "dog:dog" | base64)"
