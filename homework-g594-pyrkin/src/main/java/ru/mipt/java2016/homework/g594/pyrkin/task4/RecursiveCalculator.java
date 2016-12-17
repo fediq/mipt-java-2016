@@ -12,7 +12,7 @@ import java.util.Vector;
 public class RecursiveCalculator implements Calculator {
     private char[] expression;
 
-    private double calculateSegment(int left, int right) {
+    private double calculateSegment(int left, int right) throws ParsingException{
         while (expression[left] == '(' && expression[right] == ')') {
             ++left;
             --right;
@@ -21,6 +21,11 @@ public class RecursiveCalculator implements Calculator {
         int id = findExternalSymbol('+', left, right);
         if (id != right) {
             return calculateSegment(left, id) + calculateSegment(id + 1, right);
+        }
+
+        id = findExternalSymbol('-', left, right);
+        if (id != right) {
+            return calculateSegment(left, id) - calculateSegment(id + 1, right);
         }
 
         id = findExternalSymbol('*', left, right);
@@ -81,7 +86,7 @@ public class RecursiveCalculator implements Calculator {
         return new String(expression, left, length);
     }
 
-    private Vector<Double> calculateArguments(int left, int right) {
+    private Vector<Double> calculateArguments(int left, int right) throws ParsingException{
         Vector<Double> result = new Vector<>();
         int balance = 0;
         int last = -1;
@@ -104,7 +109,8 @@ public class RecursiveCalculator implements Calculator {
         return result;
     }
 
-    private double calculateFunction(String functionName, Vector<Double> arguments) {
+    private double calculateFunction(String functionName, Vector<Double> arguments)
+            throws ParsingException{
         Double[] args = arguments.toArray(new Double[arguments.size()]);
         switch (functionName) {
             case "sin":
@@ -134,13 +140,14 @@ public class RecursiveCalculator implements Calculator {
             case "min":
                 return Math.min(args[0], args[1]);
             default:
-                return 0;
+                throw new ParsingException("Invalid expression");
         }
     }
 
     @Override
     public double calculate(String expression) throws ParsingException {
-        this.expression = expression.replaceAll("[\\s]", "").toCharArray();
+        expression = expression.replaceAll("[\\s]", "");
+        this.expression = expression.toCharArray();
         return calculateSegment(0, expression.length());
     }
 }
