@@ -1,33 +1,30 @@
 package ru.mipt.java2016.homework.g595.proskurin.task4;
 
-import com.sun.javafx.scene.layout.region.Margins;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 import ru.mipt.java2016.homework.g595.proskurin.task1.MyCalculator;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
-
 /**
  * Created by Александр on 16.12.2016.
  */
 
 public class NewCalculator {
 
-    private class function {
-        public String name;
-        public ArrayList<String> params = new ArrayList<String>();
-        public String expression;
+    private class Function {
+        private String name;
+        private ArrayList<String> params = new ArrayList<String>();
+        private String expression;
 
-        function(String name, ArrayList<String> params, String expression) {
+        Function(String name, ArrayList<String> params, String expression) {
             this.name = name;
             this.params = params;
             this.expression = expression;
         }
     }
 
-    public HashMap<String, function> functions = new HashMap<String, function>();
-    public HashMap<String, String> variables = new HashMap<String, String>();
+    private HashMap<String, Function> functions = new HashMap<String, Function>();
+    private HashMap<String, String> variables = new HashMap<String, String>();
 
     NewCalculator() {
 
@@ -139,12 +136,13 @@ public class NewCalculator {
         }
     }
 
-    public double solve(String expression) throws ParsingException{
+    public double solve(String expression) throws ParsingException {
         double ans = 0;
         for (int i = 0; i < expression.length(); i++) {
             if (expression.charAt(i) >= 'a' && expression.charAt(i) <= 'z' || expression.charAt(i) == '_') {
                 int pos = i;
-                while (pos < expression.length() && (expression.charAt(pos) >= 'a' && expression.charAt(pos) <= 'z' || expression.charAt(pos) == '_')) {
+                while (pos < expression.length() && (expression.charAt(pos) >= 'a' && expression.charAt(pos) <= 'z'
+                        || expression.charAt(pos) == '_')) {
                     pos++;
                 }
                 if (pos == expression.length() || expression.charAt(pos) != '(') {
@@ -156,8 +154,7 @@ public class NewCalculator {
                     tmp = tmp.concat(expression.substring(pos, expression.length()));
                     expression = tmp;
                     i = -1;
-                }
-                else {
+                } else {
                     if (!checkStandart(expression.substring(i, pos)) && !functions.containsKey(expression.substring(i, pos))) {
                         throw new ParsingException("There is no such function");
                     }
@@ -196,12 +193,13 @@ public class NewCalculator {
                         if (params.size() != functions.get(tname).params.size()) {
                             throw new ParsingException("Incorrect expression!");
                         }
-                        String cur_expr = functions.get(tname).expression;
+                        String curExpr = functions.get(tname).expression;
                         for (int j = 0; j < functions.get(tname).params.size(); j++) {
-                            cur_expr = cur_expr.replaceAll(functions.get(tname).params.get(j), String.valueOf(params.get(j)));
+                            curExpr = curExpr.replaceAll(functions.get(tname).params.get(j),
+                                    String.valueOf(params.get(j)));
                         }
                         String tmp = expression.substring(0, i);
-                        tmp = tmp.concat(String.valueOf(solve(cur_expr)));
+                        tmp = tmp.concat(String.valueOf(solve(curExpr)));
                         tmp = tmp.concat(expression.substring(pos, expression.length()));
                         expression = tmp;
                         i = -1;
@@ -219,7 +217,9 @@ public class NewCalculator {
     }
 
     public void addFunc(String s) throws ParsingException {
-        String tname = "#", cname = "", name = "";
+        String tname = "#";
+        String cname = "";
+        String name = "";
         int pos = 0;
         ArrayList<String> tlist = new ArrayList<String>();
         for (int i = 0; i < s.length(); i++) {
@@ -241,7 +241,7 @@ public class NewCalculator {
                 }
             }
         }
-        function tmp = new function(name, tlist, s.substring(pos, s.length()));
+        Function tmp = new Function(name, tlist, s.substring(pos, s.length()));
         if (checkStandart(tname)) {
             throw new ParsingException("Incorrect expression!");
         }
@@ -313,7 +313,7 @@ public class NewCalculator {
 
     public ArrayList<String> getFuncs() {
         ArrayList<String> tmp = new ArrayList<String>();
-        for (HashMap.Entry<String, function> item : functions.entrySet()) {
+        for (HashMap.Entry<String, Function> item : functions.entrySet()) {
             tmp.add(item.getKey());
         }
         return tmp;

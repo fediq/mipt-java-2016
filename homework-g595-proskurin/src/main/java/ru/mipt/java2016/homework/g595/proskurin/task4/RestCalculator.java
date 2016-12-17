@@ -15,19 +15,19 @@ public class RestCalculator {
 
     @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.GET)
     public @ResponseBody
-    String getValueOfVariable(@PathVariable("variableName") String name) {
+    String getValueOfVariable(@PathVariable String variableName) {
         try {
-            return String.valueOf(solver.solve(name));
+            return String.valueOf(solver.solve(variableName));
         } catch(ParsingException err) {
             return "Incorrect expression";
         }
     }
 
     @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.PUT)
-    public String putValueOfVariable(@PathVariable("variableName") String name,
+    public String putValueOfVariable(@PathVariable String variableName,
                                @RequestBody String val) {
         String var = "";
-        var = var.concat(name);
+        var = var.concat(variableName);
         var = var.concat(" = ");
         var = var.concat(val);
         try {
@@ -42,11 +42,10 @@ public class RestCalculator {
     }
 
     @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.DELETE)
-    public String deleteVariable(@PathVariable("variableName") String name) {
-        if (solver.delVar(name)) {
+    public String deleteVariable(@PathVariable String variableName) {
+        if (solver.delVar(variableName)) {
             return "Variable was deleted";
-        }
-        else {
+        } else {
             return "Variable couldn't be deleted";
         }
     }
@@ -58,15 +57,15 @@ public class RestCalculator {
     }
 
     @RequestMapping(path = "/function/{functionName}", method = RequestMethod.GET)
-    public @ResponseBody String getFunctionDescription(@PathVariable("functionName") String name) {
-        return solver.getFunc(name);
+    public @ResponseBody String getFunctionDescription(@PathVariable String functionName) {
+        return solver.getFunc(functionName);
     }
 
     @RequestMapping(path = "/function/{functionName}", method = RequestMethod.PUT)
-    public String putFunction(@PathVariable("functionName") String name,
+    public String putFunction(@PathVariable String functionName,
                                @RequestParam(value = "args") List<String> params,
                                @RequestBody String expression) {
-        String tmp = name;
+        String tmp = functionName;
         tmp = tmp.concat("(");
         for (int i = 0; i < params.size(); i++) {
             tmp = tmp.concat(params.get(i));
@@ -85,11 +84,10 @@ public class RestCalculator {
     }
 
     @RequestMapping(path = "/function/{functionName}", method = RequestMethod.DELETE)
-    public String deleteFunction(@PathVariable("functionName") String name) {
-         if (solver.delFunc(name)) {
+    public String deleteFunction(@PathVariable String functionName) {
+         if (solver.delFunc(functionName)) {
              return "Function was deleted";
-         }
-         else {
+         } else {
              return "Function couldn't be deleted";
          }
     }
