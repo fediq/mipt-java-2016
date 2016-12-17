@@ -22,7 +22,7 @@ public class CalculatorController implements IFunctionalCalculator {
     private static final Logger LOG = LoggerFactory.getLogger(CalculatorController.class);
 
     @Autowired
-    CalculatorDao calculatorDao;
+    private CalculatorDao calculatorDao;
     @Autowired
     static private Map<String, IFunctionalCalculator> userCalculators = new HashMap<>();
 
@@ -76,10 +76,10 @@ public class CalculatorController implements IFunctionalCalculator {
         Double result = userCalculators.get(requesterUsername).getVariable(variableAlias);
         if (result == null) {
             LOG.debug("No such variable: " + variableAlias);
-            return "No such variable: " + variableAlias;
+            return "No such variable: " + variableAlias + '\n';
         } else {
             LOG.debug("Variable: " + variableAlias + " = " + result);
-            return "Variable: " + variableAlias + " = " + result;
+            return "Variable: " + variableAlias + " = " + result + '\n';
         }
     }
 
@@ -100,18 +100,18 @@ public class CalculatorController implements IFunctionalCalculator {
 
         Double variable = 0.0;
         try {
-            variable = Double.parseDouble(value);
-        } catch (NullPointerException | NumberFormatException e) {
-            LOG.debug("Failed to decode into double the value given: " + value);
-            return "Failed to decode into double the value given: " + value;
+            variable = userCalculators.get(requesterUsername).calculate(value);
+        } catch (ParsingException e) {
+            LOG.debug("Failed to decode into double the value given: " + value + '\n' + e.getMessage());
+            return "Failed to decode into double the value given: " + value + '\n' + e.getMessage();
         }
 
         if (userCalculators.get(requesterUsername).putVariable(variableAlias, variable)) {
-            LOG.debug("Variable put successfully: " + variableAlias);
-            return "Variable put successfully: " + variableAlias;
+            LOG.debug("Variable put successfully: " + variableAlias + " = " + variable);
+            return "Variable put successfully: " + variableAlias + " = " + variable + '\n';
         } else {
             LOG.debug("Failed to put successfully: " + variableAlias);
-            return "Failed to put successfully: " + variableAlias;
+            return "Failed to put successfully: " + variableAlias + '\n';
         }
     }
 
@@ -130,10 +130,10 @@ public class CalculatorController implements IFunctionalCalculator {
         LOG.debug("Attempting to delete variable: " + variableAlias);
         if (userCalculators.get(requesterUsername).deleteVariable(variableAlias)) {
             LOG.debug("Variable deleted successfully: " + variableAlias);
-            return "Variable deleted successfully: " + variableAlias;
+            return "Variable deleted successfully: " + variableAlias + '\n';
         } else {
             LOG.debug("Failed to delete successfully: " + variableAlias);
-            return "Failed to delete successfully: " + variableAlias;
+            return "Failed to delete successfully: " + variableAlias + '\n';
         }
     }
 
@@ -174,10 +174,10 @@ public class CalculatorController implements IFunctionalCalculator {
         CalculatorFunctionObject function = userCalculators.get(requesterUsername).getFunction(functionAlias);
         if (function == null) {
             LOG.debug("No such function: " + functionAlias);
-            return "No such function: " + functionAlias;
+            return "No such function: " + functionAlias + '\n';
         } else {
-            LOG.debug("Function: " + functionAlias + "\n" + function.toString());
-            return "Function: " + functionAlias + "\n" + function.toString();
+            LOG.debug("Function: " + functionAlias + '\n' + function.toString());
+            return "Function: " + functionAlias + '\n' + function.toString() + '\n';
         }
     }
 
@@ -200,10 +200,10 @@ public class CalculatorController implements IFunctionalCalculator {
         if (userCalculators.get(requesterUsername).putFunction(functionAlias, expression, arguments)) {
             LOG.debug("Function put successfully: " + functionAlias);
             return "Function put successfully: " + functionAlias + '\n' +
-                    userCalculators.get(requesterUsername).getFunction(functionAlias).toString();
+                    userCalculators.get(requesterUsername).getFunction(functionAlias).toString() + '\n';
         } else {
             LOG.debug("Failed to put successfully: " + functionAlias);
-            return "Failed to put successfully: " + functionAlias;
+            return "Failed to put successfully: " + functionAlias + '\n';
         }
     }
 
@@ -222,10 +222,10 @@ public class CalculatorController implements IFunctionalCalculator {
         LOG.debug("Attempting to delete function: " + functionAlias);
         if (userCalculators.get(requesterUsername).deleteFunction(functionAlias)) {
             LOG.debug("Function deleted successfully: " + functionAlias);
-            return "Function deleted successfully: " + functionAlias;
+            return "Function deleted successfully: " + functionAlias + '\n';
         } else {
             LOG.debug("Failed to delete successfully: " + functionAlias);
-            return "Failed to delete successfully: " + functionAlias;
+            return "Failed to delete successfully: " + functionAlias + '\n';
         }
     }
 
@@ -284,14 +284,14 @@ public class CalculatorController implements IFunctionalCalculator {
 
         if (!requesterUsername.equals(requesterUsername)) {
             LOG.trace("User " + requesterUsername + " is not an admin.");
-            return "You are not an admin. Cannot add users.";
+            return "You are not an admin. Cannot add users." + '\n';
         } else {
             LOG.debug("Attempting to userAdd: " + "[" + username + "," + password + "]");
             if (calculatorDao.addUserDao(username, password, true)) {
                 userCalculators.put(username, new RESTCalculator());
-                return "User " + username + " successfully created.";
+                return "User " + username + " successfully created." + '\n';
             } else {
-                return "User " + username + " already exists.";
+                return "User " + username + " already exists." + '\n';
             }
         }
     }
