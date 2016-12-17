@@ -4,6 +4,9 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 
 import java.io.IOException;
 import java.nio.channels.FileLock;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Iterator;
 import javafx.util.Pair;
 
@@ -73,6 +76,7 @@ public class MapBackedStorage<K, V> implements KeyValueStorage<K, V> {
             return;
         }
         try {
+            temp = new RandomAccessFile(realPath + File.separator + "temp.txt", "rw");
             maxSize = myMap.size();
             temp.seek(0);
             int len = myMap.size();
@@ -83,14 +87,14 @@ public class MapBackedStorage<K, V> implements KeyValueStorage<K, V> {
                 valueSerializer.output(temp, value);
             }
             myMap.clear();
-            temp.seek(0);
-            base.seek(0);
-            for (int i = 0; i < len; i++) {
-                K key = keySerializer.input(temp);
-                V value = valueSerializer.input(temp);
-                myMap.put(key, (int) base.getFilePointer());
-                valueSerializer.output(base, value);
-            }
+            temp.close();
+            base.close();
+
+            File tempFile = new File(theirPath + File.separator + "temp.txt");
+            File baseFile = new File(realPath);
+            baseFile.delete();
+            tempFile.renameTo(new File("database.txt"));
+            base = new RandomAccessFile(realPath, "rw");
         } catch (IOException err) {
             System.out.println("Some error occured!");
         }
@@ -112,7 +116,6 @@ public class MapBackedStorage<K, V> implements KeyValueStorage<K, V> {
         realPath = path + File.separator + "database.txt";
         base = new RandomAccessFile(realPath, "rw");
         inout = new RandomAccessFile(path + File.separator + "info.txt", "rw");
-        temp = new RandomAccessFile(path + File.separator + "temp.txt", "rw");
         try {
             if (inout.length() == 0) {
                 return;
@@ -156,7 +159,9 @@ public class MapBackedStorage<K, V> implements KeyValueStorage<K, V> {
     public synchronized void close() {
         update();
         rebuild();
-        isClosed();
+        if (closed == true) {
+            return;
+        }
         try {
             inout.seek(0);
             IntegerSerializer serInt = new IntegerSerializer();
@@ -174,7 +179,6 @@ public class MapBackedStorage<K, V> implements KeyValueStorage<K, V> {
             myMap.clear();
             inout.close();
             base.close();
-            temp.close();
             closed = true;
             lock.release();
             lock.close();
