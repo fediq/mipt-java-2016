@@ -14,6 +14,7 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
     private static String databasePath;
     private RandomAccessFile file;
     private File lockfile;
+    private boolean isOpened;
     private ArrayList<File> filesTable;
     private HashSet<K> setKeys;
     private HashMap<K, V> cache;
@@ -42,11 +43,10 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
     }
 
     private synchronized void touchDB() throws IllegalStateException {
-        if (!lockfile.exists()) {
+        if (!isOpened) {
             throw new IllegalStateException("Working with closed DB");
         }
     }
-
 
     KeyValueStorageImplementation(String path, FileWorker<K> kFileWorker, FileWorker<V> vFileWorker)
             throws IOException {
@@ -86,6 +86,7 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
                 filesTable.add(currentFile);
             }
         }
+        isOpened = true;
     }
 
     private synchronized void deleteHoles() throws IOException {
@@ -293,7 +294,7 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
 
     @Override
     public synchronized void close() throws IOException {
-        if (!lockfile.exists()) {
+        if (!isOpened) {
             throw new IOException("Working with closed DB");
         }
         if (deletedMap.size() > 0) {
@@ -335,5 +336,6 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
         }
         file.close();
         Files.delete(lockfile.toPath());
+        isOpened = false;
     }
 }
