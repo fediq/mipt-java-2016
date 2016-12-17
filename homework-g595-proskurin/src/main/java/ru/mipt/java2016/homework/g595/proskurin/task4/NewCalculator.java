@@ -142,7 +142,8 @@ public class NewCalculator {
             if (expression.charAt(i) >= 'a' && expression.charAt(i) <= 'z' || expression.charAt(i) == '_') {
                 int pos = i;
                 while (pos < expression.length() && (expression.charAt(pos) >= 'a' && expression.charAt(pos) <= 'z'
-                        || expression.charAt(pos) == '_')) {
+                        || expression.charAt(pos) == '_' || expression.charAt(pos) >= '1' && expression.charAt(pos) <= '9'
+                            || expression.charAt(pos) >= 'A' && expression.charAt(pos) <= 'Z')) {
                     pos++;
                 }
                 if (pos == expression.length() || expression.charAt(pos) != '(') {
