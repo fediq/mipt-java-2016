@@ -48,7 +48,8 @@ public interface IFunctionalCalculator {
     /**
      *  Make the alias of functionAlias reflect to CalculatorFunction(expression, arguments)
      */
-    boolean putFunction(String functionAlias, String expression, List<String> arguments) throws ParsingException;
+    boolean putFunction(String functionAlias, String expression, List<String> arguments)
+            throws ParsingException;
 
     /**
      *  Delete the alias of functionAlias and its held function
