@@ -31,7 +31,8 @@ public class MyBackedStorage<K, V> implements KeyValueStorage<K, V> {
     private String realPath;
     private Integer maxSize;
     private RandomAccessFile lockFile;
-    private String nameBase, nameBuf;
+    private String nameBase;
+    private String nameBuf;
 
     public MyBackedStorage(String path, Serializer<K> serializerK, Serializer<V> serializerV) throws IOException {
         realPath = path;
@@ -188,7 +189,7 @@ public class MyBackedStorage<K, V> implements KeyValueStorage<K, V> {
             File f = new File(realPath + File.separator + nameBase, "rw");
             File g = new File(realPath + File.separator + nameBuf, "rw");
             f.renameTo(g);
-        } catch(IOException err) {
+        } catch (IOException err) {
             System.out.println("Buffer is not correct");
         }
     }
