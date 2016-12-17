@@ -1,5 +1,6 @@
 package ru.mipt.java2016.homework.g594.borodin.task3;
 
+import java.awt.*;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -7,11 +8,15 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Random;
+import java.util.zip.Adler32;
+import java.util.zip.CheckedInputStream;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.g594.borodin.task3.SerializationStrategies.SerializationStrategy;
@@ -30,9 +35,11 @@ public class KVStorage<K, V> implements KeyValueStorage<K, V> {
     private HashMap<K, KeyPosition> keys;
     private HashMap<K, V> toWriteStorage;
     private ArrayList<RandomAccessFile> files;
+    private String lockFileName;
     private String keyFileName;
     private String directory;
     private File keyFile;
+    private File lockFile;
     private SerializationStrategy keyStrategy;
     private SerializationStrategy valueStrategy;
 
@@ -47,7 +54,19 @@ public class KVStorage<K, V> implements KeyValueStorage<K, V> {
         toWriteStorage = new HashMap<>();
         files = new ArrayList<>();
         keyFileName = directory + File.separator + "keysFile.txt";
+        lockFileName = directory + File.separator + "LockFile.txt";
         keyFile = new File(keyFileName);
+        lockFile = new File(lockFileName);
+
+        if (lockFile.exists()) {
+            throw new RuntimeException("Somebody is working with data\n");
+        } else {
+            try {
+                lockFile.createNewFile();
+            } catch (IOException e) {
+                throw new RuntimeException("Can't create LockFile\n");
+            }
+        }
 
         if (keyFile.exists()) {
             try {
@@ -56,13 +75,19 @@ public class KVStorage<K, V> implements KeyValueStorage<K, V> {
                 if (!firstFileString.equals(VALIDATION)) {
                     throw new RuntimeException("File storage is invalid");
                 }
+                long hashInFile = dataInputStream.readLong();
+                long hashVerifying = 0;
                 int filesCount = dataInputStream.readInt();
                 for (int i = 0; i < filesCount; ++i) {
                     File newFile = new File(directory + File.separator + Integer.toString(i) + ".txt");
                     if (!newFile.exists()) {
                         throw new RuntimeException("Can't find file\n");
                     }
+                    hashVerifying += getFileHash(newFile);
                     files.add(new RandomAccessFile(newFile, "rw"));
+                }
+                if (hashInFile != hashVerifying) {
+                    throw new RuntimeException("Hashes are different\n");
                 }
                 int keysCount = dataInputStream.readInt();
                 for (int i = 0; i < keysCount; ++i) {
@@ -204,6 +229,7 @@ public class KVStorage<K, V> implements KeyValueStorage<K, V> {
         for (int i = 0; i < files.size(); ++i) {
             files.get(i).close();
         }
+        lockFile.delete();
         isOpen = false;
     }
 
@@ -217,6 +243,12 @@ public class KVStorage<K, V> implements KeyValueStorage<K, V> {
         try {
             DataOutputStream dataOutputStream = new DataOutputStream(new FileOutputStream(keyFileName));
             dataOutputStream.writeUTF(VALIDATION);
+            long hash = 0;
+            for (int i = 0;i < files.size();++i) {
+                File file = new File(directory + File.separator + Integer.toString(i) + ".txt");
+                hash += getFileHash(file);
+            }
+            dataOutputStream.writeLong(hash);
             dataOutputStream.writeInt(files.size());
             dataOutputStream.writeInt(this.size());
             for (Map.Entry<K, KeyPosition> entry : keys.entrySet()) {
@@ -252,5 +284,16 @@ public class KVStorage<K, V> implements KeyValueStorage<K, V> {
         } catch (IOException e) {
             throw new RuntimeException("Can't create new file or get access to it\n");
         }
+    }
+    private long getFileHash (File file) {
+        Adler32 adler32 = new Adler32();
+        try {
+            DataInputStream dataInputStream = new DataInputStream(new FileInputStream(file));
+            CheckedInputStream checkedInputStream = new CheckedInputStream(dataInputStream, adler32);
+            adler32 = (Adler32) checkedInputStream.getChecksum();
+        } catch (IOException e) {
+            throw new RuntimeException("File is not found\n");
+        }
+        return adler32.getValue();
     }
 }
