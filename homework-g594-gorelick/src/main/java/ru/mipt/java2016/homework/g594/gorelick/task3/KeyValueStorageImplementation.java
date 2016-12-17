@@ -2,7 +2,6 @@ package ru.mipt.java2016.homework.g594.gorelick.task3;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 
-import java.io.UncheckedIOException;
 import java.util.*;
 import java.io.File;
 import java.nio.file.Files;
