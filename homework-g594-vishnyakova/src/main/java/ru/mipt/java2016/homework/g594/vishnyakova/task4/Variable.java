@@ -15,31 +15,26 @@ public class Variable {
     private Double value;
     private String expression;
 
-    public Variable(String user, String nam, Double val, String expr)
-    {
+    public Variable(String user, String nam, Double val, String expr) {
         username = user;
         name = nam;
         value = val;
         expression = expr;
     }
 
-    public String getUsername()
-    {
+    public String getUsername() {
         return username;
     }
 
-    public String getName()
-    {
+    public String getName() {
         return name;
     }
 
-    public Double getValue()
-    {
+    public Double getValue() {
         return value;
     }
 
-    public String getExpression()
-    {
+    public String getExpression() {
         return expression;
     }
 }

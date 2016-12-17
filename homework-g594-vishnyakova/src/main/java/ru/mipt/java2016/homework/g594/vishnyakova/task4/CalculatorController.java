@@ -46,12 +46,17 @@ public class CalculatorController {
     public String deleteVar(Authentication authentication, @PathVariable String varName) throws ParsingException {
         String ourName = authentication.getName();
         boolean result = billingDao.deleteVariable(ourName, varName);
-        if (result )return (varName + " deleted\n");
-        else return (varName + " not exists\n");
+        if (result) {
+            return varName + " deleted\n";
+        } else {
+            return (varName + " not exists\n");
+        }
     }
 
-    @RequestMapping(path = "/var/{varName}", method = RequestMethod.PUT, consumes = "text/plain", produces = "text/plain")
-    public String var(Authentication authentication, @PathVariable String varName, @RequestBody String expression) throws ParsingException {
+    @RequestMapping(path = "/var/{varName}", method = RequestMethod.PUT,
+            consumes = "text/plain", produces = "text/plain")
+    public String var(Authentication authentication, @PathVariable String varName, @RequestBody String expression)
+            throws ParsingException {
         String ourName = authentication.getName();
         billingDao.addVariable(ourName, varName,
                 calculator.calculate(billingDao.getVariables(ourName), expression), expression);
@@ -63,8 +68,7 @@ public class CalculatorController {
         String ourName = authentication.getName();
         HashMap<String, String> result = billingDao.getVariables(ourName);
         StringBuilder sb = new StringBuilder();
-        for (Map.Entry<String, String> entry : result.entrySet())
-        {
+        for (Map.Entry<String, String> entry : result.entrySet()) {
             sb.append(entry.getKey());
             sb.append(" = ");
             sb.append(entry.getValue());
@@ -73,12 +77,13 @@ public class CalculatorController {
         return sb.toString();
     }
 
-    @RequestMapping(path = "/newuser/{userName}", method = RequestMethod.PUT, consumes = "text/plain", produces = "text/plain")
-    public String newuser(@PathVariable String userName, @RequestBody String pswd) throws ParsingException {
+    @RequestMapping(path = "/newuser/{userName}", method = RequestMethod.PUT,
+            consumes = "text/plain", produces = "text/plain")
+    public String newuser(@PathVariable String userName, @RequestBody String pswd)
+            throws ParsingException {
         LOG.debug("New user: [" + userName + ' ' + pswd + "]");
         boolean done = billingDao.addUserIfNotExists(userName, pswd, true);
-        if (done)
-        {
+        if (done) {
             LOG.trace("Success");
             return "You have been successfully registered\n";
         }

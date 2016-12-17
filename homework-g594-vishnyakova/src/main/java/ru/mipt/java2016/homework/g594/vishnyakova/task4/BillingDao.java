@@ -40,19 +40,18 @@ public class BillingDao {
         addUserIfNotExists("username", "password", true);
     }
 
-    boolean addUserIfNotExists(String username, String password, boolean enabled)
-    {
+    boolean addUserIfNotExists(String username, String password, boolean enabled) {
         try {
             loadUser(username);
             return false;
         } catch (EmptyResultDataAccessException e) {
-            jdbcTemplate.update("INSERT INTO billing.users VALUES (?, ?, ?)", new Object[]{username, password, enabled});
+            jdbcTemplate.update("INSERT INTO billing.users VALUES (?, ?, ?)",
+                    new Object[]{username, password, enabled});
             return true;
         }
     }
 
-    Variable getVariable(String username, String variable)
-    {
+    Variable getVariable(String username, String variable) {
         return jdbcTemplate.queryForObject(
                 "SELECT username, name, value, expression FROM billing.variables WHERE username = ? AND name = ?",
                 new Object[]{username, variable},
@@ -69,20 +68,20 @@ public class BillingDao {
         );
     }
 
-    HashMap<String, String> getVariables(String username)
-    {
+    HashMap<String, String> getVariables(String username) {
         try {
             return jdbcTemplate.queryForObject(
                     "SELECT username, name, value, expression FROM billing.variables WHERE username = ?",
                     new Object[]{username},
-                    new RowMapper<HashMap<String, String> >() {
+                    new RowMapper<HashMap<String, String>>() {
                         @Override
                         public HashMap<String, String> mapRow(ResultSet rs, int rowNum) throws SQLException {
                             HashMap<String, String> tmp = new HashMap<String, String>();
-                            while (true)
-                            {
+                            while (true) {
                                 tmp.put(rs.getString("name"), Double.toString(rs.getDouble("value")));
-                                if (!rs.next()) break;
+                                if (!rs.next()) {
+                                    break;
+                                }
                             }
                             return tmp;
                         }

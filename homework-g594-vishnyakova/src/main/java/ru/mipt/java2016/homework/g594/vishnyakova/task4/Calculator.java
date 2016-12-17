@@ -20,28 +20,15 @@ public class Calculator {
     public static final Calculator INSTANCE = new Calculator();
 
     private double calc(HashMap<String, String> vars, String expression) throws ParsingException {
-
-        LinkedList<Character> operations = new <Character>LinkedList();
-        LinkedList<Double> numbers = new <Double>LinkedList();
-
+        LinkedList<Character> operations = new LinkedList<Character>();
+        LinkedList<Double> numbers = new LinkedList<Double>();
         expression = expression.replaceAll("\\s", "");
-
-        if (expression == null) {
-            throw new ParsingException("Null expression");
+        if (expression == null || haveSplitedNumbers(expression) || expression.equals("")) {
+            throw new ParsingException("Bad expressions");
         }
-        if (haveSplitedNumbers(expression)) {
-            throw new ParsingException("Only space-symbols between numbers");
-        }
-
-        if (expression.equals("")) {
-            throw new ParsingException("Empty string");
-        }
-
         expression = "(" + expression + ")";
-
         operations.clear();
         numbers.clear();
-
         double lastNumber = 0;
         Boolean readNumber = false;
         Boolean hadDot = false;
@@ -52,7 +39,6 @@ public class Calculator {
         String var = "";
         boolean needJump = false;
         int jump = -1;
-
         for (int i = 0; i < expression.length(); ++i) {
             if (needJump) {
                 if (i < jump) {
@@ -71,31 +57,23 @@ public class Calculator {
                         lastNumber += afterDot * digit(cur, 10);
                         continue;
                     }
-                    lastNumber *= 10;
-                    lastNumber += digit(cur, 10);
+                    lastNumber = lastNumber * 10 + digit(cur, 10);
                     continue;
                 }
                 if (isLetter(cur)) {
                     readVar = true;
                     var += cur;
                     continue;
-
                 }
-                if (hadDot) {
-                    throw new ParsingException("Two or more dots in a number");
-                }
-                if (!readNumber) {
-                    throw new ParsingException("Number starts with a dot");
+                if (hadDot || !readNumber) {
+                    throw new ParsingException("Bad dots in a number");
                 }
                 hadDot = true;
                 afterDot = 1;
                 continue;
             }
-            if (!isAvaliableSymbol(cur)) {
-                throw new ParsingException("Unknown symbol");
-            }
-            if (readNumber) {
-                if (hadDot && !hadSomeAfterDot) {
+            if (readNumber || !isAvaliableSymbol(cur)) {
+                if ((hadDot && !hadSomeAfterDot) || !isAvaliableSymbol(cur)) {
                     throw new ParsingException("Number like '1.'");
                 }
                 numbers.push(lastNumber);
@@ -103,12 +81,9 @@ public class Calculator {
                 hadDot = false;
                 readNumber = false;
             }
-
             if (readVar) {
-                if (vars.containsKey(var) == false) {
-
-                    if (var.equals("rnd"))
-                    {
+                if (!vars.containsKey(var)) {
+                    if (var.equals("rnd")) {
                         int pos = i;
                         if (expression.charAt(pos) != '(' || pos + 1 >= expression.length()
                                 || expression.charAt(pos + 1) != ')') {
@@ -121,75 +96,20 @@ public class Calculator {
                         jump = pos + 2;
                         continue;
                     }
-                    if (oneParam(var))
-                    {
+                    if (oneParam(var)) {
                         StringBuilder sb = new StringBuilder();
-                        int pos = i;
-                        if (expression.charAt(pos) != '(') {
-                            throw new ParsingException("No variable/funct");
-                        }
-                        int newBalance = 1;
-                        pos += 1;
-                        while (newBalance != 0 && pos < expression.length())
-                        {
-                            if (expression.charAt(pos) == '(') {
-                                newBalance += 1;
-                            }
-                            if (expression.charAt(pos) == ')') {
-                                newBalance -= 1;
-                            }
-                            if (newBalance != 0) {
-                                sb.append(expression.charAt(pos));
-                            }
-                            pos += 1;
-                        }
-                        if (pos == expression.length() && newBalance != 0) {
-                            throw new ParsingException("Broken balance");
-                        }
-                        String one = sb.toString();
-                        LOG.debug(one);
-                        numbers.push(countFunc(var, calc(vars, one)));
+                        int pos = parseIfOne(expression, i, sb);
+                        numbers.push(countFunc(var, calc(vars, sb.toString())));
                         var = "";
                         readVar = false;
                         needJump = true;
                         jump = pos;
                         continue;
                     }
-
                     if (twoParam(var)) {
                         StringBuilder sb1 = new StringBuilder();
                         StringBuilder sb2 = new StringBuilder();
-                        boolean secondAlready = false;
-                        int pos = i;
-                        if (expression.charAt(pos) != '(') {
-                            throw new ParsingException("No variable/funct");
-                        }
-                        int newBalance = 1;
-                        pos += 1;
-                        while (newBalance != 0 && pos < expression.length())
-                        {
-                            if (expression.charAt(pos) == '(') {
-                                newBalance += 1;
-                            }
-                            if (expression.charAt(pos) == ')') {
-                                newBalance -= 1;
-                            }
-                            if (newBalance != 0) {
-                                if (newBalance == 1 && expression.charAt(pos) == ',') {
-                                    secondAlready = true;
-                                } else {
-                                    if (secondAlready == false) {
-                                        sb1.append(expression.charAt(pos));
-                                    } else {
-                                        sb2.append(expression.charAt(pos));
-                                    }
-                                }
-                            }
-                            pos += 1;
-                        }
-                        if (pos == expression.length() && newBalance != 0) {
-                            throw new ParsingException("Broken balance");
-                        }
+                        int pos = parseIfTwo(expression, i, sb1, sb2);
                         String one = sb1.toString();
                         String two = sb2.toString();
                         LOG.debug(one + " " + two);
@@ -200,7 +120,6 @@ public class Calculator {
                         jump = pos;
                         continue;
                     }
-
                     throw new ParsingException("Unknown variable or function");
                 }
                 numbers.push(Double.parseDouble(vars.get(var)));
@@ -288,7 +207,7 @@ public class Calculator {
 
     private Boolean oneParam(String s) {
         return (s.equals("sin") || s.equals("cos") || s.equals("tg") || s.equals("sqrt") ||
-                s.equals("abs") || s.equals("sign") );
+                s.equals("abs") || s.equals("sign"));
     }
 
     private Boolean twoParam(String s) {
@@ -300,7 +219,7 @@ public class Calculator {
             return Math.pow(x, y);
         }
         if (f.equals("log")) {
-            return Math.log(x)/ Math.log(y);
+            return Math.log(x) / Math.log(y);
         }
         if (f.equals("max")) {
             return Math.max(x, y);
@@ -333,6 +252,64 @@ public class Calculator {
         return 0.0;
     }
 
+    int parseIfOne(String expression, int i, StringBuilder sb) throws ParsingException {
+        int pos = i;
+        if (expression.charAt(pos) != '(') {
+            throw new ParsingException("No variable/funct");
+        }
+        int newBalance = 1;
+        pos += 1;
+        while (newBalance != 0 && pos < expression.length()) {
+            if (expression.charAt(pos) == '(') {
+                newBalance += 1;
+            }
+            if (expression.charAt(pos) == ')') {
+                newBalance -= 1;
+            }
+            if (newBalance != 0) {
+                sb.append(expression.charAt(pos));
+            }
+            pos += 1;
+        }
+        if (pos == expression.length() && newBalance != 0) {
+            throw new ParsingException("Broken balance");
+        }
+        return pos;
+    }
+
+    int parseIfTwo(String expression, int i, StringBuilder sb1, StringBuilder sb2) throws ParsingException {
+        boolean secondAlready = false;
+        int pos = i;
+        if (expression.charAt(pos) != '(') {
+            throw new ParsingException("No variable/funct");
+        }
+        int newBalance = 1;
+        pos += 1;
+        while (newBalance != 0 && pos < expression.length()) {
+            if (expression.charAt(pos) == '(') {
+                newBalance += 1;
+            }
+            if (expression.charAt(pos) == ')') {
+                newBalance -= 1;
+            }
+            if (newBalance != 0) {
+                if (newBalance == 1 && expression.charAt(pos) == ',') {
+                    secondAlready = true;
+                } else {
+                    if (!secondAlready) {
+                        sb1.append(expression.charAt(pos));
+                    } else {
+                        sb2.append(expression.charAt(pos));
+                    }
+                }
+            }
+            pos += 1;
+        }
+        if (pos == expression.length() && newBalance != 0) {
+            throw new ParsingException("Broken balance");
+        }
+        return pos;
+    }
 
     private Boolean isAvaliableSymbol(char c) {
         return (c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')');
