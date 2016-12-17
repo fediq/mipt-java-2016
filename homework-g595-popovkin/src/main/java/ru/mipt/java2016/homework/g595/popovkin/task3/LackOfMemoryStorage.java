@@ -33,10 +33,9 @@ public class LackOfMemoryStorage<K, V> implements KeyValueStorage<K, V> {
     private ParserInterface<V> valueParser = null;
 
     private long getFileHash(String filename) throws IOException {
-        return 0;
-        /*
-        FileInputStream in = new FileInputStream(storageDirName + File.separator + filename);
         long hash = 0;
+
+        FileInputStream in = new FileInputStream(storageDirName + File.separator + filename);
         byte[] buffer = new byte[8 * 1024];
         int newBytes = in.read(buffer);
         while (newBytes > 0) {
@@ -47,7 +46,6 @@ public class LackOfMemoryStorage<K, V> implements KeyValueStorage<K, V> {
         }
         in.close();
         return hash;
-        */
     }
 
     private boolean testFile(String filename) {
@@ -74,7 +72,6 @@ public class LackOfMemoryStorage<K, V> implements KeyValueStorage<K, V> {
 
     public LackOfMemoryStorage(String directoryname, ParserInterface<K> keyParserTmp,
                                ParserInterface<V> valueParserTmp) throws IOException {
-        //System.out.println("Create");
         storageDirName = directoryname;
         keyParser = keyParserTmp;
         valueParser = valueParserTmp;
@@ -82,14 +79,11 @@ public class LackOfMemoryStorage<K, V> implements KeyValueStorage<K, V> {
         maxOffset = 0;
         File file = new File(storageDirName + File.separator + storageName);
         workingFile = new RandomAccessFile(file, "rw");
-        //System.out.println(workingFile.toString());
         if (!testFile(storageName) || !testFile(mapStorage)) {
-            //System.out.println("empty");
             return;
         }
         try {
             RandomAccessFile in = new RandomAccessFile(storageDirName + File.separator + mapStorage, "r");
-            //System.out.println("???");
             LongParserRandomAccess longParser = new LongParserRandomAccess();
             long size = longParser.deserialize(in);
             for (int i = 0; i < size; ++i) {
@@ -100,7 +94,6 @@ public class LackOfMemoryStorage<K, V> implements KeyValueStorage<K, V> {
             }
             in.close();
         } catch (IOException ex) {
-            //System.out.println("???");
             offsets.clear();
             maxOffset = 0;
         }
@@ -114,40 +107,45 @@ public class LackOfMemoryStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public V read(K key) {
-        checkForCloseness();
-        V ans = cache.get(key);
-        if (ans != null) {
-            return ans;
-        }
-        Pair<Long, Long> tmpOffset = offsets.get(key);
-        if (tmpOffset == null) {
-            return null;
-        }
-        try {
-            intellectSeek(tmpOffset.getKey());
-            return valueParser.deserialize(workingFile);
-        } catch (IOException ex) {
-            return null;
+        synchronized (this) {
+            checkForCloseness();
+            V ans = cache.get(key);
+            if (ans != null) {
+                return ans;
+            }
+            Pair<Long, Long> tmpOffset = offsets.get(key);
+            if (tmpOffset == null) {
+                return null;
+            }
+            try {
+                intellectSeek(tmpOffset.getKey());
+                return valueParser.deserialize(workingFile);
+            } catch (IOException ex) {
+                return null;
+            }
         }
     }
 
     @Override
     public boolean exists(K key) {
-        //System.out.println("exists " + key.toString());
-        checkForCloseness();
-        if (cache.containsKey(key)) {
-            return true;
+        synchronized (this) {
+            checkForCloseness();
+            if (cache.containsKey(key)) {
+                return true;
+            }
+            return offsets.containsKey(key);
         }
-        return offsets.containsKey(key);
     }
 
     @Override
     public void write(K key, V value) {
-        checkForCloseness();
-        cache.put(key, value);
-        offsets.put(key, new Pair<>(0L, 0L));
-        if (cache.size() >= CACHE_SIZE) {
-            writeAllForced();
+        synchronized (this) {
+            checkForCloseness();
+            cache.put(key, value);
+            offsets.put(key, new Pair<>(0L, 0L));
+            if (cache.size() >= CACHE_SIZE) {
+                writeAllForced();
+            }
         }
     }
 
@@ -173,23 +171,27 @@ public class LackOfMemoryStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public void delete(K key) {
-        //System.out.println("del " + key.toString());
-        checkForCloseness();
-        cache.remove(key);
-        offsets.remove(key);
+        synchronized (this) {
+            checkForCloseness();
+            cache.remove(key);
+            offsets.remove(key);
+        }
     }
 
     @Override
     public Iterator<K> readKeys() {
-        //System.out.println("read keys");
-        checkForCloseness();
-        return offsets.keySet().iterator();
+        synchronized (this) {
+            checkForCloseness();
+            return offsets.keySet().iterator();
+        }
     }
 
     @Override
     public int size() {
-        checkForCloseness();
-        return offsets.size();
+        synchronized (this) {
+            checkForCloseness();
+            return offsets.size();
+        }
     }
 
     private void intellectSeek(long offset) {
@@ -206,27 +208,26 @@ public class LackOfMemoryStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     public void close() throws IOException {
-        writeAllForced();
-        RandomAccessFile out = new RandomAccessFile(storageDirName + File.separator + mapStorage, "rw");
-        LongParserRandomAccess longParser = new LongParserRandomAccess();
-        longParser.serialize((long) size(), out);
-        closed = true;
-        //System.out.println("???");
-        try {
-            for (HashMap.Entry<K, Pair<Long, Long>> entry : offsets.entrySet()) {
-                keyParser.serialize(entry.getKey(), out);
-                longParser.serialize(entry.getValue().getKey(), out);
-                longParser.serialize(entry.getValue().getValue(), out);
+        synchronized (this) {
+            checkForCloseness();
+            writeAllForced();
+            RandomAccessFile out = new RandomAccessFile(storageDirName + File.separator + mapStorage, "rw");
+            LongParserRandomAccess longParser = new LongParserRandomAccess();
+            longParser.serialize((long) size(), out);
+            closed = true;
+            try {
+                for (HashMap.Entry<K, Pair<Long, Long>> entry : offsets.entrySet()) {
+                    keyParser.serialize(entry.getKey(), out);
+                    longParser.serialize(entry.getValue().getKey(), out);
+                    longParser.serialize(entry.getValue().getValue(), out);
+                }
+                out.close();
+            } catch (Exception ex) {
+                out.close();
             }
-            out.close();
-        } catch (Exception ex) {
-            out.close();
+            workingFile.close();
+            setHash(storageName);
+            setHash(mapStorage);
         }
-        //System.out.println("!!!");
-        workingFile.close();
-        //System.out.println("!!!");
-        setHash(storageName);
-        setHash(mapStorage);
-        //System.out.println("close");
     }
 }
