@@ -1,5 +1,9 @@
 package ru.mipt.java2016.homework.g596.proskurina.task2;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
@@ -10,7 +14,7 @@ import java.util.concurrent.ExecutionException;
  */
 public class ImplementationKeyValueStorage<K, V> implements ru.mipt.java2016.homework.base.task2.KeyValueStorage<K, V> {
 
-    private final Map<K, Long> keyPositionMap = new HashMap<>();
+    private final Map<K, Long> keyPositionMap;
 
     private final SerialiserInterface<K> keySerialiser;
     private final SerialiserInterface<V> valueSerialiser;
@@ -21,53 +25,49 @@ public class ImplementationKeyValueStorage<K, V> implements ru.mipt.java2016.hom
     private final FileWorker valuesFile;
     private final FileWorker deleteKeyFile;
     private final FileWorker lockFile;
-    private final FileWorker validationFile;
 
-    private final String dirPath;
+    private final String directoryPath;
 
     private Long currentPositionInValuesFile = new Long(0);
     private final Integer lock = 42;
 
     private boolean writing = true;
     private boolean needRebuild = false;
-    private static final String VALIDATION_STRING = "EtotFileZapisanMoeiProgoi";
     private boolean openFlag = true;
 
     private LoadingCache<K, V> cacheValues = CacheBuilder.newBuilder()
-            .maximumSize(10)
+            .maximumSize(42)
             .build(
                     new CacheLoader<K, V>() {
                         @Override
-                        public V load(K k) throws StorageException {
-                            V result = loadKey(keyPositionMap.get(k));
+                        public V load(K k) throws RuntimeException {
+                            V result = readKey(keyPositionMap.get(k));
                             if (result == null) {
-                                throw new StorageException("no such key");
+                                throw new RuntimeException("no such key");
                             }
                             return result;
                         }
                     });
 
-    public ImplementationKeyValueStorage(//String keyName, String valueName,
-                                         SerialiserInterface<K> keySerialiser, SerialiserInterface<V> valueSerialiser,
+    public ImplementationKeyValueStorage(SerialiserInterface<K> keySerialiser, SerialiserInterface<V> valueSerialiser,
                                          String directoryPath) {
 
         this.keySerialiser = keySerialiser;
         this.valueSerialiser = valueSerialiser;
 
-        keyPositionMap = Collections.synchronizedMap(new HashMap<>());
+        keyPositionMap = new HashMap<>();
 
-        if (dirPath == null || dirPath.equals("")) {
-            this.dirPath = "";
+        if (directoryPath == null || directoryPath.equals("")) {
+            this.directoryPath = "";
         } else {
-            this.dirPath = dirPath + File.separator;
+            this.directoryPath = directoryPath + File.separator;
         }
-        keyPositionFile = new FileWorker(this.dirPath + "keyPositionFile.db");
-        valuesFile = new FileWorker(this.dirPath + "valuesFile.db");
-        deleteKeyFile = new FileWorker(this.dirPath + "deleteKeyFile.db");
-        validationFile = new FileWorker(this.dirPath + "validationFile.db");
-        lockFile = new FileWorker(this.dirPath + "lockFile.db");
+        keyPositionFile = new FileWorker(this.directoryPath + "keyPositionFile.db");
+        valuesFile = new FileWorker(this.directoryPath + "valuesFile.db");
+        deleteKeyFile = new FileWorker(this.directoryPath + "deleteKeyFile.db");
+        lockFile = new FileWorker(this.directoryPath + "lockFile.db");
         if (lockFile.exist()) {
-            throw new RuntimeException("there is working storage");
+            throw new RuntimeException("we already have working storage");
         } else {
             lockFile.createFile();
         }
@@ -75,36 +75,28 @@ public class ImplementationKeyValueStorage<K, V> implements ru.mipt.java2016.hom
             keyPositionFile.createFile();
             valuesFile.createFile();
             deleteKeyFile.createFile();
-            validationFile.createFile();
         } else {
             currentPositionInValuesFile =  valuesFile.fileLength();
             initStorage();
         }
-         valuesFile.appendMode();
+        valuesFile.appendMode();
     }
+
     private void initStorage() {
         keyPositionFile.close();
         int cnt = 0;
         String nextKey = keyPositionFile.read();
         while (nextKey != null) {
             Long position = Long.parseLong(keyPositionFile.read());
-            try {
-                keyPositionMap.put(keySerialiser.deserialise(nextKey), position);
-            } catch (StorageException e) {
-                throw new RuntimeException(e);
-            }
+            keyPositionMap.put(keySerialiser.deserialise(nextKey), position);
             nextKey = keyPositionFile.read();
             cnt++;
         }
         nextKey = deleteKeyFile.read();
         while (nextKey != null) {
-            try {
-                K key = keySerialiser.deserialise(nextKey);
-                deleteKeySet.add(key);
-                keyPositionMap.remove(key);
-            } catch (StorageException e) {
-                throw new RuntimeException(e);
-            }
+            K key = keySerialiser.deserialise(nextKey);
+            deleteKeySet.add(key);
+            keyPositionMap.remove(key);
             nextKey = deleteKeyFile.read();
             cnt++;
         }
@@ -115,7 +107,7 @@ public class ImplementationKeyValueStorage<K, V> implements ru.mipt.java2016.hom
         }
     }
 
-    private void checkIfFileIsOpen() {
+    private void checkIfStorageIsOpen() {
         if (!openFlag) {
             throw new RuntimeException("Storage is closed");
         }
@@ -124,9 +116,9 @@ public class ImplementationKeyValueStorage<K, V> implements ru.mipt.java2016.hom
     @Override
     public V read(K key) {
         synchronized (lock) {
-            checkIfFileIsOpen();
-            Long offset = keyPositionMap.get(key);
-            if (offset != null) {
+            checkIfStorageIsOpen();
+            Long position = keyPositionMap.get(key);
+            if (position != null) {
                 try {
                     return cacheValues.get(key);
                 } catch (ExecutionException e) {
@@ -141,7 +133,7 @@ public class ImplementationKeyValueStorage<K, V> implements ru.mipt.java2016.hom
     @Override
     public boolean exists(K key) {
         synchronized (lock) {
-            checkIfFileIsOpen();
+            checkIfStorageIsOpen();
             return keyPositionMap.containsKey(key);
         }
     }
@@ -149,17 +141,17 @@ public class ImplementationKeyValueStorage<K, V> implements ru.mipt.java2016.hom
     @Override
     public void write(K key, V value) {
         synchronized (lock) {
-            checkIfFileIsOpen();
+            checkIfStorageIsOpen();
             deleteKeySet.remove(key);
             keyPositionMap.put(key, currentPositionInValuesFile);
-            flush(key, value);
+            writeToFile(key, value);
         }
     }
 
     @Override
     public void delete(K key) {
         synchronized (lock) {
-            checkIfFileIsOpen();
+            checkIfStorageIsOpen();
             deleteKeySet.add(key);
             keyPositionMap.remove(key);
         }
@@ -168,14 +160,15 @@ public class ImplementationKeyValueStorage<K, V> implements ru.mipt.java2016.hom
     @Override
     public Iterator<K> readKeys() {
         synchronized (lock) {
-            checkIfFileIsOpen();
+            checkIfStorageIsOpen();
             return keyPositionMap.keySet().iterator();
         }
     }
+
     @Override
     public int size() {
         synchronized (lock) {
-            checkIfFileIsOpen();
+            checkIfStorageIsOpen();
             return keyPositionMap.size();
         }
     }
@@ -183,16 +176,15 @@ public class ImplementationKeyValueStorage<K, V> implements ru.mipt.java2016.hom
     @Override
     public void close()  throws IOException {
         synchronized (lock) {
-            if(openFlag) {
+            if (openFlag) {
                 openFlag = false;
                 if (needRebuild) {
                     rebuild();
                 } else {
-                    flushDeletes();
+                    writeToFileDeleteKeySet();
                     deleteKeyFile.close();
                     keyPositionFile.close();
-                     valuesFile.close();
-                    writeChecksum();
+                    valuesFile.close();
                 }
                 lockFile.delete();
             }
@@ -200,54 +192,37 @@ public class ImplementationKeyValueStorage<K, V> implements ru.mipt.java2016.hom
     }
 
     private void rebuild() {
-        FileWorker newVal = new FileWorker(dirPath + "nva.db", false);
-        newVal.createFile();
+        FileWorker newValuesFile = new FileWorker(directoryPath + "newValuesFile.db");
+        newValuesFile.createFile();
         deleteKeyFile.close();
-        deleteKeyFile.delete();
-        deleteKeyFile.createFile();
-        validationFile.close();
-        validationFile.delete();
-        validationFile.createFile();
         keyPositionFile.close();
-        keyPositionFile.delete();
-        keyPositionFile.createFile();
         currentPositionInValuesFile = 0L;
         for (Map.Entry<K, Long> entry: keyPositionMap.entrySet()) {
             keyPositionFile.write(keySerialiser.serialise(entry.getKey()));
             keyPositionFile.write(currentPositionInValuesFile.toString());
-            currentPositionInValuesFile += newVal.write(valueSerialiser.serialise(loadKey(entry.getValue())));
+            currentPositionInValuesFile += newValuesFile.write(valueSerialiser.serialise(readKey(entry.getValue())));
         }
-        keyPositionFile.writeSubmit();
-        newVal.writeSubmit();
-        writeChecksum();
-         valuesFile.close();
-         valuesFile.delete();
-        newVal.rename(dirPath + "valuesFile.db");
-        newVal.close();
+        keyPositionFile.flushSubmit();
+        newValuesFile.flushSubmit();
+        valuesFile.close();
+        valuesFile.delete();
+        newValuesFile.rename(directoryPath + "valuesFile.db");
+        newValuesFile.close();
     }
 
-    private void writeChecksum() {
-        validationFile.close();
-        validationFile.write(Long.toString(keyPositionFile.getCheckSum()));
-        validationFile.writeSubmit();
-    }
-    private V loadKey(long position) {
+    private V readKey(long position) {
         if (writing) {
-             valuesFile.close();
+            valuesFile.close();
             writing = false;
         }
-         valuesFile.goToPosition(position);
-        try {
-            return valueSerialiser.deserialise( valuesFile.read());
-        } catch (StorageException e) {
-            throw new RuntimeException(e);
-        }
+        valuesFile.goToPosition(position);
+        return valueSerialiser.deserialise(valuesFile.read());
     }
 
-    private void flush(K key, V value) {
+    private void writeToFile(K key, V value) {
         if (!writing) {
-             valuesFile.close();
-             valuesFile.appendMode();
+            valuesFile.close();
+            valuesFile.appendMode();
             writing = true;
         }
         keyPositionFile.write(keySerialiser.serialise(key));
@@ -255,14 +230,14 @@ public class ImplementationKeyValueStorage<K, V> implements ru.mipt.java2016.hom
         currentPositionInValuesFile +=  valuesFile.write(valueSerialiser.serialise(value));
     }
 
-    private void flushDeletes() {
+    private void writeToFileDeleteKeySet() {
         if (!deleteKeyFile.exist()) {
             deleteKeyFile.createFile();
         }
         for (K entry : deleteKeySet) {
             deleteKeyFile.write(keySerialiser.serialise(entry));
         }
-        deleteKeyFile.writeSubmit();
+        deleteKeyFile.flushSubmit();
         deleteKeySet.clear();
     }
 }

@@ -6,7 +6,7 @@ import java.nio.ByteBuffer;
 /**
  * Created by Lenovo on 31.10.2016.
  */
-public class FileWorker implements Closeable{
+public class FileWorker implements Closeable {
 
     private final File file;
     private final String fileName;
@@ -55,7 +55,7 @@ public class FileWorker implements Closeable{
         return true;
     }
 
-    public void writeSubmit() {
+    public void flushSubmit() {
         if (writeBuffer != null) {
             try {
                 writeBuffer.flush();
