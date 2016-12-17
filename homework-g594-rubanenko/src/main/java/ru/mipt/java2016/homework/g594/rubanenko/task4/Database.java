@@ -125,10 +125,6 @@ public class Database {
 
     public boolean checkUser(String data) {
         BillingUser user = loadUser(data);
-        if (user.getUsername().length() > 0) {
-            return true;
-        } else {
-            return false;
-        }
+        return user.getUsername().length() > 0;
     }
 }
