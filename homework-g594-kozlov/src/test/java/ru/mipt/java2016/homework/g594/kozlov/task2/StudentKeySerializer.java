@@ -1,6 +1,7 @@
-package ru.mipt.java2016.homework.g594.kozlov.task2.serializer;
+package ru.mipt.java2016.homework.g594.kozlov.task2;
 
-import ru.mipt.java2016.homework.g594.kozlov.task2.StorageException;
+import ru.mipt.java2016.homework.g594.kozlov.task2.serializer.SerializerInterface;
+import ru.mipt.java2016.homework.g594.kozlov.task2.serializer.SerializerUtil;
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
 
 /**
@@ -9,6 +10,9 @@ import ru.mipt.java2016.homework.tests.task2.StudentKey;
 public class StudentKeySerializer implements SerializerInterface<StudentKey> {
     @Override
     public String serialize(StudentKey objToSerialize) {
+        if (objToSerialize == null) {
+            return null;
+        }
         StringBuilder resultString = new StringBuilder("{");
         resultString.append(SerializerUtil.writeMemberInt("groupId", objToSerialize.getGroupId()))
                 .append(",")
@@ -30,6 +34,11 @@ public class StudentKeySerializer implements SerializerInterface<StudentKey> {
         objectGroupId = SerializerUtil.readMemberInt("groupId", tokens[0]);
         objectName = SerializerUtil.readMemberString("name", tokens[1]);
         return new StudentKey(objectGroupId, objectName);
+    }
+
+    @Override
+    public String getClassString() {
+        return "StudentKey";
     }
 
 }

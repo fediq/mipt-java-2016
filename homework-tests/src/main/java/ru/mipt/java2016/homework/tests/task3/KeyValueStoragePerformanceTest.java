@@ -60,7 +60,6 @@ public abstract class KeyValueStoragePerformanceTest extends AbstractSingleFileS
             });
         }
         long endTime = System.currentTimeMillis();
-
         long fullTime = endTime - beginTime;
         int readsCount = iterations * size;
         int writesCount = iterations * size;
