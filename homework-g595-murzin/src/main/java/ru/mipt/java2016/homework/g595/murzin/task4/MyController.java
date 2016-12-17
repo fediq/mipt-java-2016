@@ -21,10 +21,20 @@ import java.util.Set;
  * Created by dima on 11/26/16.
  */
 
-// DONE калькулятор
-// DONE авторизация
-// DONE сохранение состояния в базу данных
-// TODO починить запуск тестов
+// DONE втроенные функции (sin, log, min, rnd, ...)
+// DONE REST контроллер
+// DONE Авторизация с регистрацией
+// DONE Пользовательские функции и переменные (состояние сохраняется в базу данных)
+// DONE Тесты REST (Сейчас используется аннотация @WithMockUser)
+// TODO Немного изменить тесты REST (класс MyControllerTest), чтобы запускались без аннотации @WithMockUser
+// Нужно каждый вызов get(...) заменить на get(...).with(user("username").roles("USER"))
+// Либо нагуглить как это по нормальному сделать
+// Либо оставить с @WithMockUser (кажется это лучший вариант)
+// TODO Тесты регистрации/авторизации +проверки, что доступ к /clearAll имеют только пользователи с roles("ADMIN")
+// Тут точно понадобится get(...).with(user("username").roles("USER"))
+// TODO сейчас почти все методы MyController возвращают ResponseEntity<...>, это нужно для того, чтобы при возникновении Exception поставить какой-нибудь 4xx код возврата
+// Нужно убрать ResponseEntity (То есть ResponseEntity<String> -> String), при возникновении Exception кидать свою, проаннотировать её как в https://spring.io/blog/2013/11/01/exception-handling-in-spring-mvc
+// TODO После выполнения предыдущего TODO проверить, что все неккоректные запросы выдают код 4xx и (!!!) что в их body написана причина ошибки
 // TODO Web интерфейс
 @RestController
 public class MyController {
