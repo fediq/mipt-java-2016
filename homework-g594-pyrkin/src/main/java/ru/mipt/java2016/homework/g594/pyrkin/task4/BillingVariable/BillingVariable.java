@@ -1,7 +1,6 @@
-package ru.mipt.java2016.homework.g594.pyrkin.task4;
+package ru.mipt.java2016.homework.g594.pyrkin.task4.BillingVariable;
 
 import org.springframework.beans.factory.annotation.Autowired;
-
 
 /**
  * Created by randan on 12/17/16.

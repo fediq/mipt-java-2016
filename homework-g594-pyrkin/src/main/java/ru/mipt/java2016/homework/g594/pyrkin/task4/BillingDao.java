@@ -7,6 +7,7 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
+import ru.mipt.java2016.homework.g594.pyrkin.task4.BillingVariable.BillingVariable;
 
 import javax.annotation.PostConstruct;
 import javax.sql.DataSource;

@@ -7,10 +7,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
+import ru.mipt.java2016.homework.g594.pyrkin.task4.BillingVariable.BillingVariable;
+import ru.mipt.java2016.homework.g594.pyrkin.task4.BillingVariable.BillingVariableLengthCompare;
 
+import java.util.Collections;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @RestController
 public class CalculatorController {
@@ -85,10 +86,11 @@ public class CalculatorController {
 
     private String replaceVariables(String username, String expression) {
         List<BillingVariable> variables = billingDao.loadAllVariables(username);
+        Collections.sort(variables, new BillingVariableLengthCompare());
+
         for (BillingVariable variable : variables) {
-            Pattern pattern = Pattern.compile(variable.getName());
-            Matcher matcher = pattern.matcher(expression);
-            expression = matcher.replaceAll(Double.toString(variable.getValue()));
+            expression = expression.replaceAll(variable.getName(),
+                    Double.toString(variable.getValue()));
         }
         return expression;
     }
