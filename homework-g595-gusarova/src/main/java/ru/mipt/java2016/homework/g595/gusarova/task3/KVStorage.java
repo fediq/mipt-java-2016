@@ -2,6 +2,8 @@ package ru.mipt.java2016.homework.g595.gusarova.task3;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.base.task2.MalformedDataException;
+import ru.mipt.java2016.homework.g595.gusarova.task2.SerializerAndDeserializer;
+import ru.mipt.java2016.homework.g595.gusarova.task2.SerializerAndDeserializerForLong;
 
 import java.io.*;
 import java.nio.channels.FileLock;
@@ -103,7 +105,7 @@ public class KVStorage<K, V> implements KeyValueStorage<K, V> {
         }
         serializerAndDeserializerForKey = forKey;
         serializerAndDeserializerForValue = forValue;
-        serializerAndDeserializerForOffsets = new SerializersAndDeserializers.SerializerAndDeserializerForLong();
+        serializerAndDeserializerForOffsets = new SerializerAndDeserializerForLong();
         try {
             addKeysAndOffsets();
         } catch (IOException exp) {

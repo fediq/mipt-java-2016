@@ -19,8 +19,8 @@ public class KVStorageTests extends AbstractSingleFileStorageTest {
         KVStorage<String, String> temp;
         try {
             temp = new KVStorage<String, String>(path,
-                    new SerializersAndDeserializers.SerializerAndDeserializerForString(),
-                    new SerializersAndDeserializers.SerializerAndDeserializerForString());
+                    new SerializerAndDeserializerForString(),
+                    new SerializerAndDeserializerForString());
         }catch (IOException exp) {
             return null;
         }
@@ -32,8 +32,8 @@ public class KVStorageTests extends AbstractSingleFileStorageTest {
         KVStorage<Integer, Double> temp;
         try {
             temp = new KVStorage<Integer, Double>(path,
-                    new SerializersAndDeserializers.SerializerAndDeserializerForInteger(),
-                    new SerializersAndDeserializers.SerializerAndDeserializerForDouble());
+                    new SerializerAndDeserializerForInteger(),
+                    new SerializerAndDeserializerForDouble());
         } catch (IOException exp) {
             return null;
         }
@@ -45,8 +45,8 @@ public class KVStorageTests extends AbstractSingleFileStorageTest {
         KVStorage<StudentKey, Student> temp;
         try {
             temp = new KVStorage<StudentKey, Student>(path,
-                    new SerializersAndDeserializers.SerializerAndDeserializerForStudentKey(),
-                    new SerializersAndDeserializers.SerializerAndDeserializerForStudent());
+                    new SerializerAndDeserializerForStudentKey(),
+                    new SerializerAndDeserializerForStudent());
         } catch (IOException exp) {
             return null;
         }
