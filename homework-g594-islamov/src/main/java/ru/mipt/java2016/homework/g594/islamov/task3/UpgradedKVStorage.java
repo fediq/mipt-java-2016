@@ -5,6 +5,9 @@ import ru.mipt.java2016.homework.base.task2.MalformedDataException;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.zip.Adler32;
 import java.util.zip.CheckedInputStream;
 
@@ -13,6 +16,9 @@ import java.util.zip.CheckedInputStream;
  */
 
 class UpgradedKVStorage<K, V> implements KeyValueStorage<K, V> {
+    private final ReadWriteLock readWriteLock;
+    private final Lock writeLock;
+    private final Lock readLock;
     private String fileName;
     private String hashOfFile;
     private HashMap<K, Position> positionOfKey;
@@ -58,6 +64,9 @@ class UpgradedKVStorage<K, V> implements KeyValueStorage<K, V> {
 
     UpgradedKVStorage(String path, KVSSerializationInterface serializedKey,
                       KVSSerializationInterface serializedValue) {
+        readWriteLock = new ReentrantReadWriteLock();
+        writeLock = readWriteLock.writeLock();
+        readLock = readWriteLock.readLock();
         keySerialization = serializedKey;
         valueSerialization = serializedValue;
         fileName = path + "/storage";
@@ -86,12 +95,14 @@ class UpgradedKVStorage<K, V> implements KeyValueStorage<K, V> {
             }
             try (DataOutputStream out = new DataOutputStream(new FileOutputStream(mainFile));
                  DataOutputStream outHash = new DataOutputStream(new FileOutputStream(hashOfFile))) {
+                writeLock.lock();
                 // Amount of files
                 out.writeInt(0);
                 // Amount of positions of keys
                 out.writeInt(0);
                 // Initial hash
                 outHash.writeInt(0);
+                writeLock.unlock();
             } catch (IOException e) {
                 throw new MalformedDataException("Failed at writing to the file");
             }
@@ -100,6 +111,7 @@ class UpgradedKVStorage<K, V> implements KeyValueStorage<K, V> {
             throw new MalformedDataException("File not found");
         }
         try (DataInputStream in = new DataInputStream(new FileInputStream(mainFile))) {
+            readLock.lock();
             // Number of files with data
             int numberOfFiles = in.readInt();
             // Check the integrity of all our files
@@ -124,6 +136,7 @@ class UpgradedKVStorage<K, V> implements KeyValueStorage<K, V> {
                 positionOfKey.put(key, new Position(numberOfFile, offset));
                 usedKeys.add(key);
             }
+            readLock.unlock();
         } catch (IOException e) {
             throw new MalformedDataException("Failed at reading from file");
         }
@@ -132,6 +145,7 @@ class UpgradedKVStorage<K, V> implements KeyValueStorage<K, V> {
     // Check hash of all files
     private void checkIntegrity(int numberOfFiles) {
         try (DataInputStream in = new DataInputStream(new FileInputStream(hashOfFile))) {
+            readLock.lock();
             if (numberOfFiles != in.readInt()) {
                 throw new MalformedDataException("Not a valid storage");
             }
@@ -143,6 +157,7 @@ class UpgradedKVStorage<K, V> implements KeyValueStorage<K, V> {
             if (numberOfFiles != 0 && integrity.getValue() != in.readLong()) {
                 throw new MalformedDataException("Not a valid storage");
             }
+            readLock.unlock();
         } catch (IOException e) {
             throw new MalformedDataException("Failed at working with files");
         }
@@ -152,10 +167,12 @@ class UpgradedKVStorage<K, V> implements KeyValueStorage<K, V> {
     private void getHashOfFile(String currentFileName, Adler32 checkSum) {
         try (InputStream inStream = new BufferedInputStream(new FileInputStream(new File(currentFileName)));
              CheckedInputStream checkedInStream = new CheckedInputStream(inStream, checkSum)) {
+            readLock.lock();
             byte[] buffer = new byte[MC_SIZEOFRECENTKV * MC_NUMBER];
             while (checkedInStream.read(buffer) != -1) {
                 continue;
             }
+            readLock.unlock();
         } catch (IOException e) {
             throw new MalformedDataException("File not found");
         }
@@ -188,6 +205,7 @@ class UpgradedKVStorage<K, V> implements KeyValueStorage<K, V> {
                 RandomAccessFile currentFile = files.get(numberOfNewFile);
                 currentFile.setLength(0);
                 currentFile.seek(0);
+                writeLock.lock();
                 for (Map.Entry<K, V> entry : recentKV.entrySet()) {
                     if (entry.getValue().equals(null)) {
                         positionOfKey.remove(entry.getKey());
@@ -197,6 +215,7 @@ class UpgradedKVStorage<K, V> implements KeyValueStorage<K, V> {
                     positionOfKey.put(entry.getKey(), newPosition);
                     currentFile.writeUTF(valueSerialization.serialize(entry.getValue()));
                 }
+                writeLock.lock();
                 recentKV.clear();
                 getHashOfFile(newFile, integrity);
             } catch (IOException e) {
@@ -268,11 +287,14 @@ class UpgradedKVStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public void close() throws IOException {
-        isStorageClosed();
+        if (closed) {
+            return;
+        }
         flushRecentKV(true);
         closed = true;
         String mainFile = receiveFileName(MC_MAINFILE);
         try (DataOutputStream out = new DataOutputStream(new FileOutputStream(mainFile))) {
+            writeLock.lock();
             out.writeInt(files.size());
             out.writeInt(positionOfKey.size());
             for (Map.Entry<K, Position> entry : positionOfKey.entrySet()) {
@@ -280,13 +302,16 @@ class UpgradedKVStorage<K, V> implements KeyValueStorage<K, V> {
                 out.writeInt(entry.getValue().numberOfFile);
                 out.writeLong(entry.getValue().offsetValue);
             }
+            writeLock.unlock();
         }
         try (DataOutputStream out = new DataOutputStream(new FileOutputStream(hashOfFile))) {
+            writeLock.lock();
             out.writeInt(files.size());
             for (int i = MC_FIRSTFILE; i < MC_FIRSTFILE + files.size(); ++i) {
                 files.get(i).close();
             }
             out.writeLong(integrity.getValue());
+            writeLock.unlock();
         }
         cache.clear();
         recentKV.clear();
