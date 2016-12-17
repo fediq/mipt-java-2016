@@ -2,14 +2,15 @@ package ru.mipt.java2016.homework.g594.gorelick.task1;
 
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
+
+import java.security.InvalidParameterException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Scanner;
 import java.util.Stack;
-import java.security.InvalidParameterException;
 
 class CalculatorImplementation implements Calculator {
-
+    static final Calculator INSTANCE = new CalculatorImplementation();
     private static final HashSet<String> OPERATORS = new HashSet<>(Arrays.asList("+", "-", "*", "/"));
 
     @Override
@@ -27,8 +28,8 @@ class CalculatorImplementation implements Calculator {
             case "-": return op1 - op2;
             case "*": return op1 * op2;
             case "/": return op1 / op2;
+            default: return 0;
         }
-        return 0;
     }
 
     private static int getPriority(String operator) throws InvalidParameterException {
@@ -40,17 +41,17 @@ class CalculatorImplementation implements Calculator {
             case "(": return 0;
             case ")": return 0;
             case "#": return 3;
+            default: return -1;
         }
-        return -1;
     }
 
-    private double eval(String reverse_notation) throws ParsingException {
+    private double eval(String reverseNotation) throws ParsingException {
         Stack<Double> operands = new Stack<>();
         Double a;
         Double b;
         Double result = 0.0;
         String token;
-        try (Scanner sc = new Scanner(reverse_notation)) {
+        try (Scanner sc = new Scanner(reverseNotation)) {
             while (sc.hasNext()) {
                 token = sc.next();
                 if (OPERATORS.contains(token)) {
@@ -95,7 +96,7 @@ class CalculatorImplementation implements Calculator {
         boolean unary = true;
         boolean prevIsDot = false;
         String prevUnary = "";
-        int search_condition = 0;
+        int searchCondition = 0;
         for (int i = 0; i < expression.length(); ++i) {
             c = expression.charAt(i);
             if (prevIsDot && !(Character.isDigit(c))) {
@@ -104,30 +105,30 @@ class CalculatorImplementation implements Calculator {
             if (Character.isDigit(c)) {
                 unary = false;
                 answer.append(c);
-                search_condition = 1;
+                searchCondition = 1;
                 prevIsDot = false;
             } else if (Character.isWhitespace(c)) {
                 answer.append(' ');
             } else if (c.equals('.')) {
-                if (search_condition == 0) {
+                if (searchCondition == 0) {
                     throw new ParsingException("Invalid expression: unexpected symbol '.'");
                 } else {
                     answer.append('.');
-                    search_condition = 1;
+                    searchCondition = 1;
                 }
                 prevIsDot = true;
             } else if (c.equals('(')) {
-                if (search_condition == 1) {
+                if (searchCondition == 1) {
                     throw new ParsingException("Invalid expression: unexpected symbol '('");
                 } else {
                     unary = true;
                     answer.append(' ');
                     operators.push("(");
-                    search_condition = 0;
+                    searchCondition = 0;
                 }
                 prevIsDot = false;
             } else if (c.equals(')')) {
-                if (search_condition == 0) {
+                if (searchCondition == 0) {
                     throw new ParsingException("Invalid expression: unexpected ) after operator");
                 } else {
                     boolean hasCorrespondingOpeningBracket = false;
@@ -172,7 +173,7 @@ class CalculatorImplementation implements Calculator {
                     operators.push(c.toString());
                 }
 
-                search_condition = 0;
+                searchCondition = 0;
             } else {
                 throw new ParsingException(String.format("Invalid expression: unexpected %s", c.toString()));
             }
