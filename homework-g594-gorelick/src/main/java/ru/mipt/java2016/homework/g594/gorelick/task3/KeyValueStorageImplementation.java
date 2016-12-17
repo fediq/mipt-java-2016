@@ -48,7 +48,8 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
     }
 
 
-    KeyValueStorageImplementation(String path, FileWorker<K> kFileWorker, FileWorker<V> vFileWorker) throws IOException {
+    KeyValueStorageImplementation(String path, FileWorker<K> kFileWorker, FileWorker<V> vFileWorker)
+            throws IOException {
         if (Files.notExists(Paths.get(path))) {
             throw new IOException("Wrong path");
         }
@@ -253,8 +254,7 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
         cache.put(key, value);
         try {
             newPart();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
@@ -276,8 +276,7 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
         fileMap.remove(key);
         try {
             newPart();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
