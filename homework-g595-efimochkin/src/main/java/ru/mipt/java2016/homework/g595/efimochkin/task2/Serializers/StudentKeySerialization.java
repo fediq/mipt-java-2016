@@ -13,9 +13,13 @@ public class StudentKeySerialization implements BaseSerialization<StudentKey> {
 
     private static StudentKeySerialization instance = new StudentKeySerialization();
 
-    public static StudentKeySerialization getInstance() {return instance;}
+    public static StudentKeySerialization getInstance() {
+        return instance;
+    }
 
-    private StudentKeySerialization() { }
+    private StudentKeySerialization() {
+
+    }
 
     @Override
     public StudentKey read(RandomAccessFile file) throws IOException {

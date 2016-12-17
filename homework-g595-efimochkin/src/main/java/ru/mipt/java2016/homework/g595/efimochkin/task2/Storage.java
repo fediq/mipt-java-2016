@@ -14,39 +14,39 @@ import java.util.Map;
 /**
  * Created by sergejefimockin on 17.12.16.
  */
-public class Storage <K, V> implements KeyValueStorage <K,V> {
+public class Storage<K, V> implements KeyValueStorage<K, V> {
 
-    private HashMap <K, V> map = new HashMap<>();
-    private BaseSerialization <K> KeySerializer;
-    private BaseSerialization <V> ValSerializer;
-    IntegerSerialization intSerializer = IntegerSerialization.getInstance();
-    private RandomAccessFile RAFile;
+    private HashMap<K, V> map = new HashMap<>();
+    private BaseSerialization<K> keySerializer;
+    private BaseSerialization<V> valSerializer;
+    private IntegerSerialization intSerializer = IntegerSerialization.getInstance();
+    private RandomAccessFile randomAccessFile;
     private boolean isClosed = false;
     private String path;
 
-    public Storage (String nPath, BaseSerialization <K> nKeySerializer, BaseSerialization <V> nValSerializer) throws IOException {
+    public Storage(String nPath, BaseSerialization<K> nKeySerializer,
+                    BaseSerialization<V> nValSerializer) throws IOException {
         path = nPath;
-        KeySerializer = nKeySerializer;
-        ValSerializer = nValSerializer;
+        keySerializer = nKeySerializer;
+        valSerializer = nValSerializer;
 
         File directory = new File(path);
-        if (!directory.isDirectory()){
+        if (!directory.isDirectory()) {
             throw new IOException("Directory not found!");
         }
 
-        path+= "/storage";
+        path += "/storage";
         File file = new File(path);
-        if (!file.createNewFile()){
-            RAFile = new RandomAccessFile(file, "rw");
-            int size = intSerializer.read(RAFile);
-            for(int i = 0; i < size; i++){
-                K key = KeySerializer.read(RAFile);
-                V val = ValSerializer.read(RAFile);
+        if (!file.createNewFile()) {
+            randomAccessFile = new RandomAccessFile(file, "rw");
+            int size = intSerializer.read(randomAccessFile);
+            for (int i = 0; i < size; i++) {
+                K key = keySerializer.read(randomAccessFile);
+                V val = valSerializer.read(randomAccessFile);
                 map.put(key, val);
             }
-        }
-        else {
-            RAFile = new RandomAccessFile(file, "rw");
+        } else {
+            randomAccessFile = new RandomAccessFile(file, "rw");
         }
 
 
@@ -91,18 +91,19 @@ public class Storage <K, V> implements KeyValueStorage <K,V> {
     @Override
     public void close() throws IOException {
         isClosed();
-        RAFile.setLength(0);
-        intSerializer.write(RAFile, map.size());
-        for(Map.Entry<K, V> entry : map.entrySet()){
-            KeySerializer.write(RAFile, entry.getKey());
-            ValSerializer.write(RAFile, entry.getValue());
+        randomAccessFile.setLength(0);
+        intSerializer.write(randomAccessFile, map.size());
+        for (Map.Entry<K, V> entry : map.entrySet()) {
+            keySerializer.write(randomAccessFile, entry.getKey());
+            valSerializer.write(randomAccessFile, entry.getValue());
         }
-        RAFile.close();
+        randomAccessFile.close();
         isClosed = true;
     }
 
     private void isClosed(){
-        if(isClosed)
+        if (isClosed) {
             throw new RuntimeException("File already closed!");
+        }
     }
 }

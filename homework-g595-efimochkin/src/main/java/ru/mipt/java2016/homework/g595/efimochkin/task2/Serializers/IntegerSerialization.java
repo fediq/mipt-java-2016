@@ -10,9 +10,13 @@ public class IntegerSerialization implements BaseSerialization<Integer> {
 
     private static IntegerSerialization instance = new IntegerSerialization();
 
-    public static IntegerSerialization getInstance() {return instance;}
+    public static IntegerSerialization getInstance() {
+        return instance;
+    }
 
-    private IntegerSerialization() { }
+    private IntegerSerialization() {
+
+    }
 
     @Override
     public Integer read(RandomAccessFile fileName) throws IOException {

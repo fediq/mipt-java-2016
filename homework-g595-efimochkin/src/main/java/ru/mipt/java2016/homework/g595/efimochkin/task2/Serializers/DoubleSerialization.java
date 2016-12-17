@@ -10,9 +10,13 @@ public class DoubleSerialization implements BaseSerialization<Double> {
 
     private static DoubleSerialization instance = new DoubleSerialization();
 
-    public static DoubleSerialization getInstance() {return instance;}
+    public static DoubleSerialization getInstance() {
+        return instance;
+    }
 
-    private DoubleSerialization() { }
+    private DoubleSerialization() {
+
+    }
 
 
     @Override

@@ -21,9 +21,13 @@ public class StudentSerialization implements BaseSerialization<Student> {
 
     private static StudentSerialization instance = new StudentSerialization();
 
-    public static StudentSerialization getInstance() {return instance;}
+    public static StudentSerialization getInstance() {
+        return instance;
+    }
 
-    private StudentSerialization() { }
+    private StudentSerialization() {
+
+    }
 
     @Override
     public Student read(RandomAccessFile file) throws IOException {

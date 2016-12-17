@@ -10,9 +10,13 @@ public class StringSerialization implements BaseSerialization<String> {
 
     private static StringSerialization instance = new StringSerialization();
 
-    public static StringSerialization getInstance() {return instance;}
+    public static StringSerialization getInstance() {
+        return instance;
+    }
 
-    private StringSerialization() { }
+    private StringSerialization() {
+
+    }
 
     @Override
     public String read(RandomAccessFile fileName) throws IOException {
