@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 import ru.mipt.java2016.homework.g595.romanenko.task4.calculator.Function;
@@ -13,6 +14,7 @@ import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -119,12 +121,13 @@ public class RestCalculatorDao {
         return jdbcTemplate.queryForObject(
                 "SELECT id, username, password, enabled FROM RestCalculator.users WHERE username = ?",
                 new Object[]{username},
-                (rs, rowNum) -> new RestUser(
-                        rs.getInt("id"),
-                        rs.getString("username"),
-                        rs.getString("password"),
-                        rs.getBoolean("enabled"))
-        );
+                new RowMapper<RestUser>() {
+                    @Override
+                    public RestUser mapRow(ResultSet rs, int i) throws SQLException {
+                        return new RestUser(rs.getInt("id"), rs.getString("username"),
+                                rs.getString("password"), rs.getBoolean("enabled"));
+                    }
+                });
     }
 
     public Function loadFunction(Integer userId, String functionName) {
@@ -133,18 +136,21 @@ public class RestCalculatorDao {
             function = jdbcTemplate.queryForObject(
                     "SELECT body, params FROM RestCalculator.Functions WHERE id = ? AND name = ?",
                     new Object[]{userId, functionName},
-                    (rs, rowNb) -> {
-                        String paramsStr = rs.getString("params");
-                        List<String> params = Arrays.stream(paramsStr.split("&")).collect(Collectors.toList());
-                        Function result;
-                        try {
-                            result = new Function(rs.getString("body"), params, null, null);
-                        } catch (ParsingException e) {
-                            result = null;
-                        }
-                        return result;
-                    });
+                    new RowMapper<Function>() {
+                        @Override
+                        public Function mapRow(ResultSet rs, int i) throws SQLException {
 
+                            String paramsStr = rs.getString("params");
+                            List<String> params = Arrays.stream(paramsStr.split("&")).collect(Collectors.toList());
+                            Function result;
+                            try {
+                                result = new Function(rs.getString("body"), params, null, null);
+                            } catch (ParsingException e) {
+                                result = null;
+                            }
+                            return result;
+                        }
+                    });
         } catch (EmptyResultDataAccessException ex) {
             function = null;
         }
@@ -157,14 +163,17 @@ public class RestCalculatorDao {
             function = jdbcTemplate.queryForObject(
                     "SELECT value FROM RestCalculator.Variables WHERE id = ? AND name = ?",
                     new Object[]{userId, variableName},
-                    (rs, rowNb) -> {
-                        Function result;
-                        try {
-                            result = new Function(rs.getString("value"), null, null, null);
-                        } catch (ParsingException e) {
-                            result = null;
+                    new RowMapper<Function>() {
+                        @Override
+                        public Function mapRow(ResultSet rs, int i) throws SQLException {
+                            Function result;
+                            try {
+                                result = new Function(rs.getString("value"), null, null, null);
+                            } catch (ParsingException e) {
+                                result = null;
+                            }
+                            return result;
                         }
-                        return result;
                     });
         } catch (EmptyResultDataAccessException ex) {
             function = null;
