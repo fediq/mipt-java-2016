@@ -9,8 +9,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
-import ru.mipt.java2016.homework.base.task1.Calculator;
-import ru.mipt.java2016.homework.g595.topilskiy.task4.calculator.vanilla.TokenCalculator;
+import ru.mipt.java2016.homework.g595.topilskiy.task4.calculator.rest.IFunctionalCalculator;
+import ru.mipt.java2016.homework.g595.topilskiy.task4.calculator.rest.RESTCalculator;
 
 /**
  * curl http://localhost:9001/eval \
@@ -25,8 +25,8 @@ import ru.mipt.java2016.homework.g595.topilskiy.task4.calculator.vanilla.TokenCa
 public class CalculatorApplication {
 
     @Bean
-    public Calculator calculator() {
-        return new TokenCalculator();
+    public IFunctionalCalculator calculator() {
+        return new RESTCalculator();
     }
 
     @Bean

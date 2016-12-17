@@ -105,6 +105,10 @@ public class CalculateableFunction implements IEvaluateableFunction {
                     currentToken = new Token(Token.TokenType.RIGHT_BRACE);
                     break;
 
+                case ',':
+                    currentToken = new Token(Token.TokenType.COMMA);
+                    break;
+
                 default:
                     if (Character.isDigit(expression.charAt(expressionIndex))) {
                         boolean readDot = false;
@@ -134,8 +138,8 @@ public class CalculateableFunction implements IEvaluateableFunction {
                             }
                         }
 
-                        --expressionIndex;
                         currentToken = new Token(functionExpression.substring(nameStartIndex, expressionIndex));
+                        --expressionIndex;
                     } else {
                         throw new ParsingException(String.format("Unexpected symbol at %d", expressionIndex));
                     }
@@ -285,9 +289,9 @@ public class CalculateableFunction implements IEvaluateableFunction {
         IEvaluateableFunction function = functions.get(functionName);
         List<Double> functionArguments = new ArrayList<>();
 
-        for (Token token = progressTokens();
-                   token.getType() != Token.TokenType.RIGHT_BRACE;
-                   token = progressTokens()) {
+        Token token;
+        do {
+            token = progressTokens();
 
             if (token == null) {
                 throw new ParsingException("Unexpected end of function expression.");
@@ -308,7 +312,7 @@ public class CalculateableFunction implements IEvaluateableFunction {
                     (token.getType() != Token.TokenType.COMMA && token.getType() != Token.TokenType.RIGHT_BRACE)) {
                 throw new ParsingException("Unexpected end of function expression.");
             }
-        }
+        } while (token.getType() != Token.TokenType.RIGHT_BRACE);
 
         function.setArguments(functionArguments);
         result = function.evaluate();

@@ -122,8 +122,7 @@ public class RESTCalculator implements IFunctionalCalculator {
      *  Make the alias of functionAlias reflect to CalculatorFunction(expression, arguments)
      */
     @Override
-    public boolean putFunction(String functionAlias, String expression, List<String> arguments)
-            throws ParsingException {
+    public boolean putFunction(String functionAlias, String expression, List<String> arguments) {
         if (variables.containsKey(functionAlias) ||
                 (functions.containsKey(functionAlias) && functions.get(functionAlias).isPredefined())) {
             return false;
