@@ -19,9 +19,15 @@ public class CalculatorController {
     }
 
     @RequestMapping(path = "/eval", method = RequestMethod.POST, consumes = "text/plain", produces = "text/plain")
-    public String eval(@RequestBody String expression) throws ParsingException {
+    public String eval(@RequestBody String expression) {
         LOG.debug("Evaluation request: [" + expression + "]");
-        double result = calculator.calculate(expression);
+        double result;
+        try {
+            result = calculator.calculate(expression);
+        } catch (ParsingException exception) {
+            LOG.trace(exception.getMessage());
+            return exception.getMessage() + "\n";
+        }
         LOG.trace("Result: " + result);
         return Double.toString(result) + "\n";
     }
