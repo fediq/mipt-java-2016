@@ -101,7 +101,7 @@ public class Storage<K, V> implements KeyValueStorage<K, V> {
         isClosed = true;
     }
 
-    private void isClosed(){
+    private void isClosed() {
         if (isClosed) {
             throw new RuntimeException("File already closed!");
         }
