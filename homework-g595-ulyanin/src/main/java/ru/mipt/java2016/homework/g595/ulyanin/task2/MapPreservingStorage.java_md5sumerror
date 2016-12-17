@@ -2,8 +2,10 @@ package ru.mipt.java2016.homework.g595.ulyanin.task2;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 
-import javax.xml.bind.ValidationException;
 import java.io.*;
+import java.security.DigestInputStream;
+import java.security.DigestOutputStream;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -16,57 +18,50 @@ import java.util.Iterator;
 
 public class MapPreservingStorage<K, V> implements KeyValueStorage<K, V> {
     private enum StorageState { CLOSED, OPENED }
-
     private static final String DEFAULT_DB_NAME = ".storage.db";
-
     private static final String MD5_FILE_SUFFIX_NAME = ".hash";
-
     private static final String MD5_SALT = "theSaltYouWillNeverKnow";
-
     private static final String STORAGE_VALIDATE_STRING = "MapPreservingStorage";
 
     private final HashMap<K, V> storage = new HashMap<>();
     private StorageState state;
-    private String storageFileName;
-    private Serializer<K> keySerializer;
-    private Serializer<V> valueSerializer;
+    private String storage_file_name;
+    Serializer<K> keySerializer;
+    Serializer<V> valueSerializer;
 
-    public MapPreservingStorage(String path, Serializer<K> kSerializer, Serializer<V> vSerializer)
-            throws IOException, NoSuchAlgorithmException {
+    MapPreservingStorage(String path, Serializer<K> kSerializer, Serializer<V> vSerializer) throws IOException, NoSuchAlgorithmException {
         keySerializer = kSerializer;
         valueSerializer = vSerializer;
         File tmp = new File(path);
         if (tmp.exists()) {
             if (tmp.isDirectory()) {
-                path += File.separator + DEFAULT_DB_NAME;
+                path += "/" + DEFAULT_DB_NAME;
             }
         } else {
             throw new IllegalArgumentException("file " + path + " does not exist");
         }
-        storageFileName = path;
+        storage_file_name = path;
         state = StorageState.OPENED;
         File target = new File(path);
         if (target.exists()) {
-            try {
-                readFromFile();
-            } catch (ValidationException e) {
-                throw new IllegalArgumentException(e.getMessage());
-            }
+            readFromFile();
         }
     }
 
     private String getCheckSumFileName() {
-        return storageFileName + MD5_FILE_SUFFIX_NAME;
+        return storage_file_name + MD5_FILE_SUFFIX_NAME;
     }
 
-    private void readFromFile() throws IOException, NoSuchAlgorithmException, ValidationException {
-        File file = new File(storageFileName);
+    private void readFromFile() throws IOException, NoSuchAlgorithmException {
+        File file = new File(storage_file_name);
 
         FileInputStream fileInputStream = new FileInputStream(file);
+        MessageDigest md5 = MessageDigest.getInstance("MD5");
+        DigestInputStream md5Stream = new DigestInputStream(fileInputStream, md5);
 
-        DataInputStream dataIS = new DataInputStream(fileInputStream);
+        DataInputStream dataIS = new DataInputStream(md5Stream);
         if (!StringSerializer.getInstance().deserialize(dataIS).equals(STORAGE_VALIDATE_STRING)) {
-            throw new ValidationException("It is not file of dataBase");
+            throw new IllegalArgumentException("It is not file of dataBase");
         }
         int size = IntegerSerializer.getInstance().deserialize(dataIS);
         for (int i = 0; i < size; ++i) {
@@ -74,28 +69,49 @@ public class MapPreservingStorage<K, V> implements KeyValueStorage<K, V> {
             V value = valueSerializer.deserialize(dataIS);
             write(key, value);
         }
+        File md5File = new File(getCheckSumFileName());
+        DataInputStream md5FileInputStream = new DataInputStream(new FileInputStream(md5File));
+
+        byte[] md5Bytes = new byte[md5.getDigestLength()];
+        md5FileInputStream.read(md5Bytes);
+//        System.out.println(md5.digest().toString());
+        if (!md5Bytes.equals(md5.digest())) {
+            throw new IllegalArgumentException("Corrupted file. file Md5sum is not equal to its data");
+        }
         dataIS.close();
+        md5FileInputStream.close();
     }
 
     private void writeToFile() throws IOException, NoSuchAlgorithmException {
-        File file = new File(storageFileName);
+        File file = new File(storage_file_name);
+        File md5File = new File(getCheckSumFileName());
         if (!file.exists()) {
             file.createNewFile();
         }
+        if (!md5File.exists()) {
+            md5File.createNewFile();
+        }
         FileOutputStream fileOutputStream = new FileOutputStream(file);
-        DataOutputStream dataOS = new DataOutputStream(fileOutputStream);
+        MessageDigest md5 = MessageDigest.getInstance("MD5");
+        DigestOutputStream md5Stream = new DigestOutputStream(fileOutputStream, md5);
+
+        DataOutputStream dataOS = new DataOutputStream(md5Stream);
         StringSerializer.getInstance().serialize(STORAGE_VALIDATE_STRING, dataOS);
         IntegerSerializer.getInstance().serialize(storage.size(), dataOS);
         for (HashMap.Entry<K, V> entry : storage.entrySet()) {
             keySerializer.serialize(entry.getKey(), dataOS);
             valueSerializer.serialize(entry.getValue(), dataOS);
         }
+        DataOutputStream md5FileOutputStream = new DataOutputStream(new FileOutputStream(md5File));
+        md5FileOutputStream.write(md5.digest());
+//        System.out.println(md5.digest().toString());
         dataOS.close();
+        md5FileOutputStream.close();
     }
 
-    private void throwIfClosed(String methodName) {
+    private void throwIfClosed(String method_name) {
         if (state.equals(StorageState.CLOSED)) {
-            throw new IllegalStateException("trying to apply method " + methodName + " to closed MapPreservingStorage");
+            throw new IllegalStateException("trying to apply method " + method_name + " to closed MapPreservingStorage");
         }
     }
 

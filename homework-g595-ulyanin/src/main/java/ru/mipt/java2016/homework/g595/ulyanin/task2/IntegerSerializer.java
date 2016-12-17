@@ -1,7 +1,7 @@
 package ru.mipt.java2016.homework.g595.ulyanin.task2;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 
 /**
@@ -20,12 +20,12 @@ public class IntegerSerializer implements Serializer<Integer> {
     private IntegerSerializer() { }
 
     @Override
-    public void serialize(Integer data, DataOutputStream dataOutputStream) throws IOException {
+    public void serialize(Integer data, DataOutput dataOutputStream) throws IOException {
         dataOutputStream.writeInt(data.intValue());
     }
 
     @Override
-    public Integer deserialize(DataInputStream dataInputStream) throws IOException {
+    public Integer deserialize(DataInput dataInputStream) throws IOException {
         return dataInputStream.readInt();
     }
 }

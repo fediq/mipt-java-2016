@@ -1,7 +1,7 @@
 package ru.mipt.java2016.homework.g595.ulyanin.task2;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 
 /**
@@ -18,12 +18,12 @@ public class BooleanSerializer implements Serializer<Boolean> {
     private BooleanSerializer() { }
 
     @Override
-    public void serialize(Boolean data, DataOutputStream dataOutputStream) throws IOException {
+    public void serialize(Boolean data, DataOutput dataOutputStream) throws IOException {
         dataOutputStream.writeBoolean(data);
     }
 
     @Override
-    public Boolean deserialize(DataInputStream dataInputStream) throws IOException {
+    public Boolean deserialize(DataInput dataInputStream) throws IOException {
         return dataInputStream.readBoolean();
     }
 }
