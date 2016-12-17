@@ -1,8 +1,6 @@
 package ru.mipt.java2016.homework.g595.popovkin.task2;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.Date;
 
 /**
@@ -11,12 +9,12 @@ import java.util.Date;
 public class DateParser implements ItemParser<Date> {
 
     @Override
-    public void serialize(Date arg, FileOutputStream out) throws IOException {
+    public void serialize(Date arg, OutputStream out) throws IOException {
         new LongParser().serialize(arg.getTime(), out);
     }
 
     @Override
-    public Date deserialize(FileInputStream in) throws IOException {
+    public Date deserialize(InputStream in) throws IOException {
         return new Date(new LongParser().deserialize(in));
     }
 }
