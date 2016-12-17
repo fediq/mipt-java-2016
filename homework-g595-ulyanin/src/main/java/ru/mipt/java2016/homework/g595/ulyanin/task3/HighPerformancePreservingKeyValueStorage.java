@@ -6,6 +6,7 @@ import ru.mipt.java2016.homework.g595.ulyanin.task2.StringSerializer;
 
 import javax.xml.bind.ValidationException;
 import java.io.*;
+import java.nio.channels.FileLock;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -57,14 +58,24 @@ public class HighPerformancePreservingKeyValueStorage<K, V> implements KeyValueS
         if (associatedFile.exists()) {
             readFromFile(associatedFile);
         } else {
-            associatedFile.createNewFile();
-            storage = createNewSSTable(constructDBName(createNewGeneration()));
+            try {
+                createLockFile();
+                associatedFile.createNewFile();
+                storage = createNewSSTable(constructDBName(createNewGeneration()));
+            } catch (IOException error) {
+                System.out.println("database already in use");
+            }
         }
+    }
+
+    private void createLockFile() throws IOException {
+        RandomAccessFile lockFile = new RandomAccessFile(storageFileName + ".lock", "rw");
+        FileLock lock = lockFile.getChannel().lock();
     }
 
     private SSTable<K, V> createNewSSTable(String dbName)
             throws NoSuchAlgorithmException, IOException, ValidationException {
-        return new SSTable<K, V>(workingDirectory, dbName, keySerializer, valueSerializer);
+        return new SSTable<>(workingDirectory, dbName, keySerializer, valueSerializer);
     }
 
     private int createNewGeneration() {
@@ -79,16 +90,14 @@ public class HighPerformancePreservingKeyValueStorage<K, V> implements KeyValueS
         FileInputStream fileInputStream = new FileInputStream(target);
 
         DataInputStream dataIS = new DataInputStream(fileInputStream);
-        if (!StringSerializer.getInstance().deserialize(dataIS).equals(STORAGE_VALIDATE_STRING)) {
-            throw new IllegalArgumentException("It is not a file of dataBase");
-        }
+        String dataBaseHash = StringSerializer.getInstance().deserialize(dataIS);
         String databaseName = StringSerializer.getInstance().deserialize(dataIS);
         storage = createNewSSTable(databaseName);
+        String storageHash = storage.getDataBaseHash();
+        if (!dataBaseHash.equals(storageHash)) {
+            throw new IllegalArgumentException("It is not a file of dataBase");
+        }
         dataIS.close();
-    }
-
-    private V readFromCache(K key) {
-        return null;
     }
 
     @Override
@@ -108,27 +117,11 @@ public class HighPerformancePreservingKeyValueStorage<K, V> implements KeyValueS
         } catch (IOException e) {
             e.printStackTrace();
         }
-//        if (memTable.size() > 1000) {
-//            writeMemTableToDisk();
-//        }
-    }
-
-    private void writeMemTableToDisk() {
-        try {
-            storage.appendHashMapData(memTable);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        memTable.clear();
     }
 
     @Override
     public void delete(K key) {
-        if (memTable.containsKey(key)) {
-            memTable.remove(key);
-        } else {
-            storage.delete(key);
-        }
+        storage.delete(key);
     }
 
     @Override
@@ -143,10 +136,13 @@ public class HighPerformancePreservingKeyValueStorage<K, V> implements KeyValueS
 
     @Override
     public void close() throws IOException {
-        writeMemTableToDisk();
+        if (state == StorageState.CLOSED) {
+            return;
+        }
+        state = StorageState.CLOSED;
         FileOutputStream fileOutputStream = new FileOutputStream(associatedFile);
         DataOutputStream dataOS = new DataOutputStream(fileOutputStream);
-        StringSerializer.getInstance().serialize(STORAGE_VALIDATE_STRING, dataOS);
+        StringSerializer.getInstance().serialize(storage.getDataBaseHash(), dataOS);
         StringSerializer.getInstance().serialize(storage.getDBName(), dataOS);
         dataOS.close();
         fileOutputStream.close();
