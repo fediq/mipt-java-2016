@@ -2,7 +2,6 @@ package ru.mipt.java2016.homework.g596.kupriyanov.task3;
 
 import java.io.DataInput;
 import java.io.DataOutput;
-import java.io.RandomAccessFile;
 import java.io.IOException;
 
 /**

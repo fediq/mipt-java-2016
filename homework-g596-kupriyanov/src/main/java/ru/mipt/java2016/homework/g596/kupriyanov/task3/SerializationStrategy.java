@@ -1,6 +1,9 @@
 package ru.mipt.java2016.homework.g596.kupriyanov.task3;
 
-import java.io.*;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+
 
 /**
  * Created by Artem Kupriyanov on 29/10/2016.

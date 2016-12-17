@@ -4,7 +4,6 @@ import ru.mipt.java2016.homework.tests.task2.Student;
 
 import java.io.DataInput;
 import java.io.DataOutput;
-import java.io.RandomAccessFile;
 import java.io.IOException;
 import java.util.Date;
 

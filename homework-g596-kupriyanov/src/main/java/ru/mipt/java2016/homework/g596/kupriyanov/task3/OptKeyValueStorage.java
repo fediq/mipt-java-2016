@@ -1,5 +1,7 @@
 package ru.mipt.java2016.homework.g596.kupriyanov.task3;
 
+import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -11,8 +13,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static java.lang.Math.max;
-
-import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 
 /**
  * Created by Artem Kupriyanov on 20/11/2016.
@@ -30,18 +30,15 @@ public class OptKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private Map<K, V> bufferCache = new HashMap<>();
 
     private long maxNow;
-    private long clearingThreshold;
-
-    private final static long MAXTHRESHOLD = 5000;
 
     private final String pathName;
 
     private File mtxFile;
-    private static final String mtxFileName = "mtx.txt";
+    private static final String MtxFileName = "mtx.txt";
     private RandomAccessFile storage;
-    private static final String storageName = "storage.txt";
+    private static final String StorageName = "storage.txt";
     private RandomAccessFile mapStorage;
-    private static final String mapStorageName = "mapStorage.txt";
+    private static final String MapStorageName = "mapStorage.txt";
 
     private boolean dbClosed;
 
@@ -53,20 +50,19 @@ public class OptKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         keySerialization = keySerStrat;
         valueSerialization = valueSerStrat;
         maxNow = 0L;
-        clearingThreshold = 0L;
         pathName = path;
         File dir = new File(pathName);
         if (!dir.isDirectory()) {
             throw new RuntimeException("BAD PATH");
         }
-        mtxFile = new File(pathName, mtxFileName);
+        mtxFile = new File(pathName, MtxFileName);
         if (!mtxFile.createNewFile()) {
             throw new RuntimeException("CAN'T SYNCHRONIZE");
         }
-        File file = new File(pathName, storageName);
+        File file = new File(pathName, StorageName);
         storage = new RandomAccessFile(file, "rw");
         dbClosed = false;
-        File mapFile = new File(path, mapStorageName);
+        File mapFile = new File(path, MapStorageName);
         mapStorage = new RandomAccessFile(mapFile, "rw");
         if (file.exists() && mapFile.exists()) {
             uploadData();
@@ -79,7 +75,6 @@ public class OptKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     public V read(K key) {
         readLock.lock();
         try {
-            clearingThreshold++;
             if (!exists(key)) {
                 return null;
             }
@@ -105,7 +100,6 @@ public class OptKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     public void write(K key, V value) {
         writeLock.lock();
         try {
-            clearingThreshold++;
             if (dbClosed) {
                 throw new RuntimeException("CAN'T OPEN");
             }
@@ -123,7 +117,6 @@ public class OptKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public synchronized void delete(K key) {
-        clearingThreshold++;
         if (dbClosed) {
             throw new RuntimeException("CAN'T OPEN");
         }
@@ -181,9 +174,9 @@ public class OptKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private void downloadData() {
         try {
             mapStorage.close();
-            File file = new File(pathName, mapStorageName);
+            File file = new File(pathName, MapStorageName);
             assert (file.delete());
-            file = new File(pathName, mapStorageName);
+            file = new File(pathName, MapStorageName);
             mapStorage = new RandomAccessFile(file, "rw");
             mapStorage.writeInt(size());
             for (HashMap.Entry<K, Long> entry : db.entrySet()) {
@@ -215,7 +208,6 @@ public class OptKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private void updStorage() {
         try {
-            clearingThreshold = 0;
             File file = new File(pathName, "newStorage.txt");
             RandomAccessFile newStorage = new RandomAccessFile(file, "rw");
             assert (bufferCache.isEmpty());
@@ -226,7 +218,7 @@ public class OptKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 db.put(entry.getKey(), value);
             }
             storage.close();
-            File newFile = new File(pathName, storageName);
+            File newFile = new File(pathName, StorageName);
             assert (newFile.delete());
             newStorage.close();
             assert (file.renameTo(newFile));
