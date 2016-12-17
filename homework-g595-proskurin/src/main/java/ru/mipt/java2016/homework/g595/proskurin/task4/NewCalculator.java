@@ -295,7 +295,7 @@ public class NewCalculator {
         tmp = tmp.concat("(");
         for (int i = 0; i < functions.get(s).params.size(); i++) {
             tmp = tmp.concat(functions.get(s).params.get(i));
-            if (i != functions.get(s).params.size() - 1){
+            if (i != functions.get(s).params.size() - 1) {
                 tmp = tmp.concat(", ");
             }
         }
