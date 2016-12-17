@@ -213,8 +213,9 @@ public class LackOfMemoryStorage<K, V> implements KeyValueStorage<K, V> {
 
     public void close() throws IOException {
         synchronized (this) {
-            if (lightCheckForCloseness())
+            if (lightCheckForCloseness()) {
                 return;
+            }
             writeAllForced();
             RandomAccessFile out = new RandomAccessFile(storageDirName + File.separator + mapStorage, "rw");
             LongParserRandomAccess longParser = new LongParserRandomAccess();
