@@ -122,4 +122,13 @@ public class Database {
     public void deleteUser(String data) {
         jdbcTemplate.update("DELETE FROM billing.users WHERE username = '" + data + "'");
     }
+
+    public boolean checkUser(String data) {
+        BillingUser user = loadUser(data);
+        if (user.getUsername().length() > 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 }

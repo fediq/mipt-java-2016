@@ -3,6 +3,7 @@ package ru.mipt.java2016.homework.g594.rubanenko.task4;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
@@ -47,34 +48,39 @@ public class CalculatorController  {
     }
 
     @RequestMapping(path = "/eval", method = RequestMethod.POST, consumes = "text/plain", produces = "text/plain")
-    public String eval(@RequestBody String expression) throws ParsingException {
-        LOG.debug("Evaluation request: [" + expression + "]");
-        StringBuilder expressionNew = new StringBuilder();
-        StringBuilder word = new StringBuilder();
-        boolean letter = false;
-        for (int i = 0; i < expression.length(); ++i) {
-            if (SYMBOLS.contains(expression.charAt(i))) {
-                letter = true;
-                word.append(expression.charAt(i));
-            } else {
-                if (letter) {
-                    letter = false;
-                    try {
-                        expressionNew.append(database.loadMeaning(word.toString()));
-                    } catch (Exception e) {
-                        throw new ParsingException(e.getMessage(), e.getCause());
-                    }
-                    expressionNew.append(expression.charAt(i));
-                    word = new StringBuilder();
+    public String eval(Authentication authentication, @RequestBody String expression) throws ParsingException {
+        String author = authentication.getName();
+        if (clients.checkUser(author)) {
+            LOG.debug("Evaluation request: [" + expression + "]");
+            StringBuilder expressionNew = new StringBuilder();
+            StringBuilder word = new StringBuilder();
+            boolean letter = false;
+            for (int i = 0; i < expression.length(); ++i) {
+                if (SYMBOLS.contains(expression.charAt(i))) {
+                    letter = true;
+                    word.append(expression.charAt(i));
                 } else {
-                    expressionNew.append(expression.charAt(i));
+                    if (letter) {
+                        letter = false;
+                        try {
+                            expressionNew.append(database.loadMeaning(word.toString()));
+                        } catch (Exception e) {
+                            throw new ParsingException(e.getMessage(), e.getCause());
+                        }
+                        expressionNew.append(expression.charAt(i));
+                        word = new StringBuilder();
+                    } else {
+                        expressionNew.append(expression.charAt(i));
+                    }
                 }
             }
+            System.out.println(expressionNew.toString());
+            double result = calculator.calculate(expressionNew.toString());
+            LOG.trace("Result: " + result);
+            return Double.toString(result) + "\n";
+        } else {
+            return "BAD CREDENTIALS!!!\n";
         }
-        System.out.println(expressionNew.toString());
-        double result = calculator.calculate(expressionNew.toString());
-        LOG.trace("Result: " + result);
-        return Double.toString(result) + "\n";
     }
 
     @RequestMapping(path = "/add", method = RequestMethod.POST, consumes = "text/plain", produces = "text/plain")
@@ -100,17 +106,33 @@ public class CalculatorController  {
         return answer.toString();
     }
 
-    @RequestMapping(path = "/addUser", method = RequestMethod.POST, consumes = "text/plain", produces = "text/plain")
-    public String addUser(@RequestBody String data) {
+    @RequestMapping(path = "/addUser/{variableName}",
+            method = RequestMethod.POST,
+            consumes = "text/plain",
+            produces = "text/plain")
+    public String addUser(Authentication authentication, @RequestBody String data) {
         LOG.debug("Add new user [" + data + "]");
-        clients.addUser(data);
+        String author = authentication.getName();
+        if (author.equals("admin")) {
+            clients.addUser(data);
+        } else {
+            return "BAD CREDENTIALS!!!\n";
+        }
         return "OK\n";
     }
 
-    @RequestMapping(path = "/deleteUser", method = RequestMethod.DELETE, consumes = "text/plain", produces = "text/plain")
-    public String deleteUser(@RequestBody String data) {
+    @RequestMapping(path = "/deleteUser/{variableName}",
+            method = RequestMethod.DELETE,
+            consumes = "text/plain",
+            produces = "text/plain")
+    public String deleteUser(Authentication authentication, @RequestBody String data) {
         LOG.debug("Delete user [" + data + "]");
-        clients.deleteUser(data);
+        String author = authentication.getName();
+        if (author.equals("admin")) {
+            clients.deleteUser(data);
+        } else {
+            return "BAD CREDENTIALS!!!\n";
+        }
         return "OK\n";
     }
 }
