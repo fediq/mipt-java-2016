@@ -41,7 +41,8 @@ public class CalculatorController {
     @Autowired
     private BillingDao billingDao;
 
-    @RequestMapping(path = "/signup/{username}", method = RequestMethod.PUT, consumes = "text/plain", produces = "text/plain")
+    @RequestMapping(path = "/signup/{username}", method = RequestMethod.PUT,
+            consumes = "text/plain", produces = "text/plain")
     public String signup(@PathVariable String username, @RequestBody String password) {
         if (billingDao.createUser(username, password, true)) {
             return "Successful signup";

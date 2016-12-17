@@ -270,8 +270,7 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
 
 
     @Override
-    public synchronized boolean exists(K key)
-    {
+    public synchronized boolean exists(K key) {
         try {
             checkOpened();
         } catch (IllegalStateException e) {
