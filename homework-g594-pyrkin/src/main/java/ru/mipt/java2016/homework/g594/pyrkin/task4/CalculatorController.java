@@ -18,17 +18,6 @@ public class CalculatorController {
         return "OK\n";
     }
 
-    @RequestMapping(path = "/", method = RequestMethod.GET, produces = "text/html")
-    public String main(@RequestParam(required = false) String name) {
-        if (name == null) {
-            name = "world";
-        }
-        return "<html>" +
-                "<head><title>FediqApp</title></head>" +
-                "<body><h1>Hello, " + name + "!</h1></body>" +
-                "</html>";
-    }
-
     @RequestMapping(path = "/eval", method = RequestMethod.POST, consumes = "text/plain", produces = "text/plain")
     public String eval(@RequestBody String expression) throws ParsingException {
         LOG.debug("Evaluation request: [" + expression + "]");

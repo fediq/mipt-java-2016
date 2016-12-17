@@ -30,10 +30,10 @@ public class BillingDao {
 
     public void initSchema() {
         LOG.trace("Initializing schema");
-        jdbcTemplate.execute("DROP SCHEMA billing");
-        jdbcTemplate.execute("CREATE SCHEMA billing");
-        jdbcTemplate.execute("CREATE TABLE billing.users " +
+        jdbcTemplate.execute("CREATE SCHEMA IF NOT EXISTS billing");
+        jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS billing.users " +
                 "(username VARCHAR PRIMARY KEY, password VARCHAR, enabled BOOLEAN)");
+        jdbcTemplate.update("DELETE FROM billing.users WHERE username='username'");
         jdbcTemplate.update("INSERT INTO billing.users VALUES ('username', 'password', TRUE)");
     }
 
@@ -54,5 +54,14 @@ public class BillingDao {
                     }
                 }
         );
+    }
+
+    public boolean addUser(String username, String password) {
+        try {
+            jdbcTemplate.execute("INSERT INTO billing.users VALUES ('" + username + "', '" + password + "', TRUE)");
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
     }
 }

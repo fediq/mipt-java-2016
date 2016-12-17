@@ -16,6 +16,7 @@ public class CalculatorImplementation implements Calculator {
     private double currentDecimal; // текущая дробная часть числа
     private boolean point; // была ли встречена точка во время обработки числа
     private boolean number; // обрабатывается ли число
+    private int shift;
 
     private boolean badSymbolsCheck(final String expression) {
         for (char symbol : expression.toCharArray()) {
@@ -81,6 +82,7 @@ public class CalculatorImplementation implements Calculator {
         currentDecimal = 0;
         number = false;
         point = false;
+        shift = 10;
     }
 
     private void makeOperation(final char operand) throws ParsingException {
@@ -139,13 +141,15 @@ public class CalculatorImplementation implements Calculator {
         currentDecimal = 0;
         point = false;
         number = false;
+        shift = 10;
         char previousSymbol = 'x';
 
         for (char symbol : expression.toCharArray()) {
             if (Character.isDigit(symbol)) {
                 number = true;
                 if (point) {
-                    currentDecimal += (double) Character.getNumericValue(symbol) / 10;
+                    currentDecimal +=  (double) Character.getNumericValue(symbol) / shift;
+                    shift *= 10;
                 } else {
                     currentInteger = currentInteger * 10 + Character.getNumericValue(symbol);
                 }
@@ -201,6 +205,8 @@ public class CalculatorImplementation implements Calculator {
         if (bracketsCheck(expression)) {
             throw new ParsingException("Invalid expression");
         }
+        numbers.clear();
+        symbols.clear();
         return getResult(expression);
     }
 }
