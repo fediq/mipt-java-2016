@@ -31,12 +31,15 @@ public class MyBackedStorage<K, V> implements KeyValueStorage<K, V> {
     private String realPath;
     private Integer maxSize;
     private RandomAccessFile lockFile;
+    private String nameBase, nameBuf;
 
     public MyBackedStorage(String path, Serializer<K> serializerK, Serializer<V> serializerV) throws IOException {
         realPath = path;
         keySerializer = serializerK;
         valueSerializer = serializerV;
         info = new RandomAccessFile(path + File.separator + "DataBase", "rw");
+        nameBase = "DataBase";
+        nameBuf = "buffer";
         file = new RandomAccessFile(path + File.separator + "StorageInfo", "rw");
         hash = new RandomAccessFile(path + File.separator + "Hash", "rw");
         in = new MySerializer.IntegerSerializer();
@@ -152,27 +155,41 @@ public class MyBackedStorage<K, V> implements KeyValueStorage<K, V> {
             list.add(new Pair<>(it.getValue(), it.getKey()));
         }
 
-        list.sort(new Comparator<Pair<Integer, K>>() {
-            public int compare(Pair<Integer, K> x, Pair<Integer, K> y) {
-                return y.getKey() - x.getKey();
+        RandomAccessFile buf;
+
+        try {
+            buf = new RandomAccessFile(realPath + File.separator + nameBuf, "rw");
+
+            list.sort(new Comparator<Pair<Integer, K>>() {
+                public int compare(Pair<Integer, K> x, Pair<Integer, K> y) {
+                    return y.getKey() - x.getKey();
+                }
+            });
+
+            map.clear();
+
+            Integer pos = 0;
+
+            for (int i = 0; i < list.size(); i++) {
+                map.put(list.get(i).getValue(), pos);
+                mySeek(info, (long) list.get(i).getKey());
+
+                try {
+                    V value = valueSerializer.deserialize(buf);
+                    mySeek(buf, (long) pos);
+                    valueSerializer.serialize(value, buf);
+                } catch (IOException error) {
+                    System.out.println("Error");
+                }
             }
-        });
 
-        map.clear();
-
-        Integer pos = 0;
-
-        for (int i = 0; i < list.size(); i++) {
-            map.put(list.get(i).getValue(), pos);
-            mySeek(info, (long) list.get(i).getKey());
-
-            try {
-                V value = valueSerializer.deserialize(info);
-                mySeek(info, (long) pos);
-                valueSerializer.serialize(value, info);
-            } catch (IOException error) {
-                System.out.println("Error");
-            }
+            info.close();
+            info = buf;
+            File f = new File(realPath + File.separator + nameBase, "rw");
+            File g = new File(realPath + File.separator + nameBuf, "rw");
+            f.renameTo(g);
+        } catch(IOException err) {
+            System.out.println("Buffer is not correct");
         }
     }
 
