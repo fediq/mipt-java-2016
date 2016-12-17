@@ -10,7 +10,7 @@ public class Token {
     /**
      *  Enum to describe the type of Data in Token
      */
-    static public enum TokenType {
+    public enum TokenType {
         PLUS, MINUS, MULTIPLY, DIVIDE,
         NUMBER, NAME,
         LEFT_BRACE, RIGHT_BRACE, COMMA,

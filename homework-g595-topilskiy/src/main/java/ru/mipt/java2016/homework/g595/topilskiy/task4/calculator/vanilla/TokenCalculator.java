@@ -43,7 +43,7 @@ public class TokenCalculator implements Calculator {
                 continue;
             }
 
-            switch(expression.charAt(expressionIndex)) {
+            switch (expression.charAt(expressionIndex)) {
                 case '+':
                     currentTokenType = Token.TokenType.PLUS;
                     break;

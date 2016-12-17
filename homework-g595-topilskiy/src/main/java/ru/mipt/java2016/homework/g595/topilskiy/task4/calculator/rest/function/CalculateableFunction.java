@@ -80,7 +80,7 @@ public class CalculateableFunction implements IEvaluateableFunction {
                 continue;
             }
 
-            switch(expression.charAt(expressionIndex)) {
+            switch (expression.charAt(expressionIndex)) {
                 case '+':
                     currentToken = new Token(Token.TokenType.PLUS);
                     break;

@@ -19,6 +19,7 @@ public class PredefinedFunction implements IEvaluateableFunction {
     }
 
     public static final Map<PredefinedFunctionType, Integer> PREDEFINED_FUNCTION_TYPE_NUM_ARGUMENTS_MAP;
+
     static {
         Map<PredefinedFunctionType, Integer> predefinedFunctionTypeNumArguments = new HashMap<>();
         predefinedFunctionTypeNumArguments.put(PredefinedFunctionType.SIN,  1);
