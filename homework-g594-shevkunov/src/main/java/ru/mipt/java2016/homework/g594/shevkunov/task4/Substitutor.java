@@ -52,10 +52,15 @@ public class Substitutor {
             }
         }
 
-        return res.toString();
+        return substitute(res.toString());
     }
 
     String substitute(String expression) throws ParsingException {
+        ++level;
+        if (level > maximumLevel) {
+            level = 0;
+            throw new ParsingException("So deep...");
+        }
         StringBuilder buffer = new StringBuilder();
         StringBuilder newExpression = new StringBuilder();
 
@@ -81,6 +86,8 @@ public class Substitutor {
                                     break;
                                 case ')':
                                     --balance;
+                                    break;
+                                default:
                             }
                             ++rPos;
                         }
@@ -115,9 +122,12 @@ public class Substitutor {
             }
         }
 
+        --level;
         return newExpression.toString();
     }
 
     private Map<String, String> variables;
     private Map<String, FunctionWrapper> functions;
+    private int level = 0;
+    private final int maximumLevel = 1000;
 }

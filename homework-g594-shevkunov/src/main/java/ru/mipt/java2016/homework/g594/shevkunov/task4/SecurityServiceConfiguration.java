@@ -34,8 +34,7 @@ public class SecurityServiceConfiguration extends WebSecurityConfigurerAdapter {
                 .antMatchers("/eval/**").authenticated()
                 .antMatchers("/variable/**").authenticated()
                 .antMatchers("/function/**").authenticated()
-                .anyRequest().permitAll()
-        ;
+                .anyRequest().permitAll();
     }
 
     @Autowired

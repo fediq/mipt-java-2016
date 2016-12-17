@@ -67,7 +67,7 @@ public class FunctionWrapper {
 
     public static String listToString(List<String> list) {
         String all = "";
-        for (Iterator<String> i = list.iterator(); i.hasNext(); ) {
+        for (Iterator<String> i = list.iterator(); i.hasNext();) {
             all += i.next();
             if (i.hasNext()) {
                 all += ",";

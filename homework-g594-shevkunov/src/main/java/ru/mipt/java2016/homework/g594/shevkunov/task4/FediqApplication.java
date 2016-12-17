@@ -24,7 +24,7 @@ public class FediqApplication {
 
     @Bean
     public Calculator calculator() {
-        return new PolishCalculator();
+        return new ru.mipt.java2016.homework.g594.shevkunov.task1.PolishCalculator();
     }
 
     @Bean

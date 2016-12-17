@@ -56,13 +56,13 @@ public class CalculatorController {
         try {
             double dResult = rebuildAndCalculate(expression, billingDao.getAllVariables(username),
                     billingDao.getAllFunctions(username)); // TODO username
-            result = Double.toString(dResult) + "\n";
+            result = Double.toString(dResult);
         } catch (Throwable e)  {
-            result = "InvalidExpression.\n";
+            result = e.toString();
         }
 
         LOG.trace("Result: " + result);
-        return result;
+        return result + "\n";
     }
 
     /*** Variables functions
@@ -84,14 +84,15 @@ public class CalculatorController {
     }
 
     @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.PUT, produces = "text/html")
-    public String varPut(Authentication authentication, @PathVariable String variableName, @RequestBody String value) throws ParsingException {
+    public String varPut(Authentication authentication, @PathVariable String variableName,
+                         @RequestBody String value) throws ParsingException {
         String username = authentication.getName();
         String result = "OK";
         try {
             value = Double.toString(rebuildAndCalculate(value, billingDao.getAllVariables(username),
                     billingDao.getAllFunctions(username)));
             billingDao.setVariable(username, variableName, value);
-        } catch (ParsingException e){
+        } catch (ParsingException e) {
             result = e.toString();
         } catch (Exception e) {
             result = "Server Internal Error.";
@@ -102,13 +103,13 @@ public class CalculatorController {
     @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.DELETE, produces = "text/html")
     public String varDel(Authentication authentication, @PathVariable String variableName) throws ParsingException {
         String username = authentication.getName();
-        String result = "OK\n";
+        String result = "OK";
         try {
             billingDao.delVariable(username, variableName);
         } catch (Exception e) {
-            result = "Server Internal Error.\n";
+            result = e.toString();
         }
-        return result;
+        return result + "\n";
     }
 
     @RequestMapping(path = "/variable/", method = RequestMethod.GET, produces = "text/html")
@@ -116,7 +117,7 @@ public class CalculatorController {
         String username = authentication.getName();
         List<String> allVar = billingDao.getAllVariableNames(username);
         String all = "'";
-        for (Iterator<String> i = allVar.iterator(); i.hasNext(); ) {
+        for (Iterator<String> i = allVar.iterator(); i.hasNext();) {
             all += i.next();
             if (i.hasNext()) {
                 all += "', '";
@@ -176,7 +177,7 @@ public class CalculatorController {
         String username = authentication.getName();
         List<String> allVar = billingDao.getAllFunctionNames(username);
         String all = "'";
-        for (Iterator<String> i = allVar.iterator(); i.hasNext(); ) {
+        for (Iterator<String> i = allVar.iterator(); i.hasNext();) {
             all += i.next();
             if (i.hasNext()) {
                 all += "', '";

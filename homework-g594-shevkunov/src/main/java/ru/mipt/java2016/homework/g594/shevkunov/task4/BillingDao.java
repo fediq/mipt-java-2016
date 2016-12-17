@@ -101,7 +101,7 @@ public class BillingDao {
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(querry);
 
         for (Map row : rows) {
-            vars.add((String)row.get("variable"));
+            vars.add((String) row.get("variable"));
         }
         return vars;
     }
@@ -114,14 +114,15 @@ public class BillingDao {
 
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(querry);
         for (Map row : rows) {
-            vars.put((String)row.get("variable"), (String)row.get("value"));
+            vars.put((String) row.get("variable"), (String) row.get("value"));
         }
         return vars;
     }
 
     public void delVariable(String username, String variable) {
         LOG.trace("Deletting variable " + variable + " for user " + username); // TODO check valid
-        String querry = "DELETE FROM billing.vars WHERE username = '" + username + "' AND variable = '" + variable +"'";
+        String querry = "DELETE FROM billing.vars WHERE username = '" + username
+                + "' AND variable = '" + variable + "'";
         jdbcTemplate.execute(querry);
     }
 
@@ -132,7 +133,7 @@ public class BillingDao {
         LOG.trace("Setting function " + function.getName() + " for user " + username);
         delFunction(username, function.getName());
         String querry = "INSERT INTO billing.funcs VALUES ('" + function.getName() +
-                "','" + username + "','" + function.argsToString() + "','" + function.getValue() +"')";
+                "','" + username + "','" + function.argsToString() + "','" + function.getValue() + "')";
         jdbcTemplate.execute(querry);
     }
 
@@ -161,7 +162,7 @@ public class BillingDao {
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(querry);
 
         for (Map row : rows) {
-            vars.add((String)row.get("function"));
+            vars.add((String) row.get("function"));
         }
         return vars;
     }
@@ -174,8 +175,8 @@ public class BillingDao {
 
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(querry);
         for (Map row : rows) {
-            FunctionWrapper func = new FunctionWrapper((String)row.get("function"),
-                    (String)row.get("args"), (String)row.get("value"));
+            FunctionWrapper func = new FunctionWrapper((String) row.get("function"),
+                    (String) row.get("args"), (String) row.get("value"));
             vars.put(func.getName(), func);
         }
         return vars;
@@ -183,7 +184,8 @@ public class BillingDao {
 
     public void delFunction(String username, String function) {
         LOG.trace("Deletting function " + function + " for user " + username); // TODO check valid
-        String querry = "DELETE FROM billing.funcs WHERE username = '" + username + "' AND function = '" + function +"'";
+        String querry = "DELETE FROM billing.funcs WHERE username = '" + username
+                + "' AND function = '" + function + "'";
         jdbcTemplate.execute(querry);
     }
 
