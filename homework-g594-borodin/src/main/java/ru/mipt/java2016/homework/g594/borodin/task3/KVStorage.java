@@ -1,6 +1,5 @@
 package ru.mipt.java2016.homework.g594.borodin.task3;
 
-import java.awt.*;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -8,13 +7,11 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Random;
 import java.util.zip.Adler32;
 import java.util.zip.CheckedInputStream;
 
@@ -244,7 +241,7 @@ public class KVStorage<K, V> implements KeyValueStorage<K, V> {
             DataOutputStream dataOutputStream = new DataOutputStream(new FileOutputStream(keyFileName));
             dataOutputStream.writeUTF(VALIDATION);
             long hash = 0;
-            for (int i = 0;i < files.size();++i) {
+            for (int i = 0; i < files.size(); ++i) {
                 File file = new File(directory + File.separator + Integer.toString(i) + ".txt");
                 hash += getFileHash(file);
             }
@@ -285,7 +282,8 @@ public class KVStorage<K, V> implements KeyValueStorage<K, V> {
             throw new RuntimeException("Can't create new file or get access to it\n");
         }
     }
-    private long getFileHash (File file) {
+
+    private long getFileHash(File file) {
         Adler32 adler32 = new Adler32();
         try {
             DataInputStream dataInputStream = new DataInputStream(new FileInputStream(file));
