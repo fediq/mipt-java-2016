@@ -56,11 +56,8 @@ public class CalculatorFunctionObject {
      */
     @Override
     public String toString() {
-        /* NOTE FOR THYSELF:
-            Array -> stream -(reduce)-> joined strings
-            -(format)-> concatenate expression+arguments
-        */
-        return String.format(expression, arguments.stream().reduce("", String::join));
+        return "Expression: " + expression + '\n' +
+                "Arguments: " + String.join(", ", arguments);
     }
 
     @Override
