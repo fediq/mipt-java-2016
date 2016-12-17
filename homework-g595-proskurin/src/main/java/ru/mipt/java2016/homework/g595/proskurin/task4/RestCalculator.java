@@ -1,0 +1,110 @@
+package ru.mipt.java2016.homework.g595.proskurin.task4;
+
+import org.springframework.web.bind.annotation.*;
+import ru.mipt.java2016.homework.base.task1.ParsingException;
+
+import java.util.List;
+
+/**
+ * Created by Александр on 17.12.2016.
+ */
+
+@RestController
+public class RestCalculator {
+    private NewCalculator solver = new NewCalculator();
+
+    @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.GET)
+    public @ResponseBody
+    String getValueOfVariable(@PathVariable("variableName") String name) {
+        try {
+            return String.valueOf(solver.solve(name));
+        } catch(ParsingException err) {
+            return "Incorrect expression";
+        }
+    }
+
+    @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.PUT)
+    public String putValueOfVariable(@PathVariable("variableName") String name,
+                               @RequestBody String val) {
+        String var = "";
+        var = var.concat(name);
+        var = var.concat(" = ");
+        var = var.concat(val);
+        try {
+            if (solver.addVar(var)) {
+                return "Variable value was changed";
+            } else {
+                return "Error";
+            }
+        } catch (ParsingException err) {
+            return "Error";
+        }
+    }
+
+    @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.DELETE)
+    public String deleteVariable(@PathVariable("variableName") String name) {
+        if (solver.delVar(name)) {
+            return "Variable was deleted";
+        }
+        else {
+            return "Variable couldn't be deleted";
+        }
+    }
+
+    @RequestMapping(path = "/variable", method = RequestMethod.GET)
+    public @ResponseBody
+    List<String> getAllVariables() {
+        return solver.getVars();
+    }
+
+    @RequestMapping(path = "/function/{functionName}", method = RequestMethod.GET)
+    public @ResponseBody String getFunctionDescription(@PathVariable("functionName") String name) {
+        return solver.getFunc(name);
+    }
+
+    @RequestMapping(path = "/function/{functionName}", method = RequestMethod.PUT)
+    public String putFunction(@PathVariable("functionName") String name,
+                               @RequestParam(value = "args") List<String> params,
+                               @RequestBody String expression) {
+        String tmp = name;
+        tmp = tmp.concat("(");
+        for (int i = 0; i < params.size(); i++) {
+            tmp = tmp.concat(params.get(i));
+            if (i != params.size() - 1){
+                tmp = tmp.concat(", ");
+            }
+        }
+        tmp = tmp.concat(") = ");
+        tmp = tmp.concat(expression);
+        try {
+            solver.addFunc(tmp);
+            return "Function was added";
+        } catch (ParsingException err) {
+            return "Incorrect expression";
+        }
+    }
+
+    @RequestMapping(path = "/function/{functionName}", method = RequestMethod.DELETE)
+    public String deleteFunction(@PathVariable("functionName") String name) {
+         if (solver.delFunc(name)) {
+             return "Function was deleted";
+         }
+         else {
+             return "Function couldn't be deleted";
+         }
+    }
+
+    @RequestMapping(path = "/function", method = RequestMethod.GET)
+    public @ResponseBody List<String> getAllFunctions() {
+        return solver.getFuncs();
+    }
+
+    @RequestMapping(path = "/eval", method = RequestMethod.POST)
+    public @ResponseBody String calculate(@RequestBody String expression) {
+        try {
+            return String.valueOf(solver.solve(expression));
+        } catch (ParsingException err) {
+            return "Incorrect expression";
+        }
+    }
+}
