@@ -44,8 +44,7 @@ public class BillingDao {
         LOG.trace("Querying for user " + username);
         return jdbcTemplate.queryForObject(
                 "SELECT username, password FROM billing.users WHERE username = ?",
-                new Object[]{username},
-                (rs, rowNum) -> new User(
+                new Object[]{username}, (rs, rowNum) -> new User(
                         rs.getString("username"),
                         rs.getString("password"),
                         Collections.singletonList(() -> "AUTH")
@@ -58,7 +57,8 @@ public class BillingDao {
     }
 
     public MyContext getContext(String username) {
-        String contextJson = jdbcTemplate.queryForObject("SELECT context FROM billing.users WHERE username = ?", new Object[]{username}, String.class);
+        String contextJson = jdbcTemplate.queryForObject("SELECT context FROM billing.users WHERE username = ?",
+                new Object[]{username}, String.class);
         MyContext context = new Gson().fromJson(contextJson, MyContext.class);
         if (context == null) {
             return new MyContext();

@@ -58,8 +58,17 @@ public class SimpleCalculator implements Calculator {
     public double calculate(String expression, MyContext context, HashMap<String, Double> additionalVariables)
             throws ParsingException {
         ArrayList<Token> input = parseString(expression, context, additionalVariables);
-        ArrayDeque<Token> rpn = convertToRPN(input);
-        return calculateRPN(rpn);
+        ArrayDeque<Token> rpn;
+        try {
+            rpn = convertToRPN(input);
+        } catch (ParsingException e) {
+            throw new ParsingException(String.format("Error while convertToRPN (input = %s, expression = %s)", input, expression), e);
+        }
+        try {
+            return calculateRPN(rpn);
+        } catch (ParsingException e) {
+            throw new ParsingException(String.format("Error while calculateRPN (rpn = %s, input = %s, expression = %s)", rpn, input, expression), e);
+        }
     }
 
     private ArrayList<Token> parseString(String expression, MyContext context,
@@ -145,99 +154,91 @@ public class SimpleCalculator implements Calculator {
     }
 
     private ArrayDeque<Token> convertToRPN(ArrayList<Token> input) throws ParsingException {
-        try {
-            ArrayDeque<Token> output = new ArrayDeque<>();
-            ArrayDeque<Token> stack = new ArrayDeque<>();
-            for (Token token : input) {
-                if (token.type == TokenType.NUMBER) {
-                    output.addLast(token);
-                } else if (token.type == TokenType.OPEN_BRACKET) {
-                    stack.addLast(token);
-                } else if (token.type == TokenType.CLOSE_BRACKET) {
-                    while (!stack.isEmpty() && stack.peekLast().type != TokenType.OPEN_BRACKET) {
-                        output.addLast(stack.pollLast());
-                    }
-                    if (stack.isEmpty() || stack.peekLast().type != TokenType.OPEN_BRACKET) {
-                        throw new ParsingException("Bad brackets balance");
-                    }
-                    stack.pollLast();
-                    if (!stack.isEmpty() && stack.peekLast().type == TokenType.FUNCTION) {
-                        output.addLast(stack.pollLast());
-                    }
-                } else if (token.type == TokenType.COMMA) {
-                    output.addLast(token);
-                } else if (token.type == TokenType.FUNCTION) {
-                    TokenFunction function = (TokenFunction) token;
-                    stack.addLast(function);
-                } else {
-                    int priority = ((TokenOperator) token).priority;
-                    while (!stack.isEmpty() && stack.peekLast().isOperation()
-                            && priority <= ((TokenOperator) stack.peekLast()).priority) {
-                        output.addLast(stack.pollLast());
-                    }
-                    stack.addLast(token);
+        ArrayDeque<Token> output = new ArrayDeque<>();
+        ArrayDeque<Token> stack = new ArrayDeque<>();
+        for (Token token : input) {
+            if (token.type == TokenType.NUMBER) {
+                output.addLast(token);
+            } else if (token.type == TokenType.OPEN_BRACKET) {
+                stack.addLast(token);
+            } else if (token.type == TokenType.CLOSE_BRACKET) {
+                while (!stack.isEmpty() && stack.peekLast().type != TokenType.OPEN_BRACKET) {
+                    output.addLast(stack.pollLast());
                 }
-            }
-            while (!stack.isEmpty()) {
-                output.addLast(stack.pollLast());
-            }
-            if (output.isEmpty()) {
-                throw new ParsingException("Empty string is not a valid string");
-            }
-            for (Token token : output) {
-                if (token.type == TokenType.OPEN_BRACKET) {
+                if (stack.isEmpty() || stack.peekLast().type != TokenType.OPEN_BRACKET) {
                     throw new ParsingException("Bad brackets balance");
                 }
+                stack.pollLast();
+                if (!stack.isEmpty() && stack.peekLast().type == TokenType.FUNCTION) {
+                    output.addLast(stack.pollLast());
+                }
+            } else if (token.type == TokenType.COMMA) {
+                output.addLast(token);
+            } else if (token.type == TokenType.FUNCTION) {
+                TokenFunction function = (TokenFunction) token;
+                stack.addLast(function);
+            } else {
+                int priority = ((TokenOperator) token).priority;
+                while (!stack.isEmpty() && stack.peekLast().isOperation()
+                        && priority <= ((TokenOperator) stack.peekLast()).priority) {
+                    output.addLast(stack.pollLast());
+                }
+                stack.addLast(token);
             }
-            return output;
-        } catch (ParsingException e) {
-            throw new ParsingException("Error while convertToRPN " + input, e);
         }
+        while (!stack.isEmpty()) {
+            output.addLast(stack.pollLast());
+        }
+        if (output.isEmpty()) {
+            throw new ParsingException("Empty string is not a valid string");
+        }
+        for (Token token : output) {
+            if (token.type == TokenType.OPEN_BRACKET) {
+                throw new ParsingException("Bad brackets balance");
+            }
+        }
+        return output;
     }
 
     private double calculateRPN(ArrayDeque<Token> rpn) throws ParsingException {
-        try {
-            ArrayDeque<Token> stack = new ArrayDeque<>();
-            for (Token token : rpn) {
-                if (token.type == TokenType.NUMBER || token.type == TokenType.COMMA) {
-                    stack.push(token);
-                } else if (token.type == TokenType.FUNCTION) {
-                    IFunction function = ((TokenFunction) token).function;
-                    int numberArguments = function.numberArguments();
-                    if (stack.size() < numberArguments) {
-                        throw new ParsingException(String.format("Function %s takes %d arguments, only %d given",
-                                function, numberArguments, stack.size()));
-                    }
-                    double[] arguments = new double[numberArguments];
-                    for (int i = arguments.length - 1; i >= 0; i--) {
-                        arguments[i] = ((TokenNumber) stack.pop()).x;
-                        if (i != 0) {
-                            Token comma = stack.pop();
-                            if (comma.type != TokenType.COMMA) {
-                                throw new ParsingException("Too few arguments (TODO)");
-                            }
+        ArrayDeque<Token> stack = new ArrayDeque<>();
+        for (Token token : rpn) {
+            if (token.type == TokenType.NUMBER || token.type == TokenType.COMMA) {
+                stack.push(token);
+            } else if (token.type == TokenType.FUNCTION) {
+                IFunction function = ((TokenFunction) token).function;
+                int numberArguments = function.numberArguments();
+                if (stack.size() < numberArguments) {
+                    throw new ParsingException(String.format("Function %s takes %d arguments, only %d given",
+                            function, numberArguments, stack.size()));
+                }
+                double[] arguments = new double[numberArguments];
+                for (int i = arguments.length - 1; i >= 0; i--) {
+                    arguments[i] = ((TokenNumber) stack.pop()).x;
+                    if (i != 0) {
+                        Token comma = stack.pop();
+                        if (comma.type != TokenType.COMMA) {
+                            throw new ParsingException("Too few arguments (TODO)");
                         }
                     }
-                    stack.push(new TokenNumber(function.apply(arguments)));
-                } else {
-                    TokenOperator operation = (TokenOperator) token;
-                    if (stack.size() < operation.numberOfOperands()) {
-                        throw new ParsingException(String.format("Operator %s takes %d operands, only %d given",
-                                operation.type, operation.numberOfOperands(), stack.size()));
-                    }
-                    if (operation.numberOfOperands() == 1) {
-                        TokenNumber operand = (TokenNumber) stack.pop();
-                        stack.push(((TokenOperatorUnary) operation).apply(operand));
-                    } else if (operation.numberOfOperands() == 2) {
-                        TokenNumber operand2 = (TokenNumber) stack.pop();
-                        TokenNumber operand1 = (TokenNumber) stack.pop();
-                        stack.push(((TokenOperatorBinary) operation).apply(operand1, operand2));
-                    }
+                }
+                stack.push(new TokenNumber(function.apply(arguments)));
+            } else {
+                TokenOperator operation = (TokenOperator) token;
+                if (stack.size() < operation.numberOfOperands()) {
+                    throw new ParsingException(String.format("Operator %s takes %d operands, only %d given",
+                            operation.type, operation.numberOfOperands(), stack.size()));
+                }
+                if (operation.numberOfOperands() == 1) {
+                    TokenNumber operand = (TokenNumber) stack.pop();
+                    stack.push(((TokenOperatorUnary) operation).apply(operand));
+                } else if (operation.numberOfOperands() == 2) {
+                    TokenNumber operand2 = (TokenNumber) stack.pop();
+                    TokenNumber operand1 = (TokenNumber) stack.pop();
+                    stack.push(((TokenOperatorBinary) operation).apply(operand1, operand2));
                 }
             }
-            return ((TokenNumber) stack.peek()).x;
-        } catch (ParsingException e) {
-            throw new ParsingException("Error while calculateRPN " + rpn, e);
         }
+        return ((TokenNumber) stack.peek()).x;
     }
 }
