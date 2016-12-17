@@ -1,8 +1,10 @@
 package ru.mipt.java2016.homework.g594.pyrkin.task4;
 
+import org.h2.jdbc.JdbcSQLException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -61,7 +63,7 @@ public class BillingDao {
     public boolean addUser(String username, String password) {
         try {
             jdbcTemplate.execute("INSERT INTO billing.users VALUES ('" + username + "', '" + password + "', TRUE)");
-        } catch (Exception e) {
+        } catch (DuplicateKeyException e) {
             return false;
         }
 
@@ -92,7 +94,7 @@ public class BillingDao {
             jdbcTemplate.update("INSERT INTO " + username + ".variables VALUES ('" +
                     variable.getName() + "','" + variable.getValue() + "','" +
                     variable.getExpression() + "')");
-        } catch (Exception e) {
+        } catch (DuplicateKeyException e) {
             return false;
         }
         return true;
@@ -102,7 +104,7 @@ public class BillingDao {
         try {
             jdbcTemplate.update("DELETE FROM " + username + ".variables WHERE " +
                     "name='" + variableName + "'");
-        } catch (Exception e) {
+        } catch (DuplicateKeyException e) {
             return false;
         }
         return true;
