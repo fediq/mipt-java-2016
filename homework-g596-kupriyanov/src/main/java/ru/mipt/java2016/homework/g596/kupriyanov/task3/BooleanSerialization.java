@@ -1,5 +1,7 @@
 package ru.mipt.java2016.homework.g596.kupriyanov.task3;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.RandomAccessFile;
 import java.io.IOException;
 
@@ -10,12 +12,12 @@ import java.io.IOException;
 public class BooleanSerialization implements SerializationStrategy<Boolean> {
 
     @Override
-    public void write(Boolean value, RandomAccessFile out) throws IOException {
+    public void write(Boolean value, DataOutput out) throws IOException {
         out.writeBoolean(value);
     }
 
     @Override
-    public Boolean read(RandomAccessFile in) throws IOException {
+    public Boolean read(DataInput in) throws IOException {
         return in.readBoolean();
     }
 }

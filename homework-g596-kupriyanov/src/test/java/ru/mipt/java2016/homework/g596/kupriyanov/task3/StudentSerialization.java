@@ -2,6 +2,8 @@ package ru.mipt.java2016.homework.g596.kupriyanov.task3;
 
 import ru.mipt.java2016.homework.tests.task2.Student;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.RandomAccessFile;
 import java.io.IOException;
 import java.util.Date;
@@ -13,7 +15,7 @@ import java.util.Date;
 public class StudentSerialization implements SerializationStrategy<Student> {
 
     @Override
-    public void write(Student value, RandomAccessFile out) throws IOException {
+    public void write(Student value, DataOutput out) throws IOException {
         out.writeInt(value.getGroupId());
         out.writeUTF(value.getName());
         out.writeUTF(value.getHometown());
@@ -24,10 +26,10 @@ public class StudentSerialization implements SerializationStrategy<Student> {
     }
 
     @Override
-    public Student read(RandomAccessFile stream) throws IOException {
-        Student responceStudent = new Student(stream.readInt(), stream.readUTF(), stream.readUTF(),
-                new Date(stream.readLong()), stream.readBoolean(),
-                stream.readDouble());
+    public Student read(DataInput in) throws IOException {
+        Student responceStudent = new Student(in.readInt(), in.readUTF(), in.readUTF(),
+                new Date(in.readLong()), in.readBoolean(),
+                in.readDouble());
         return responceStudent;
     }
 }

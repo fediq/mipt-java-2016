@@ -1,5 +1,7 @@
 package ru.mipt.java2016.homework.g596.kupriyanov.task3;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.RandomAccessFile;
 import java.io.IOException;
 
@@ -10,12 +12,12 @@ import java.io.IOException;
 public class StringSerialization implements SerializationStrategy<String> {
 
     @Override
-    public void write(String value, RandomAccessFile out) throws IOException {
+    public void write(String value, DataOutput out) throws IOException {
         out.writeUTF(value);
     }
 
     @Override
-    public String read(RandomAccessFile in) throws IOException {
+    public String read(DataInput in) throws IOException {
         return in.readUTF();
     }
 }
