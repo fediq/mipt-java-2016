@@ -16,7 +16,7 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
     private File lockfile;
     private ArrayList<File> filesTable;
     private HashSet<K> setKeys;
-    private HashMap<K, V> Cache;
+    private HashMap<K, V> cache;
     private HashMap<K, KeyPosition> fileMap;
     private HashMap<K, KeyPosition> deletedMap;
     private final FileWorker<K> keyFileWorker;
@@ -42,9 +42,11 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
     }
 
     private synchronized void touchDB() throws IllegalStateException {
-        if (!lockfile.exists())
+        if (!lockfile.exists()) {
             throw new IllegalStateException("Working with closed DB");
+        }
     }
+
 
     KeyValueStorageImplementation(String path, FileWorker<K> kFileWorker, FileWorker<V> vFileWorker) throws IOException {
         if (Files.notExists(Paths.get(path))) {
@@ -55,7 +57,7 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
             throw new IOException("Database is already opened.");
         }
         setKeys = new HashSet<>();
-        Cache = new HashMap<>();
+        cache = new HashMap<>();
         fileMap = new HashMap<>();
         deletedMap = new HashMap<>();
         filesTable = new ArrayList<>();
@@ -88,54 +90,54 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
     private synchronized void deleteHoles() throws IOException {
         try {
             for (int id = 0; id < filesTable.size() - 1; id++) {
-                int main_result = id;
-                int rest_result = id + 1;
+                int mainResult = id;
+                int restResult = id + 1;
                 HashMap<K, KeyPosition> newMapKeyFile = new HashMap<>();
-                File file1 = filesTable.get(main_result);
-                File file2 = filesTable.get(rest_result);
-                RandomAccessFile RAF1 = new RandomAccessFile(file1, "rw");
-                RandomAccessFile RAF2 = new RandomAccessFile(file2, "rw");
+                File file1 = filesTable.get(mainResult);
+                File file2 = filesTable.get(restResult);
+                RandomAccessFile raf1 = new RandomAccessFile(file1, "rw");
+                RandomAccessFile raf2 = new RandomAccessFile(file2, "rw");
                 int currentKeys = 0;
                 long currentShift = 0;
                 File currentFile = new File(databasePath + File.separator + DATABASE_NAME_TEMPLATE + "." + "new1");
                 currentFile.createNewFile();
                 RandomAccessFile currentFileRAM = new RandomAccessFile(currentFile, "rw");
 
-                while (currentShift != RAF1.length()) {
-                    K key = keyFileWorker.read(RAF1, RAF1.getFilePointer());
-                    long currentKeyShift = RAF1.getFilePointer();
-                    V value = valueFileWorker.read(RAF1, RAF1.getFilePointer());
-                    currentShift = RAF1.getFilePointer();
+                while (currentShift != raf1.length()) {
+                    K key = keyFileWorker.read(raf1, raf1.getFilePointer());
+                    long currentKeyShift = raf1.getFilePointer();
+                    V value = valueFileWorker.read(raf1, raf1.getFilePointer());
+                    currentShift = raf1.getFilePointer();
                     if (deletedMap.containsKey(key)) {
                         KeyPosition place = deletedMap.get(key);
-                        if (place.getId() == main_result && place.getPosition() == currentKeyShift) {
+                        if (place.getId() == mainResult && place.getPosition() == currentKeyShift) {
                             continue;
                         }
                     }
                     keyFileWorker.write(currentFileRAM, key, currentFileRAM.getFilePointer());
-                    newMapKeyFile.put(key, new KeyPosition(main_result, currentFileRAM.getFilePointer()));
+                    newMapKeyFile.put(key, new KeyPosition(mainResult, currentFileRAM.getFilePointer()));
                     valueFileWorker.write(currentFileRAM, value, currentFileRAM.getFilePointer());
                     currentKeys++;
                 }
                 currentShift = 0;
-                while (currentShift != RAF2.length() && currentKeys < DATA_CAPACITY) {
-                    K key = keyFileWorker.read(RAF2, RAF2.getFilePointer());
-                    long currentKeyShift = RAF2.getFilePointer();
-                    V value = valueFileWorker.read(RAF2, RAF2.getFilePointer());
-                    currentShift = RAF2.getFilePointer();
+                while (currentShift != raf2.length() && currentKeys < DATA_CAPACITY) {
+                    K key = keyFileWorker.read(raf2, raf2.getFilePointer());
+                    long currentKeyShift = raf2.getFilePointer();
+                    V value = valueFileWorker.read(raf2, raf2.getFilePointer());
+                    currentShift = raf2.getFilePointer();
                     if (deletedMap.containsKey(key)) {
                         KeyPosition place = deletedMap.get(key);
-                        if (place.getId() == rest_result && place.getPosition() == currentKeyShift) {
+                        if (place.getId() == restResult && place.getPosition() == currentKeyShift) {
                             continue;
                         }
                     }
                     keyFileWorker.write(currentFileRAM, key, currentFileRAM.getFilePointer());
-                    newMapKeyFile.put(key, new KeyPosition(rest_result, currentFileRAM.getFilePointer()));
+                    newMapKeyFile.put(key, new KeyPosition(restResult, currentFileRAM.getFilePointer()));
                     valueFileWorker.write(currentFileRAM, value, currentFileRAM.getFilePointer());
                     currentKeys++;
                 }
 
-                RAF1.close();
+                raf1.close();
                 Files.delete(filesTable.get(id).toPath());
                 currentFileRAM.close();
                 currentFile.renameTo(file1);
@@ -145,30 +147,30 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
                     currentFile.createNewFile();
                     currentFileRAM = new RandomAccessFile(currentFile, "rw");
 
-                    while (currentShift != RAF2.length()) {
-                        K key = keyFileWorker.read(RAF2, RAF2.getFilePointer());
-                        long currentKeyShift = RAF2.getFilePointer();
-                        V value = valueFileWorker.read(RAF2, RAF2.getFilePointer());
-                        currentShift = RAF2.getFilePointer();
+                    while (currentShift != raf2.length()) {
+                        K key = keyFileWorker.read(raf2, raf2.getFilePointer());
+                        long currentKeyShift = raf2.getFilePointer();
+                        V value = valueFileWorker.read(raf2, raf2.getFilePointer());
+                        currentShift = raf2.getFilePointer();
                         if (deletedMap.containsKey(key)) {
                             KeyPosition place = deletedMap.get(key);
-                            if (place.getId() == rest_result && place.getPosition() == currentKeyShift) {
+                            if (place.getId() == restResult && place.getPosition() == currentKeyShift) {
                                 continue;
                             }
                         }
                         keyFileWorker.write(currentFileRAM, key, currentFileRAM.getFilePointer());
-                        newMapKeyFile.put(key, new KeyPosition(rest_result, currentFileRAM.getFilePointer()));
+                        newMapKeyFile.put(key, new KeyPosition(restResult, currentFileRAM.getFilePointer()));
                         valueFileWorker.write(currentFileRAM, value, currentFileRAM.getFilePointer());
                     }
                 }
 
-                RAF2.close();
+                raf2.close();
                 Files.delete(filesTable.get(id + 1).toPath());
                 if (currentKeys >= DATA_CAPACITY) {
                     currentFileRAM.close();
                     currentFile.renameTo(file2);
                 } else {
-                    for (int index = rest_result + 1; index < filesTable.size(); index++) {
+                    for (int index = restResult + 1; index < filesTable.size(); index++) {
                         int oldid = index;
                         int newid = index - 1;
                         File oldfile = filesTable.get(oldid);
@@ -199,7 +201,7 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
             deleteHoles();
             deletedMap.clear();
         }
-        if (Cache.size() >= DATA_CAPACITY)  {
+        if (cache.size() >= DATA_CAPACITY)  {
             int id = filesTable.size();
             File tmp = new File(databasePath + File.separator + DATABASE_NAME_TEMPLATE + "." + id);
             try {
@@ -208,12 +210,12 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
                 RandomAccessFile current = new RandomAccessFile(tmp, "rw");
                 current.setLength(0);
                 current.seek(0);
-                for (Map.Entry<K, V> entry : Cache.entrySet()) {
+                for (Map.Entry<K, V> entry : cache.entrySet()) {
                     KeyPosition place = new KeyPosition(id, current.getFilePointer());
                     fileMap.put(entry.getKey(), place);
                     valueFileWorker.write(current, entry.getValue(), current.getFilePointer());
                 }
-                Cache.clear();
+                cache.clear();
                 current.close();
             } catch (IOException error) {
                 error.printStackTrace();
@@ -225,8 +227,8 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
     @Override
     public synchronized V read(K key)  {
         touchDB();
-        if (Cache.keySet().contains(key)) {
-            return Cache.get(key);
+        if (cache.keySet().contains(key)) {
+            return cache.get(key);
         } else if (fileMap.containsKey(key)) {
             int id = fileMap.get(key).getId();
             long shift = fileMap.get(key).getPosition();
@@ -248,8 +250,8 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
     public synchronized void write(K key, V value) {
         touchDB();
         setKeys.add(key);
-        Cache.put(key, value);
-        try{
+        cache.put(key, value);
+        try {
             newPart();
         }
         catch (IOException e) {
@@ -266,10 +268,11 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
     @Override
     public synchronized void delete(K key) {
         touchDB();
-        if (Cache.containsKey(key) || fileMap.containsKey(key))
+        if (cache.containsKey(key) || fileMap.containsKey(key)) {
             deletedMap.put(key, fileMap.get(key));
+        }
         setKeys.remove(key);
-        Cache.remove(key);
+        cache.remove(key);
         fileMap.remove(key);
         try {
             newPart();
@@ -291,13 +294,14 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
 
     @Override
     public synchronized void close() throws IOException {
-        if (!lockfile.exists())
-            throw new IOException("Working with closed DB") ;
+        if (!lockfile.exists()) {
+            throw new IOException("Working with closed DB");
+        }
         if (deletedMap.size() > 0) {
             deleteHoles();
             deletedMap.clear();
         }
-        if (Cache.size() > 0) {
+        if (cache.size() > 0) {
             int id = filesTable.size();
             File tmp = new File(databasePath + File.separator + DATABASE_NAME_TEMPLATE + "." + id);
             try {
@@ -306,12 +310,12 @@ public class KeyValueStorageImplementation<K, V> implements KeyValueStorage<K, V
                 RandomAccessFile current = new RandomAccessFile(tmp, "rw");
                 current.setLength(0);
                 current.seek(0);
-                for (Map.Entry<K, V> entry : Cache.entrySet()) {
+                for (Map.Entry<K, V> entry : cache.entrySet()) {
                     KeyPosition place = new KeyPosition(id, current.getFilePointer());
                     fileMap.put(entry.getKey(), place);
                     valueFileWorker.write(current, entry.getValue(), current.getFilePointer());
                 }
-                Cache.clear();
+                cache.clear();
                 current.close();
             } catch (IOException error) {
                 error.printStackTrace();
