@@ -15,9 +15,9 @@ public class CalculatorImplementation {
         private String str; // TODO threads
         private String username;
 
-        private double calculate(String username, String expression) {
+        private double calculate(String user, String expression) {
             String start = expression.replaceAll("\\s", "");
-            this.username = username;
+            username = user;
             StringBuilder result = new StringBuilder();
             StringBuilder current = new StringBuilder();
             for (int i = 0; i <= start.length(); ++i) {
@@ -187,8 +187,6 @@ public class CalculatorImplementation {
         }
     }
 
-    private String str; // TODO threads
-    private String username;
     @Autowired
     private BillingDao billingDao;
 
