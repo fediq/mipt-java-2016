@@ -25,7 +25,7 @@ public class Application {
 
     @Bean
     public Calculator calculator() {
-        return new CalculatorImplementation();
+        return new RecursiveCalculator();
     }
 
     @Bean
