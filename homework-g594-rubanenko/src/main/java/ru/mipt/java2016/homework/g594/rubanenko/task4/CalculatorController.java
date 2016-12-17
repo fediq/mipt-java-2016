@@ -43,7 +43,8 @@ public class CalculatorController  {
         }
         return "<html>" +
                 "<head><title>Svinkapeppa</title></head>" +
-                "<body><h1>Hello, " + name + "!</h1></body>" +
+                "<body><h1>Реализация выполнена Рубаненко Евгением</h1>" +
+                "<h2>Декабрь 2016</h2></body>" +
                 "</html>";
     }
 
