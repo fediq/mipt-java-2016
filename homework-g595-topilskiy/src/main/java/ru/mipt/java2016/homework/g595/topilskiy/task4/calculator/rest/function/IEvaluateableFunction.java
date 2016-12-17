@@ -20,4 +20,11 @@ public interface IEvaluateableFunction {
      *  Sets the arguments up for the evaluation of the Function
      */
     void setArguments(List<Double> arguments) throws ParsingException;
+
+    /**
+     *  @return whether the current function is predefined
+     */
+    default boolean isPredefined() {
+        return false;
+    }
 }

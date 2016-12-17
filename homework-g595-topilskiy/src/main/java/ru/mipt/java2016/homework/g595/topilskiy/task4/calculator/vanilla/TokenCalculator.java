@@ -7,7 +7,8 @@ import java.util.ArrayList;
 
 /**
  * Calculator that evaluates the expression by the way of tokens
- * Expression is defined as the following (in extended Backus-Naur Form \)
+ *
+ * Expression is defined as the following (in extended Backus-Naur Form)
  *   expression = multiple, { ('+' | '-') multiple }
  *   multiple   = braced_expression, { ('*' | '/') braced_expression }
  *   braced_expression = '(' expression ')' | number_expression

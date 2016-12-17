@@ -125,4 +125,9 @@ public class PredefinedFunction implements IEvaluateableFunction {
             this.arguments.set(argumentsIndex, arguments.get(argumentsIndex));
         }
     }
+
+    @Override
+    public boolean isPredefined() {
+        return true;
+    }
 }
