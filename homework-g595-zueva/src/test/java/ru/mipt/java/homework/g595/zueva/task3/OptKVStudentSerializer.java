@@ -10,20 +10,20 @@ import java.util.Date;
 
 class OptKVStudentSerializer implements OptKVStorageSerializer<Student> {
     @Override
-    public int Size(Student value) {
+    public int size(Student value) {
         return Integer.SIZE / 8 + 2 * (value.getName().length() + 1) +
                 2 * (value.getHometown().length() + 1) + Long.SIZE / 8 + 1 + Double.SIZE / 8;
     }
 
     @Override
-    public ByteBuffer SerialToStrm(Student value) {
-        ByteBuffer serialized = ByteBuffer.allocate(Size(value));
+    public ByteBuffer stringToStream(Student value) {
+        ByteBuffer serialized = ByteBuffer.allocate(size(value));
         OptKVStorageSerializer studentKeySerializer = new OptKVStudentKeySerializer();
-        serialized.put(studentKeySerializer.SerialToStrm(new StudentKey(value.getGroupId(),
+        serialized.put(studentKeySerializer.stringToStream(new StudentKey(value.getGroupId(),
                 value.getName())).array());
         CombienedSerializer StudentSKey =
                 new CombienedSerializer();
-        serialized.put(StudentSKey.SerialToStrm(value.getHometown()).array());
+        serialized.put(StudentSKey.stringToStream(value.getHometown()).array());
         serialized.putLong(value.getBirthDate().getTime());
         if (value.isHasDormitory()) {
             serialized.put((byte) 1);
@@ -38,12 +38,12 @@ class OptKVStudentSerializer implements OptKVStorageSerializer<Student> {
 
 
     @Override
-    public Student DeserialFromStrm(ByteBuffer in) {
+    public Student deserializationFromStream(ByteBuffer in) {
         CombienedSerializer MyExample =
                 new CombienedSerializer();
         return new Student(in.getInt(),
-                MyExample.DeserialFromStrm(in),
-                MyExample.DeserialFromStrm(in),
+                MyExample.deserializationFromStream(in),
+                MyExample.deserializationFromStream(in),
                 new Date(in.getLong()), (in.get() == 1), in.getDouble());
     }
 }

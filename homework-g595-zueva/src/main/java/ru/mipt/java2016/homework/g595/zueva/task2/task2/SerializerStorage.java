@@ -8,7 +8,7 @@ import java.io.IOException;
  * Created by nestyme on 31.10.2016.
  */
 interface SerializerStorage<T> {
-    public void writeToStream(DataOutputStream out, T value)throws IOException;
+    void writeToStream(DataOutputStream out, T value)throws IOException;
 
-    public T readFromStream(DataInputStream in) throws IOException;
+    T readFromStream(DataInputStream in) throws IOException;
 }

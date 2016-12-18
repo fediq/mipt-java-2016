@@ -8,25 +8,25 @@ import java.nio.ByteBuffer;
 public class OptKVStudentKeySerializer implements OptKVStorageSerializer<StudentKey> {
 
     @Override
-    public int Size(StudentKey value) {
+    public int size(StudentKey value) {
         return Integer.SIZE / 8 + 2 * (value.getName().length() + 1);
     }
 
     @Override
-    public ByteBuffer SerialToStrm(StudentKey value) {
-        ByteBuffer serialized = ByteBuffer.allocate(Size(value));
+    public ByteBuffer stringToStream(StudentKey value) {
+        ByteBuffer serialized = ByteBuffer.allocate(size(value));
         serialized.putInt(value.getGroupId());
         CombienedSerializer StExample =
                 new CombienedSerializer();
-        serialized.put(StExample.SerialToStrm(value.getName()).array());
+        serialized.put(StExample.stringToStream(value.getName()).array());
         return serialized;
     }
 
     @Override
-    public StudentKey DeserialFromStrm(ByteBuffer in) {
+    public StudentKey deserializationFromStream(ByteBuffer in) {
         CombienedSerializer StrStud =
                 new CombienedSerializer();
-        return new StudentKey(in.getInt(), StrStud.DeserialFromStrm(in));
+        return new StudentKey(in.getInt(), StrStud.deserializationFromStream(in));
     }
 
     }

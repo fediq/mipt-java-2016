@@ -2,16 +2,15 @@ package ru.mipt.java2016.homework.g595.zueva.task2.task3;
 
 import java.nio.ByteBuffer;
 
-public class CombienedSerializer
-    implements OptKVStorageSerializer<String> {
+public class CombienedSerializer implements OptKVStorageSerializer<String> {
         @Override
-        public int Size(String value) {
+        public int size(String value) {
             return 2 * (value.length() + 1);
         }
 
         @Override
-        public ByteBuffer SerialToStrm(String value) {
-            ByteBuffer serialized = ByteBuffer.allocate(Size(value));
+        public ByteBuffer stringToStream(String value) {
+            ByteBuffer serialized = ByteBuffer.allocate(size(value));
             for (char c : value.toCharArray()) {
                 serialized.putChar(c);
             }
@@ -20,7 +19,7 @@ public class CombienedSerializer
         }
 
         @Override
-        public String DeserialFromStrm(ByteBuffer input) {
+        public String deserializationFromStream (ByteBuffer input) {
             StringBuilder deserialized = new StringBuilder();
             char c = input.getChar();
             while (c != '\0') {
