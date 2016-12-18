@@ -48,10 +48,7 @@ public class MyKeyValueStorage<K, V> implements
             }
         } catch (FileNotFoundException e) {
             throw new RuntimeException("File not found", e);
-        } catch (IOException e) {
-            throw new RuntimeException("Can't write to file", e);
         }
-
 
         isOpen = true;
     }

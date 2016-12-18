@@ -3,8 +3,9 @@ package ru.mipt.java2016.homework.g597.grishutin.task2;
 
 import ru.mipt.java2016.homework.tests.task2.Student;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 
 /*
     int groupId,
@@ -14,30 +15,40 @@ import java.io.RandomAccessFile;
     boolean hasDormitory,
     double averageScore
  */
-class StudentSerializationStrategy implements SerializationStrategy<Student> {
-    private IntegerSerializationStrategy integerSerializationStrategy = IntegerSerializationStrategy.getInstance();
-    private StringSerializationStrategy stringSerializationStrategy = StringSerializationStrategy.getInstance();
-    private DateSerializationStrategy dateSerializationStrategy = DateSerializationStrategy.getInstance();
-    private BooleanSerializationStrategy booleanSerializationStrategy = BooleanSerializationStrategy.getInstance();
-    private DoubleSerializationStrategy doubleSerializationStrategy = DoubleSerializationStrategy.getInstance();
+public class StudentSerializationStrategy implements SerializationStrategy<Student> {
+    private final IntegerSerializer integerSerializer = IntegerSerializer.getInstance();
+    private final StringSerializer stringSerializer = StringSerializer.getInstance();
+    private final DateSerializer dateSerializer = DateSerializer.getInstance();
+    private final BooleanSerializer booleanSerializer = BooleanSerializer.getInstance();
+    private final DoubleSerializer doubleSerializer = DoubleSerializer.getInstance();
 
     @Override
-    public void serialize(Student student, RandomAccessFile raf) throws IOException {
-        integerSerializationStrategy.serialize(student.getGroupId(), raf);
-        stringSerializationStrategy.serialize(student.getName(), raf);
-        stringSerializationStrategy.serialize(student.getHometown(), raf);
-        dateSerializationStrategy.serialize(student.getBirthDate(), raf);
-        booleanSerializationStrategy.serialize(student.isHasDormitory(), raf);
-        doubleSerializationStrategy.serialize(student.getAverageScore(), raf);
+    public void serialize(Student student, DataOutput raf) throws IOException {
+        integerSerializer.serialize(student.getGroupId(), raf);
+        stringSerializer.serialize(student.getName(), raf);
+        stringSerializer.serialize(student.getHometown(), raf);
+        dateSerializer.serialize(student.getBirthDate(), raf);
+        booleanSerializer.serialize(student.isHasDormitory(), raf);
+        doubleSerializer.serialize(student.getAverageScore(), raf);
     }
 
     @Override
-    public Student deserialize(RandomAccessFile raf) throws IOException {
-        return new Student(integerSerializationStrategy.deserialize(raf),
-                stringSerializationStrategy.deserialize(raf),
-                stringSerializationStrategy.deserialize(raf),
-                dateSerializationStrategy.deserialize(raf),
-                booleanSerializationStrategy.deserialize(raf),
-                doubleSerializationStrategy.deserialize(raf));
+    public Student deserialize(DataInput raf) throws IOException {
+        return new Student(integerSerializer.deserialize(raf),
+                stringSerializer.deserialize(raf),
+                stringSerializer.deserialize(raf),
+                dateSerializer.deserialize(raf),
+                booleanSerializer.deserialize(raf),
+                doubleSerializer.deserialize(raf));
+    }
+
+    @Override
+    public Long bytesSize(Student value) {
+        return integerSerializer.bytesSize(value.getGroupId()) +
+                stringSerializer.bytesSize(value.getName()) +
+                stringSerializer.bytesSize(value.getHometown()) +
+                dateSerializer.bytesSize(value.getBirthDate()) +
+                booleanSerializer.bytesSize(value.isHasDormitory()) +
+                doubleSerializer.bytesSize(value.getAverageScore());
     }
 }

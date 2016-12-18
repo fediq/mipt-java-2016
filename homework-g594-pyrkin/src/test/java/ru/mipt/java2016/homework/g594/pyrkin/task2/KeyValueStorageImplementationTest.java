@@ -19,7 +19,7 @@ public class KeyValueStorageImplementationTest extends AbstractSingleFileStorage
     protected KeyValueStorage<String, String> buildStringsStorage(String path) {
         try {
             return new KeyValueStorageImplementation<>(path,
-                    new StringSerializer(), new StringSerializer());
+                    new FastStringSerializer(), new FastStringSerializer());
         }catch (IOException e){
             return null;
         }
