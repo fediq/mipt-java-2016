@@ -129,18 +129,31 @@ class EvaluatorHelper {
                 getNextChar();
             } else {
                 result = processFactor();
-                if (func.equals("sqrt")) result = Math.sqrt(result);
-                else if (func.equals("sin")) result = Math.sin(Math.toRadians(result));
-                else if (func.equals("cos")) result = Math.cos(Math.toRadians(result));
-                else if (func.equals("tg")) result = Math.tan(Math.toRadians(result));
-                else if (func.equals("abs")) result = Math.abs(result);
-                else if (func.equals("sign")) result = Math.signum(result);
-                else if (func.equals("log2")) result = Math.log(result) / Math.log(2);
-                else if (func.equals("max")) result = Math.max(result, pendingArgument);
-                else if (func.equals("min")) result = Math.min(result, pendingArgument);
-                else if (func.equals("pow")) result = Math.pow(result, pendingArgument);
-                else if (func.equals("log")) result = Math.log(result) / Math.log(pendingArgument);
-                else throw new RuntimeException("Unknown function: " + func);
+                if (func.equals("sqrt")) {
+                    result = Math.sqrt(result);
+                } else if (func.equals("sin")) {
+                    result = Math.sin(Math.toRadians(result));
+                } else if (func.equals("cos")) {
+                    result = Math.cos(Math.toRadians(result));
+                } else if (func.equals("tg")) {
+                    result = Math.tan(Math.toRadians(result));
+                } else if (func.equals("abs")) {
+                    result = Math.abs(result);
+                } else if (func.equals("sign")) {
+                    result = Math.signum(result);
+                } else if (func.equals("log2")) {
+                    result = Math.log(result) / Math.log(2);
+                } else if (func.equals("max")) {
+                    result = Math.max(result, pendingArgument);
+                } else if (func.equals("min")) {
+                    result = Math.min(result, pendingArgument);
+                } else if (func.equals("pow")) {
+                    result = Math.pow(result, pendingArgument);
+                } else if (func.equals("log")) {
+                    result = Math.log(result) / Math.log(pendingArgument);
+                } else {
+                    throw new RuntimeException("Unknown function: " + func);
+                }
             }
         } else {
             throw new ParsingException("Unexpected appearance of: " + ch);
