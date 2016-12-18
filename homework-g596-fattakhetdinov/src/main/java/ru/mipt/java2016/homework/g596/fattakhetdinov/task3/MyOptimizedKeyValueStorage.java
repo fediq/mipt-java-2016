@@ -284,40 +284,38 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
         //creating new files and streams
         File fileVFrom = new File(path + File.separator + valuesFileName);
-        RandomAccessFile valuesRewriteFromFile = new RandomAccessFile(fileVFrom, "rw");
 
         File fileKFrom = new File(path + File.separator + keysFileName);
 
         File fileVTo = new File(path + File.separator + valuesRewriteFileName);
         fileVTo.createNewFile();
-        DataOutputStream valuesRewriteToFile =
-                new DataOutputStream(new BufferedOutputStream(new FileOutputStream(fileVTo)));
+
 
         File fileKTo = new File(path + File.separator + keysRewriteFileName);
         fileKTo.createNewFile();
-        DataOutputStream keysRewriteToFile =
-                new DataOutputStream(new BufferedOutputStream(new FileOutputStream(fileKTo)));
+
 
         //rewrite
-        keysRewriteToFile.writeUTF(currentStorageType);
-        keysRewriteToFile.writeInt(keysOffsetsTable.size());
-        for (K key : keysOffsetsTable.keySet()) {
-            Long offset = keysOffsetsTable.get(key);
-            Long offsetForKeysFile = fileVTo.length();
-            valuesRewriteFromFile.seek(offset);
-            V res = valueSerializationStrategy.deserializeFromFile(valuesRewriteFromFile);
-            valueSerializationStrategy.serializeToFile(res, valuesRewriteToFile);
-            valuesRewriteToFile.flush();
+        try (RandomAccessFile valuesRewriteFromFile = new RandomAccessFile(fileVFrom, "rw");
+                DataOutputStream valuesRewriteToFile = new DataOutputStream(
+                        new BufferedOutputStream(new FileOutputStream(fileVTo)));
+                DataOutputStream keysRewriteToFile = new DataOutputStream(
+                        new BufferedOutputStream(new FileOutputStream(fileKTo)))) {
+            keysRewriteToFile.writeUTF(currentStorageType);
+            keysRewriteToFile.writeInt(keysOffsetsTable.size());
+            for (K key : keysOffsetsTable.keySet()) {
+                Long offset = keysOffsetsTable.get(key);
+                Long offsetForKeysFile = fileVTo.length();
+                valuesRewriteFromFile.seek(offset);
+                V res = valueSerializationStrategy.deserializeFromFile(valuesRewriteFromFile);
+                valueSerializationStrategy.serializeToFile(res, valuesRewriteToFile);
+                valuesRewriteToFile.flush();
 
-            keySerializationStrategy.serializeToFile(key, keysRewriteToFile);
-            keysRewriteToFile.writeLong(offsetForKeysFile);
+                keySerializationStrategy.serializeToFile(key, keysRewriteToFile);
+                keysRewriteToFile.writeLong(offsetForKeysFile);
+            }
         }
-
-        //close all
-        valuesRewriteToFile.close();
-        valuesRewriteFromFile.close();
-        keysRewriteToFile.close();
-
+        //clear all
         keysOffsetsTable.clear();
         cacheTable.cleanUp();
 
@@ -327,10 +325,6 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         //rename new files
         fileKTo.renameTo(new File(path + File.separator + keysFileName));
         fileVTo.renameTo(new File(path + File.separator + valuesFileName));
-
-        //write type of storage to initFile
-        initFile.delete();
-        initFile = new File(path + File.separator + initFileName);
 
         reloadData();
     }
@@ -355,26 +349,27 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public void close() throws IOException {
-        DataOutputStream output = new DataOutputStream(new FileOutputStream(initFile));
-        output.writeUTF(currentStorageType);
-        output.close();
+        isClosed = true;
+
+
+        try (DataOutputStream output = new DataOutputStream(new FileOutputStream(initFile))) {
+            output.writeUTF(currentStorageType);
+        }
 
         valuesOutputStream.close();
         keysDataInputStream.close();
-        DataOutputStream keysDataOutputStream = new DataOutputStream(new BufferedOutputStream(
-                new FileOutputStream(new File(path + File.separator + keysFileName))));
 
-        keysDataOutputStream.writeUTF(currentStorageType);
-        keysDataOutputStream.writeInt(keysOffsetsTable.size());
-        for (K key : keysOffsetsTable.keySet()) {
-            keySerializationStrategy.serializeToFile(key, keysDataOutputStream);
-            keysDataOutputStream.writeLong(keysOffsetsTable.get(key));
+
+        try (DataOutputStream keysDataOutputStream = new DataOutputStream(new BufferedOutputStream(
+                new FileOutputStream(new File(path + File.separator + keysFileName))))) {
+            keysDataOutputStream.writeUTF(currentStorageType);
+            keysDataOutputStream.writeInt(keysOffsetsTable.size());
+            for (K key : keysOffsetsTable.keySet()) {
+                keySerializationStrategy.serializeToFile(key, keysDataOutputStream);
+                keysDataOutputStream.writeLong(keysOffsetsTable.get(key));
+            }
+            keysOffsetsTable.clear();
         }
-        keysOffsetsTable.clear();
-
-        keysDataOutputStream.close();
-
         valuesFile.close();
-        isClosed = true;
     }
 }
