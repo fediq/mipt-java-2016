@@ -125,7 +125,7 @@ public class OptKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             }
             if (bufferCache.containsKey(key)) {
                 if (cntThreshold > MAX_OPTIMIZE_THRESHOLD) {
-                    optimizeMemory();
+                    updStorage();
                 }
                 ++cntThreshold;
             }
@@ -144,7 +144,7 @@ public class OptKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             bufferCache.remove(key);
             db.remove(key);
             if (cntThreshold > MAX_OPTIMIZE_THRESHOLD) {
-                optimizeMemory();
+                updStorage();
             }
             ++cntThreshold;
         } catch (Exception e) {
@@ -185,14 +185,9 @@ public class OptKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         writeLock.lock();
         try {
             writeCashe();
-            updStorage();
             downloadData();
-            try {
-                mapStorage.close();
-                storage.close();
-            } catch (IOException e) {
-                throw new RuntimeException("CAN'T CLOSE");
-            }
+            mapStorage.close();
+            storage.close();
             bufferCache.clear();
             db.clear();
             mtxFile.delete();
@@ -252,42 +247,17 @@ public class OptKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void updStorage() {
-        File file = new File(pathName, "newStorage.txt");
-        try (RandomAccessFile newStorage = new RandomAccessFile(file, "rw")) {
-            for (HashMap.Entry<K, Long> entry : db.entrySet()) {
-                storage.seek(entry.getValue());
-                Long value = newStorage.getFilePointer();
-                valueSerialization.write(read(entry.getKey()), newStorage);
-                db.put(entry.getKey(), value);
-            }
-            storage.close();
-            File newFile = new File(pathName, STORAGE_NAME);
-            assert (newFile.delete());
-            assert (file.renameTo(newFile));
-        } catch (IOException e) {
-            throw new RuntimeException("CAN'T UPD");
-        } finally {
-           cntThreshold = 0;
-        }
-    }
-
-    private void optimizeMemory() {
         try {
             cntThreshold = 0;
-            Map<K, Long> newMapPlace = new HashMap<>();
-            File fileWithNewValues = new File(pathName, "st");
-            fileWithNewValues.createNewFile();
-            try (RandomAccessFile newFileWithValues = new RandomAccessFile(fileWithNewValues, "rw")) {
-                newFileWithValues.seek(0);
-                newFileWithValues.setLength(0);
+            File file = new File(pathName, "newStorage.txt");
+            Map<K, Long> newdb = new HashMap<>();
+            try (RandomAccessFile newStorage = new RandomAccessFile(file, "rw")) {
                 for (Map.Entry<K, Long> entry : db.entrySet()) {
-                    storage.seek(entry.getValue());
-                    V value = valueSerialization.read(storage);
-                    newMapPlace.put(entry.getKey(), newFileWithValues.length());
-                    valueSerialization.write(value, newFileWithValues);
+                    newdb.put(entry.getKey(), newStorage.length());
+                    valueSerialization.write(read(entry.getKey()), newStorage);
                 }
-                db = newMapPlace;
-                newFileWithValues.close();
+                db = newdb;
+                newStorage.close();
             }
         } catch (IOException e) {
             throw new RuntimeException("CAN'T UPD");
