@@ -25,6 +25,6 @@ To get value of a variable/body of function run in shell:
 
 To evaluate expressions run in shell:
 
-`curl http://localhost:9001/eval -X POST -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "username:password" | base64)" --data "44*3+2"`
+`curl http://localhost:9001/eval -X POST -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "username:password" | base64)" --data "pow(sin(3 + pow(2, 4)), tg(32)) + 44*3+2"`
 
 `curl http://localhost:9001/eval -X POST -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "mountain-viewer:1234567" | base64)" --data "sum(sum(3, 4), 4)"`
