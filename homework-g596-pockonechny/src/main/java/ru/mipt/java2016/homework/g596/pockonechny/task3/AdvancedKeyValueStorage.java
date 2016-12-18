@@ -149,8 +149,7 @@ class AdvancedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private void refreshOffsets() {
         ++changesCounter;
 
-        if (changesCounter > MAX_OFFSET_CHANGES_COUNTER)
-        {
+        if (changesCounter > MAX_OFFSET_CHANGES_COUNTER) {
             changesCounter = 0;
             eraseCacheStorage();
         }
