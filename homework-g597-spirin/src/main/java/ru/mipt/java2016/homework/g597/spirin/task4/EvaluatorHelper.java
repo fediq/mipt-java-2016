@@ -121,8 +121,12 @@ class EvaluatorHelper {
 
             result = Double.parseDouble(expression.substring(startPos, this.pos));
         } else if (Character.isAlphabetic(ch)) {
-            while (Character.isAlphabetic(ch)) getNextChar();
+            while (Character.isAlphabetic(ch)) {
+                getNextChar();
+            }
+
             String func = expression.substring(startPos, this.pos);
+
             if (func.equals("rnd")) {
                 result = Math.random();
                 getNextChar();
