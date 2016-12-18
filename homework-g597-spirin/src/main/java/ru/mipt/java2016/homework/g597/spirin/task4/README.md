@@ -13,7 +13,7 @@ To put variable/function run in shell:
 
 `curl http://localhost:9001/variable/x?value="19" -X PUT -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "username:password" | base64)"`
 
-`curl http://localhost:9001/function/sum?valency="2" -X PUT -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "username:password" | base64)" --data "x+y"`
+`curl http://localhost:9001/function/sum?arity="2" -X PUT -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "username:password" | base64)" --data "x+y"`
 
 
 To get value of a variable/body of function run in shell:
