@@ -1,7 +1,8 @@
 package ru.mipt.java2016.homework.g597.zakharkin.task2;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 
 /**
  * Serialization strategy for Integer type
@@ -22,12 +23,12 @@ public class IntegerSerializer implements Serializer<Integer> {
     }
 
     @Override
-    public void write(RandomAccessFile file, Integer data) throws IOException {
+    public void write(DataOutput file, Integer data) throws IOException {
         file.writeInt(data);
     }
 
     @Override
-    public Integer read(RandomAccessFile file) throws IOException {
+    public Integer read(DataInput file) throws IOException {
         Integer data = file.readInt();
         return data;
     }

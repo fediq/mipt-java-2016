@@ -1,14 +1,14 @@
 package ru.mipt.java2016.homework.g594.ishkhanyan.task2;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 
 
-interface MySerialization<Type> {
-    void writeToFile(Type object, DataOutputStream file) throws IOException;
+public interface MySerialization<Type> {
+    void writeToFile(Type object, DataOutput file) throws IOException;
 
-    Type readFromFile(DataInputStream file) throws IOException;
+    Type readFromFile(DataInput file) throws IOException;
 }
 
 
