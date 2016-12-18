@@ -26,6 +26,9 @@ public class SecurityServiceConfiguration extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
         LOG.info("Configuring security");
         http
+                .authorizeRequests()
+                .antMatchers("/addUser").permitAll().anyRequest().authenticated();
+        http
                 .httpBasic().realmName("Calculator").and()
                 .formLogin().disable()
                 .logout().disable()

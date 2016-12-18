@@ -34,11 +34,11 @@ public class BillingDao {
         jdbcTemplate.execute("CREATE SCHEMA IF NOT EXISTS billing");
         jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS billing.users " +
                 "(username VARCHAR PRIMARY KEY, password VARCHAR, enabled BOOLEAN)");
-        try {
+        /*try {
             jdbcTemplate.update("INSERT INTO billing.users VALUES ('username', 'password', TRUE)");
         } catch (Exception e) {
             LOG.debug(e.getMessage());
-        }
+        }*/
     }
 
 
@@ -58,5 +58,17 @@ public class BillingDao {
                     }
                 }
         );
+    }
+
+    public void addUser(String username, String password) {
+        LOG.debug("Add user " + username + "\n");
+        //jdbcTemplate.update("UPSERT INTO billing.users VALUES ('username', 'password', TRUE)");
+        try {
+            String cmd = "INSERT INTO billing.users VALUES (" + "'" + username + "'" + ", " + "'"
+                    + password + "'" + ", TRUE)";
+            jdbcTemplate.update(cmd);
+        } catch (Exception e) {
+            throw new RuntimeException("User with this username exists\n");
+        }
     }
 }
