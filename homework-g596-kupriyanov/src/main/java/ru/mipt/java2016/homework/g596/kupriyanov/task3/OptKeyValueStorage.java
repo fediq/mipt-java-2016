@@ -18,7 +18,6 @@ import static java.lang.Math.max;
  * Created by Artem Kupriyanov on 20/11/2016.
  */
 
-
 public class OptKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private SerializationStrategy<K> keySerialization;
     private SerializationStrategy<V> valueSerialization;
@@ -35,19 +34,22 @@ public class OptKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private final String pathName;
 
     private File mtxFile;
-    private static final String MTXFILENAME = "mtx.txt";
+    private static final String MTX_FILE_NAME = "mtx.txt";
     private RandomAccessFile storage;
-    private static final String STORAGENAME = "storage.txt";
+    private static final String STORAGE_NAME = "storage.txt";
     private RandomAccessFile mapStorage;
-    private static final String MAPSTORAGENAME = "mapStorage.txt";
+    private static final String MAP_STORAGE_NAME = "mapStorage.txt";
+
+    private static final long MAX_OPTIMIZE_THRESHOLD = 100000;
+    private long cntThreshold = 0;
 
     private boolean dbClosed;
 
     private static final long MAXSIZE = 100L;
 
     public OptKeyValueStorage(SerializationStrategy<K> keySerStrat,
-                                    SerializationStrategy<V> valueSerStrat,
-                                    String path) throws IOException {
+                              SerializationStrategy<V> valueSerStrat,
+                              String path) throws IOException {
         keySerialization = keySerStrat;
         valueSerialization = valueSerStrat;
         maxNow = 0L;
@@ -56,14 +58,14 @@ public class OptKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         if (!dir.isDirectory()) {
             throw new RuntimeException("BAD PATH");
         }
-        mtxFile = new File(pathName, MTXFILENAME);
+        mtxFile = new File(pathName, MTX_FILE_NAME);
         if (!mtxFile.createNewFile()) {
             throw new RuntimeException("CAN'T SYNCHRONIZE");
         }
-        File file = new File(pathName, STORAGENAME);
+        File file = new File(pathName, STORAGE_NAME);
         storage = new RandomAccessFile(file, "rw");
         dbClosed = false;
-        File mapFile = new File(path, MAPSTORAGENAME);
+        File mapFile = new File(path, MAP_STORAGE_NAME);
         mapStorage = new RandomAccessFile(mapFile, "rw");
         if (file.exists() && mapFile.exists()) {
             uploadData();
@@ -72,10 +74,17 @@ public class OptKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
+    private void checkOpened() {
+        if (dbClosed) {
+            throw new RuntimeException("CAN'T OPEN");
+        }
+    }
+
     @Override
     public V read(K key) {
-        readLock.lock();
+        writeLock.lock();
         try {
+            checkOpened();
             if (!exists(key)) {
                 return null;
             }
@@ -88,26 +97,37 @@ public class OptKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         } catch (Exception e) {
             throw new RuntimeException("CAN'T READ");
         } finally {
-            readLock.unlock();
+            writeLock.unlock();
         }
     }
 
     @Override
-    public synchronized boolean exists(K key) {
-        return !dbClosed && (bufferCache.containsKey(key) || db.containsKey(key));
+    public boolean exists(K key) {
+        readLock.lock();
+        try {
+            return !dbClosed && (bufferCache.containsKey(key) || db.containsKey(key));
+        } catch (Exception e) {
+            throw new RuntimeException("CAN'T CHECK EXIST");
+        } finally {
+            readLock.unlock();
+        }
     }
 
     @Override
     public void write(K key, V value) {
         writeLock.lock();
         try {
-            if (dbClosed) {
-                throw new RuntimeException("CAN'T OPEN");
-            }
-            bufferCache.put(key, value);
+            checkOpened();
             db.put(key, 0L);
+            bufferCache.put(key, value);
             if (bufferCache.size() > MAXSIZE) {
                 writeCashe();
+            }
+            if (bufferCache.containsKey(key)) {
+                if (cntThreshold > MAX_OPTIMIZE_THRESHOLD) {
+                    updStorage();
+                }
+                ++cntThreshold;
             }
         } catch (Exception e) {
             throw new RuntimeException("CAN'T OPEN");
@@ -117,45 +137,66 @@ public class OptKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     @Override
-    public synchronized void delete(K key) {
-        if (dbClosed) {
-            throw new RuntimeException("CAN'T OPEN");
-        }
-        bufferCache.remove(key);
-        db.remove(key);
-    }
-
-    @Override
-    public synchronized Iterator<K> readKeys() {
-        if (dbClosed) {
-            throw new RuntimeException("CAN'T OPEN");
-        }
-        return db.keySet().iterator();
-    }
-
-    @Override
-    public synchronized int size() {
-        if (dbClosed) {
-            throw new RuntimeException("CAN'T OPEN");
-        }
-        return db.size();
-    }
-
-    @Override
-    public synchronized void close() throws IOException {
-        writeCashe();
-        updStorage();
-        downloadData();
+    public void delete(K key) {
+        writeLock.lock();
         try {
+            checkOpened();
+            bufferCache.remove(key);
+            db.remove(key);
+            if (cntThreshold > MAX_OPTIMIZE_THRESHOLD) {
+                updStorage();
+            }
+            ++cntThreshold;
+        } catch (Exception e) {
+            throw new RuntimeException("CAN'T DELETE");
+        } finally {
+            writeLock.unlock();
+        }
+    }
+
+    @Override
+    public Iterator<K> readKeys() {
+        readLock.lock();
+        try {
+            checkOpened();
+            return db.keySet().iterator();
+        } catch (Exception e) {
+            throw new RuntimeException("CAN'T RETURN ITERATOR");
+        } finally {
+            readLock.unlock();
+        }
+    }
+
+    @Override
+    public int size() {
+        readLock.lock();
+        try {
+            checkOpened();
+            return db.size();
+        } catch (Exception e) {
+            throw new RuntimeException("CAN'T RETURN SIZE");
+        } finally {
+            readLock.unlock();
+        }
+    }
+
+    @Override
+    public void close() throws IOException {
+        writeLock.lock();
+        try {
+            writeCashe();
+            downloadData();
             mapStorage.close();
             storage.close();
-        } catch (IOException e) {
-            throw new RuntimeException("CAN'T CLOSE");
+            bufferCache.clear();
+            db.clear();
+            mtxFile.delete();
+            dbClosed = true;
+        } catch (Exception e) {
+            throw new RuntimeException("CAN'T CLOSE2");
+        } finally {
+            writeLock.unlock();
         }
-        bufferCache.clear();
-        db.clear();
-        mtxFile.delete();
-        dbClosed = true;
     }
 
     private void uploadData() {
@@ -175,9 +216,9 @@ public class OptKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private void downloadData() {
         try {
             mapStorage.close();
-            File file = new File(pathName, MAPSTORAGENAME);
+            File file = new File(pathName, MAP_STORAGE_NAME);
             assert (file.delete());
-            file = new File(pathName, MAPSTORAGENAME);
+            file = new File(pathName, MAP_STORAGE_NAME);
             mapStorage = new RandomAccessFile(file, "rw");
             mapStorage.writeInt(size());
             for (HashMap.Entry<K, Long> entry : db.entrySet()) {
@@ -190,9 +231,7 @@ public class OptKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void writeCashe() {
-        if (dbClosed) {
-            throw new RuntimeException("CAN'T WRITE");
-        }
+        checkOpened();
         try {
             for (HashMap.Entry<K, V> entry : bufferCache.entrySet()) {
                 storage.seek(maxNow);
@@ -209,20 +248,17 @@ public class OptKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private void updStorage() {
         try {
+            cntThreshold = 0;
             File file = new File(pathName, "newStorage.txt");
-            RandomAccessFile newStorage = new RandomAccessFile(file, "rw");
-            assert (bufferCache.isEmpty());
-            for (HashMap.Entry<K, Long> entry : db.entrySet()) {
-                storage.seek(entry.getValue());
-                Long value = newStorage.getFilePointer();
-                valueSerialization.write(read(entry.getKey()), newStorage);
-                db.put(entry.getKey(), value);
+            Map<K, Long> newdb = new HashMap<>();
+            try (RandomAccessFile newStorage = new RandomAccessFile(file, "rw")) {
+                for (Map.Entry<K, Long> entry : db.entrySet()) {
+                    newdb.put(entry.getKey(), newStorage.length());
+                    valueSerialization.write(read(entry.getKey()), newStorage);
+                }
+                db = newdb;
+                newStorage.close();
             }
-            storage.close();
-            File newFile = new File(pathName, STORAGENAME);
-            assert (newFile.delete());
-            newStorage.close();
-            assert (file.renameTo(newFile));
         } catch (IOException e) {
             throw new RuntimeException("CAN'T UPD");
         }
