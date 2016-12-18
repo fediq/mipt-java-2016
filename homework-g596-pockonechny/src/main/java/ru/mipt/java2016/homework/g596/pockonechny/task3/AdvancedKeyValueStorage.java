@@ -253,7 +253,6 @@ class AdvancedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         File valuesFile = new File(valuesFilename);
 
         lock.readLock().lock();
-        //lock.writeLock().lock();
         try {
             if (!offsetFile.exists()) {
                 createStorage(offsetFile, valuesFile);
@@ -262,7 +261,6 @@ class AdvancedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             }
         } finally {
             lock.readLock().unlock();
-            //lock.writeLock().unlock();
         }
     }
 
