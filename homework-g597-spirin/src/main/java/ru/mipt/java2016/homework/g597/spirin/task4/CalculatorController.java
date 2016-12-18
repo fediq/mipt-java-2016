@@ -84,8 +84,8 @@ public class CalculatorController {
     @RequestMapping(path = "/variable", method = RequestMethod.GET, consumes = "text/plain", produces = "text/plain")
     public String getAllVariables(Authentication authentication) {
         String username = authentication.getName();
-        String[] ans = billingDao.getAllVariables(username);
-        return ans.toString() + "\n";
+        String[] res = billingDao.getAllVariables(username);
+        return res.toString() + "\n";
     }
 
     @RequestMapping(path = "/function/{functionName}", method = RequestMethod.PUT,
@@ -108,7 +108,7 @@ public class CalculatorController {
             consumes = "text/plain", produces = "text/plain")
     public String getFunction(Authentication authentication, @PathVariable String functionName) {
         String username = authentication.getName();
-        String ans = billingDao.getFunction(username, functionName);
-        return ans + "\n";
+        String res = billingDao.getFunction(username, functionName);
+        return res + "\n";
     }
 }

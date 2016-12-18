@@ -13,6 +13,8 @@ class EvaluatorHelper {
     private char ch;
     private final String expression;
 
+    private double pendingArgument;
+
     // Constructor
     EvaluatorHelper(String expression) {
         this.expression = expression;
@@ -94,7 +96,7 @@ class EvaluatorHelper {
             return -processFactor();
         }
 
-        double result;
+        double result = 0;
         int startPos = this.pos;
 
         if (tryCaptureChar('(')) {
@@ -118,8 +120,34 @@ class EvaluatorHelper {
             }
 
             result = Double.parseDouble(expression.substring(startPos, this.pos));
+        } else if (Character.isAlphabetic(ch)) {
+            while (Character.isAlphabetic(ch)) getNextChar();
+            String func = expression.substring(startPos, this.pos);
+            if (func.equals("rnd")) {
+                result = Math.random();
+                getNextChar();
+                getNextChar();
+            } else {
+                result = processFactor();
+                if (func.equals("sqrt")) result = Math.sqrt(result);
+                else if (func.equals("sin")) result = Math.sin(Math.toRadians(result));
+                else if (func.equals("cos")) result = Math.cos(Math.toRadians(result));
+                else if (func.equals("tg")) result = Math.tan(Math.toRadians(result));
+                else if (func.equals("abs")) result = Math.abs(result);
+                else if (func.equals("sign")) result = Math.signum(result);
+                else if (func.equals("log2")) result = Math.log(result) / Math.log(2);
+                else if (func.equals("max")) result = Math.max(result, pendingArgument);
+                else if (func.equals("min")) result = Math.min(result, pendingArgument);
+                else if (func.equals("pow")) result = Math.pow(result, pendingArgument);
+                else if (func.equals("log")) result = Math.log(result) / Math.log(pendingArgument);
+                else throw new RuntimeException("Unknown function: " + func);
+            }
         } else {
             throw new ParsingException("Unexpected appearance of: " + ch);
+        }
+
+        if (tryCaptureChar(',')) {
+            pendingArgument = processFactor();
         }
 
         return result;
