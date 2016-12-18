@@ -1,11 +1,11 @@
 package ru.mipt.java2016.homework.g596.kozlova.task4;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
+
 import java.util.Map;
 import java.util.HashMap;
 import java.util.LinkedList;
+
 import static java.lang.Character.digit;
 import static java.lang.Character.isDigit;
 import static java.lang.Character.isLetter;
@@ -21,7 +21,8 @@ public class Calculator {
         return calc(variables, expression);
     }
 
-    private double calc(Map<String, String> variables, String expression) throws ParsingException {
+    private double calc(Map<String, String> variables, String expression)
+            throws ParsingException {
         LinkedList<Character> operations = new LinkedList<>();
         LinkedList<Double> numbers = new LinkedList<>();
         expression = expression.replaceAll("\\s", "");
