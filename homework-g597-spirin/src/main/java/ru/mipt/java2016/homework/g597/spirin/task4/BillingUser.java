@@ -6,9 +6,8 @@ package ru.mipt.java2016.homework.g597.spirin.task4;
 public class BillingUser {
     private final String username;
     private final String password;
-    private final boolean enabled;
 
-    public BillingUser(String username, String password, boolean enabled) {
+    public BillingUser(String username, String password) {
         if (username == null) {
             throw new IllegalArgumentException("Null username is not allowed");
         }
@@ -17,7 +16,6 @@ public class BillingUser {
         }
         this.username = username;
         this.password = password;
-        this.enabled = enabled;
     }
 
     public String getUsername() {
@@ -28,16 +26,11 @@ public class BillingUser {
         return password;
     }
 
-    public boolean isEnabled() {
-        return enabled;
-    }
-
     @Override
     public String toString() {
         return "BillingUser{" +
                 "username='" + username + '\'' +
                 ", password='" + password + '\'' +
-                ", enabled=" + enabled +
                 '}';
     }
 
@@ -52,9 +45,6 @@ public class BillingUser {
 
         BillingUser that = (BillingUser) o;
 
-        if (enabled != that.enabled) {
-            return false;
-        }
         if (!username.equals(that.username)) {
             return false;
         }
@@ -66,7 +56,6 @@ public class BillingUser {
     public int hashCode() {
         int result = username.hashCode();
         result = 31 * result + password.hashCode();
-        result = 31 * result + (enabled ? 1 : 0);
         return result;
     }
 }
