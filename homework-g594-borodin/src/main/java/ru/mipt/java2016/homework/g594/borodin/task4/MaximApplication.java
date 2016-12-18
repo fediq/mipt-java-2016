@@ -13,7 +13,8 @@ import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.g594.borodin.task1.MyCalculator;
 
 /**
- * curl http://localhost:9001/eval -X POST -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "username:password" | base64)" --data-raw "44*3+2"
+ * curl http://localhost:9001/eval -X POST -H "Content-Type: text/plain" -H "Authorization: Basic
+ * $(echo -n "username:password" | base64)" --data-raw "44*3+2"
  */
 
 @EnableAutoConfiguration
@@ -23,7 +24,7 @@ public class MaximApplication {
 
     @Bean
     public Calculator calculator() {
-        return new MyCalculator ();
+        return new MyCalculator();
     }
 
     @Bean
