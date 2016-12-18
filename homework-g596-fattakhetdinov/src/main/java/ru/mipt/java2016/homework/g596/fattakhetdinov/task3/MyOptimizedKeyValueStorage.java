@@ -36,7 +36,7 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                             try {
                                 result = loadValueFromFile(key);
                             } catch (IOException e) {
-                                e.printStackTrace();
+                                throw new RuntimeException();
                             }
                             if (result == null) {
                                 throw new RuntimeException();
@@ -45,7 +45,6 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                         }
                     });
     private File initFile;
-    private RandomAccessFile keysFile;
     private RandomAccessFile valuesFile;
     private DataInputStream keysDataInputStream;
     private DataOutputStream valuesOutputStream;
@@ -63,7 +62,6 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private String currentStorageType; //Строка для проверки типа хранилища
     private boolean isClosed;
     private long storageLength;
-    private long writtenLength;
     private String path;
     private int numChanges;
 
@@ -94,7 +92,6 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
 
         storageLength = valuesFile.length();
-        writtenLength = 0;
         numChanges = 0;
     }
 
@@ -105,7 +102,6 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         fileK.createNewFile();
         fileV.createNewFile();
 
-        keysFile = new RandomAccessFile(fileK, "rw");
         valuesFile = new RandomAccessFile(fileV, "rw");
 
         createDataStreams();
@@ -119,12 +115,12 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             throw new IOException("Files don't exist");
         }
 
-        keysFile = new RandomAccessFile(fileK, "rw");
         valuesFile = new RandomAccessFile(fileV, "rw");
 
         createDataStreams();
 
-        try (DataInputStream input = new DataInputStream(new FileInputStream(initFile))) {
+        try (DataInputStream input = new DataInputStream(
+                new BufferedInputStream(new FileInputStream(initFile)))) {
             String fileStorageType = input.readUTF(); //Считываем проверочную строку
             if (!currentStorageType.equals(fileStorageType)) {
                 throw new RuntimeException(
@@ -139,14 +135,13 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void createDataStreams() throws IOException {
-        FileInputStream keysFIS = new FileInputStream(keysFile.getFD());
-        BufferedInputStream keysBIS = new BufferedInputStream(keysFIS);
-        keysDataInputStream = new DataInputStream(keysBIS);
+
+        keysDataInputStream = new DataInputStream(new BufferedInputStream(
+                new FileInputStream(new File(path + File.separator + keysFileName))));
 
         valuesFile.seek(valuesFile.length());
-        FileOutputStream valuesFOS = new FileOutputStream(valuesFile.getFD());
-        BufferedOutputStream valuesBOS = new BufferedOutputStream(valuesFOS);
-        valuesOutputStream = new DataOutputStream(valuesBOS);
+        valuesOutputStream = new DataOutputStream(
+                new BufferedOutputStream(new FileOutputStream(valuesFile.getFD())));
     }
 
     private void readOffsetsTable() throws IOException {
@@ -174,8 +169,8 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private V loadValueFromFile(K key) throws IOException {
         Long offset = keysOffsetsTable.get(key);
+        valuesOutputStream.flush();
         valuesFile.seek(offset);
-
         V result = valueSerializationStrategy.deserializeFromFile(valuesFile);
         valuesFile.seek(valuesFile.length());
         return result;
@@ -218,14 +213,13 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             keysOffsetsTable.put(key, storageLength);
             long writtenSize = valuesOutputStream.size();
             valueSerializationStrategy.serializeToFile(value, valuesOutputStream);
-            valuesOutputStream.flush();
             storageLength += valuesOutputStream.size() - writtenSize;
 
             if (cacheTable.asMap().containsKey(key)) {
                 cacheTable.put(key, value);
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException();
         } finally {
             writeLock.unlock();
         }
@@ -278,7 +272,6 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private void changesCheck() throws IOException {
         if (numChanges > minChangesNeededToRewriteFile
                 && numChanges > maxChangesFactor * keysOffsetsTable.size()) {
-            System.out.println("rewrite");
             rewriteFile();
         }
     }
@@ -287,7 +280,6 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         //closing streams and files
         keysDataInputStream.close();
         valuesOutputStream.close();
-        keysFile.close();
         valuesFile.close();
 
         //creating new files and streams
@@ -351,7 +343,6 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             throw new IOException("Files don't exist");
         }
 
-        keysFile = new RandomAccessFile(fileK, "rw");
         valuesFile = new RandomAccessFile(fileV, "rw");
 
         createDataStreams();
@@ -359,7 +350,6 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         readOffsetsTable();
 
         storageLength = valuesFile.length();
-        writtenLength = 0;
         numChanges = 0;
     }
 
@@ -371,12 +361,8 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
         valuesOutputStream.close();
         keysDataInputStream.close();
-        keysFile.close();
-        File fileK = new File(path + File.separator + keysFileName);
-        keysFile = new RandomAccessFile(fileK, "rw");
-        FileOutputStream keysFOS = new FileOutputStream(keysFile.getFD());
-        BufferedOutputStream keysBOS = new BufferedOutputStream(keysFOS);
-        DataOutputStream keysDataOutputStream = new DataOutputStream(keysBOS);
+        DataOutputStream keysDataOutputStream = new DataOutputStream(new BufferedOutputStream(
+                new FileOutputStream(new File(path + File.separator + keysFileName))));
 
         keysDataOutputStream.writeUTF(currentStorageType);
         keysDataOutputStream.writeInt(keysOffsetsTable.size());
@@ -387,7 +373,7 @@ public class MyOptimizedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         keysOffsetsTable.clear();
 
         keysDataOutputStream.close();
-        keysFile.close();
+
         valuesFile.close();
         isClosed = true;
     }
