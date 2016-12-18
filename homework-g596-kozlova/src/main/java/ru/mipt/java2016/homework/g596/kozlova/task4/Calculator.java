@@ -95,30 +95,10 @@ public class Calculator {
                         continue;
                     }
                     if (isFunctionWithOneParameter(variable)) {
-                        StringBuilder firstParameter = new StringBuilder();
-                        int position = i;
-                        if (expression.charAt(position) != '(') {
-                            throw new ParsingException("Bad expression");
-                        }
-                        int newBalance = 1;
-                        position += 1;
-                        while (newBalance != 0 && position < expression.length()) {
-                            if (expression.charAt(position) == '(') {
-                                newBalance += 1;
-                            }
-                            if (expression.charAt(position) == ')') {
-                                newBalance -= 1;
-                            }
-                            if (newBalance != 0) {
-                                firstParameter.append(expression.charAt(position));
-                            }
-                            position += 1;
-                        }
-                        if (position == expression.length() && newBalance != 0) {
-                            throw new ParsingException("Bad expression");
-                        }
+                        StringBuilder parameter = new StringBuilder();
+                        int position = actionsIfOneParameter(expression, i, parameter);
                         numbers.push(calcFunctionWithOneParameter(variable,
-                                calc(variables, firstParameter.toString())));
+                                calc(variables, parameter.toString())));
                         variable = "";
                         readVariable = false;
                         needJump = true;
@@ -128,36 +108,7 @@ public class Calculator {
                     if (isFunctionWithTwoParameters(variable)) {
                         StringBuilder firstParameter = new StringBuilder();
                         StringBuilder secondParameter = new StringBuilder();
-                        boolean secondAlready = false;
-                        int position = i;
-                        if (expression.charAt(position) != '(') {
-                            throw new ParsingException("Bad expression");
-                        }
-                        int newBalance = 1;
-                        position += 1;
-                        while (newBalance != 0 && position < expression.length()) {
-                            if (expression.charAt(position) == '(') {
-                                newBalance += 1;
-                            }
-                            if (expression.charAt(position) == ')') {
-                                newBalance -= 1;
-                            }
-                            if (newBalance != 0) {
-                                if (newBalance == 1 && expression.charAt(position) == ',') {
-                                    secondAlready = true;
-                                } else {
-                                    if (!secondAlready) {
-                                        firstParameter.append(expression.charAt(position));
-                                    } else {
-                                        secondParameter.append(expression.charAt(position));
-                                    }
-                                }
-                            }
-                            position += 1;
-                        }
-                        if (position == expression.length() && newBalance != 0) {
-                            throw new ParsingException("Bad expression");
-                        }
+                        int position = actionsIfTwoParameters(expression, i, firstParameter, secondParameter);
                         numbers.push(calcFunctionWithTwoParameters(variable,
                                 calc(variables, firstParameter.toString()),
                                 calc(variables, secondParameter.toString())));
@@ -317,11 +268,73 @@ public class Calculator {
         return (symbol == '+' || symbol == '-' || symbol == '*' || symbol == '/' || symbol == '(' || symbol == ')');
     }
 
+    int actionsIfOneParameter(String expression, int i, StringBuilder parameter)
+            throws ParsingException {
+        int position = i;
+        if (expression.charAt(position) != '(') {
+            throw new ParsingException("Bad expression");
+        }
+        int newBalance = 1;
+        position += 1;
+        while (newBalance != 0 && position < expression.length()) {
+            if (expression.charAt(position) == '(') {
+                newBalance += 1;
+            }
+            if (expression.charAt(position) == ')') {
+                newBalance -= 1;
+            }
+            if (newBalance != 0) {
+                parameter.append(expression.charAt(position));
+            }
+            position += 1;
+        }
+        if (position == expression.length() && newBalance != 0) {
+            throw new ParsingException("Bad expression");
+        }
+        return position;
+    }
+
+    int actionsIfTwoParameters(String expression, int i, StringBuilder firstParameter, StringBuilder secondParameter)
+            throws ParsingException {
+        int position = i;
+        boolean secondAlready = false;
+        if (expression.charAt(position) != '(') {
+            throw new ParsingException("Bad expression");
+        }
+        int newBalance = 1;
+        position += 1;
+        while (newBalance != 0 && position < expression.length()) {
+            if (expression.charAt(position) == '(') {
+                newBalance += 1;
+            }
+            if (expression.charAt(position) == ')') {
+                newBalance -= 1;
+            }
+            if (newBalance != 0) {
+                if (newBalance == 1 && expression.charAt(position) == ',') {
+                    secondAlready = true;
+                } else {
+                    if (!secondAlready) {
+                        firstParameter.append(expression.charAt(position));
+                    } else {
+                        secondParameter.append(expression.charAt(position));
+                    }
+                }
+            }
+            position += 1;
+        }
+        if (position == expression.length() && newBalance != 0) {
+            throw new ParsingException("Bad expression");
+        }
+        return position;
+    }
+
     private boolean isSplitedNumbers(String expression) {
         Character lastSymbol = '^';
         for (int i = 0; i < expression.length(); ++i) {
             if ((isDigit(lastSymbol) || lastSymbol == '.' || isLetter(lastSymbol)) &&
-                    (isDigit(expression.charAt(i)) || expression.charAt(i) == '.' || isLetter(expression.charAt(i))) &&
+                    (isDigit(expression.charAt(i)) || expression.charAt(i) == '.' ||
+                            isLetter(expression.charAt(i))) &&
                     !(isDigit(expression.charAt(i - 1)) || expression.charAt(i - 1) == '.' ||
                             isLetter(expression.charAt(i - 1)))) {
                 return true;
