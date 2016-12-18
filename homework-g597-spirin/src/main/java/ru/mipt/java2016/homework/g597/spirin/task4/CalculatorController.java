@@ -91,7 +91,7 @@ public class CalculatorController {
     @RequestMapping(path = "/function/{functionName}", method = RequestMethod.PUT,
             consumes = "text/plain", produces = "text/plain")
     public void putFunction(Authentication authentication, @PathVariable String functionName,
-                            @RequestParam(value = "valency") Integer arity, @RequestBody String body) {
+                            @RequestParam(value = "arity") Integer arity, @RequestBody String body) {
         String username = authentication.getName();
         LOG.trace(username);
         billingDao.putFunction(username, functionName, arity, body);
