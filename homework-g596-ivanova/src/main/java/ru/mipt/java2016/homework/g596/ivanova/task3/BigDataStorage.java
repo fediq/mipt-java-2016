@@ -289,6 +289,13 @@ public class BigDataStorage<K, V> implements KeyValueStorage<K, V> {
                 writeLock.unlock();
             }
         }
+        if (deleteCount == maxDeleteCount) {
+            try {
+                fileCleaner();
+            } catch (IOException e) {
+                throw new MalformedDataException(e);
+            }
+        }
         writeLock.lock();
         try {
             map.put(key, value);
@@ -328,7 +335,7 @@ public class BigDataStorage<K, V> implements KeyValueStorage<K, V> {
         dataOutputStream.close();
         twinFile.close();
         file.close();
-        Files.move(Paths.get(twinFilePath), Paths.get(twinFilePath).resolveSibling(filePath),
+        Files.move(Paths.get(twinFilePath), Paths.get(filePath),
                 REPLACE_EXISTING);
 
         file = new RandomAccessFile(filePath, "rw");
