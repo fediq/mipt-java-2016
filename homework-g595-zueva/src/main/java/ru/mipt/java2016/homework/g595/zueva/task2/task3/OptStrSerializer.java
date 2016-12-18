@@ -2,17 +2,17 @@ package ru.mipt.java2016.homework.g595.zueva.task2.task3;
 import java.nio.ByteBuffer;
 public class OptStrSerializer implements OptKVStorageSerializer<String> {
         @Override
-     public ByteBuffer srlzToStr(String value) {
+     public ByteBuffer SerialToStrm(String value) {
                 return ByteBuffer.wrap(value.getBytes());
             }
 
              @Override
-     public String desrlzFrStr(ByteBuffer input) {
+     public String DeserialFromStrm(ByteBuffer input) {
                 return new String(input.array());
             }
 
              @Override
-     public int SrlzSize(String value) {
-                return value.length();
+     public int Size(String data) {
+                return data.length();
             }
 }
