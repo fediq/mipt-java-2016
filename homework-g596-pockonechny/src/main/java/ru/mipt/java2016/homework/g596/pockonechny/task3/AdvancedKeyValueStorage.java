@@ -149,8 +149,7 @@ class AdvancedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private void refreshOffsets() {
         ++changesCounter;
 
-        if (changesCounter > MAX_OFFSET_CHANGES_COUNTER)
-        {
+        if (changesCounter > MAX_OFFSET_CHANGES_COUNTER) {
             changesCounter = 0;
             eraseCacheStorage();
         }
@@ -254,7 +253,7 @@ class AdvancedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         File valuesFile = new File(valuesFilename);
 
         lock.readLock().lock();
-        lock.writeLock().lock();
+        //lock.writeLock().lock();
         try {
             if (!offsetFile.exists()) {
                 createStorage(offsetFile, valuesFile);
@@ -263,7 +262,7 @@ class AdvancedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             }
         } finally {
             lock.readLock().unlock();
-            lock.writeLock().unlock();
+            //lock.writeLock().unlock();
         }
     }
 
