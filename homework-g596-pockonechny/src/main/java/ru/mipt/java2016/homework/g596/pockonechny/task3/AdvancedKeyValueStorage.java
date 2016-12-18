@@ -9,12 +9,15 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import java.io.*;
 import java.nio.file.Files;
 import java.util.*;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 class AdvancedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private static final int MAX_STORAGE_OFFSET = 2000000000;
-    private static final int MAX_READING_BLOCK_MEMORY_SIZE = 10;
-    private static final int MAX_WRITING_BLOCK_MEMORY_SIZE = 1200;
+    private static final int MAX_READING_BLOCK_MEMORY_SIZE = 1;
+    private static final int MAX_WRITING_BLOCK_MEMORY_SIZE = 100;
+    private static final int MAX_OFFSET_CHANGES_COUNTER = 50000;
     private static final String DEFAULT_STORAGE_OFFSET_FILENAME = "storage_offset.kvs";
     private static final String DEFAULT_STORAGE_VALUES_FILENAME = "storage.kvs";
     private static final String DEFAULT_STORAGE_TRANSFER_FILENAME = "storage_transfer.kvs";
@@ -35,6 +38,10 @@ class AdvancedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private Map<K, V> cachedWritingBlockMap;    // cached block for flushing by blocks
     private Map<K, Long> offsetFullMap;         // map of the offsets in file
     private Set<K> existKeysFullMap;            // keys represented in temp buffer
+
+    private Integer changesCounter;
+
+    private ReadWriteLock lock;
 
     // STUFF --------------------------
 
@@ -118,7 +125,7 @@ class AdvancedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                     offsetFullMap.put(nextEntry.getKey(), (long) -1);
                 }
             }
-        } catch (IOException | SecurityException | IllegalStateException e) {
+        } catch (IOException e) {
             throw new IllegalStateException(e.getMessage(), e.getCause());
         }
         cachedWritingBlockMap.clear();
@@ -137,6 +144,16 @@ class AdvancedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             return;
         }
         flushWritingBlock();
+    }
+
+    private void refreshOffsets() {
+        ++changesCounter;
+
+        if (changesCounter > MAX_OFFSET_CHANGES_COUNTER)
+        {
+            changesCounter = 0;
+            eraseCacheStorage();
+        }
     }
 
     private void checkStorageAvailability() {
@@ -191,7 +208,23 @@ class AdvancedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 offsetWriter.write(writingDevice, iterator.getValue());
             }
         }
-        writingDevice.close();
+    }
+
+    private V tryReadFromRwCache(K key) {
+        if (cachedWritingBlockMap.containsKey(key)) {
+            V currentValue = cachedWritingBlockMap.get(key);
+            cachedReadingBlockMap.put(key, currentValue);
+            refreshReadingBlock();
+            return currentValue;
+        }
+
+        if (cachedReadingBlockMap.containsKey(key)) {
+            V cacheValue = cachedReadingBlockMap.remove(key);
+            cachedReadingBlockMap.put(key, cacheValue);
+            return cacheValue;
+        }
+
+        return null;
     }
 
     // Override -----------------------
@@ -208,6 +241,10 @@ class AdvancedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         existKeysFullMap = new HashSet<>();
         offsetFullMap = new HashMap<>();
 
+        changesCounter = 0;
+
+        lock = new ReentrantReadWriteLock();
+
         this.keySerialization = keySerialization;
         this.valueSerialization = valueSerialization;
 
@@ -216,124 +253,171 @@ class AdvancedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         File offsetFile = new File(offsetFilename);
         File valuesFile = new File(valuesFilename);
 
-        if (!offsetFile.exists()) {
-            createStorage(offsetFile, valuesFile);
-        } else {
-            readDataFromStorage(offsetFile, valuesFile);
+        lock.readLock().lock();
+        lock.writeLock().lock();
+        try {
+            if (!offsetFile.exists()) {
+                createStorage(offsetFile, valuesFile);
+            } else {
+                readDataFromStorage(offsetFile, valuesFile);
+            }
+        } finally {
+            lock.readLock().unlock();
+            lock.writeLock().unlock();
         }
     }
 
     @Override
-    public void close() throws IllegalStateException {
-        checkStorageAvailability();
-        isStreamingNow = false;
-        flushWritingBlock();
+    public void close() throws IOException {
+        lock.writeLock().lock();
+        lock.readLock().lock();
 
-        eraseCacheStorage();
+        try {
 
-        File newStorage = new File(workspaceDir + File.separator + DEFAULT_STORAGE_COPY_FILENAME);
-        checkFileIsOk(newStorage);
+            checkStorageAvailability();
+            isStreamingNow = false;
+            flushWritingBlock();
 
-        try (DataOutputStream finishWriter = new DataOutputStream(new
-                BufferedOutputStream(new FileOutputStream(newStorage)))) {
+            eraseCacheStorage();
 
-            commitAllDataToFile(finishWriter);
+            File newStorage = new File(workspaceDir + File.separator + DEFAULT_STORAGE_COPY_FILENAME);
+            checkFileIsOk(newStorage);
 
-            storageDevice.close();
+            try (DataOutputStream finishWriter = new DataOutputStream(new
+                    BufferedOutputStream(new FileOutputStream(newStorage)))) {
 
-            File oldStorage = new File(offsetFilename);
-            if (!oldStorage.delete()) {
-                throw new IllegalStateException("Cannot delete old file");
+                commitAllDataToFile(finishWriter);
+
+                storageDevice.close();
+
+                File oldStorage = new File(offsetFilename);
+                if (!oldStorage.delete()) {
+                    throw new IllegalStateException("Cannot delete old file");
+                }
+                if (!newStorage.renameTo(oldStorage)) {
+                    throw new IllegalStateException("Cannot rename file");
+                }
+            } catch (IOException e) {
+                throw new IOException(e.getMessage());
             }
-            if (!newStorage.renameTo(oldStorage)) {
-                throw new IllegalStateException("Cannot rename file");
-            }
-        } catch (IOException | SecurityException | IllegalStateException e) {
-            throw new IllegalStateException(e.getMessage(), e.getCause());
+        } finally {
+            lock.readLock().unlock();
+            lock.writeLock().unlock();
         }
     }
 
     @Override
     public int size() throws IllegalStateException {
-        checkStorageAvailability();
-        return existKeysFullMap.size();
+        lock.readLock().lock();
+        try {
+            checkStorageAvailability();
+            return existKeysFullMap.size();
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     @Override
     public V read(K key) throws IllegalStateException {
-        checkStorageAvailability();
+        lock.readLock().lock();
 
-        if (cachedWritingBlockMap.containsKey(key)) {
-            V currentValue = cachedWritingBlockMap.get(key);
-            cachedReadingBlockMap.put(key, currentValue);
-            refreshReadingBlock();
-            return currentValue;
-        }
-        if (cachedReadingBlockMap.containsKey(key)) {
-            V cacheValue = cachedReadingBlockMap.remove(key);
-            cachedReadingBlockMap.put(key, cacheValue);
-            return cacheValue;
-        }
+        try {
+            checkStorageAvailability();
 
-        if (offsetFullMap.containsKey(key)) {
-            if (offsetFullMap.get(key).equals((long) -1)) {
+            V currentValue = tryReadFromRwCache(key);
+            if (currentValue != null) {
+                return currentValue;
+            }
+
+            if (offsetFullMap.containsKey(key)) {
+                if (offsetFullMap.get(key).equals((long) -1)) {
+                    cachedReadingBlockMap.put(key, null);
+                    refreshReadingBlock();
+                    return null;
+                }
+                try {
+                    V value;
+
+                    storageDevice.seek(offsetFullMap.get(key));
+                    value = valueSerialization.read(storageDevice);
+                    cachedReadingBlockMap.put(key, value);
+                    refreshReadingBlock();
+
+                    return value;
+                } catch (IllegalStateException | IOException e) {
+                    throw new IllegalStateException(e.getMessage());
+                }
+            } else {
                 cachedReadingBlockMap.put(key, null);
                 refreshReadingBlock();
                 return null;
             }
-
-            try {
-                V value;
-
-                storageDevice.seek(offsetFullMap.get(key));
-                value = valueSerialization.read(storageDevice);
-                cachedReadingBlockMap.put(key, value);
-                refreshReadingBlock();
-
-                return value;
-            } catch (IOException | IllegalStateException e) {
-                throw new IllegalStateException(e.getMessage(), e.getCause());
-            }
-        } else {
-            cachedReadingBlockMap.put(key, null);
-            refreshReadingBlock();
-            return null;
+        } finally {
+            lock.readLock().unlock();
         }
     }
 
     @Override
     public boolean exists(K key) throws IllegalStateException {
-        checkStorageAvailability();
-        return existKeysFullMap.contains(key);
+        lock.readLock().lock();
+
+        try {
+            checkStorageAvailability();
+            return existKeysFullMap.contains(key);
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     @Override
     public void write(K key, V value) throws IllegalStateException {
-        checkStorageAvailability();
-        if (cachedReadingBlockMap.containsKey(key)) {
-            cachedReadingBlockMap.put(key, value);
-        }
-        existKeysFullMap.add(key);
-        cachedWritingBlockMap.put(key, value);
+        lock.writeLock().lock();
+        try {
+            checkStorageAvailability();
 
-        refreshWritingBlock();
+            refreshOffsets();
+
+            if (cachedReadingBlockMap.containsKey(key)) {
+                cachedReadingBlockMap.put(key, value);
+            }
+            existKeysFullMap.add(key);
+            cachedWritingBlockMap.put(key, value);
+
+            refreshWritingBlock();
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 
     @Override
     public void delete(K key) throws IllegalStateException {
-        checkStorageAvailability();
-        if (cachedReadingBlockMap.containsKey(key)) {
-            cachedReadingBlockMap.put(key, null);
-        }
-        existKeysFullMap.remove(key);
-        cachedWritingBlockMap.put(key, null);
+        lock.writeLock().lock();
+        try {
+            checkStorageAvailability();
 
-        refreshWritingBlock();
+            refreshOffsets();
+
+            if (cachedReadingBlockMap.containsKey(key)) {
+                cachedReadingBlockMap.put(key, null);
+            }
+            existKeysFullMap.remove(key);
+            cachedWritingBlockMap.put(key, null);
+
+            refreshWritingBlock();
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 
     @Override
     public Iterator<K> readKeys() throws IllegalStateException {
-        checkStorageAvailability();
-        return existKeysFullMap.iterator();
+        lock.readLock().lock();
+
+        try {
+            checkStorageAvailability();
+            return existKeysFullMap.iterator();
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 }
