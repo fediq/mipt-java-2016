@@ -163,8 +163,7 @@ public class BigDataStorage<K, V> implements KeyValueStorage<K, V> {
 
         Weigher<K, V> weigher = (key, value) -> (int) ObjectSize.deepSizeOf(key) + (int) ObjectSize
                 .deepSizeOf(value);
-        cache = CacheBuilder
-                .newBuilder()
+        cache = CacheBuilder.newBuilder()
                 .maximumWeight(maxCachedWeight)
                 .weigher(weigher)
                 .build();
@@ -174,37 +173,21 @@ public class BigDataStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     public final V read(final K key) {
-        if (!isInitialized) {
-            throw new MalformedDataException("Storage is closed.");
-        }
-        readLock.lock();
+        writeLock.lock();
         V value;
         try {
-            value = cache.getIfPresent(key);
-        } finally {
-            readLock.unlock();
-        }
-        if (value == null) {
-            readLock.lock();
-            try {
-                value = map.get(key);
-            } finally {
-                readLock.unlock();
+            if (!isInitialized) {
+                throw new MalformedDataException("Storage is closed.");
             }
+            value = cache.getIfPresent(key);
             if (value == null) {
-                if (!offsets.containsKey(key)) {
-                    return null;
-                }
-                readLock.lock();
-                long offset;
-                try {
+                value = map.get(key);
+                if (value == null) {
+                    if (!offsets.containsKey(key)) {
+                        return null;
+                    }
+                    long offset;
                     offset = offsets.get(key);
-                } finally {
-                    readLock.unlock();
-                }
-
-                writeLock.lock();
-                try {
                     try {
                         file.seek(offset);
                     } catch (IOException e) {
@@ -215,27 +198,29 @@ public class BigDataStorage<K, V> implements KeyValueStorage<K, V> {
                     } catch (IOException e) {
                         throw new MalformedDataException(e);
                     }
-                } finally {
-                    writeLock.unlock();
+                }
+                if (value != null) {
+                    cache.put(key, value);
                 }
             }
-        }
-        if (value != null) {
-            writeLock.lock();
-            try {
-                cache.put(key, value);
-            } finally {
-                writeLock.unlock();
-            }
+        } finally {
+            writeLock.unlock();
         }
         return value;
     }
 
     public final boolean exists(final K key) {
-        if (!isInitialized) {
-            throw new MalformedDataException("Storage is closed.");
+        readLock.lock();
+        boolean exists;
+        try {
+            if (!isInitialized) {
+                throw new MalformedDataException("Storage is closed.");
+            }
+            exists = map.containsKey(key) || offsets.containsKey(key);
+        } finally {
+            readLock.unlock();
         }
-        return cache.getIfPresent(key) != null || map.containsKey(key) || offsets.containsKey(key);
+        return exists;
     }
 
     /**
@@ -257,47 +242,32 @@ public class BigDataStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     public final void write(final K key, final V value) {
-        if (!isInitialized) {
-            throw new MalformedDataException("Storage is closed.");
-        }
         writeLock.lock();
         try {
+            if (!isInitialized) {
+                throw new MalformedDataException("Storage is closed.");
+            }
             addWeight += ObjectSize.deepSizeOf(key);
             addWeight += ObjectSize.deepSizeOf(value);
-        } finally {
-            writeLock.unlock();
-        }
 
-        if (addWeight > maxAddWeight) {
-            try {
-                writeToFile();
-            } catch (IOException e) {
-                throw new MalformedDataException(e);
-            }
-            writeLock.lock();
-            try {
+            if (addWeight > maxAddWeight) {
+                try {
+                    writeToFile();
+                } catch (IOException e) {
+                    throw new MalformedDataException(e);
+                }
                 addWeight = (int) (ObjectSize.deepSizeOf(key) + ObjectSize.deepSizeOf(value));
-            } finally {
-                writeLock.unlock();
             }
-        }
-        if (exists(key)) {
-            writeLock.lock();
-            try {
+            if (exists(key)) {
                 ++deleteCount;
-            } finally {
-                writeLock.unlock();
             }
-        }
-        if (deleteCount == maxDeleteCount) {
-            try {
-                fileCleaner();
-            } catch (IOException e) {
-                throw new MalformedDataException(e);
+            if (deleteCount == maxDeleteCount) {
+                try {
+                    cleanFile();
+                } catch (IOException e) {
+                    throw new MalformedDataException(e);
+                }
             }
-        }
-        writeLock.lock();
-        try {
             map.put(key, value);
             offsets.put(key, -1L);
         } finally {
@@ -308,7 +278,7 @@ public class BigDataStorage<K, V> implements KeyValueStorage<K, V> {
     /**
      * Cleans file up when maxDeleteCount is reached.
      */
-    private void fileCleaner() throws IOException {
+    private void cleanFile() throws IOException {
         if (!isInitialized) {
             throw new MalformedDataException("Storage is closed.");
         }
@@ -335,65 +305,77 @@ public class BigDataStorage<K, V> implements KeyValueStorage<K, V> {
         dataOutputStream.close();
         twinFile.close();
         file.close();
-        Files.move(Paths.get(twinFilePath), Paths.get(filePath),
-                REPLACE_EXISTING);
+        Files.move(Paths.get(twinFilePath), Paths.get(filePath), REPLACE_EXISTING);
 
         file = new RandomAccessFile(filePath, "rw");
         deleteCount = 0;
-
     }
 
     public final void delete(final K key) {
-        if (!isInitialized) {
-            throw new MalformedDataException("Storage is closed.");
-        }
+        writeLock.lock();
         try {
-            writeLock.lock();
+            if (!isInitialized) {
+                throw new MalformedDataException("Storage is closed.");
+            }
             map.remove(key);
             cache.invalidate(key);
             offsets.remove(key);
             ++deleteCount;
+            if (deleteCount == maxDeleteCount) {
+                try {
+                    cleanFile();
+                } catch (IOException e) {
+                    throw new MalformedDataException(e);
+                }
+            }
         } finally {
             writeLock.unlock();
-        }
-        if (deleteCount == maxDeleteCount) {
-            try {
-                fileCleaner();
-            } catch (IOException e) {
-                throw new MalformedDataException(e);
-            }
         }
     }
 
     public final Iterator<K> readKeys() {
-        if (!isInitialized) {
-            throw new MalformedDataException("Storage is closed.");
-        }
+        readLock.lock();
+        Iterator<K> iterator;
         try {
-            writeToFile();
-        } catch (IOException e) {
-            throw new MalformedDataException(e);
+            if (!isInitialized) {
+                throw new MalformedDataException("Storage is closed.");
+            }
+            try {
+                writeToFile();
+            } catch (IOException e) {
+                throw new MalformedDataException(e);
+            }
+            iterator = offsets.keySet().iterator();
+        } finally {
+            readLock.unlock();
         }
-        return offsets.keySet().iterator();
+        return iterator;
     }
 
     public final int size() {
-        if (!isInitialized) {
-            throw new MalformedDataException("Storage is closed.");
+        readLock.lock();
+        int size;
+        try {
+            if (!isInitialized) {
+                throw new MalformedDataException("Storage is closed.");
+            }
+            size = offsets.size();
+        } finally {
+            readLock.unlock();
         }
-        return offsets.size();
+        return size;
     }
 
     public final void close() throws IOException {
-        if (!isInitialized) {
-            throw new MalformedDataException("Storage is closed.");
-        }
         writeLock.lock();
         try {
+            if (!isInitialized) {
+                throw new MalformedDataException("Storage is closed.");
+            }
             cache.cleanUp();
 
             if (deleteCount > 0) {
-                fileCleaner();
+                cleanFile();
             }
             if (addWeight > 0) {
                 writeToFile();
