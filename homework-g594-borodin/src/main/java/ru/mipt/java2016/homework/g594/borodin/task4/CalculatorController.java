@@ -39,6 +39,6 @@ public class CalculatorController {
         LOG.debug("Evaluation request: [" + expression + "]");
         double result = calculator.calculate(expression);
         LOG.trace("Result: " + result);
-        return Double.toString(result) + "\n";
+        return "\n" + Double.toString(result) + "\n";
     }
 }

@@ -10,3 +10,5 @@ temp/
 tmp/
 
 *.DS_Store
+
+/.homework-g594-borodin/Database.mv.db.mv.db

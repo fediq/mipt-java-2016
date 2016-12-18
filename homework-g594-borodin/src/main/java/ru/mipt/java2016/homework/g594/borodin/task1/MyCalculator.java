@@ -115,6 +115,9 @@ public class MyCalculator implements Calculator {
 
     @Override
     public double calculate(String expression) throws ParsingException {
+        operands.clear();
+        functions.clear();
+        pos = 0;
         expression = '(' + expression + ')';
         Token token;
         Token previousToken = new Function(')', 1);
