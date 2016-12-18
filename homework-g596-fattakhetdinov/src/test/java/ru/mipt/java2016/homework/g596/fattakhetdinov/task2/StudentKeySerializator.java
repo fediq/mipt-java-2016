@@ -8,12 +8,6 @@ import ru.mipt.java2016.homework.tests.task2.StudentKey;
 
 public class StudentKeySerializator implements SerializationStrategy<StudentKey> {
     @Override
-    public int sizeOfSerialization(StudentKey studentKey) {
-        return Integer.SIZE / 8 + studentKey.getName().length();
-    }
-
-
-    @Override
     public void serializeToFile(StudentKey studentKey, DataOutput output) throws IOException {
         output.writeInt(studentKey.getGroupId());
         output.writeUTF(studentKey.getName());

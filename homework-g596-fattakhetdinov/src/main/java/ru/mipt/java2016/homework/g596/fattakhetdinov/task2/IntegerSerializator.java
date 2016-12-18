@@ -6,11 +6,6 @@ import java.io.IOException;
 
 public class IntegerSerializator implements SerializationStrategy<Integer> {
     @Override
-    public int sizeOfSerialization(Integer value) {
-        return Integer.SIZE / 8;
-    }
-
-    @Override
     public void serializeToFile(Integer value, DataOutput output) throws IOException {
         output.writeInt(value);
     }
