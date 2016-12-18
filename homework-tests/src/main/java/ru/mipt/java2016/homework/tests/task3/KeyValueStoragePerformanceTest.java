@@ -1,15 +1,14 @@
 package ru.mipt.java2016.homework.tests.task3;
 
+import static ru.mipt.java2016.homework.tests.task3.PerformanceTestUtils.randomKey;
+import static ru.mipt.java2016.homework.tests.task3.PerformanceTestUtils.randomValue;
+
+import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 import org.junit.Assert;
 import org.junit.Test;
 import ru.mipt.java2016.homework.tests.task2.AbstractSingleFileStorageTest;
 import ru.mipt.java2016.homework.tests.task2.StorageTestUtils;
-
-import java.util.*;
-import java.util.concurrent.atomic.AtomicLong;
-
-import static ru.mipt.java2016.homework.tests.task3.PerformanceTestUtils.randomKey;
-import static ru.mipt.java2016.homework.tests.task3.PerformanceTestUtils.randomValue;
 
 /**
  * @author Fedor S. Lavrentyev
