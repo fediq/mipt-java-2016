@@ -5,7 +5,6 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.g595.ferenets.task2.SerializationStrategy;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileLock;
@@ -80,7 +79,7 @@ public class MyOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
         try {
             storage.seek(storage.length());
             for (Map.Entry<K, V> entry : map.entrySet()) {
-                if (entry.getValue() == null){
+                if (entry.getValue() == null) {
                     continue;
                 }
                 keyValueOffset.put(entry.getKey(), storage.getFilePointer());
