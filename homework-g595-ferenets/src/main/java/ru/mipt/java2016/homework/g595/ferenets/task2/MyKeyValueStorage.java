@@ -95,8 +95,8 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 keySerializator.write(fileRA, entry.getKey());
                 valueSerializator.write(fileRA, entry.getValue());
             }
-            opened = false;
             fileRA.close();
+            opened = false;
         } catch (IOException e) {
             throw new IOException("Closed.");
         }

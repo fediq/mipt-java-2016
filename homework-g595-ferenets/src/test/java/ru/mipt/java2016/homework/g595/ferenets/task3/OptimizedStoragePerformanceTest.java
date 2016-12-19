@@ -11,7 +11,7 @@ public class OptimizedStoragePerformanceTest extends KeyValueStoragePerformanceT
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String path) throws MalformedDataException {
         try {
-            return new MyKeyValueStorage(path,
+            return new MyOptimizedStorage(path,
                     new StringSerializationStrategy(), new StringSerializationStrategy());
         } catch (IOException e) {
             e.getCause();
@@ -22,7 +22,7 @@ public class OptimizedStoragePerformanceTest extends KeyValueStoragePerformanceT
     @Override
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) throws MalformedDataException {
         try {
-            return new MyKeyValueStorage<>(path,
+            return new MyOptimizedStorage(path,
                     new IntegerSerializationStrategy(), new StringSerializationStrategy());
         } catch (IOException e) {
             e.getCause();
@@ -33,7 +33,7 @@ public class OptimizedStoragePerformanceTest extends KeyValueStoragePerformanceT
     @Override
     protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) throws MalformedDataException {
         try {
-            return new MyKeyValueStorage<>(path,
+            return new MyOptimizedStorage(path,
                     new StudentKeySerializationStrategy(), new StudentSerializationStrategy());
         } catch (IOException e) {
             e.getCause();
