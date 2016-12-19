@@ -3,13 +3,14 @@ package ru.mipt.java2016.homework.g599.trotsiuk.task2;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 
 import java.io.*;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
 public class DataBase<K, V> implements KeyValueStorage<K, V> {
 
     private File dataFile;
-    private Map<K, V> data;
+    private Map<K, V> data = new HashMap<>();
     private Serializer<K> serializerKey;
     private Serializer<V> serializerValue;
 
