@@ -55,7 +55,7 @@ public class BillingDao {
                 "SELECT username, password, enabled FROM billing.users WHERE username = ?",
                 new Object[]{userName},
             (ResultSet resultSet, int numberOfRow) -> {
-                return new BillingUser (resultSet.getString("userName"), resultSet.getString("password"),
+                return new BillingUser(resultSet.getString("userName"), resultSet.getString("password"),
                     resultSet.getBoolean("enabled"));
             }
         );
@@ -71,7 +71,7 @@ public class BillingDao {
                         resultSet.getString("name"),
                         resultSet.getDouble("value"),
                         resultSet.getString("expression"));
-                }
+            }
         );
     }
 
