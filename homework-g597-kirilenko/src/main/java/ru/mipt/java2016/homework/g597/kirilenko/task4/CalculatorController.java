@@ -45,7 +45,7 @@ public class CalculatorController {
 
     @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.DELETE)
     public void deleteVariable(@PathVariable String variableName) {
-       calculator.deleteVariable(variableName);
+        calculator.deleteVariable(variableName);
     }
 
     @RequestMapping(path = "/variable", method = RequestMethod.GET)
@@ -56,8 +56,8 @@ public class CalculatorController {
 
     @RequestMapping(path = "/function/{functionName}", method = RequestMethod.PUT)
     public @ResponseBody void putFunction(@PathVariable String functionName,
-                               @RequestParam(value = "args") ArrayList<String> args,
-                               @RequestBody String functionBody) throws ParsingException {
+                                          @RequestParam(value = "args") ArrayList<String> args,
+                                          @RequestBody String functionBody) throws ParsingException {
         calculator.setFunction(functionName, new ArrayList<>(args), functionBody);
     }
 

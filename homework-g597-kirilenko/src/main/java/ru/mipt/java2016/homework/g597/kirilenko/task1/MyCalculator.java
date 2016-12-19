@@ -18,75 +18,76 @@ public class MyCalculator implements Calculator {
     private final Map<String, String> variablesExpressions = new HashMap();
     private final Map<String, Pair<ArrayList<String>, String>> functions = new HashMap();
 
-    private double calculateStandardExpression(String functionName, ArrayList<Double> arguments) throws ParsingException {
+    private double calculateStandardExpression(String functionName, ArrayList<Double> arguments)
+        throws ParsingException {
         if (functionName.equals("sin")) {
-            if(arguments.size() != 1) {
+            if (arguments.size() != 1) {
                 throw new ParsingException("Incorrect expression");
             }
             return sin(arguments.get(0));
         }
         if (functionName.equals("cos")) {
-            if(arguments.size() != 1) {
+            if (arguments.size() != 1) {
                 throw new ParsingException("Incorrect expression");
             }
             return cos(arguments.get(0));
         }
         if (functionName.equals("tg")) {
-            if(arguments.size() != 1) {
+            if (arguments.size() != 1) {
                 throw new ParsingException("Incorrect expression");
             }
             return tan(arguments.get(0));
         }
         if (functionName.equals("sqrt")) {
-            if(arguments.size() != 1) {
+            if (arguments.size() != 1) {
                 throw new ParsingException("Incorrect expression");
             }
             return sqrt(arguments.get(0));
         }
-        if(functionName.equals("abs")) {
-            if(arguments.size() != 1) {
+        if (functionName.equals("abs")) {
+            if (arguments.size() != 1) {
                 throw new ParsingException("Incorrect expression");
             }
             return abs(arguments.get(0));
         }
-        if(functionName.equals("max")) {
-            if(arguments.size() != 2) {
+        if (functionName.equals("max")) {
+            if (arguments.size() != 2) {
                 throw new ParsingException("Incorrect expression");
             }
             return max(arguments.get(0), arguments.get(1));
         }
-        if(functionName.equals("min")) {
-            if(arguments.size() != 2) {
+        if (functionName.equals("min")) {
+            if (arguments.size() != 2) {
                 throw new ParsingException("Incorrect expression");
             }
             return min(arguments.get(0), arguments.get(1));
         }
-        if(functionName.equals("pow")) {
-            if(arguments.size() != 2) {
+        if (functionName.equals("pow")) {
+            if (arguments.size() != 2) {
                 throw new ParsingException("Incorrect expression");
             }
             return pow(arguments.get(0), arguments.get(1));
         }
-        if(functionName.equals("log")) {
-            if(arguments.size() != 2) {
+        if (functionName.equals("log")) {
+            if (arguments.size() != 2) {
                 throw new ParsingException("Incorrect expression");
             }
             return log(arguments.get(0)) / log(arguments.get(1));
         }
-        if(functionName.equals("log2")) {
-            if(arguments.size() != 1) {
+        if (functionName.equals("log2")) {
+            if (arguments.size() != 1) {
                 throw new ParsingException("Incorrect expression");
             }
             return log(arguments.get(0)) / log(2);
         }
-        if(functionName.equals("rnd")) {
-            if(arguments.size() != 0) {
+        if (functionName.equals("rnd")) {
+            if (arguments.size() != 0) {
                 throw new ParsingException("Incorrect expression");
             }
             return random();
         }
-        if(functionName.equals("sign")) {
-            if(arguments.size() != 1) {
+        if (functionName.equals("sign")) {
+            if (arguments.size() != 1) {
                 throw new ParsingException("Incorrect expression");
             }
             return signum(arguments.get(0));
@@ -105,7 +106,7 @@ public class MyCalculator implements Calculator {
                 functionName.equals("log") ||
                 functionName.equals("log2") ||
                 functionName.equals("rnd") ||
-                functionName.equals("max")||
+                functionName.equals("max") ||
                 functionName.equals("min");
 
     }
@@ -172,14 +173,16 @@ public class MyCalculator implements Calculator {
 
     private Pair<Integer, Integer> getValueLexem(String expression, Integer startIndex) {
         Integer firstIndex = startIndex;
-        while (firstIndex < expression.length() && !isUnderscore(expression.charAt(firstIndex)) && !isLatinSymbol(expression.charAt(firstIndex))) {
+        while (firstIndex < expression.length() && !isUnderscore(expression.charAt(firstIndex)) &&
+                !isLatinSymbol(expression.charAt(firstIndex))) {
             firstIndex += 1;
         }
         if (firstIndex >= expression.length()) {
             return null;
         }
         Integer secondIndex = firstIndex;
-        while (secondIndex < expression.length() && (isUnderscore(expression.charAt(secondIndex)) || isLatinSymbol(expression.charAt(secondIndex)) || isDigit(expression.charAt(secondIndex)))) {
+        while (secondIndex < expression.length() && (isUnderscore(expression.charAt(secondIndex)) ||
+                isLatinSymbol(expression.charAt(secondIndex)) || isDigit(expression.charAt(secondIndex)))) {
             secondIndex += 1;
         }
         if (secondIndex == expression.length() || expression.charAt(secondIndex) != '(') {
@@ -189,16 +192,18 @@ public class MyCalculator implements Calculator {
         }
     }
 
-    private Pair<Pair<String, Pair<Integer,Integer>>, ArrayList<String>> getFunctionLexem(String expression) {
+    private Pair<Pair<String, Pair<Integer, Integer>>, ArrayList<String>> getFunctionLexem(String expression) {
         Integer firstIndex = 0;
-        while (firstIndex < expression.length() && !isUnderscore(expression.charAt(firstIndex)) && !isLatinSymbol(expression.charAt(firstIndex))) {
+        while (firstIndex < expression.length() && !isUnderscore(expression.charAt(firstIndex)) &&
+                !isLatinSymbol(expression.charAt(firstIndex))) {
             firstIndex += 1;
         }
         if (firstIndex >= expression.length()) {
             return null;
         }
         Integer secondIndex = firstIndex;
-        while (secondIndex < expression.length() && (isUnderscore(expression.charAt(secondIndex)) || isLatinSymbol(expression.charAt(secondIndex)) || isDigit(expression.charAt(secondIndex)))) {
+        while (secondIndex < expression.length() && (isUnderscore(expression.charAt(secondIndex)) ||
+                isLatinSymbol(expression.charAt(secondIndex)) || isDigit(expression.charAt(secondIndex)))) {
             secondIndex += 1;
         }
         String name = expression.substring(firstIndex, secondIndex);
@@ -215,7 +220,7 @@ public class MyCalculator implements Calculator {
         Integer balance = 1;
         Integer currentIndex = startIndex + 1;
         String currentArgument = "";
-        while(balance != 0) { //выражение уже проверено на корректность -> exception не выбрасываем
+        while (balance != 0) { //выражение уже проверено на корректность -> exception не выбрасываем
             if (expression.charAt(currentIndex) == '(') {
                 balance += 1;
                 currentArgument += expression.charAt(currentIndex);
@@ -245,12 +250,14 @@ public class MyCalculator implements Calculator {
         return new Pair<>(lastIndex, lastIndex + argument.length());
     }
 
-    private Double evaluateFunction(String expression, ArrayList<String> argumentsList, ArrayList<Double> arguments) throws ParsingException {
+    private Double evaluateFunction(String expression, ArrayList<String> argumentsList,
+                                    ArrayList<Double> arguments) throws ParsingException {
         for (int i = 0; i < argumentsList.size(); i++) {
             String argument = argumentsList.get(i);
             Pair<Integer, Integer> argCoord = findArgument(expression, argument);
             while (argCoord != null) {
-                expression = expression.substring(0, argCoord.getKey()) + arguments.get(i).toString() + expression.substring(argCoord.getValue(), expression.length());
+                expression = expression.substring(0, argCoord.getKey()) + arguments.get(i).toString() +
+                        expression.substring(argCoord.getValue(), expression.length());
                 argCoord = findArgument(expression, argument);
             }
         }
@@ -275,10 +282,12 @@ public class MyCalculator implements Calculator {
                 String valueName = expression.substring(start, end);
                 String valExpr = getVariableExpression(valueName);
                 Double result = evaluateExpression(valExpr);
-                expression = expression.substring(0, start) + result.toString() + expression.substring(end, expression.length());
+                expression = expression.substring(0, start) + result.toString() +
+                        expression.substring(end, expression.length());
                 valueLexem = getValueLexem(expression, 0);
             }
-            Pair<Pair<String, Pair<Integer,Integer>>, ArrayList<String>> functionLexem = getFunctionLexem(expression);
+            Pair<Pair<String, Pair<Integer, Integer>>, ArrayList<String>> functionLexem =
+                    getFunctionLexem(expression);
             while (functionLexem != null) {
                 String functionName = functionLexem.getKey().getKey();
                 Integer start = functionLexem.getKey().getValue().getKey();
@@ -295,7 +304,8 @@ public class MyCalculator implements Calculator {
                     Pair<ArrayList<String>, String> func = getFunctionInfo(functionName);
                     result = evaluateFunction(func.getValue(), func.getKey(), calculatedArguments);
                 }
-                expression = expression.substring(0, start) + result.toString() + expression.substring(end, expression.length());
+                expression = expression.substring(0, start) + result.toString() +
+                        expression.substring(end, expression.length());
                 functionLexem = getFunctionLexem(expression);
             }
             return calculate(expression);
