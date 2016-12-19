@@ -56,3 +56,17 @@ curl http://localhost:9001/calculate \
              -H "Content-Type: text/plain" \
              -H "Authorization: Basic $(echo -n "username:password" | base64)" \
              --data-raw "t+f(t) + sqrt(f(9))"
+
+Add another function:
+curl http://localhost:9001/function/g?args=x,y \
+        -X PUT \
+        -H "Content-Type: text/plain" \
+        -H "Authorization: Basic $(echo -n "username:password" | base64)" \
+        --data-raw "x*y"
+
+Third expression:
+curl http://localhost:9001/calculate \
+             -X POST \
+             -H "Content-Type: text/plain" \
+             -H "Authorization: Basic $(echo -n "username:password" | base64)" \
+             --data-raw "g(t, 4)"

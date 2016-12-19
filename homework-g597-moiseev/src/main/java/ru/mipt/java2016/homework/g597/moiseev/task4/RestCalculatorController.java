@@ -9,6 +9,8 @@ import org.springframework.security.core.Authentication;
 
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -80,10 +82,11 @@ public class RestCalculatorController {
     @RequestMapping(path = "/function/{name}", method = RequestMethod.PUT,
             consumes = "text/plain", produces = "text/plain")
     public String addFunction(Authentication authentication, @PathVariable String name,
-                              @RequestParam(value = "args") List<String> arguments,
+                              @RequestParam(value = "args") String args,
                               @RequestBody String expression)
             throws ParsingException {
         String username = authentication.getName();
+        List<String> arguments = Arrays.asList(args.split(","));
         billingDao.addFunction(username, name, arguments, expression);
         return "Function added\n";
     }
