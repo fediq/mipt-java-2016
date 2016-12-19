@@ -2,6 +2,7 @@ package ru.mipt.java2016.homework.g595.ulyanin.task2;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 
+import javax.xml.bind.ValidationException;
 import java.io.*;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
@@ -30,14 +31,14 @@ public class MapPreservingStorage<K, V> implements KeyValueStorage<K, V> {
     private Serializer<K> keySerializer;
     private Serializer<V> valueSerializer;
 
-    MapPreservingStorage(String path, Serializer<K> kSerializer, Serializer<V> vSerializer)
+    public MapPreservingStorage(String path, Serializer<K> kSerializer, Serializer<V> vSerializer)
             throws IOException, NoSuchAlgorithmException {
         keySerializer = kSerializer;
         valueSerializer = vSerializer;
         File tmp = new File(path);
         if (tmp.exists()) {
             if (tmp.isDirectory()) {
-                path += "/" + DEFAULT_DB_NAME;
+                path += File.separator + DEFAULT_DB_NAME;
             }
         } else {
             throw new IllegalArgumentException("file " + path + " does not exist");
@@ -46,7 +47,11 @@ public class MapPreservingStorage<K, V> implements KeyValueStorage<K, V> {
         state = StorageState.OPENED;
         File target = new File(path);
         if (target.exists()) {
-            readFromFile();
+            try {
+                readFromFile();
+            } catch (ValidationException e) {
+                throw new IllegalArgumentException(e.getMessage());
+            }
         }
     }
 
@@ -54,14 +59,14 @@ public class MapPreservingStorage<K, V> implements KeyValueStorage<K, V> {
         return storageFileName + MD5_FILE_SUFFIX_NAME;
     }
 
-    private void readFromFile() throws IOException, NoSuchAlgorithmException {
+    private void readFromFile() throws IOException, NoSuchAlgorithmException, ValidationException {
         File file = new File(storageFileName);
 
         FileInputStream fileInputStream = new FileInputStream(file);
 
         DataInputStream dataIS = new DataInputStream(fileInputStream);
         if (!StringSerializer.getInstance().deserialize(dataIS).equals(STORAGE_VALIDATE_STRING)) {
-            throw new IllegalArgumentException("It is not file of dataBase");
+            throw new ValidationException("It is not file of dataBase");
         }
         int size = IntegerSerializer.getInstance().deserialize(dataIS);
         for (int i = 0; i < size; ++i) {
