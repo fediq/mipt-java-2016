@@ -9,6 +9,7 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import java.io.*;
 import java.nio.file.Files;
 import java.util.*;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -17,11 +18,12 @@ class AdvancedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private static final int MAX_STORAGE_OFFSET = 2000000000;
     private static final int MAX_READING_BLOCK_MEMORY_SIZE = 1;
     private static final int MAX_WRITING_BLOCK_MEMORY_SIZE = 100;
-    private static final int MAX_OFFSET_CHANGES_COUNTER = 50000;
-    private static final String DEFAULT_STORAGE_OFFSET_FILENAME = "storage_offset.kvs";
+    private static final int MAX_CHANGES_COUNTER = 20000;
+
     private static final String DEFAULT_STORAGE_VALUES_FILENAME = "storage.kvs";
-    private static final String DEFAULT_STORAGE_TRANSFER_FILENAME = "storage_transfer.kvs";
-    private static final String DEFAULT_STORAGE_COPY_FILENAME = "~storage.kvs";
+    private static final String DEFAULT_STORAGE_OFFSET_FILENAME = "storage_offset.kvs";
+    private static final String DEFAULT_STORAGE_VALUES_COPY_FILENAME = "~storage.kvs";
+    private static final String DEFAULT_STORAGE_OFFSET_COPY_FILENAME = "~storage_offset.kvs";
 
     // FIELDS -------------------------
 
@@ -42,6 +44,8 @@ class AdvancedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private Integer changesCounter;
 
     private ReadWriteLock lock;
+    private Lock readlock;
+    private Lock writelock;
 
     // STUFF --------------------------
 
@@ -52,13 +56,13 @@ class AdvancedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         }
     }
 
-    private void checkFileIsOk(File file) throws IllegalStateException {
+    private void safeCreateFile(File file) throws IllegalStateException {
         try {
             if (!file.createNewFile()) {
                 throw new IllegalStateException("Cannot create file");
             }
         } catch (IOException | SecurityException e) {
-            throw new IllegalStateException(e.getMessage(), e.getCause());
+            throw new IllegalStateException(e);
         }
     }
 
@@ -126,7 +130,7 @@ class AdvancedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 }
             }
         } catch (IOException e) {
-            throw new IllegalStateException(e.getMessage(), e.getCause());
+            throw new IllegalStateException(e);
         }
         cachedWritingBlockMap.clear();
     }
@@ -146,12 +150,12 @@ class AdvancedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         flushWritingBlock();
     }
 
-    private void refreshOffsets() {
+    private void refreshStorage() throws IOException {
         ++changesCounter;
 
-        if (changesCounter > MAX_OFFSET_CHANGES_COUNTER) {
+        if (changesCounter > MAX_CHANGES_COUNTER) {
             changesCounter = 0;
-            eraseCacheStorage();
+            updateValuesInStorage();
         }
     }
 
@@ -169,11 +173,35 @@ class AdvancedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 valueSerialization.write(writingDevice, valueSerialization.read(storageDevice));
             }
         }
-        writingDevice.close();
     }
 
-    private void eraseCacheStorage() {
-        File transfer = new File(workspaceDir + File.separator + DEFAULT_STORAGE_TRANSFER_FILENAME);
+    private void updateOffsetsInStorage() throws IOException {
+        File newStorage = new File(workspaceDir + File.separator + DEFAULT_STORAGE_OFFSET_COPY_FILENAME);
+        safeCreateFile(newStorage);
+
+        try (DataOutputStream finishWriter = new DataOutputStream(new
+                BufferedOutputStream(new FileOutputStream(newStorage)))) {
+
+            commitOffsetsToFile(finishWriter);
+
+            finishWriter.flush();
+
+            storageDevice.close();
+
+            File oldOffset = new File(offsetFilename);
+            if (!oldOffset.delete()) {
+                throw new IllegalStateException("Cannot delete old file");
+            }
+            if (!newStorage.renameTo(oldOffset)) {
+                throw new IllegalStateException("Cannot rename file");
+            }
+        } catch (IOException e) {
+            throw new IOException(e);
+        }
+    }
+
+    private void updateValuesInStorage() {
+        File transfer = new File(workspaceDir + File.separator + DEFAULT_STORAGE_VALUES_COPY_FILENAME);
 
         if (!checkTransferFileIsOk(transfer)) {
             return;
@@ -184,20 +212,24 @@ class AdvancedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             transferFile(transferWriter);
 
             storageDevice.close();
+
             File oldStorage = new File(valuesFilename);
+
             if (!oldStorage.delete()) {
                 throw new IllegalStateException("Cannot remove file");
             }
+
             if (!transfer.renameTo(oldStorage)) {
                 throw new IllegalStateException("Cannot rename file");
             }
+
             storageDevice = new RandomAccessFile(transfer, "rw");
         } catch (IOException e) {
             throw new IllegalStateException("Invalid file operation");
         }
     }
 
-    private void commitAllDataToFile(DataOutputStream writingDevice) throws IOException {
+    private void commitOffsetsToFile(DataOutputStream writingDevice) throws IOException {
         writingDevice.writeUTF(contentType);
         writingDevice.writeInt(existKeysFullMap.size());
         SerializationStrategy<Long> offsetWriter = new LongSerialization();
@@ -243,6 +275,8 @@ class AdvancedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         changesCounter = 0;
 
         lock = new ReentrantReadWriteLock();
+        readlock = lock.readLock();
+        writelock = lock.writeLock();
 
         this.keySerialization = keySerialization;
         this.valueSerialization = valueSerialization;
@@ -252,71 +286,44 @@ class AdvancedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         File offsetFile = new File(offsetFilename);
         File valuesFile = new File(valuesFilename);
 
-        lock.readLock().lock();
-        try {
-            if (!offsetFile.exists()) {
-                createStorage(offsetFile, valuesFile);
-            } else {
-                readDataFromStorage(offsetFile, valuesFile);
-            }
-        } finally {
-            lock.readLock().unlock();
+        if (!offsetFile.exists()) {
+            createStorage(offsetFile, valuesFile);
+        } else {
+            readDataFromStorage(offsetFile, valuesFile);
         }
     }
 
     @Override
     public void close() throws IOException {
-        lock.writeLock().lock();
-        lock.readLock().lock();
-
+        writelock.lock();
         try {
-
             checkStorageAvailability();
+
             isStreamingNow = false;
+
             flushWritingBlock();
+            updateValuesInStorage();
+            updateOffsetsInStorage();
 
-            eraseCacheStorage();
-
-            File newStorage = new File(workspaceDir + File.separator + DEFAULT_STORAGE_COPY_FILENAME);
-            checkFileIsOk(newStorage);
-
-            try (DataOutputStream finishWriter = new DataOutputStream(new
-                    BufferedOutputStream(new FileOutputStream(newStorage)))) {
-
-                commitAllDataToFile(finishWriter);
-
-                storageDevice.close();
-
-                File oldStorage = new File(offsetFilename);
-                if (!oldStorage.delete()) {
-                    throw new IllegalStateException("Cannot delete old file");
-                }
-                if (!newStorage.renameTo(oldStorage)) {
-                    throw new IllegalStateException("Cannot rename file");
-                }
-            } catch (IOException e) {
-                throw new IOException(e.getMessage());
-            }
         } finally {
-            lock.readLock().unlock();
-            lock.writeLock().unlock();
+            writelock.unlock();
         }
     }
 
     @Override
     public int size() throws IllegalStateException {
-        lock.readLock().lock();
+        readlock.lock();
         try {
             checkStorageAvailability();
             return existKeysFullMap.size();
         } finally {
-            lock.readLock().unlock();
+            readlock.unlock();
         }
     }
 
     @Override
     public V read(K key) throws IllegalStateException {
-        lock.readLock().lock();
+        writelock.lock();
 
         try {
             checkStorageAvailability();
@@ -342,7 +349,7 @@ class AdvancedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
                     return value;
                 } catch (IllegalStateException | IOException e) {
-                    throw new IllegalStateException(e.getMessage());
+                    throw new IllegalStateException(e);
                 }
             } else {
                 cachedReadingBlockMap.put(key, null);
@@ -350,29 +357,29 @@ class AdvancedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                 return null;
             }
         } finally {
-            lock.readLock().unlock();
+            writelock.unlock();
         }
     }
 
     @Override
     public boolean exists(K key) throws IllegalStateException {
-        lock.readLock().lock();
+        readlock.lock();
 
         try {
             checkStorageAvailability();
             return existKeysFullMap.contains(key);
         } finally {
-            lock.readLock().unlock();
+            readlock.unlock();
         }
     }
 
     @Override
     public void write(K key, V value) throws IllegalStateException {
-        lock.writeLock().lock();
+        writelock.lock();
         try {
             checkStorageAvailability();
 
-            refreshOffsets();
+            refreshStorage();
 
             if (cachedReadingBlockMap.containsKey(key)) {
                 cachedReadingBlockMap.put(key, value);
@@ -381,18 +388,20 @@ class AdvancedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             cachedWritingBlockMap.put(key, value);
 
             refreshWritingBlock();
+        } catch (IOException e) {
+            e.printStackTrace();
         } finally {
-            lock.writeLock().unlock();
+            writelock.unlock();
         }
     }
 
     @Override
     public void delete(K key) throws IllegalStateException {
-        lock.writeLock().lock();
+        writelock.lock();
         try {
             checkStorageAvailability();
 
-            refreshOffsets();
+            refreshStorage();
 
             if (cachedReadingBlockMap.containsKey(key)) {
                 cachedReadingBlockMap.put(key, null);
@@ -401,20 +410,22 @@ class AdvancedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
             cachedWritingBlockMap.put(key, null);
 
             refreshWritingBlock();
+        } catch (IOException e) {
+            e.printStackTrace();
         } finally {
-            lock.writeLock().unlock();
+            writelock.unlock();
         }
     }
 
     @Override
     public Iterator<K> readKeys() throws IllegalStateException {
-        lock.readLock().lock();
+        readlock.lock();
 
         try {
             checkStorageAvailability();
             return existKeysFullMap.iterator();
         } finally {
-            lock.readLock().unlock();
+            readlock.unlock();
         }
     }
 }
