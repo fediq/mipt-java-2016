@@ -179,25 +179,26 @@ class AdvancedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         File newStorage = new File(workspaceDir + File.separator + DEFAULT_STORAGE_OFFSET_COPY_FILENAME);
         safeCreateFile(newStorage);
 
-        try (DataOutputStream finishWriter = new DataOutputStream(new
-                BufferedOutputStream(new FileOutputStream(newStorage)))) {
-
+        DataOutputStream finishWriter;
+        try {
+            finishWriter = new DataOutputStream(new
+                    BufferedOutputStream(new FileOutputStream(newStorage)));
             commitOffsetsToFile(finishWriter);
-
-            finishWriter.flush();
-
-            storageDevice.close();
-
-            File oldOffset = new File(offsetFilename);
-            if (!oldOffset.delete()) {
-                throw new IllegalStateException("Cannot delete old file");
-            }
-            if (!newStorage.renameTo(oldOffset)) {
-                throw new IllegalStateException("Cannot rename file");
-            }
         } catch (IOException e) {
             throw new IOException(e);
         }
+
+        finishWriter.flush();
+        storageDevice.close();
+
+        File oldOffset = new File(offsetFilename);
+        if (!oldOffset.delete()) {
+            throw new IllegalStateException("Cannot delete old file");
+        }
+        if (!newStorage.renameTo(oldOffset)) {
+            throw new IllegalStateException("Cannot rename file");
+        }
+
     }
 
     private void updateValuesInStorage() {
