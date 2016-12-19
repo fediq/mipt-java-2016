@@ -47,6 +47,9 @@ public class CalculatorController {
 
     @RequestMapping(path = "/eval", method = RequestMethod.POST)
     public String eval(@RequestBody String expression, Principal principal) throws ParsingException {
+        if (principal == null) {
+            throw new RuntimeException("Authorization error");
+        }
         LOG.debug("Evaluation request: [" + expression + "]");
         double result = calculator.calculate(expression);
         LOG.trace("Result: " + result);
