@@ -1,14 +1,13 @@
 package ru.mipt.java2016.homework.g597.moiseev.task1;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Scanner;
+import java.util.Set;
+import java.util.Stack;
+import java.util.regex.Pattern;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
-
-import java.util.HashSet;
-import java.util.regex.Pattern;
-
-import java.util.Arrays;
-import java.util.Scanner;
-import java.util.Stack;
 
 /**
  * Стековый калькулятор.
@@ -19,19 +18,24 @@ import java.util.Stack;
 
 public class StackCalculator implements Calculator {
 
-    private static final HashSet<Character> OPERATORS = new HashSet<>(Arrays.asList('+', '-', '*', '/')); // Операторы
-    private static final HashSet<Character> DIGITS_AND_DOT = new HashSet<>(Arrays.asList('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.')); // Элементы числа
+    private static final Set<Character> OPERATORS =
+            new HashSet<>(Arrays.asList('+', '-', '*', '/')); // Операторы
+    private static final Set<Character> DIGITS_AND_DOT =
+            new HashSet<>(Arrays.asList('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.'));
+            // Элементы числа
 
     @Override
     public double calculate(String expression) throws ParsingException {
         if (expression == null) {
             throw new ParsingException("Expression is null");
         }
-        String postfixLine = getPostfixLine(expression.replaceAll("\\s", "")); // Преобразуем инфикссную запись в постфиксную
+        // Преобразуем инфикссную запись в постфиксную
+        String postfixLine = getPostfixLine(expression.replaceAll("\\s", ""));
         return calculateValueOfPostfixLine(postfixLine); // Считаем результат для постфиксной записи
     }
 
-    private String getPostfixLine(String expression) throws ParsingException { // Перевод инфиксной записи в постфиксную
+    // Перевод инфиксной записи в постфиксную
+    private String getPostfixLine(String expression) throws ParsingException {
         boolean flag = true; // Флажок на то, что следующий оператор - унарный
         Stack<Character> stack = new Stack<>(); // Стек операторов
         StringBuilder result = new StringBuilder(); // Результирующая строка
@@ -52,7 +56,8 @@ public class StackCalculator implements Calculator {
                 } else {
                     flag = true;
                     result.append(' ');
-                    while (!stack.empty()) { // выталкиваем из стека в строку все элементы с приоритетом, большим данного
+                    // выталкиваем из стека в строку все элементы с приоритетом, большим данного
+                    while (!stack.empty()) {
                         Character current = stack.pop();
                         if (getPriority(c) <= getPriority(current)) {
                             result.append(' ').append(current).append(' ');
@@ -135,8 +140,11 @@ public class StackCalculator implements Calculator {
         }
     }
 
-    private double calculateValueOfPostfixLine(String expression) throws ParsingException { // Подсчет результата постфиксного выражения
-        try (Scanner sc = new Scanner(expression) ) {
+    /**
+     * Подсчет результата постфиксного выражения
+     */
+    private double calculateValueOfPostfixLine(String expression) throws ParsingException {
+        try (Scanner sc = new Scanner(expression)) {
             Stack<Double> stack = new Stack<>(); // Стек промежуточных результатов
             while (sc.hasNext()) { // Перебираем все лексемы в выражении
                 String s = sc.next();
@@ -150,13 +158,13 @@ public class StackCalculator implements Calculator {
                         throw new ParsingException("Invalid expression");
                     }
                 } else if (s.length() == 1 && s.charAt(0) == '&') {
-                    if(stack.size() >= 1) {
+                    if (stack.size() >= 1) {
                         double operand = stack.pop();
                         stack.push(-1 * operand);
                     } else {
                         throw new ParsingException("Invalid expression");
                     }
-                } else if(Pattern.matches("[-+]?[0-9]*\\.?[0-9]", s)) {
+                } else if (Pattern.matches("[-+]?[0-9]*\\.?[0-9]", s)) {
                     double current = Double.parseDouble(s); // Иначе это число
                     stack.push(current); // Кладем его в  стек
                 } else {
