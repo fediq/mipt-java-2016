@@ -18,7 +18,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private boolean opened;
 
 
-    MyKeyValueStorage(String path, SerializationStrategy argKeySerializator,
+    public MyKeyValueStorage(String path, SerializationStrategy argKeySerializator,
                       SerializationStrategy argValueSerializator) throws IOException {
         map = new HashMap<>();
         keySerializator = argKeySerializator;
