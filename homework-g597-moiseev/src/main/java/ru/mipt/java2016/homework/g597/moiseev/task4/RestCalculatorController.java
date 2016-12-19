@@ -9,7 +9,6 @@ import org.springframework.security.core.Authentication;
 
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
