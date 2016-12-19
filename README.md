@@ -68,13 +68,13 @@
 
 Обязательным является прохождение проверки Maven Checkstyle. Она происходит при запуске всех тестов (например, с помощью `mvn test` или по клавише test во вкладке Maven Projects).
 
-1. [Java vs C++; Работа с исключениям и I/O](https://yadi.sk/d/meyw4Nv1wUrzc) ([примеры кода](https://github.com/DanAnastasyev/mipt-java-2016/tree/master/seminars/src/ru/mipt/java2016/seminars/seminar1), [доп семинар](https://github.com/DanAnastasyev/mipt-java-2016/blob/master/seminars/src/ru/mipt/java2016/seminars/Seminar%201.5%20Notes.md))
-2. [Паттерны проектирования](https://yadi.sk/d/Clpl7NfhwuYod) ([коллекция паттернов](http://java-design-patterns.com/patterns/))
-3. [Строки и обёртки над примитивными типами в Java. Антипаттерны](https://yadi.sk/d/nhdo_dFsx7JnZ) ([коллекция антипаттернов](https://sourcemaking.com/antipatterns))
-4. [Повторное использование кода в Java. Многопоточность в Java](https://yadi.sk/d/nitO2OJuxcMAw) ([видео: Java Memory Model](https://shipilev.net/#jmm))
-5. [Средства синхронизации в Java](https://yadi.sk/d/2YAOFlpSxx73h) ([примеры кода](https://github.com/DanAnastasyev/mipt-java-2016/tree/master/seminars/src/ru/mipt/java2016/seminars/seminar5))
-6. [Рефлексия и сборка мусора в Java](https://yadi.sk/d/1cpd_baDyHELV) ([примеры кода](https://github.com/DanAnastasyev/mipt-java-2016/tree/master/seminars/src/ru/mipt/java2016/seminars/seminar6), [хорошая статья про ссылки в Java](http://www.kdgregory.com/?page=java.refobj))
-7. [Lambdas & Streams](https://yadi.sk/d/uJ4A7PrRyhL2e) ([примеры кода](https://github.com/DanAnastasyev/mipt-java-2016/tree/master/seminars/src/ru/mipt/java2016/seminars/seminar7), [видео: Get a Taste of Lambdas and Get Addicted to Streams](https://youtu.be/1OpAgZvYXLQ))
+1. [Java vs C++; Работа с исключениям и I/O](https://goo.gl/wps6dA) ([примеры кода](https://github.com/DanAnastasyev/mipt-java-2016/tree/master/seminars/src/ru/mipt/java2016/seminars/seminar1), [доп семинар](https://github.com/DanAnastasyev/mipt-java-2016/blob/master/seminars/src/ru/mipt/java2016/seminars/Seminar%201.5%20Notes.md))
+2. [Паттерны проектирования](https://goo.gl/QxbbNf) ([коллекция паттернов](http://java-design-patterns.com/patterns/))
+3. [Строки и обёртки над примитивными типами в Java. Антипаттерны](https://goo.gl/snYk3h) ([коллекция антипаттернов](https://sourcemaking.com/antipatterns))
+4. [Повторное использование кода в Java. Многопоточность в Java](https://goo.gl/w8fvaQ) ([видео: Java Memory Model](https://shipilev.net/#jmm))
+5. [Средства синхронизации в Java](https://goo.gl/7UyMHV) ([примеры кода](https://github.com/DanAnastasyev/mipt-java-2016/tree/master/seminars/src/ru/mipt/java2016/seminars/seminar5))
+6. [Рефлексия и сборка мусора в Java](https://goo.gl/SsM7xX) ([примеры кода](https://github.com/DanAnastasyev/mipt-java-2016/tree/master/seminars/src/ru/mipt/java2016/seminars/seminar6), [хорошая статья про ссылки в Java](http://www.kdgregory.com/?page=java.refobj))
+7. [Lambdas & Streams](https://doc.co/P4Dhx3) ([примеры кода](https://github.com/DanAnastasyev/mipt-java-2016/tree/master/seminars/src/ru/mipt/java2016/seminars/seminar7), [видео: Get a Taste of Lambdas and Get Addicted to Streams](https://youtu.be/1OpAgZvYXLQ))
 8. [Spring Framework Core](https://goo.gl/rTX8BC) ([примеры кода](https://github.com/DanAnastasyev/mipt-java-2016/tree/master/spring))
 9. [REST & DB](https://goo.gl/iYKhFg) ([примеры кода](https://github.com/DanAnastasyev/mipt-java-2016/tree/master/spring-rest))
 10. [MVC](https://goo.gl/YcOQrb) (примеры: [Spring MVC](https://github.com/DanAnastasyev/mipt-java-2016/tree/master/spring-mvc), [WebSockets + JS-клиент](https://github.com/DanAnastasyev/mipt-java-2016/tree/master/spring-chat), [игрушечный MVC с Observer](https://github.com/DanAnastasyev/mipt-java-2016/tree/master/seminars/src/ru/mipt/java2016/seminars/seminar10/mvc))
