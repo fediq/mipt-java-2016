@@ -23,7 +23,7 @@ public class OptimizedStoragePerformanceTest extends KeyValueStoragePerformanceT
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) throws MalformedDataException {
         try {
             return new MyOptimizedStorage(path,
-                    new IntegerSerializationStrategy(), new StringSerializationStrategy());
+                    new IntegerSerializationStrategy(), new DoubleSerializationStrategy());
         } catch (IOException e) {
             e.getCause();
         }
