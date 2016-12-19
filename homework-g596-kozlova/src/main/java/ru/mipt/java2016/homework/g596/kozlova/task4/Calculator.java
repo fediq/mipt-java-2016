@@ -1,9 +1,10 @@
 package ru.mipt.java2016.homework.g596.kozlova.task4;
 
 import ru.mipt.java2016.homework.base.task1.ParsingException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
-import java.util.HashMap;
 import java.util.LinkedList;
 
 import static java.lang.Character.digit;
@@ -13,11 +14,14 @@ import static java.lang.Character.isWhitespace;
 
 public class Calculator {
 
-    public double calculate(String expression) throws  ParsingException {
+    private static final Logger LOG = LoggerFactory.getLogger(Calculator.class);
+
+    public static final Calculator INSTANCE = new Calculator();
+
+    public double calculate(Map<String, String> variables, String expression) throws  ParsingException {
         if (expression == null || isSplitedNumbers(expression) || expression.equals("")) {
             throw new ParsingException("Bad expressions");
         }
-        Map<String, String> variables = new HashMap<>();
         return calc(variables, expression);
     }
 
@@ -109,6 +113,7 @@ public class Calculator {
                         StringBuilder firstParameter = new StringBuilder();
                         StringBuilder secondParameter = new StringBuilder();
                         int position = actionsIfTwoParameters(expression, i, firstParameter, secondParameter);
+                        LOG.debug(firstParameter + " " + secondParameter);
                         numbers.push(calcFunctionWithTwoParameters(variable,
                                 calc(variables, firstParameter.toString()),
                                 calc(variables, secondParameter.toString())));
@@ -147,6 +152,7 @@ public class Calculator {
                 }
                 canBeUnary = false;
                 if (last != '(') {
+                    LOG.debug(Integer.toString(i));
                     throw new ParsingException("Bad expression");
                 }
                 continue;
@@ -167,12 +173,13 @@ public class Calculator {
             throw new ParsingException("Bad expression");
         }
         double answer = numbers.pop();
+        LOG.debug(Double.toString(answer) + " " + expression);
         return answer;
     }
 
     private boolean isFunctionWithOneParameter(String f) {
-        return (f.equals("sin") || f.equals("cos") || f.equals("tg") || f.equals("sqrt") ||
-                f.equals("abs") || f.equals("sign"));
+        return f.equals("sin") || f.equals("cos") || f.equals("tg") || f.equals("sqrt") ||
+                f.equals("abs") || f.equals("sign") || f.equals("log2");
     }
 
     private boolean isFunctionWithTwoParameters(String f) {
@@ -227,6 +234,9 @@ public class Calculator {
         }
         if (f.equals("sign")) {
             return Math.signum(x);
+        }
+        if (f.equals("log2")) {
+            return Math.log(x) / Math.log(2);
         }
         return 0.0;
     }
@@ -344,6 +354,10 @@ public class Calculator {
             }
         }
         return false;
+    }
+
+    public boolean isPredefinedFunction(String f) {
+        return isFunctionWithOneParameter(f) || isFunctionWithTwoParameters(f) || f.equals("rnd");
     }
 }
 
