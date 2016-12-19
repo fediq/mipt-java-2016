@@ -9,23 +9,24 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileLock;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.nio.channels.OverlappingFileLockException;
+import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 
 public class MyOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
     private static final int MAX_MEM_SIZE = 100;
     private SerializationStrategy<K> keySerialization;
     private SerializationStrategy<V> valueSerialization;
     private HashMap<K, V> map = new HashMap<K, V>();
-    private HashMap<K, Long> keyValueOffset = new HashMap<K, Long>();
+    private TreeMap<K, Long> keyValueOffset = new TreeMap<K, Long>();
+    private HashSet<K> keySet = new HashSet<K>();
     private boolean opened;
     private RandomAccessFile storage;
     private RandomAccessFile offsets;
-    private String storagePath;
-    private String offsetsPath;
+    private File storageFile;
+    private File offsetsFile;
     private FileLock lockFile;
     private ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
 
@@ -35,32 +36,36 @@ public class MyOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
         try {
             keySerialization = argKeySerialization;
             valueSerialization = argValueSerialization;
-            storagePath = path + File.separator + "storage.txt";
-            offsetsPath = path + File.separator + "offsets.txt";
-            File offsetsFile = new File(offsetsPath);
-            File storageFile = new File(storagePath);
+            String storagePath = path + File.separator + "storage.txt";
+            String offsetsPath = path + File.separator + "offsets.txt";
+            opened = true;
+            offsetsFile = new File(offsetsPath);
+            storageFile = new File(storagePath);
             if (!offsetsFile.createNewFile()) {
-                offsets = new RandomAccessFile(offsetsPath, "rw");
-                storage = new RandomAccessFile(storagePath, "rw");
-                lockFile = offsets.getChannel().lock();
+                offsets = new RandomAccessFile(offsetsFile, "rw");
+                storage = new RandomAccessFile(storageFile, "rw");
+                try {
+                    lockFile = offsets.getChannel().lock();
+                } catch (OverlappingFileLockException e) {
+                    e.printStackTrace();
+                }
                 int offsetsSize = offsets.readInt();
                 for (int i = 0; i < offsetsSize; i++) {
                     K key = keySerialization.read(offsets);
                     long offset = offsets.readLong();
                     keyValueOffset.put(key, offset);
+                    keySet.add(key);
                 }
-                lockFile.release();
-                offsets.close();
             } else {
-                offsets = new RandomAccessFile(offsetsPath, "rw");
-                storage = new RandomAccessFile(storagePath, "rw");
+                offsets = new RandomAccessFile(offsetsFile, "rw");
+                storage = new RandomAccessFile(storageFile, "rw");
                 lockFile = offsets.getChannel().lock();
             }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
+        lockFile.release();
+        offsets.close();
     }
 
 
@@ -72,18 +77,19 @@ public class MyOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
 
     private void pushMapIntoFile() throws IOException {
         readWriteLock.writeLock().lock();
-        if (map.size() < MAX_MEM_SIZE) {
-            return;
-        }
-        storage.seek(storage.length());
-        for (Map.Entry<K, V> entry : map.entrySet()) {
-            if (!keyValueOffset.containsKey(entry.getKey())) {
+        try {
+            storage.seek(storage.length());
+            for (Map.Entry<K, V> entry : map.entrySet()) {
+                if (entry.getValue() == null){
+                    continue;
+                }
                 keyValueOffset.put(entry.getKey(), storage.getFilePointer());
                 valueSerialization.write(storage, entry.getValue());
             }
+            map.clear();
+        } finally {
+            readWriteLock.writeLock().unlock();
         }
-        map.clear();
-        readWriteLock.writeLock().unlock();
     }
 
     @Override
@@ -100,18 +106,23 @@ public class MyOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
                 V value = valueSerialization.read(storage);
                 return value;
             }
+            return null;
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Key is wrong");
         } finally {
             readWriteLock.writeLock().unlock();
         }
-        return null;
     }
 
     @Override
     public boolean exists(K key) {
-        checkFileAccess();
-        return keyValueOffset.containsKey(key);
+        readWriteLock.readLock().lock();
+        try {
+            checkFileAccess();
+            return keySet.contains(key);
+        } finally {
+            readWriteLock.readLock().unlock();
+        }
     }
 
     @Override
@@ -119,8 +130,11 @@ public class MyOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
         readWriteLock.writeLock().lock();
         checkFileAccess();
         map.put(key, value);
+        keySet.add(key);
         try {
-            pushMapIntoFile();
+            if (map.size() > MAX_MEM_SIZE) {
+                pushMapIntoFile();
+            }
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
@@ -133,8 +147,9 @@ public class MyOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
         readWriteLock.readLock().lock();
         checkFileAccess();
         if (exists(key)) {
-            map.remove(key);
+            map.put(key, null);
             keyValueOffset.remove(key);
+            keySet.remove(key);
         }
         readWriteLock.readLock().unlock();
     }
@@ -144,7 +159,7 @@ public class MyOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
         readWriteLock.readLock().lock();
         try {
             checkFileAccess();
-            return map.keySet().iterator();
+            return keySet.iterator();
         } finally {
             readWriteLock.readLock().unlock();
         }
@@ -155,7 +170,7 @@ public class MyOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
         readWriteLock.readLock().lock();
         try {
             checkFileAccess();
-            return map.keySet().size() + keyValueOffset.size();
+            return keySet.size();
         } finally {
             readWriteLock.readLock().unlock();
         }
@@ -167,8 +182,12 @@ public class MyOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
         opened = false;
         try {
             pushMapIntoFile();
-            offsets = new RandomAccessFile(offsetsPath, "rw");
-            lockFile = offsets.getChannel().lock();
+            offsets = new RandomAccessFile(offsetsFile, "rw");
+            try {
+                lockFile = offsets.getChannel().lock();
+            } catch (OverlappingFileLockException e) {
+                e.printStackTrace();
+            }
             offsets.writeInt(keyValueOffset.size());
             for (Map.Entry<K, Long> entry : keyValueOffset.entrySet()) {
                 keySerialization.write(offsets, entry.getKey());
