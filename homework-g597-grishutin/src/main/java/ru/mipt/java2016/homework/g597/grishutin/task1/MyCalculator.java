@@ -9,8 +9,8 @@ import java.util.HashSet;
 import java.util.Scanner;
 import java.util.Stack;
 
-class MyCalculator implements Calculator {
-    static final Calculator INSTANCE = new MyCalculator();
+public class MyCalculator implements Calculator {
+    public static final Calculator INSTANCE = new MyCalculator();
     private static final String UNARYMINUS = "#";
 
     private enum ParsingCondition { WaitingToken, ReadingNumber }
