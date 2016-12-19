@@ -160,8 +160,6 @@ public class OptKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         try {
             checkOpened();
             return db.keySet().iterator();
-        } catch (Exception e) {
-            throw new RuntimeException("CAN'T RETURN ITERATOR");
         } finally {
             readLock.unlock();
         }
@@ -173,8 +171,6 @@ public class OptKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         try {
             checkOpened();
             return db.size();
-        } catch (Exception e) {
-            throw new RuntimeException("CAN'T RETURN SIZE");
         } finally {
             readLock.unlock();
         }
@@ -257,7 +253,11 @@ public class OptKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
                     valueSerialization.write(read(entry.getKey()), newStorage);
                 }
                 db = newdb;
+                storage.close();
+                File newFile = new File(pathName, STORAGE_NAME);
+                assert (newFile.delete());
                 newStorage.close();
+                assert (file.renameTo(newFile));
             }
         } catch (IOException e) {
             throw new RuntimeException("CAN'T UPD");
