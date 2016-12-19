@@ -5,7 +5,16 @@ package ru.mipt.java2016.homework.g597.spirin.task4;
  */
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
+import java.util.Stack;
+
 // Algorithm based on grammar expressions
+
+// Grammar:
+// expression = term | expression `+` term | expression `-` term | expression, expression
+// term = factor | term `*` factor | term `/` factor
+// factor = `+` factor | `-` factor | `(` expression `)`
+//        | number | functionName factor
+
 class EvaluatorHelper {
 
     // Class data members
@@ -13,7 +22,7 @@ class EvaluatorHelper {
     private char ch;
     private final String expression;
 
-    private double pendingArgument;
+    private final Stack<String> functions = new Stack<>();
 
     // Constructor
     EvaluatorHelper(String expression) {
@@ -57,6 +66,21 @@ class EvaluatorHelper {
         return result;
     }
 
+    // Calculate the value of call function(a, b)
+    private double performBinaryFunction(String function, double a, double b) throws ParsingException {
+        if (function.equals("max")) {
+            return Math.max(a, b);
+        } else if (function.equals("min")) {
+            return Math.min(a, b);
+        } else if (function.equals("pow")) {
+            return Math.pow(a, b);
+        } else if (function.equals("log")) {
+            return Math.log(a) / Math.log(b);
+        } else {
+            throw new ParsingException("Unknown function call: " + function);
+        }
+    }
+
     // Evaluation the whole expression
     private double processExpression() throws ParsingException {
         double result = processTerm();
@@ -66,6 +90,9 @@ class EvaluatorHelper {
                 result += processTerm();
             } else if (tryCaptureChar('-')) {
                 result -= processTerm();
+            } else if (tryCaptureChar(',')) {
+                double pendingArgument = processExpression();
+                result = performBinaryFunction(functions.pop(), result, pendingArgument);
             } else {
                 break;
             }
@@ -88,6 +115,11 @@ class EvaluatorHelper {
         }
 
         return result;
+    }
+
+    // Check if function is binary
+    private boolean isBinaryFunction(String func) {
+        return func.equals("pow") || func.equals("log") || func.equals("min") || func.equals("max");
     }
 
     // Evaluation factors of the expression
@@ -116,7 +148,7 @@ class EvaluatorHelper {
             }
 
             if (countPoints > 1) {
-                throw new ParsingException("Number with many points found");
+                throw new ParsingException("Number with many points found.");
             }
 
             result = Double.parseDouble(expression.substring(startPos, this.pos));
@@ -126,6 +158,10 @@ class EvaluatorHelper {
             }
 
             String func = expression.substring(startPos, this.pos);
+
+            if (isBinaryFunction(func)) {
+                functions.push(func);
+            }
 
             if (func.equals("rnd")) {
                 result = Math.random();
@@ -147,24 +183,12 @@ class EvaluatorHelper {
                     result = Math.signum(result);
                 } else if (func.equals("log2")) {
                     result = Math.log(result) / Math.log(2);
-                } else if (func.equals("max")) {
-                    result = Math.max(result, pendingArgument);
-                } else if (func.equals("min")) {
-                    result = Math.min(result, pendingArgument);
-                } else if (func.equals("pow")) {
-                    result = Math.pow(result, pendingArgument);
-                } else if (func.equals("log")) {
-                    result = Math.log(result) / Math.log(pendingArgument);
-                } else {
-                    throw new RuntimeException("Unknown function: " + func);
+                } else if (!isBinaryFunction(func)) {
+                    throw new ParsingException("Unknown function call: " + func);
                 }
             }
         } else {
             throw new ParsingException("Unexpected appearance of: " + ch);
-        }
-
-        if (tryCaptureChar(',')) {
-            pendingArgument = processFactor();
         }
 
         return result;
