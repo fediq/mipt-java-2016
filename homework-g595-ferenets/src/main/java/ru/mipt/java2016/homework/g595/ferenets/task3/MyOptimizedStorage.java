@@ -39,7 +39,7 @@ public class MyOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
             offsetsPath = path + File.separator + "offsets.txt";
             File offsetsFile = new File(offsetsPath);
             File storageFile = new File(storagePath);
-            if(!offsetsFile.createNewFile()) {
+            if (!offsetsFile.createNewFile()) {
                 offsets = new RandomAccessFile(offsetsPath, "rw");
                 storage = new RandomAccessFile(storagePath, "rw");
                 lockFile = offsets.getChannel().lock();
@@ -142,7 +142,7 @@ public class MyOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public Iterator<K> readKeys() {
         readWriteLock.readLock().lock();
-        try{
+        try {
             checkFileAccess();
             return map.keySet().iterator();
         } finally {
@@ -153,9 +153,9 @@ public class MyOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public int size() {
         readWriteLock.readLock().lock();
-        try{
-                checkFileAccess();
-                return map.keySet().size() + keyValueOffset.size();
+        try {
+            checkFileAccess();
+            return map.keySet().size() + keyValueOffset.size();
         } finally {
             readWriteLock.readLock().unlock();
         }
