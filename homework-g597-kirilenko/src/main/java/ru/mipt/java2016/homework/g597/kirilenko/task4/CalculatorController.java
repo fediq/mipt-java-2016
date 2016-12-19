@@ -9,7 +9,6 @@ import ru.mipt.java2016.homework.base.task1.ParsingException;
 import ru.mipt.java2016.homework.g597.kirilenko.task1.MyCalculator;
 
 import java.util.ArrayList;
-import java.util.List;
 
 @RestController
 public class CalculatorController {
@@ -34,7 +33,7 @@ public class CalculatorController {
                 result += ",";
             }
         }
-        return result;
+        return result + "\n";
     }
 
     @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.PUT,
