@@ -46,8 +46,9 @@ public final class StudentKeySerialisation implements Serialisation<StudentKey> 
     }
 
     @Override
-    public void write(final DataOutput file, final StudentKey object) throws IOException {
-        integerSerialisation.write(file, object.getGroupId());
-        stringSerialisation.write(file, object.getName());
+    public long write(final DataOutput file, final StudentKey object) throws IOException {
+        long size = integerSerialisation.write(file, object.getGroupId());
+        size += stringSerialisation.write(file, object.getName());
+        return size;
     }
 }

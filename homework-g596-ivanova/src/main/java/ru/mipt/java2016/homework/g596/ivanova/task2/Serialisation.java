@@ -20,5 +20,5 @@ public interface Serialisation<T> {
      * @param object - object we serialize.
      * @throws IOException - if an I/O error occurs.
      */
-    void write(DataOutput file, T object) throws IOException;
+    long write(DataOutput file, T object) throws IOException;
 }

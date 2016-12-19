@@ -31,7 +31,9 @@ public final class DoubleSerialisation implements Serialisation<Double> {
     }
 
     @Override
-    public void write(final DataOutput file, final Double object) throws IOException {
+    public long write(final DataOutput file, final Double object) throws IOException {
+        long doubleSize = 8;
         file.writeDouble(object);
+        return doubleSize;
     }
 }

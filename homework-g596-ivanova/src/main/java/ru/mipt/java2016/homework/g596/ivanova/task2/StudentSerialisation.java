@@ -69,12 +69,13 @@ public final class StudentSerialisation implements Serialisation<Student> {
     }
 
     @Override
-    public void write(final DataOutput file, final Student object) throws IOException {
-        integerSerialisation.write(file, object.getGroupId());
-        stringSerialisation.write(file, object.getName());
-        stringSerialisation.write(file, object.getHometown());
-        dateSerialisation.write(file, object.getBirthDate());
-        booleanSerialisation.write(file, object.isHasDormitory());
-        doubleSerialisation.write(file, object.getAverageScore());
+    public long write(final DataOutput file, final Student object) throws IOException {
+        long size = integerSerialisation.write(file, object.getGroupId());
+        size += stringSerialisation.write(file, object.getName());
+        size += stringSerialisation.write(file, object.getHometown());
+        size += dateSerialisation.write(file, object.getBirthDate());
+        size += booleanSerialisation.write(file, object.isHasDormitory());
+        size += doubleSerialisation.write(file, object.getAverageScore());
+        return size;
     }
 }
