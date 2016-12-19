@@ -14,27 +14,27 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private HashMap<K, V> map;
     private SerializationStrategy<K> keySerializator;
     private SerializationStrategy<V> valueSerializator;
-    private RandomAccessFile RAFile;
+    private RandomAccessFile fileRA;
     private boolean opened;
 
 
-    MyKeyValueStorage(String path, SerializationStrategy _keySerializator,
-                      SerializationStrategy _valueSerializator) throws IOException {
+    MyKeyValueStorage(String path, SerializationStrategy argKeySerializator,
+                      SerializationStrategy argValueSerializator) throws IOException {
         map = new HashMap<>();
-        keySerializator = _keySerializator;
-        valueSerializator = _valueSerializator;
+        keySerializator = argKeySerializator;
+        valueSerializator = argValueSerializator;
         opened = true;
         String pathToStorage = path + File.separator + "storage.txt";
         try {
             File file = new File(pathToStorage);
             if (file.createNewFile()) {
-                RAFile = new RandomAccessFile(file.getPath(), "rw");
+                fileRA = new RandomAccessFile(file.getPath(), "rw");
             } else {
-                RAFile = new RandomAccessFile(file, "rw");
-                int elementsCount = RAFile.readInt();
+                fileRA = new RandomAccessFile(file, "rw");
+                int elementsCount = fileRA.readInt();
                 for (int i = 0; i < elementsCount; ++i) {
-                    K currentKey = this.keySerializator.read(RAFile);
-                    V currentValue = this.valueSerializator.read(RAFile);
+                    K currentKey = this.keySerializator.read(fileRA);
+                    V currentValue = this.valueSerializator.read(fileRA);
                     map.put(currentKey, currentValue);
                 }
             }
@@ -88,15 +88,15 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public void close() throws IOException {
         try {
-            RAFile.setLength(0);
-            RAFile.seek(0);
-            RAFile.writeInt(map.size());
+            fileRA.setLength(0);
+            fileRA.seek(0);
+            fileRA.writeInt(map.size());
             for (HashMap.Entry<K, V> entry : map.entrySet()) {
-                keySerializator.write(RAFile, entry.getKey());
-                valueSerializator.write(RAFile, entry.getValue());
+                keySerializator.write(fileRA, entry.getKey());
+                valueSerializator.write(fileRA, entry.getValue());
             }
             opened = false;
-            RAFile.close();
+            fileRA.close();
         } catch (IOException e) {
             throw new IOException("Closed.");
         }
