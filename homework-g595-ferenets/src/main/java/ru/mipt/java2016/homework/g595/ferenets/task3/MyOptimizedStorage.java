@@ -61,7 +61,7 @@ public class MyOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
         }
         storage.seek(storage.length());
         for (Map.Entry<K, V> entry: map.entrySet()) {
-            if(!keyValueOffset.containsKey(entry.getKey())){
+            if (!keyValueOffset.containsKey(entry.getKey())) {
                 keyValueOffset.put(entry.getKey(), storage.getFilePointer());
                 valueSerialization.write(storage, entry.getValue());
             }
@@ -108,7 +108,7 @@ public class MyOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public void delete(K key) {
         checkFileAccess();
-        if(exists(key)) {
+        if (exists(key)) {
             map.remove(key);
             keyValueOffset.remove(key);
         }
