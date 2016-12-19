@@ -56,7 +56,7 @@ public class BillingDao {
                 new Object[]{userName},
                 new RowMapper<BillingUser>() {
                     @Override
-                    public BillingUser mapRow(ResultSet resultSet, int NumberOfRow) throws SQLException {
+                    public BillingUser mapRow(ResultSet resultSet, int numberOfRow) throws SQLException {
                         return new BillingUser(
                                 resultSet.getString("userName"),
                                 resultSet.getString("password"),

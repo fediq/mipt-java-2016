@@ -42,4 +42,12 @@ public class BillingUser {
         }
         return true;
     }
- }
+
+    @Override
+    public int hashCode() {
+        int result = userName.hashCode();
+        result = 31 * result + password.hashCode();
+        result = 31 * result + (enabled ? 1 : 0);
+        return result;
+    }
+}
