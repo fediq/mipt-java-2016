@@ -26,7 +26,6 @@ public class MyOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
     private RandomAccessFile offsets;
     private File storageFile;
     private File offsetsFile;
-    private FileLock lockFile;
     private ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
 
 
@@ -43,11 +42,6 @@ public class MyOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
             if (!offsetsFile.createNewFile()) {
                 offsets = new RandomAccessFile(offsetsFile, "rw");
                 storage = new RandomAccessFile(storageFile, "rw");
-                try {
-                    lockFile = offsets.getChannel().lock();
-                } catch (OverlappingFileLockException e) {
-                    e.printStackTrace();
-                }
                 int offsetsSize = offsets.readInt();
                 for (int i = 0; i < offsetsSize; i++) {
                     K key = keySerialization.read(offsets);
@@ -58,12 +52,10 @@ public class MyOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
             } else {
                 offsets = new RandomAccessFile(offsetsFile, "rw");
                 storage = new RandomAccessFile(storageFile, "rw");
-                lockFile = offsets.getChannel().lock();
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
-        lockFile.release();
         offsets.close();
     }
 
@@ -182,17 +174,11 @@ public class MyOptimizedStorage<K, V> implements KeyValueStorage<K, V> {
         try {
             pushMapIntoFile();
             offsets = new RandomAccessFile(offsetsFile, "rw");
-            try {
-                lockFile = offsets.getChannel().lock();
-            } catch (OverlappingFileLockException e) {
-                e.printStackTrace();
-            }
             offsets.writeInt(keyValueOffset.size());
             for (Map.Entry<K, Long> entry : keyValueOffset.entrySet()) {
                 keySerialization.write(offsets, entry.getKey());
                 offsets.writeLong(entry.getValue());
             }
-            lockFile.release();
             storage.close();
             offsets.close();
         } finally {
