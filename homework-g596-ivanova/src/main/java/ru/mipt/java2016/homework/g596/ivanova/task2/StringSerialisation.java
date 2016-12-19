@@ -40,8 +40,10 @@ public final class StringSerialisation implements Serialisation<String> {
     }
 
     @Override
-    public void write(final DataOutput file, final String object) throws IOException {
+    public long write(final DataOutput file, final String object) throws IOException {
         integerSerialisation.write(file, object.length());
         file.write(object.getBytes());
+        long stringSize = 2 * object.length();
+        return stringSize;
     }
 }

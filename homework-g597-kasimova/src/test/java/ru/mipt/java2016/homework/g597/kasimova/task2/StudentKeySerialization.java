@@ -2,8 +2,8 @@ package ru.mipt.java2016.homework.g597.kasimova.task2;
 
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 
 /**
@@ -11,7 +11,7 @@ import java.io.IOException;
  */
 public class StudentKeySerialization implements MSerialization<StudentKey> {
     @Override
-    public void serializeToStream(StudentKey value, DataOutputStream outStream) {
+    public void serializeToStream(StudentKey value, DataOutput outStream) {
         try {
             outStream.writeInt(value.getGroupId());
             outStream.writeUTF(value.getName());
@@ -21,7 +21,7 @@ public class StudentKeySerialization implements MSerialization<StudentKey> {
     }
 
     @Override
-    public StudentKey deserializeFromStream(DataInputStream inStream) {
+    public StudentKey deserializeFromStream(DataInput inStream) {
         try {
             return new StudentKey(inStream.readInt(), inStream.readUTF());
         } catch (IOException exp) {

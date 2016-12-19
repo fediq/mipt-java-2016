@@ -21,20 +21,23 @@ class LazyMergedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private final String path;
     private final LazyMergedKeyValueStorageHeader header;
-    private final LazyMergedKeyValueStorageSerializator<V> serializator;
+    private final LazyMergedKeyValueStorageSerializator<V> valueSerializator;
 
     private final HashMap<K, V> chache = new HashMap<>();
 
-    LazyMergedKeyValueStorage(String argsK, String argsV, String path) throws Exception {
+    LazyMergedKeyValueStorage(LazyMergedKeyValueStorageSerializator<K> keySerializator,
+                              LazyMergedKeyValueStorageSerializator<V> valueSerializator,
+                              String path) throws Exception {
         this.path = path;
-        serializator = new LazyMergedKeyValueStorageSerializator<V>(argsV);
+        this.valueSerializator = valueSerializator;
         File dir = new File(path);
         boolean dirOk = dir.exists() && dir.isDirectory();
         if (!dirOk) {
             throw new FileNotFoundException("No such directory");
         }
         try {
-            header = new LazyMergedKeyValueStorageHeader(argsK, argsV, path + HEADER_NAME);
+            header = new LazyMergedKeyValueStorageHeader(keySerializator,
+                    valueSerializator, path + HEADER_NAME);
         } catch (IOException e) {
             throw new RuntimeException("Problems with header-file");
         }
@@ -115,8 +118,8 @@ class LazyMergedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private long writeToFile(RandomAccessFile out, V value) throws IOException {
-        byte[] bytes = serializator.serialize(value);
-        byte[] sizeBytes  = serializator.toBytes(bytes.length);
+        byte[] bytes = valueSerializator.serialize(value);
+        byte[] sizeBytes  = valueSerializator.toBytes(bytes.length);
 
         long retOffset = out.length();
         out.seek(retOffset);
@@ -129,9 +132,9 @@ class LazyMergedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         byte[] sizeBytes = new byte[8];
         in.seek(seek);
         in.read(sizeBytes);
-        long size = LazyMergedKeyValueStorageSerializator.toLong(sizeBytes);
+        long size = valueSerializator.toLong(sizeBytes);
         byte[] bytes = new byte[(int) size];
         in.read(bytes);
-        return serializator.deSerialize(bytes);
+        return valueSerializator.deSerialize(bytes);
     }
 }
