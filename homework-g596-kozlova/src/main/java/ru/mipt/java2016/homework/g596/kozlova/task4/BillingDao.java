@@ -54,10 +54,10 @@ public class BillingDao {
         return jdbcTemplate.queryForObject(
                 "SELECT username, password, enabled FROM billing.users WHERE username = ?",
                 new Object[]{userName},
-                (ResultSet resultSet, int numberOfRow) -> {
-                    return new BillingUser( resultSet.getString("userName"), resultSet.getString("password"),
-                            resultSet.getBoolean("enabled"));
-                }
+            (ResultSet resultSet, int numberOfRow) -> {
+                return new BillingUser (resultSet.getString("userName"), resultSet.getString("password"),
+                    resultSet.getBoolean("enabled"));
+            }
         );
     }
 
@@ -65,12 +65,12 @@ public class BillingDao {
         return jdbcTemplate.queryForObject(
                 "SELECT userName, name, value, expression FROM billing.variables WHERE userName = ? AND name = ?",
                 new Object[]{userName, variable},
-                (ResultSet resultSet, int numberOfRow) -> {
-                    return new Variable(
-                            resultSet.getString("userName"),
-                            resultSet.getString("name"),
-                            resultSet.getDouble("value"),
-                            resultSet.getString("expression"));
+            (ResultSet resultSet, int numberOfRow) -> {
+                return new Variable(
+                        resultSet.getString("userName"),
+                        resultSet.getString("name"),
+                        resultSet.getDouble("value"),
+                        resultSet.getString("expression"));
                 }
         );
     }
@@ -80,13 +80,13 @@ public class BillingDao {
             return jdbcTemplate.queryForObject(
                     "SELECT userName, name, value, expression FROM billing.variables WHERE userName = ?",
                     new Object[]{userName},
-                    (ResultSet resultSet, int numberOfRow) -> {
-                        Map<String, String> map = new HashMap<>();
-                        while (!resultSet.next()) {
-                            map.put(resultSet.getString("name"), Double.toString(resultSet.getDouble("value")));
-                        }
-                        return map;
+                (ResultSet resultSet, int numberOfRow) -> {
+                    Map<String, String> map = new HashMap<>();
+                    while (!resultSet.next()) {
+                        map.put(resultSet.getString("name"), Double.toString(resultSet.getDouble("value")));
                     }
+                    return map;
+                }
             );
         } catch (EmptyResultDataAccessException e) {
             return new HashMap<>();
@@ -110,12 +110,12 @@ public class BillingDao {
         return jdbcTemplate.queryForObject(
                 "SELECT userName, name, arguments, expression FROM billing.functions WHERE userName = ? AND name = ?",
                 new Object[]{userName, function},
-                (ResultSet resultSet, int numberOfRow) -> {
-                    String name = resultSet.getString("name");
-                    List<String> arguments = Arrays.asList(resultSet.getString("arguments").split(" "));
-                    String expression = resultSet.getString("expression");
-                    return new Function(userName, name, arguments, expression);
-                }
+            (ResultSet resultSet, int numberOfRow) -> {
+                String name = resultSet.getString("name");
+                List<String> arguments = Arrays.asList(resultSet.getString("arguments").split(" "));
+                String expression = resultSet.getString("expression");
+                return new Function(userName, name, arguments, expression);
+            }
         );
     }
 
@@ -124,19 +124,19 @@ public class BillingDao {
             return jdbcTemplate.queryForObject(
                     "SELECT userName, name, arguments, expression FROM billing.functions WHERE userName = ?",
                     new Object[]{userName},
-                    (ResultSet resultSet, int numberOfRow) -> {
-                        Map<String, Function> map = new HashMap<>();
-                        while (true) {
-                            String name = resultSet.getString("name");
-                            List<String> arguments = Arrays.asList(resultSet.getString("arguments").split(" "));
-                            String expression = resultSet.getString("expression");
-                            map.put(name, new Function(userName, name, arguments, expression));
-                            if (!resultSet.next()) {
-                                break;
-                            }
+                (ResultSet resultSet, int numberOfRow) -> {
+                    Map<String, Function> map = new HashMap<>();
+                    while (true) {
+                        String name = resultSet.getString("name");
+                        List<String> arguments = Arrays.asList(resultSet.getString("arguments").split(" "));
+                        String expression = resultSet.getString("expression");
+                        map.put(name, new Function(userName, name, arguments, expression));
+                        if (!resultSet.next()) {
+                            break;
                         }
-                        return map;
                     }
+                    return map;
+                }
             );
         } catch (EmptyResultDataAccessException e) {
             return new HashMap<>();
