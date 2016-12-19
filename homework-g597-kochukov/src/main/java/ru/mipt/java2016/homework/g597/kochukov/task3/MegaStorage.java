@@ -13,8 +13,10 @@ import java.util.concurrent.locks.ReentrantLock;
 public class MegaStorage<K, V> implements KeyValueStorage<K, V> {
 
     private static final int CACHE_CONST_SIZE = 0xF;
-    private static ReentrantLock FILE_LOCK = new ReentrantLock();
-
+    private static ReentrantLock fileLock = new ReentrantLock();
+    
+    // [ERROR]  Name 'FILE_LOCK' must match pattern '^[a-z][a-zA-Z0-9]*$'. [StaticVariableName]
+   
     private boolean closed;
     private HashMap<K, Long> map = new HashMap<>();
     private HashMap<K, V> cache = new HashMap<>();
@@ -39,7 +41,7 @@ public class MegaStorage<K, V> implements KeyValueStorage<K, V> {
         if (infoFile.length() != 0) {
             size = in.deserialize(infoFile);
         }
-        FILE_LOCK.lock();
+        fileLock.lock();
         try {
             for (int i = 0; i < size; i++) {
                 K key = keySerializer.deserialize(infoFile);
@@ -47,14 +49,14 @@ public class MegaStorage<K, V> implements KeyValueStorage<K, V> {
                 map.put(key, shift);
             }
         } finally {
-            FILE_LOCK.unlock();
+            fileLock.unlock();
         }
         maxSize = map.size();
         closed = false;
         infoFile.close();
     }
 
-    private void isClosed() throws RuntimeException{
+    private void isClosed() {
         if (closed) {
             throw new RuntimeException("The gates to the database are closed, My lord!");
         }
@@ -74,12 +76,12 @@ public class MegaStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public void close() throws IOException {
-        if (closed){
+        if (closed) {
             return;
         }
         closed = true;
         infoFile = new RandomAccessFile(fullPath + File.separator + "dbinfo", "rw");
-        in.serialize( (long) map.size(), infoFile);
+        in.serialize((long) map.size(), infoFile);
         for (HashMap.Entry<K, Long> it : map.entrySet()) {
             keySerializer.serialize(it.getKey(), infoFile);
             in.serialize(it.getValue(), infoFile);
@@ -95,7 +97,7 @@ public class MegaStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void rebuild() {
-        ArrayList<HashMap.Entry<K,Long>> list = new ArrayList<>();
+        ArrayList<HashMap.Entry<K, Long>> list = new ArrayList<>();
 
         for (HashMap.Entry<K, Long> it : map.entrySet()) {
             list.add(it);
@@ -105,7 +107,7 @@ public class MegaStorage<K, V> implements KeyValueStorage<K, V> {
 
         map.clear();
         long pos = 0;
-        FILE_LOCK.lock();
+        fileLock.lock();
         try {
             for (HashMap.Entry<K, Long> aList : list) {
                 map.put(aList.getKey(), pos);
@@ -115,10 +117,10 @@ public class MegaStorage<K, V> implements KeyValueStorage<K, V> {
                 valueSerializer.serialize(value, dbFile);
             }
         } catch (IOException error) {
-            System.err.println("Error during rebuild: "+error.getLocalizedMessage());
+            System.err.println("Error during rebuild: " + error.getLocalizedMessage());
             throw new UncheckedIOException(error);
-        }finally {
-            FILE_LOCK.unlock();
+        } finally {
+            fileLock.unlock();
         }
     }
 
@@ -150,7 +152,7 @@ public class MegaStorage<K, V> implements KeyValueStorage<K, V> {
                 f.seek(pos);
             }
         } catch (IOException error) {
-            System.err.println("Error during seeking: "+error.getLocalizedMessage());
+            System.err.println("Error during seeking: " + error.getLocalizedMessage());
             throw new UncheckedIOException(error);
         }
     }
@@ -166,17 +168,17 @@ public class MegaStorage<K, V> implements KeyValueStorage<K, V> {
             }
             long shift = map.get(key);
             try {
-                FILE_LOCK.lock();
-                try{
+                fileLock.lock();
+                try {
                     seekTo(dbFile, shift);
                     V temp = valueSerializer.deserialize(dbFile);
                     return addToCache(key, temp);
                 } finally {
-                    FILE_LOCK.unlock();
+                    fileLock.unlock();
                 }
 
             } catch (IOException error) {
-                System.err.println("Error during reading: "+error.getLocalizedMessage());
+                System.err.println("Error during reading: " + error.getLocalizedMessage());
                 throw new UncheckedIOException(error);
             }
         }
@@ -188,13 +190,13 @@ public class MegaStorage<K, V> implements KeyValueStorage<K, V> {
         isClosed();
         addToCache(key, value);
         try {
-            FILE_LOCK.lock();
+            fileLock.lock();
             try {
                 seekTo(dbFile, dbFile.length());
                 map.put(key, dbFile.length());
                 valueSerializer.serialize(value, dbFile);
             } finally {
-                FILE_LOCK.unlock();
+                fileLock.unlock();
             }
             if (map.size() <= maxSize / 3) {
                 rebuild();
@@ -203,7 +205,7 @@ public class MegaStorage<K, V> implements KeyValueStorage<K, V> {
             maxSize = Math.max(maxSize, map.size());
 
         } catch (IOException error) {
-            System.err.println("Error during writing: "+error.getLocalizedMessage());
+            System.err.println("Error during writing: " + error.getLocalizedMessage());
             throw new UncheckedIOException(error);
         }
     }
