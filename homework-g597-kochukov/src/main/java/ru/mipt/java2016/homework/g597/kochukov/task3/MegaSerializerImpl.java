@@ -33,6 +33,18 @@ public class MegaSerializerImpl {
         }
     }
 
+    public static class LongSerializer implements MegaSerializer<Long> {
+        @Override
+        public void serialize(Long value, RandomAccessFile f) throws IOException {
+            f.writeLong(value);
+        }
+
+        @Override
+        public Long deserialize(RandomAccessFile f) throws IOException {
+            return f.readLong();
+        }
+    }
+
     public static class DoubleSerializer implements MegaSerializer<Double> {
         @Override
         public void serialize(Double value, RandomAccessFile f) throws IOException {

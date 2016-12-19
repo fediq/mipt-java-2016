@@ -3,50 +3,58 @@ package ru.mipt.java2016.homework.g597.kochukov.task3;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.HashMap;
-import javafx.util.Pair;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Created by tna0y on 27/11/16.
  */
 public class MegaStorage<K, V> implements KeyValueStorage<K, V> {
+
+    private static final int CACHE_CONST_SIZE = 0xF;
+    private static ReentrantLock FILE_LOCK = new ReentrantLock();
+
     private boolean closed;
-    private HashMap<K, Integer> map = new HashMap<>();
+    private HashMap<K, Long> map = new HashMap<>();
     private HashMap<K, V> cache = new HashMap<>();
     private RandomAccessFile infoFile;
     private RandomAccessFile dbFile;
     private MegaSerializer<K> keySerializer;
     private MegaSerializer<V> valueSerializer;
-    private MegaSerializer<Integer> in;
+    private MegaSerializer<Long> in;
     private String fullPath;
     private Integer maxSize;
-
-    private static final Integer CACHECONSTSIZE = 0xF;
+    private long objectId;
 
     public MegaStorage(String path, MegaSerializer<K> serializerK, MegaSerializer<V> serializerV) throws IOException {
+
         fullPath = path;
         keySerializer = serializerK;
         valueSerializer = serializerV;
         dbFile = new RandomAccessFile(path + File.separator + "megadb", "rw");
         infoFile = new RandomAccessFile(path + File.separator + "dbinfo", "rw");
-        in = new MegaSerializerImpl.IntegerSerializer();
-        int size = 0;
+        in = new MegaSerializerImpl.LongSerializer();
+        long size = 0;
         if (infoFile.length() != 0) {
             size = in.deserialize(infoFile);
         }
-        for (Integer i = 0; i < size; i++) {
-            K key = keySerializer.deserialize(infoFile);
-            Integer shift = in.deserialize(infoFile);
-            map.put(key, shift);
+        FILE_LOCK.lock();
+        try {
+            for (int i = 0; i < size; i++) {
+                K key = keySerializer.deserialize(infoFile);
+                Long shift = in.deserialize(infoFile);
+                map.put(key, shift);
+            }
+        } finally {
+            FILE_LOCK.unlock();
         }
         maxSize = map.size();
         closed = false;
         infoFile.close();
     }
 
-    private void isClosed() {
+    private void isClosed() throws RuntimeException{
         if (closed) {
             throw new RuntimeException("The gates to the database are closed, My lord!");
         }
@@ -66,11 +74,13 @@ public class MegaStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public void close() throws IOException {
-        isClosed();
+        if (closed){
+            return;
+        }
         closed = true;
         infoFile = new RandomAccessFile(fullPath + File.separator + "dbinfo", "rw");
-        in.serialize(map.size(), infoFile);
-        for (HashMap.Entry<K, Integer> it : map.entrySet()) {
+        in.serialize( (long) map.size(), infoFile);
+        for (HashMap.Entry<K, Long> it : map.entrySet()) {
             keySerializer.serialize(it.getKey(), infoFile);
             in.serialize(it.getValue(), infoFile);
         }
@@ -85,27 +95,30 @@ public class MegaStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void rebuild() {
-        ArrayList<Pair<Integer, K>> list = new ArrayList<>();
-        for (HashMap.Entry<K, Integer> it : map.entrySet()) {
-            list.add(new Pair<>(it.getValue(), it.getKey()));
+        ArrayList<HashMap.Entry<K,Long>> list = new ArrayList<>();
+
+        for (HashMap.Entry<K, Long> it : map.entrySet()) {
+            list.add(it);
         }
-        list.sort(new Comparator<Pair<Integer, K>>() {
-            public int compare(Pair<Integer, K> x, Pair<Integer, K> y) {
-                return y.getKey() - x.getKey();
-            }
-        });
+
+        list.sort((x, y) -> Long.compare(x.getValue(), y.getValue()));
+
         map.clear();
-        Integer pos = 0;
-        for (int i = 0; i < list.size(); i++) {
-            map.put(list.get(i).getValue(), pos);
-            seekTo(dbFile, (long) list.get(i).getKey());
-            try {
+        long pos = 0;
+        FILE_LOCK.lock();
+        try {
+            for (HashMap.Entry<K, Long> aList : list) {
+                map.put(aList.getKey(), pos);
+                seekTo(dbFile, aList.getValue());
                 V value = valueSerializer.deserialize(dbFile);
-                seekTo(dbFile, (long) pos);
+                seekTo(dbFile, pos);
                 valueSerializer.serialize(value, dbFile);
-            } catch (IOException error) {
-                System.out.println("Error");
             }
+        } catch (IOException error) {
+            System.err.println("Error during rebuild: "+error.getLocalizedMessage());
+            throw new UncheckedIOException(error);
+        }finally {
+            FILE_LOCK.unlock();
         }
     }
 
@@ -113,17 +126,18 @@ public class MegaStorage<K, V> implements KeyValueStorage<K, V> {
     public void delete(K key) {
         isClosed();
         boolean hasKey = map.containsKey(key);
-        if (hasKey && (map.size() <= maxSize / 3)) {
-            rebuild();
-            maxSize = map.size();
-        } else if (hasKey) {
+        if (hasKey) {
             cache.remove(key);
             map.remove(key);
+            if (map.size() <= maxSize / 3) {
+                rebuild();
+                maxSize = map.size();
+            }
         }
     }
 
     private V addToCache(K key, V value) {
-        if (cache.size() == CACHECONSTSIZE) {
+        if (cache.size() >= CACHE_CONST_SIZE) {
             cache.clear();
         }
         cache.put(key, value);
@@ -136,24 +150,34 @@ public class MegaStorage<K, V> implements KeyValueStorage<K, V> {
                 f.seek(pos);
             }
         } catch (IOException error) {
-            System.out.println("Seeking error, My lord!");
+            System.err.println("Error during seeking: "+error.getLocalizedMessage());
+            throw new UncheckedIOException(error);
         }
     }
 
     @Override
     public V read(K key) {
         isClosed();
+
+
         if (exists(key)) {
             if (cache.containsKey(key)) {
                 return cache.get(key);
             }
-            Integer shift = map.get(key);
+            long shift = map.get(key);
             try {
-                seekTo(dbFile, (long) shift);
-                V temp = valueSerializer.deserialize(dbFile);
-                return addToCache(key, temp);
+                FILE_LOCK.lock();
+                try{
+                    seekTo(dbFile, shift);
+                    V temp = valueSerializer.deserialize(dbFile);
+                    return addToCache(key, temp);
+                } finally {
+                    FILE_LOCK.unlock();
+                }
+
             } catch (IOException error) {
-                System.out.println("Error in reading, my lord!");
+                System.err.println("Error during reading: "+error.getLocalizedMessage());
+                throw new UncheckedIOException(error);
             }
         }
         return null;
@@ -164,14 +188,23 @@ public class MegaStorage<K, V> implements KeyValueStorage<K, V> {
         isClosed();
         addToCache(key, value);
         try {
-            seekTo(dbFile, dbFile.length());
-            map.put(key, (int) dbFile.length());
-            valueSerializer.serialize(value, dbFile);
-            if (maxSize < map.size()) {
-                maxSize++;
+            FILE_LOCK.lock();
+            try {
+                seekTo(dbFile, dbFile.length());
+                map.put(key, dbFile.length());
+                valueSerializer.serialize(value, dbFile);
+            } finally {
+                FILE_LOCK.unlock();
             }
+            if (map.size() <= maxSize / 3) {
+                rebuild();
+                maxSize = map.size();
+            }
+            maxSize = Math.max(maxSize, map.size());
+
         } catch (IOException error) {
-            System.out.println("Error in writing, My lord!");
+            System.err.println("Error during writing: "+error.getLocalizedMessage());
+            throw new UncheckedIOException(error);
         }
     }
 }

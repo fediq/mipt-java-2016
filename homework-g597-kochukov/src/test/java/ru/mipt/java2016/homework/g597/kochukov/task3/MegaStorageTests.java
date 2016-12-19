@@ -19,9 +19,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since 02.11.16
  */
 public class MegaStorageTests extends KeyValueStoragePerformanceTest {
-    private final Map<String, Map<String, String>> stringMaps = new ConcurrentHashMap<>();
-    private final Map<String, Map<Integer, Double>> numbersMaps = new ConcurrentHashMap<>();
-    private final Map<String, Map<StudentKey, Student>> pojoMaps = new ConcurrentHashMap<>();
 
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String path) {
