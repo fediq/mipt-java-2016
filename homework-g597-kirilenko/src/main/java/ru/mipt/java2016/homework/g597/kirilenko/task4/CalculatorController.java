@@ -18,18 +18,18 @@ public class CalculatorController {
 
 
     @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.GET)
-    public @ResponseBody String getVariable(@PathVariable String variableName) {
+    public String getVariable(@PathVariable String variableName) {
         String result = calculator.getVariableExpression(variableName);
         return result;
     }
 
     @RequestMapping(path = "/function/{functionName}", method = RequestMethod.GET)
-    public @ResponseBody String getFunction(@PathVariable String functionName) {
+    public String getFunction(@PathVariable String functionName) {
         Pair<ArrayList<String>, String> info = calculator.getFunctionInfo(functionName);
         String result = info.getValue() + "&";
         for (int i = 0; i < info.getKey().size(); i++) {
             result += info.getKey().get(i);
-            if (i != info.getKey().size()-1) {
+            if (i != info.getKey().size() - 1) {
                 result += ",";
             }
         }
@@ -38,7 +38,7 @@ public class CalculatorController {
 
     @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.PUT,
             consumes = "text/plain", produces = "text/plain")
-    public @ResponseBody void putVariable(@PathVariable String variableName,
+    public void putVariable(@PathVariable String variableName,
                                           @RequestBody String expr) throws ParsingException {
         calculator.setVariableExpression(variableName, expr);
     }
@@ -49,25 +49,25 @@ public class CalculatorController {
     }
 
     @RequestMapping(path = "/variable", method = RequestMethod.GET)
-    public @ResponseBody ArrayList<String> getVariables() {
+    public ArrayList<String> getVariables() {
         return calculator.getAllVariables();
     }
 
 
     @RequestMapping(path = "/function/{functionName}", method = RequestMethod.PUT)
-    public @ResponseBody void putFunction(@PathVariable String functionName,
+    public void putFunction(@PathVariable String functionName,
                                           @RequestParam(value = "args") ArrayList<String> args,
                                           @RequestBody String functionBody) throws ParsingException {
         calculator.setFunction(functionName, new ArrayList<>(args), functionBody);
     }
 
     @RequestMapping(path = "/function/{functionName}", method = RequestMethod.DELETE)
-    public @ResponseBody Boolean deleteFunction(@PathVariable String functionName) {
+    public Boolean deleteFunction(@PathVariable String functionName) {
         return calculator.deleteFunction(functionName);
     }
 
     @RequestMapping(path = "/function", method = RequestMethod.GET)
-    public @ResponseBody ArrayList<String> getFunctionsNames() {
+    public ArrayList<String> getFunctionsNames() {
         return calculator.getAllFunctions();
     }
 
@@ -77,7 +77,7 @@ public class CalculatorController {
     }
 
     @RequestMapping(path = "/eval", method = RequestMethod.POST, consumes = "text/plain", produces = "text/plain")
-    public @ResponseBody String eval(@RequestBody String expression) throws ParsingException {
+    public String eval(@RequestBody String expression) throws ParsingException {
         double result = calculator.evaluateExpression(expression);
         return Double.toString(result) + "\n";
     }
