@@ -5,15 +5,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
 import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Array;
+import java.util.List;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -35,6 +34,8 @@ public class BillingDao {
                 "(username VARCHAR PRIMARY KEY, password VARCHAR, enabled BOOLEAN)");
         jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS billing.variables " +
                 "(username VARCHAR, name VARCHAR, value DOUBLE, expression VARCHAR)");
+        jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS billing.functions " +
+                "(username VARCHAR, name VARCHAR, arguments VARCHAR, expression VARCHAR)");
         createNewUser("userName", "password", true);
     }
 
@@ -43,8 +44,7 @@ public class BillingDao {
             loadUser(userName);
             return false;
         } catch (EmptyResultDataAccessException e) {
-            jdbcTemplate.update("INSERT INTO billing.users VALUES (?, ?, ?)",
-                    new Object[]{userName, password, enabled});
+            jdbcTemplate.update("INSERT INTO billing.users VALUES (?, ?, ?)", userName, password, enabled);
             return true;
         }
     }
@@ -54,15 +54,9 @@ public class BillingDao {
         return jdbcTemplate.queryForObject(
                 "SELECT username, password, enabled FROM billing.users WHERE username = ?",
                 new Object[]{userName},
-                new RowMapper<BillingUser>() {
-                    @Override
-                    public BillingUser mapRow(ResultSet resultSet, int numberOfRow) throws SQLException {
-                        return new BillingUser(
-                                resultSet.getString("userName"),
-                                resultSet.getString("password"),
-                                resultSet.getBoolean("enabled")
-                        );
-                    }
+                (ResultSet resultSet, int numberOfRow) -> {
+                    return new BillingUser( resultSet.getString("userName"), resultSet.getString("password"),
+                            resultSet.getBoolean("enabled"));
                 }
         );
     }
@@ -71,15 +65,12 @@ public class BillingDao {
         return jdbcTemplate.queryForObject(
                 "SELECT userName, name, value, expression FROM billing.variables WHERE userName = ? AND name = ?",
                 new Object[]{userName, variable},
-                new RowMapper<Variable>() {
-                    @Override
-                    public Variable mapRow(ResultSet resultSet, int numberOfRow) throws SQLException {
-                        return new Variable(
-                                resultSet.getString("userName"),
-                                resultSet.getString("name"),
-                                resultSet.getDouble("value"),
-                                resultSet.getString("expression"));
-                    }
+                (ResultSet resultSet, int numberOfRow) -> {
+                    return new Variable(
+                            resultSet.getString("userName"),
+                            resultSet.getString("name"),
+                            resultSet.getDouble("value"),
+                            resultSet.getString("expression"));
                 }
         );
     }
@@ -89,15 +80,12 @@ public class BillingDao {
             return jdbcTemplate.queryForObject(
                     "SELECT userName, name, value, expression FROM billing.variables WHERE userName = ?",
                     new Object[]{userName},
-                    new RowMapper<Map<String, String>>() {
-                        @Override
-                        public Map<String, String> mapRow(ResultSet resultSet, int numberOfRow) throws SQLException {
-                            Map<String, String> map = new HashMap<>();
-                            while (!resultSet.next()) {
-                                map.put(resultSet.getString("name"), Double.toString(resultSet.getDouble("value")));
-                            }
-                            return map;
+                    (ResultSet resultSet, int numberOfRow) -> {
+                        Map<String, String> map = new HashMap<>();
+                        while (!resultSet.next()) {
+                            map.put(resultSet.getString("name"), Double.toString(resultSet.getDouble("value")));
                         }
+                        return map;
                     }
             );
         } catch (EmptyResultDataAccessException e) {
@@ -108,57 +96,46 @@ public class BillingDao {
     public void deleteVariable(String userName, String name) throws ParsingException {
         try {
             getVariable(userName, name);
-            jdbcTemplate.update("DELETE FROM billing.variables WHERE userName = ? AND name = ?",
-                    new Object[]{userName, name});
+            jdbcTemplate.update("DELETE FROM billing.variables WHERE userName = ? AND name = ?", userName, name);
         } catch (EmptyResultDataAccessException e) {
             throw new ParsingException("Can't delete");
         }
     }
 
     public void addVariable(String userName, String name, Double value, String expression) throws ParsingException {
-        try {
-            getVariable(userName, name);
-            jdbcTemplate.update("DELETE FROM billing.variables WHERE userName = ? AND name = ?",
-                    new Object[]{userName, name});
-            jdbcTemplate.update("INSERT INTO billing.variables VALUES (?, ?, ?, ?)",
-                    new Object[]{userName, name, value, expression});
-        } catch (EmptyResultDataAccessException e) {
-            jdbcTemplate.update("INSERT INTO billing.variables VALUES (?, ?, ?, ?)",
-                    new Object[]{userName, name, value, expression});
-        }
+        jdbcTemplate.update("MERGE INTO billing.variables VALUES (?, ?, ?, ?)", userName, name, value, expression);
     }
 
     public Function getFunction(String userName, String function) {
         return jdbcTemplate.queryForObject(
                 "SELECT userName, name, arguments, expression FROM billing.functions WHERE userName = ? AND name = ?",
                 new Object[]{userName, function},
-                new RowMapper<Function>() {
-                    @Override
-                    public Function mapRow(ResultSet resultSet, int numberOfRow) throws SQLException {
-                        return new Function(
-                                resultSet.getString("userName"),
-                                resultSet.getString("name"),
-                                resultSet.getArray("arguments"),
-                                resultSet.getString("expression"));
-                    }
+                (ResultSet resultSet, int numberOfRow) -> {
+                    String name = resultSet.getString("name");
+                    List<String> arguments = Arrays.asList(resultSet.getString("arguments").split(" "));
+                    String expression = resultSet.getString("expression");
+                    return new Function(userName, name, arguments, expression);
                 }
         );
     }
 
-    public Map<String, String> getFunctions(String userName) {
+    public Map<String, Function> getFunctions(String userName) {
         try {
             return jdbcTemplate.queryForObject(
                     "SELECT userName, name, arguments, expression FROM billing.functions WHERE userName = ?",
                     new Object[]{userName},
-                    new RowMapper<Map<String, String>>() {
-                        @Override
-                        public Map<String, String> mapRow(ResultSet resultSet, int numberOfRow) throws SQLException {
-                            Map<String, String> map = new HashMap<>();
-                            while (!resultSet.next()) {
-                                map.put(resultSet.getString("name"), Double.toString(resultSet.getDouble("arguments")));
+                    (ResultSet resultSet, int numberOfRow) -> {
+                        Map<String, Function> map = new HashMap<>();
+                        while (true) {
+                            String name = resultSet.getString("name");
+                            List<String> arguments = Arrays.asList(resultSet.getString("arguments").split(" "));
+                            String expression = resultSet.getString("expression");
+                            map.put(name, new Function(userName, name, arguments, expression));
+                            if (!resultSet.next()) {
+                                break;
                             }
-                            return map;
                         }
+                        return map;
                     }
             );
         } catch (EmptyResultDataAccessException e) {
@@ -169,23 +146,14 @@ public class BillingDao {
     public void deleteFunction(String userName, String name) throws ParsingException {
         try {
             getFunction(userName, name);
-            jdbcTemplate.update("DELETE FROM billing.functions WHERE userName = ? AND name = ?",
-                    new Object[]{userName, name});
+            jdbcTemplate.update("DELETE FROM billing.functions WHERE userName = ? AND name = ?", userName, name);
         } catch (EmptyResultDataAccessException e) {
             throw new ParsingException("Can't delete");
         }
     }
 
-    public void addFunction(String userName, String name, Array arguments, String expression) throws ParsingException {
-        try {
-            getVariable(userName, name);
-            jdbcTemplate.update("DELETE FROM billing.functions WHERE userName = ? AND name = ?",
-                    new Object[]{userName, name});
-            jdbcTemplate.update("INSERT INTO billing.functions arguments (?, ?, ?, ?)",
-                    new Object[]{userName, name, arguments, expression});
-        } catch (EmptyResultDataAccessException e) {
-            jdbcTemplate.update("INSERT INTO billing.functions FUNCTION (?, ?, ?, ?)",
-                    new Object[]{userName, name, arguments, expression});
-        }
+    public void addFunction(String userName, String name, List<String> arguments, String expression)
+            throws ParsingException {
+        jdbcTemplate.update("MERGE INTO billing.functions VALUES (?, ?, ?, ?)", userName, name, arguments, expression);
     }
 }

@@ -3,7 +3,8 @@ package ru.mipt.java2016.homework.g596.kozlova.task4;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Array;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Function {
 
@@ -11,10 +12,10 @@ public class Function {
 
     private String userName;
     private String name;
-    private Array arguments;
+    private List<String> arguments = new ArrayList<>();
     private String expression;
 
-    public Function(String u, String n, Array a, String e) {
+    public Function(String u, String n, List<String> a, String e) {
         userName = u;
         name = n;
         arguments = a;
@@ -29,7 +30,7 @@ public class Function {
         return name;
     }
 
-    public Array getArguments() {
+    public List<String> getArguments() {
         return arguments;
     }
 
