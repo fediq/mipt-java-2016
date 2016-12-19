@@ -14,7 +14,7 @@ import java.util.List;
 
 @RestController
 public class ExampleHandler {
-    MyCalculator calculator = new MyCalculator();
+    private MyCalculator calculator = new MyCalculator();
 
     @RequestMapping(value = "/{expression}", method = RequestMethod.GET)
     public ResponseEntity<String> eval(@PathVariable String expression) {
@@ -34,6 +34,7 @@ public class ExampleHandler {
                 + "</p></body>", HttpStatus.OK);
         return resp;
     }
+
     @RequestMapping(value = "/put/{name}", method = RequestMethod.PUT)
     public ResponseEntity<String> put(@RequestParam(value = "args", defaultValue = "x") List<String> vars,
                                              @PathVariable String name, @RequestBody String body) {

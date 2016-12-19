@@ -2,7 +2,6 @@ package ru.mipt.java2016.homework.g595.popovkin.task1;
 
 import ru.mipt.java2016.homework.base.task1.*;
 
-import javax.naming.LimitExceededException;
 import java.util.*;
 
 /**
@@ -90,9 +89,11 @@ public class MyCalculator implements ru.mipt.java2016.homework.base.task1.Calcul
                 int lastPoint = leftId + 2;
                 int balance = 0;
                 while (commaScaner < rightId - 1) {
-                    if (lexicalUnits.get(commaScaner).isOpenBracer()) ++balance;
-                    else if (lexicalUnits.get(commaScaner).isCloseBracer()) --balance;
-                    else if (lexicalUnits.get(commaScaner).isComma() && balance == 0) {
+                    if (lexicalUnits.get(commaScaner).isOpenBracer()) {
+                        ++balance;
+                    } else if (lexicalUnits.get(commaScaner).isCloseBracer()) {
+                        --balance;
+                    } else if (lexicalUnits.get(commaScaner).isComma() && balance == 0) {
                         //System.out.print(lastPoint);
                         //System.out.println(commaScaner);
                         argv.add(parceAndCalc(lastPoint, commaScaner));
@@ -100,8 +101,9 @@ public class MyCalculator implements ru.mipt.java2016.homework.base.task1.Calcul
                     }
                     ++commaScaner;
                 }
-                if (lastPoint != commaScaner)
+                if (lastPoint != commaScaner) {
                     argv.add(parceAndCalc(lastPoint, commaScaner));
+                }
                 return unit.eval(argv);
             }
         }

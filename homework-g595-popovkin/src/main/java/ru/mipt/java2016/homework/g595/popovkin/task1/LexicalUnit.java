@@ -1,6 +1,5 @@
 package ru.mipt.java2016.homework.g595.popovkin.task1;
 
-import org.w3c.dom.DOMImplementation;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
 import java.util.List;
@@ -50,9 +49,13 @@ public class LexicalUnit {
         return type == UnitType.MathSign;
     }
 
-    boolean isFunc() { return type == UnitType.Function; }
+    boolean isFunc() {
+        return type == UnitType.Function;
+    }
 
-    boolean isComma() { return type == UnitType.Comma; }
+    boolean isComma() {
+        return type == UnitType.Comma;
+    }
 
     LexicalUnit(String val) throws ParsingException {
         value = val;
