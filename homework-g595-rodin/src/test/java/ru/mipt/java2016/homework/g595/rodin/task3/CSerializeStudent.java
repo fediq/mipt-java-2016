@@ -1,7 +1,8 @@
-package ru.mipt.java2016.homework.g595.rodin.task2;
+package ru.mipt.java2016.homework.g595.rodin.task3;
 
-import ru.mipt.java2016.homework.g595.rodin.task2.Serializer.*;
+import ru.mipt.java2016.homework.g595.rodin.task3.Serializer.*;
 import ru.mipt.java2016.homework.tests.task2.Student;
+
 import java.util.Date;
 import java.util.StringTokenizer;
 
@@ -15,6 +16,7 @@ public class CSerializeStudent implements ISerialize<Student> {
     private static CSerializeDate serializeDate = new CSerializeDate();
     private static CSerializeBoolean serializeBoolean = new CSerializeBoolean();
     private static CSerializeDouble serializeDouble = new CSerializeDouble();
+    private static StringBuilder stringBuilder = new StringBuilder();
 
     @Override
     public String serialize(Student argument) throws IllegalArgumentException {
@@ -26,7 +28,7 @@ public class CSerializeStudent implements ISerialize<Student> {
         serializeDate = new CSerializeDate();
         serializeBoolean = new CSerializeBoolean();
         serializeDouble = new CSerializeDouble();
-        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder = new StringBuilder();
         return stringBuilder.append("\"groupId\":")
                 .append(serializeInteger.serialize(argument.getGroupId())).append(",")
                 .append("\"name\":").append(serializeString.serialize(argument.getName()))
@@ -100,5 +102,10 @@ public class CSerializeStudent implements ISerialize<Student> {
             throw new IllegalArgumentException("Invalid Argument");
         }
         return new Student(groupId, name, hometown, birthDate, hasDormitory, averageScore);
+    }
+
+    @Override
+    public String getArgumentClass() {
+        return "Student";
     }
 }

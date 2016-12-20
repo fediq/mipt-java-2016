@@ -6,11 +6,11 @@ import java.io.*;
  * Created by Dmitry on 26.10.16.
  */
 
-public class CDiskTable {
+class CDiskTable {
 
     private final File file;
 
-    public CDiskTable(String filePath) {
+    CDiskTable(String filePath) {
         this.file = new File(filePath);
     }
 

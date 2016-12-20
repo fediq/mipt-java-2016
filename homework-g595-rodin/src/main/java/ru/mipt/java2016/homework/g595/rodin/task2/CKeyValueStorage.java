@@ -16,7 +16,7 @@ import java.util.StringTokenizer;
  * Created by Dmitry on 26.10.16.
  */
 
-public class CKeyValueStorage<KeyType, ValueType> implements KeyValueStorage<KeyType, ValueType> {
+class CKeyValueStorage<KeyType, ValueType> implements KeyValueStorage<KeyType, ValueType> {
 
 
     private final CJSONCreator<KeyType, ValueType> serializer;
@@ -25,7 +25,7 @@ public class CKeyValueStorage<KeyType, ValueType> implements KeyValueStorage<Key
 
     private final String valueName;
 
-    private CDiskTable diskWriter;
+    private final CDiskTable diskWriter;
 
     private final HashMap<KeyType, ValueType> simpleStorage
             = new HashMap<>();
@@ -34,7 +34,7 @@ public class CKeyValueStorage<KeyType, ValueType> implements KeyValueStorage<Key
 
     private static final String VALIDATION_STRING = "Task2Storage";
 
-    public CKeyValueStorage(String directoryPath,
+    CKeyValueStorage(String directoryPath,
                             ISerialize<KeyType> keyTypeSerialize,
                             ISerialize<ValueType> valueTypeSerialize,
                             String keyName,
@@ -42,7 +42,7 @@ public class CKeyValueStorage<KeyType, ValueType> implements KeyValueStorage<Key
         this.serializer = new CJSONCreator(keyTypeSerialize, valueTypeSerialize);
         this.keyName = keyName;
         this.valueName = valueName;
-        this.closeFlag = false;
+        closeFlag = false;
         diskWriter = new CDiskTable(directoryPath + File.separator + "storage.db");
         if (diskWriter.exists()) {
             scanFile();
