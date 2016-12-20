@@ -53,6 +53,7 @@ public class CalculatorController {
         LOG.debug("New user: [" + userName + ' ' + passwd + "]");
         billingDao.putUser(userName, passwd);
     }
+
     private String functionalCalculate(String expression, String username) throws ParsingException {
         String goodExpression = expression;
         Parser parser = new Parser(expression, username);

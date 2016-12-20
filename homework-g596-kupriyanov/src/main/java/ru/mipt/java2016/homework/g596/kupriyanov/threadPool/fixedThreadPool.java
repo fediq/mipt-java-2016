@@ -11,12 +11,12 @@ import java.util.concurrent.locks.ReentrantLock;
  * Created by Artem Kupriyanov on 15/12/2016.
  */
 
-public class fixedThreadPool {
+public class FixedThreadPool {
     private final Queue<Runnable> tasks = new ArrayDeque<Runnable>();
     private final Lock lock = new ReentrantLock();
     private final List<Thread> workers;
 
-    public fixedThreadPool(int nThread) {
+    public FixedThreadPool(int nThread) {
         workers = new ArrayList<>(nThread);
         for (int i = 0; i < nThread; ++i) {
             workers.add(new MyThread(i));
@@ -30,7 +30,7 @@ public class fixedThreadPool {
             return index;
         }
 
-        public MyThread(Integer ind) {
+        MyThread(Integer ind) {
             index = ind;
         }
 
@@ -65,7 +65,7 @@ public class fixedThreadPool {
     }
 
     public void execute(Runnable runnable) {
-            tasks.add(runnable);
-            lock.notify();
+        tasks.add(runnable);
+        lock.notify();
     }
 }

@@ -127,7 +127,7 @@ public class BillingDao {
         try {
             deleteVariable(username, variable);
         } catch (Exception e) {
-          e.printStackTrace();
+            e.printStackTrace();
         } finally {
             jdbcTemplate.execute("INSERT INTO billing.variables VALUES (\'"
                     + username + "\', \'" + variable + "\', " + value.toString() + ")");

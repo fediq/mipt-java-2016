@@ -35,9 +35,9 @@ public class Parser extends BillingDao {
 
     private void substituteVariable() {
         LengthComparator myComparator = new LengthComparator();
-        List<String> sorted_variables = new ArrayList<>(variables.keySet());
-        Collections.sort(sorted_variables, myComparator);
-        for (String variable: sorted_variables) {
+        List<String> sortedVariables = new ArrayList<>(variables.keySet());
+        Collections.sort(sortedVariables, myComparator);
+        for (String variable: sortedVariables) {
             if (expression.contains(variable)) {
                 expression.replaceAll(variable, variables.get(variable));
             }
