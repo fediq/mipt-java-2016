@@ -6,8 +6,7 @@ First run application, then follow commands below:
 
 To authorize run in shell:
 
-`curl http://localhost:9001/signup?args="mountain-viewer, 1234567" -X POST -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "username:password" | base64)"`
-
+`curl http://localhost:9001/signup?args="mountain-viewer, 1234567" -X POST -H "Content-Type: text/plain"`
 
 To put variable/function run in shell:
 
