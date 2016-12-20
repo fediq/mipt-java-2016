@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
-import ru.mipt.java2016.homework.g596.ivanova.task1.BestCalculatorEver;
 
 @RestController
 public class RestCalculatorController {
