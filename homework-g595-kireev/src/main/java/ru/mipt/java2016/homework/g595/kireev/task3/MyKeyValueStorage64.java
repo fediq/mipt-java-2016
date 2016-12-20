@@ -1,12 +1,11 @@
 package ru.mipt.java2016.homework.g595.kireev.task3;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
-import ru.mipt.java2016.homework.g595.kireev.task3.MyBufferedBinaryHandler;
 
 import java.io.*;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
+import java.util.zip.Adler32;
+import java.util.zip.CheckedInputStream;
 
 /**
  * Created by sun on 17.11.16.
@@ -17,13 +16,15 @@ public class MyKeyValueStorage64<K, V> implements KeyValueStorage<K, V> {
     private String path;
     private String dataName = "/storage.db";
     private String headerName = "/header.db";
+    private String checkSumName = "/checkSum.db";
     private RandomAccessFile dataFile;
     private MyBufferedBinaryHandler<K> keyHandler;
     private MyBufferedBinaryHandler<V> valueHandler;
     private MyBufferedBinaryHandler<Integer> lengthHandler;
-    private int uselessData = 0;
+    public int uselessData = 0;
     private Object sync = new Object();
     private boolean isClosed = false;
+    MyCache64<Object, K> fastCache = new MyCache64<>();
 
     MyKeyValueStorage64(String keyType, String valueType, String path) throws IOException {
 
@@ -41,12 +42,16 @@ public class MyKeyValueStorage64<K, V> implements KeyValueStorage<K, V> {
         takeCacheFromFile();
     }
 
-    private void takeCacheFromFile() throws IOException {
+private void takeCacheFromFile() throws IOException {
+
         File inFile = new File(path + headerName);
+        File checksumFile = new File(path + checkSumName);
         if (!inFile.exists()) {
             inFile.createNewFile();
         }
-        // RandomAccessFile in = new RandomAccessFile(path + headerName, "rw");
+        if (!checksumFile.exists()) {
+            checksumFile.createNewFile();
+        }
         RandomAccessFile in = new RandomAccessFile(path + headerName, "r");
         if (!cache.isEmpty()) {
             cache.clear();
@@ -56,6 +61,14 @@ public class MyKeyValueStorage64<K, V> implements KeyValueStorage<K, V> {
             n = 0;
             generalOffset = 0;
         } else {
+            try (RandomAccessFile checksumTempFile = new RandomAccessFile(checksumFile, "rw")) {
+                long hash = checksumTempFile.readLong(); //хэш
+                if (hash != getChecksums()) {
+                    throw new RuntimeException("Checksums don't equals");
+                }
+            } catch (IOException e) {
+                throw new RuntimeException("Can not read from file");
+            }
             n = lengthHandler.getFromInput(in);
             generalOffset = lengthHandler.getFromInput(in);
         }
@@ -70,8 +83,12 @@ public class MyKeyValueStorage64<K, V> implements KeyValueStorage<K, V> {
     public V read(K key) {
         synchronized (sync) {
             checkClose();
+            if (fastCache.containsKey(key))
+                return (V) fastCache.get(key);
             try {
-                return get(key);
+                V value = get(key);
+                fastCache.put(key, value);
+                return value;
             } catch (IOException e) {
                 throw new RuntimeException("IO error during reading");
             }
@@ -100,6 +117,7 @@ public class MyKeyValueStorage64<K, V> implements KeyValueStorage<K, V> {
 
 
 
+
     @Override
     public void write(K key, V value)  {
         synchronized (sync) {
@@ -108,6 +126,7 @@ public class MyKeyValueStorage64<K, V> implements KeyValueStorage<K, V> {
                 ++uselessData;
             }
             cache.put(key, generalOffset); //TODO по идее заменяет предыдущий оффсет на новый
+            fastCache.put(key, value);
             try {
                 dataFile.seek(generalOffset); //TODO нужно посмотреть насколько полезно это
                 generalOffset += valueHandler.putToOutput(dataFile, value);
@@ -144,11 +163,12 @@ public class MyKeyValueStorage64<K, V> implements KeyValueStorage<K, V> {
     }
 
     @Override
-    public void close() throws IOException {
-        synchronized (sync) {
-            isClosed = true;
-            writeToFile();
-        }
+    public void close()  throws IOException {
+        if (isClosed)
+            return;
+        isClosed = true;
+        fastCache.clear();
+        writeToFile();
     }
 
     private void checkClose() {
@@ -160,7 +180,9 @@ public class MyKeyValueStorage64<K, V> implements KeyValueStorage<K, V> {
 
 
 
-    public void writeToFile () throws IOException {
+
+
+    private void writeToFile () throws IOException {
         RandomAccessFile headerOut = new RandomAccessFile(path + headerName, "rw");
 
         lengthHandler.putToOutput(headerOut, cache.size());
@@ -171,11 +193,35 @@ public class MyKeyValueStorage64<K, V> implements KeyValueStorage<K, V> {
         }
         headerOut.close();
         dataFile.close();
+        try (RandomAccessFile checksumTempFile = new RandomAccessFile(new File(path + checkSumName), "rw")) {
+            checksumTempFile.writeLong(getChecksums());
+        } catch (IOException e) {
+            throw new RuntimeException("Can not read from file");
+        }
         //время магии
         //TODO посортим мап по оффсетам и сиками пройдемся по данным в сторадже
 
     }
 
+    private Long getChecksums() throws IOException {
+        Long hash;
+        byte[] tempBuffer = new byte[1024 * 1024];
 
+        hash = (signFile(new File(path + dataName), tempBuffer));
+        hash += (signFile(new File(path + headerName), tempBuffer));
+
+        return hash;
+    }
+
+    private long signFile(File file, byte[] buff) throws IOException {
+        try (CheckedInputStream input = new CheckedInputStream(new FileInputStream(file), new Adler32())) {
+            while (true) {
+                if (input.read(buff) == -1) {
+                    break;
+                }
+            }
+            return input.getChecksum().getValue();
+        }
+    }
 
 }
