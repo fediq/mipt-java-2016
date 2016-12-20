@@ -12,8 +12,6 @@ import org.springframework.web.bind.annotation.*;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
-import java.util.List;
-
 @RestController
 public class CalculatorController {
     private static final Logger LOG = LoggerFactory.getLogger(CalculatorController.class);
@@ -42,36 +40,32 @@ public class CalculatorController {
     public String eval(Authentication auth, @RequestBody String expression) throws ParsingException {
         LOG.debug("Evaluation request: [" + expression + "]");
         String username = auth.getName();
-        //double result = calculator.calculate(expression);
-        String result = functionalCalculate(expression, username);
+        double result = calculator.calculate(expression);
+        //String result = functionalCalculate(expression, username);
         LOG.trace("Result: " + result);
-        return result;
-        //return Double.toString(result) + "\n";
+        //return result;
+        return Double.toString(result) + "\n";
     }
 
-    @RequestMapping(path = "/reg", method = RequestMethod.POST, consumes = "text/plain", produces = "text/plain")
-    public void reg(@RequestParam(value = "args") List<String> arguments) throws ParsingException {
-        billingDao.putUser(arguments.get(0), arguments.get(1));
+    @RequestMapping(path = "/reg/{userName}", method = RequestMethod.PUT,
+            consumes = "text/plain", produces = "text/plain")
+    public void reg(@PathVariable String userName, @RequestBody String passwd) throws ParsingException {
+        LOG.debug("New user: [" + userName + ' ' + passwd + "]");
+        billingDao.putUser(userName, passwd);
     }
-
     private String functionalCalculate(String expression, String username) throws ParsingException {
         String goodExpression = expression;
-        try {
-            Parser parser = new Parser(expression, username);
-            for (String function : parser.getFunction()) {
-                if (expression.indexOf(function) != -1) {
-                    String subExpression = parser.expressionInFunction(expression, function);
-                    String functionAndOperand = function + subExpression;
-                    expression.replace(functionAndOperand, functionalCalculate(subExpression, username));
-                }
+        Parser parser = new Parser(expression, username);
+        for (String function : parser.getFunction()) {
+            if (expression.indexOf(function) != -1) {
+                String subExpression = parser.expressionInFunction(expression, function);
+                String functionAndOperand = function + subExpression;
+                expression.replace(functionAndOperand, functionalCalculate(subExpression, username));
             }
-            goodExpression = parser.work();
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            double result = calculator.calculate(goodExpression);
-            return Double.toString(result)  + "\n";
         }
+        goodExpression = parser.work();
+        double result = calculator.calculate(goodExpression);
+        return Double.toString(result)  + "\n";
     }
 
     @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.PUT,

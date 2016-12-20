@@ -1,8 +1,8 @@
 package ru.mipt.java2016.homework.g596.kupriyanov.task4;
 
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import ru.mipt.java2016.homework.base.task1.ParsingException;
+
+import java.util.*;
 
 /**
  * Created by Artem Kupriyanov on 19/12/2016.
@@ -12,13 +12,17 @@ import java.util.List;
 public class Parser extends BillingDao {
     private String expression;
     private String username;
-    private List<String> variables;
+    private Map<String, String> variables;
     private List<String> functions;
 
     Parser(String exp, String usern) {
         expression = exp;
         username = usern;
-        variables = getAllVariables(username);
+        try {
+            variables = getAllVariables(username);
+        } catch (ParsingException e) {
+            variables = new HashMap<>();
+        }
         //functions =
     }
 
@@ -31,10 +35,11 @@ public class Parser extends BillingDao {
 
     private void substituteVariable() {
         LengthComparator myComparator = new LengthComparator();
-        Collections.sort(variables, myComparator);
-        for (String variable: variables) {
+        List<String> sorted_variables = new ArrayList<>(variables.keySet());
+        Collections.sort(sorted_variables, myComparator);
+        for (String variable: sorted_variables) {
             if (expression.contains(variable)) {
-                expression.replaceAll(variable, getVariable(username, variable).toString());
+                expression.replaceAll(variable, variables.get(variable));
             }
         }
     }

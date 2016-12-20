@@ -15,3 +15,14 @@ curl http://localhost:9001/variable/pi?value="3.1415926" -X PUT -H "Content-Type
 
 curl http://localhost:9001/variable/pi -X GET -H "Content-Type: text/plain" -H \
 "Authorization: Basic $(echo -n "username:password" | base64)"
+
+        curl http://localhost:9001/reg/artemkaa \
+        -X PUT \
+        -H "Content-Type: text/plain" \
+        --data-raw "599"
+
+curl http://localhost:9001/function/sum?arity="2" -X PUT -H "Content-Type: text/plain" -H \
+"Authorization: Basic $(echo -n "username:password" | base64)" --data "x+y"
+
+curl http://localhost:9001/function/sum -X GET -H "Content-Type: text/plain" -H \
+"Authorization: Basic $(echo -n "username:password" | base64)"

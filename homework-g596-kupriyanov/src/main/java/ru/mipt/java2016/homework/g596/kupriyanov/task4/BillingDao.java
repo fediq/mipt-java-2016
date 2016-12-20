@@ -11,14 +11,13 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
+import ru.mipt.java2016.homework.base.task1.ParsingException;
 
 import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.HashMap;
 
 @Repository
 public class BillingDao {
@@ -47,27 +46,30 @@ public class BillingDao {
 
         // Variable table
         jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS billing.variables " +
-                "(username VARCHAR, variable VARCHAR, value FLOAT)");
+                "(username VARCHAR, variable VARCHAR, val DOUBLE)");
 
         // Functions table
         jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS billing.functions " +
                 "(username VARCHAR, function VARCHAR, arity INTEGER, body VARCHAR)");
     }
 
-    // ЗДЕСЬ ДОЛЖНА БЫТЬ ХОРОШАЯ РЕАЛИЗАЦИЯ БАЗЫ ДАННЫХ
-
-    private Integer checkNull(String condition) {
+    private Boolean checkNull(String condition) {
         LOG.trace("check " + condition);
-        String allSelect = "SELECT COUNT(*) FROM " + condition;
+        String allSelect = "SELECT * FROM " + condition;
         return jdbcTemplate.queryForObject(
                 allSelect,
-                new Integer[]{},
-                new RowMapper<Integer>() {
+                new Object[]{},
+                new RowMapper<Boolean>() {
                     @Override
-                    public Integer mapRow(ResultSet rs, int rowNum) throws SQLException {
-                        return new Integer(
-                                rs.getString("value").toString()
-                        );
+                    public Boolean mapRow(ResultSet rs, int rowNum) throws SQLException {
+                        Boolean flag = false;
+                        while (true) {
+                            if (!rs.next()) {
+                                break;
+                            }
+                            flag = true;
+                        }
+                        return flag;
                     }
                 }
         );
@@ -92,35 +94,44 @@ public class BillingDao {
     }
 
     public void putUser(String username, String password) {
-        jdbcTemplate.update("INSERT INTO billing.users VALUES (\'" + username + "\', \'" + password + "\', TRUE)");
+        try {
+            loadUser(username);
+        } catch (EmptyResultDataAccessException e) {
+            jdbcTemplate.execute("INSERT INTO billing.users VALUES (\'" + username + "\', \'" + password + "\', TRUE)");
+        }
     }
 
-    public Double getVariable(String username, String variable) throws EmptyResultDataAccessException {
+    public Double getVariable(String username, String variable) {
         LOG.trace("Get variable " + username + " variable " + variable);
         try {
             return jdbcTemplate.queryForObject(
-                    "select value from billing.variables " +
+                    "select val from billing.variables " +
                             "where username = \'" + username + "\' and variable = \'" + variable + "\'",
                     new Double[]{},
                     new RowMapper<Double>() {
                         @Override
                         public Double mapRow(ResultSet rs, int rowNum) throws SQLException {
                             return new Double(
-                                    rs.getString("value").toString()
+                                    rs.getString("val").toString()
                             );
                         }
                     }
             );
-        } catch (Exception e) {
-            return null;
+        } catch (EmptyResultDataAccessException e) {
+            return 0.0;
         }
     }
 
     public void putVariable(String username, String variable, Double value) {
         LOG.trace("Put variable " + variable + " for user " + username);
-        jdbcTemplate.execute("INSERT INTO billing.variables VALUES (\'"
-                + username + "\', \'" + variable + "\', " + value.toString() + ")"
-        );
+        try {
+            deleteVariable(username, variable);
+        } catch (Exception e) {
+          e.printStackTrace();
+        } finally {
+            jdbcTemplate.execute("INSERT INTO billing.variables VALUES (\'"
+                    + username + "\', \'" + variable + "\', " + value.toString() + ")");
+        }
     }
 
     public void deleteVariable(String username, String variable) {
@@ -129,28 +140,43 @@ public class BillingDao {
                 + username + "\' AND variable = \'" + variable + "\'");
     }
 
-    public List<String> getAllVariables(String username) throws EmptyResultDataAccessException {
+    public HashMap<String, String> getAllVariables(String username) throws ParsingException {
         LOG.trace("List with all functions for user: " + username);
-//        try {
-        List<Map<String, Object>> queryResult = jdbcTemplate.queryForList(
-            " SELECT variable FROM billing.variables WHERE username = \'" + username + "\'"
-        );
-        List<String> variables = new ArrayList<String>();
-        for (Object aQueryResult : queryResult) {
-            variables.add(aQueryResult.toString());
+        try {
+            return jdbcTemplate.queryForObject(
+                    "SELECT username, variable, val FROM billing.variables WHERE username = ?",
+                    new Object[]{username},
+                    new RowMapper<HashMap<String, String>>() {
+                        @Override
+                        public HashMap<String, String> mapRow(ResultSet rs, int rowNum) throws SQLException {
+                            HashMap<String, String> tmp = new HashMap<String, String>();
+                            while (true) {
+                                tmp.put(rs.getString("variable"), Double.toString(rs.getDouble("val")));
+                                if (!rs.next()) {
+                                    break;
+                                }
+                            }
+                            return tmp;
+                        }
+                    }
+            );
+        } catch (EmptyResultDataAccessException e) {
+            HashMap<String, String> tmp = new HashMap<String, String>();
+            return tmp;
         }
-        return variables;
-//        } catch (Exception e) {
-//            return new ArrayList<String>();
-//        }
-
     }
 
     public void putFunction(String username, String function, Integer arity, String body) {
         LOG.trace("Put function " + function + " for user " + username);
-        jdbcTemplate.execute("INSERT INTO billing.functions VALUES (\'"
-                + username + "\', \'" + function + "\', " + arity.toString() + ", \'"
-                + body + "\')");
+        try {
+            deleteFunction(username, function);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            jdbcTemplate.execute("INSERT INTO billing.functions VALUES (\'"
+                    + username + "\', \'" + function + "\', " + arity.toString() + ", \'"
+                    + body + "\')");
+        }
     }
 
     public String getFunction(String username, String function) {
