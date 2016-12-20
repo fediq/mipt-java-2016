@@ -47,7 +47,7 @@ public class MyKeyValueStorage64<K, V> implements KeyValueStorage<K, V> {
         takeCacheFromFile();
     }
 
-private void takeCacheFromFile() throws IOException {
+    private void takeCacheFromFile() throws IOException {
 
         File inFile = new File(path + headerName);
         File checksumFile = new File(path + checkSumName);
@@ -67,7 +67,7 @@ private void takeCacheFromFile() throws IOException {
             generalOffset = 0;
         } else {
             try (RandomAccessFile checksumTempFile = new RandomAccessFile(checksumFile, "rw")) {
-                long hash = checksumTempFile.readLong(); //хэш
+                long hash = checksumTempFile.readLong();
                 if (hash != getChecksums()) {
                     throw new RuntimeException("Checksums don't equals");
                 }
@@ -127,7 +127,7 @@ private void takeCacheFromFile() throws IOException {
             if (cache.containsKey(key)) {
                 ++uselessData;
             }
-            cache.put(key, generalOffset); //TODO по идее заменяет предыдущий оффсет на новый
+            cache.put(key, generalOffset);
             fastCache.put(key, value);
             cache.put(key, generalOffset);
             try {
