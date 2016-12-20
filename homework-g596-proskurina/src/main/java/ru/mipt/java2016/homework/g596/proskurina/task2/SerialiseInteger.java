@@ -15,8 +15,4 @@ public class SerialiseInteger implements SerialiserInterface<Integer> {
         return Integer.parseInt(inString);
     }
 
-    @Override
-    public String getType() {
-        return "Integer";
-    }
 }

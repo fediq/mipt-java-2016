@@ -14,19 +14,26 @@ public class FileWorker {
         }
     }
 
+    public FileWorker() {
+    }
+
     public static String read(String fileName) throws FileNotFoundException {
 
         StringBuffer inputData = new StringBuffer();
         exists(fileName);
         File file = new File(fileName);
 
-        try (BufferedReader in = new BufferedReader(new FileReader(file.getAbsoluteFile()))) {
-            String s;
-            while ((s = in.readLine()) != null) {
-                inputData.append(s);
-                inputData.append("\n");
+        try {
+            BufferedReader in = new BufferedReader(new FileReader(file.getAbsoluteFile()));
+            try {
+                String s;
+                while ((s = in.readLine()) != null) {
+                    inputData.append(s);
+                    inputData.append("\n");
+                }
+            } finally {
+                in.close();
             }
-
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

@@ -27,9 +27,4 @@ public class SerialiseStudentKey implements SerialiserInterface<StudentKey> {
         return new StudentKey(groupId, name);
     }
 
-    @Override
-    public String getType() {
-        return "StudentKey";
-    }
-
 }

@@ -2,7 +2,6 @@ package ru.mipt.java2016.homework.g596.proskurina.task2;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -13,7 +12,10 @@ import java.util.Map;
  */
 public class ImplementationKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
-    private final Map<K, V> map = new HashMap<>();
+    private final HashMap<K, V> map = new HashMap<>();
+
+    private final String keyName;
+    private final String valueName;
 
     private final SerialiserInterface<K> keySerialiser;
     private final SerialiserInterface<V> valueSerialiser;
@@ -28,11 +30,14 @@ public class ImplementationKeyValueStorage<K, V> implements KeyValueStorage<K, V
                                          SerialiserInterface<K> keySerialiser, SerialiserInterface<V> valueSerialiser,
                                          String directoryPath) {
 
+        this.keyName = keyName;
+        this.valueName = valueName;
+
         this.keySerialiser = keySerialiser;
         this.valueSerialiser = valueSerialiser;
 
         file = new FileWorker();
-        fileName = directoryPath + File.separator + "myFile.db";
+        fileName = directoryPath + "/myFile.db";
 
         try {
             String inputData = file.read(fileName);
@@ -62,60 +67,57 @@ public class ImplementationKeyValueStorage<K, V> implements KeyValueStorage<K, V
 
     }
 
-    private void checkIfFileIsOpen() {
-        if (!openFlag) {
+    @Override
+    public V read(K key) {
+        if (openFlag) {
+            return map.get(key);
+        } else {
             throw new RuntimeException("Storage is closed");
         }
     }
 
     @Override
-    public V read(K key) {
-        checkIfFileIsOpen();
-        return map.get(key);
-
-    }
-
-    @Override
     public boolean exists(K key) {
-        checkIfFileIsOpen();
         return map.containsKey(key);
     }
 
     @Override
     public void write(K key, V value) {
-        checkIfFileIsOpen();
-        map.put(key, value);
+        if (openFlag) {
+            map.put(key, value);
+        } else {
+            throw new RuntimeException("Storage is closed");
+        }
     }
 
     @Override
     public void delete(K key) {
-        checkIfFileIsOpen();
         map.remove(key);
     }
 
     @Override
     public Iterator<K> readKeys() {
-        checkIfFileIsOpen();
-        return map.keySet().iterator();
+        if (openFlag) {
+            return map.keySet().iterator();
+        } else {
+            throw new RuntimeException("Storage is closed");
+        }
     }
 
     @Override
     public int size() {
-        checkIfFileIsOpen();
         return map.size();
     }
 
     @Override
     public void close() {
-        checkIfFileIsOpen();
         openFlag = false;
         writeData();
-        map.clear();
     }
 
     public void writeData() {
         StringBuffer text = new StringBuffer(VALIDATION_STRING + "\n");
-        text.append(keySerialiser.getType()).append('\n').append(valueSerialiser.getType()).append('\n');
+        text.append(keyName).append('\n').append(valueName).append('\n');
         text.append(map.size()).append('\n');
         for (Map.Entry<K, V> entry : map.entrySet()) {
             text.append(keySerialiser.serialise(entry.getKey()))
