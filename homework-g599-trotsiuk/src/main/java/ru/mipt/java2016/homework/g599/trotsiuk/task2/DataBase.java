@@ -8,95 +8,68 @@ import java.util.Iterator;
 import java.util.Map;
 
 public class DataBase<K, V> implements KeyValueStorage<K, V> {
-
-    private File dataFile;
+    private File dbFile;
+    private Boolean checkOpen;
+    private Serializer<K> keySerializer;
+    private Serializer<V> valueSerializer;
     private Map<K, V> data = new HashMap<>();
-    private Serializer<K> serializerKey;
-    private Serializer<V> serializerValue;
 
-    public DataBase(String path, Serializer<K> serializerKey, Serializer<V> serializerValue) throws IOException {
-
-        this.serializerKey = serializerKey;
-        this.serializerValue = serializerValue;
-
-        File directory = new File(path);
-        if (!directory.isDirectory()) {
+    public DataBase(String path, Serializer<K> keySer,
+                             Serializer<V> valueSer) throws IOException {
+        File checkDir = new File(path);
+        keySerializer = keySer;
+        valueSerializer = valueSer;
+        dbFile = new File(path, "db.txt");
+        if (!checkDir.exists()) {
+            throw new RuntimeException("DataBase: File not found");
+        }
+        if (!checkDir.isDirectory()) {
             throw new RuntimeException("DataBase: Wrong path");
         }
-
-        dataFile = new File(path, "storage.db");
-
-        if (dataFile.exists()) {
-            readFromFile();
-        } else if (!dataFile.createNewFile()) {
-            throw new RuntimeException("DataBase: Can't create file");
-        }
-
-    }
-
-    private void readFromFile() throws IOException {
-        try (DataInputStream stream = new DataInputStream(new FileInputStream(dataFile))) {
-            int count;
-            count = stream.readInt();
-            for (int i = 0; i < count; i++) {
-                K key = serializerKey.deserializeRead(stream);
-                V value = serializerValue.deserializeRead(stream);
-                if (data.containsKey(key)) {
-                    throw new IOException("DataBase.readFromFile: Two same keys in database file");
+        checkOpen = true;
+        if (dbFile.exists()) {
+            try (DataInputStream in = new DataInputStream(new FileInputStream(dbFile))) {
+                int cntElems = in.readInt();
+                for (int i = 0; i < cntElems; ++i) {
+                    data.put(keySerializer.deserializeRead(in), valueSerializer.deserializeRead(in));
                 }
-                data.put(key, value);
+            } catch (IOException e) {
+                throw new RuntimeException("DataBase: Can't use database");
             }
-        } catch (FileNotFoundException e) {
-            throw new IOException(e + "DataBase.readFromFile: File not found");
+        } else {
+            dbFile.createNewFile();
         }
     }
-
-    private void writeInFile() throws IOException {
-        try (DataOutputStream stream = new DataOutputStream(new FileOutputStream(dataFile))) {
-
-
-            for (Map.Entry<K, V> current : data.entrySet()) {
-                serializerKey.serializeWrite(current.getKey(), stream);
-                serializerValue.serializeWrite(current.getValue(), stream);
-            }
-        } catch (FileNotFoundException e) {
-            throw new IOException("DataBase.writeInFile: File not found", e);
-        }
-
-    }
-
+    
     @Override
-    public V read(K key)  {
+    public V read(K key) {
         checkNotClosed();
         return data.get(key);
     }
 
     @Override
-    public boolean exists(K key)  {
+    public boolean exists(K key) {
         checkNotClosed();
         return data.containsKey(key);
     }
 
-
     @Override
-    public void write(K key, V value)  {
+    public void write(K key, V value) {
         checkNotClosed();
         data.put(key, value);
     }
 
     @Override
-    public void delete(K key)  {
+    public void delete(K key) {
         checkNotClosed();
         data.remove(key);
     }
-
 
     @Override
     public Iterator<K> readKeys() {
         checkNotClosed();
         return data.keySet().iterator();
     }
-
 
     @Override
     public int size() {
@@ -106,13 +79,23 @@ public class DataBase<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public void close() throws IOException {
-        writeInFile();
-        data = null;
+        checkNotClosed();
+        try (DataOutputStream out = new DataOutputStream(new FileOutputStream(dbFile))) {
+            out.writeInt(data.size());
+            for (HashMap.Entry<K, V> pair: data.entrySet()) {
+                keySerializer.serializeWrite(pair.getKey(), out);
+                valueSerializer.serializeWrite(pair.getValue(), out);
+            }
+            checkOpen = false;
+            data.clear();
+        } catch (IOException exp) {
+            throw new RuntimeException("DataBase: Can't close");
+        }
     }
 
     private void checkNotClosed() {
-        if (data == null) {
-            throw new IllegalStateException("DataBase: Already closed");
+        if (!checkOpen) {
+            throw new RuntimeException("DataBase: Already closed");
         }
     }
 

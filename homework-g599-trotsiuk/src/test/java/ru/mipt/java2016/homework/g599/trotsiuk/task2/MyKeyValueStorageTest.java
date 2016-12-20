@@ -11,29 +11,40 @@ public class MyKeyValueStorageTest extends AbstractSingleFileStorageTest {
 
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String path) {
+        DataBase<String, String> db;
         try {
-            return new DataBase<>(path, new SerializerString(), new SerializerString());
-            } catch (IOException e) {
-            throw new RuntimeException(e + "buildStringsStorage: Problem");
-            }
+            db = new DataBase(path,
+                    new SerializerString(),
+                    new SerializerString());
+        }catch (IOException exp) {
+            return null;
+        }
+        return db;
     }
 
     @Override
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) {
+        DataBase<Integer, Double> db;
         try {
-            return new DataBase<>(path, new SerializerInteger(), new SerializerDouble());
-
-        } catch (IOException e) {
-            throw new RuntimeException(e + "buildNumbersStorage: Problem");
+            db = new DataBase(path,
+                    new SerializerInteger(),
+                    new SerializerDouble());
+        } catch (IOException exp) {
+            return null;
         }
+        return db;
     }
 
     @Override
     protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) {
+        DataBase<StudentKey, Student> db;
         try {
-            return new DataBase<>(path, new SerializerStudentKey(), new SerializerStudent());
-        } catch (IOException e) {
-            throw new RuntimeException(e + "buildPojoStorage: Problem");
+            db = new DataBase(path,
+                    new SerializerStudentKey(),
+                    new SerializerStudent());
+        } catch (IOException exp) {
+            return null;
         }
+        return db;
     }
 }
