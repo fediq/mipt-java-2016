@@ -54,11 +54,11 @@ public class GrammarCalculator {
         }
     }
 
-    private boolean tryFindChar(char ch) throws ParsingException {
-        while (Character.isWhitespace(this.ch)) {
+    private boolean tryFindChar(char charToFind) throws ParsingException {
+        while (Character.isWhitespace(ch)) {
             getNextChar();
         }
-        if (ch == this.ch) {
+        if (charToFind == ch) {
             getNextChar();
             return true;
         }

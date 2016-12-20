@@ -23,11 +23,11 @@ public class BillingVariable {
         this.expression = expression;
     }
 
-    private boolean check(String name) {
-        if (name == null) {
+    private boolean check(String s) {
+        if (s == null) {
             return false;
         }
-        return !(Character.isDigit(name.charAt(0)) || name.contains("[^_a-zA-Z]"));
+        return !(Character.isDigit(s.charAt(0)) || s.contains("[^_a-zA-Z]"));
     }
 
     public String getName() {

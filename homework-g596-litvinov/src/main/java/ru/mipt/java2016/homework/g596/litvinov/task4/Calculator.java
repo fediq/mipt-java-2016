@@ -1,6 +1,5 @@
 package ru.mipt.java2016.homework.g596.litvinov.task4;
 
-import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
 /**
@@ -9,7 +8,7 @@ import ru.mipt.java2016.homework.base.task1.ParsingException;
  * @author Stanislav A. Litvinov
  * @since 20.12.16.
  */
-public class calculator implements Calculator {
+public class Calculator implements ru.mipt.java2016.homework.base.task1.Calculator {
     @Override
     public double calculate(String expression) throws ParsingException {
         if (expression == null) {

@@ -32,12 +32,18 @@ public class CalculatorController {
         return "OK\n";
     }
 
-    @RequestMapping(path = "/variables/{variableName}", method = RequestMethod.GET, produces = "text/plain")
+    @RequestMapping(
+            path = "/variables/{variableName}",
+            method = RequestMethod.GET,
+            produces = "text/plain")
     public String getVariable(Authentication authentication, @PathVariable String variableName) {
         return billingDao.loadVariable(authentication.getName(), variableName) + "\n";
     }
 
-    @RequestMapping(path = "/variables/{variableName}", method = RequestMethod.PUT, consumes = "text/plain")
+    @RequestMapping(
+            path = "/variables/{variableName}",
+            method = RequestMethod.PUT,
+            consumes = "text/plain")
     public String putVariable(Authentication authentication, @PathVariable String variableName,
             @PathVariable String expression) {
         expression = replaceVariable(authentication.getName(), expression);
@@ -54,7 +60,10 @@ public class CalculatorController {
         return "Variable exists\n";
     }
 
-    @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.DELETE, produces = "text/plain")
+    @RequestMapping(
+            path = "/variable/{variableName}",
+            method = RequestMethod.DELETE,
+            produces = "text/plain")
     public String removeVariable(Authentication authentication, @PathVariable String variableName) {
         if (billingDao.removeVariable(authentication.getName(), variableName)) {
             return "Variable deleted\n";
@@ -62,7 +71,10 @@ public class CalculatorController {
         return "Variable does not exist\n";
     }
 
-    @RequestMapping(path = "/variables/{variableName}", method = RequestMethod.GET, produces = "text/plain")
+    @RequestMapping(
+            path = "/variables/{variableName}",
+            method = RequestMethod.GET,
+            produces = "text/plain")
     public String loadAllVariables(Authentication authentication) {
         List<BillingVariable> variables = billingDao.loadAllVariables(authentication.getName());
         String result = "";
@@ -74,7 +86,11 @@ public class CalculatorController {
         return result;
     }
 
-    @RequestMapping(path = "/eval", method = RequestMethod.POST, consumes = "text/plain", produces = "text/plain")
+    @RequestMapping(
+            path = "/eval",
+            method = RequestMethod.POST,
+            consumes = "text/plain",
+            produces = "text/plain")
     public String eval(Authentication authentication, @RequestBody String expresison) {
         LOG.debug("Evaluation request : {" + expresison + "}");
         double result;
@@ -100,7 +116,11 @@ public class CalculatorController {
         return expression;
     }
 
-    @RequestMapping(path = "/function/{functionName}", method = RequestMethod.PUT, consumes = "text/plain", produces = "text/plain")
+    @RequestMapping(
+            path = "/function/{functionName}",
+            method = RequestMethod.PUT,
+            consumes = "text/plain",
+            produces = "text/plain")
     public void putFunction(Authentication authentication, @PathVariable String functionName,
             @RequestParam(value = "arity") Integer arity, @RequestBody String body) {
         String username = authentication.getName();
@@ -108,14 +128,21 @@ public class CalculatorController {
         billingDao.putFunction(username, functionName, arity, body);
     }
 
-    @RequestMapping(path = "/function/{functionName}", method = RequestMethod.DELETE, consumes = "text/plain", produces = "text/plain")
+    @RequestMapping(path = "/function/{functionName}",
+            method = RequestMethod.DELETE,
+            consumes = "text/plain",
+            produces = "text/plain")
     public void deleteFunction(Authentication authentication, @PathVariable String functionName) {
         String username = authentication.getName();
         billingDao.deleteFunction(username, functionName);
     }
 
 
-    @RequestMapping(path = "/function/{functionName}", method = RequestMethod.GET, consumes = "text/plain", produces = "text/plain")
+    @RequestMapping(
+            path = "/function/{functionName}",
+            method = RequestMethod.GET,
+            consumes = "text/plain",
+            produces = "text/plain")
     public String getFunction(Authentication authentication, @PathVariable String functionName) {
         String username = authentication.getName();
         String res = billingDao.getFunction(username, functionName);
