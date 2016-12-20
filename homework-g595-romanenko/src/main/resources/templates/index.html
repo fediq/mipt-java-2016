@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<!--<%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>-->
+<html lang="en"
+      xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="static_resources/bootstrap-3.3.6-dist/css/bootstrap.min.css" rel="stylesheet" />
+
+    <script src="static_resources/jquery-2.2.4.min.js"></script>
+    <script src="static_resources/bootstrap-3.3.6-dist/js/bootstrap.min.js"></script>
+
+    <title>Title</title>
+
+    <script type="text/javascript" src="/static_resources/index_ajax.js"></script>
+</head>
+<body role="document">
+
+<nav class="navbar navbar-default navbar-static-top">
+    <div class="container">
+        <div class="navbar-header">
+            <div class="navbar-brand">Формочка для тестирования</div>
+        </div>
+        <ul class="nav navbar-nav navbar-right">
+            <li><a href="/logout">Logout</a></li>
+        </ul>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-8">
+
+            <!-- Eval expression -->
+
+            <div class="row">
+                <div class="form-group">
+                    <label>Eval expression</label>
+                    <textarea id="eval_input" class="form-control"></textarea>
+                </div>
+                <button id="eval" type="button" class="btn btn-default" onclick="submitEval()">Eval expression</button>
+                <br/><br/>
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Result : </h3>
+                    </div>
+                    <div class="panel-body" id="result_eval"></div>
+                </div>
+            </div>
+
+
+            <!-- Nav tabs -->
+
+            <div>
+
+                <ul class="nav nav-tabs" role="tablist">
+                    <li role="presentation" class="active">
+                        <a href="#get_function" aria-controls="home" role="tab" data-toggle="tab">Get Function</a>
+                    </li>
+                    <li role="presentation">
+                        <a href="#add_function" aria-controls="profile" role="tab" data-toggle="tab">Add Function</a>
+                    </li>
+                    <li role="presentation">
+                        <a href="#add_variable" aria-controls="messages" role="tab" data-toggle="tab">Add Variable</a>
+                    </li>
+                    <li role="presentation">
+                        <a href="#delete_function_variable" aria-controls="settings" role="tab" data-toggle="tab">
+                            Delete Function/Variable
+                        </a>
+                    </li>
+                </ul>
+
+                <!-- Tab panes -->
+                <div class="tab-content">
+
+                    <!--Get function information -->
+                    <div role="tabpanel" class="tab-pane active" id="get_function">
+
+                        <br/>
+                        <div class="container-fluid">
+                            <div class="form-group">
+                                <label>Get function information</label>
+                                <div class="input-group">
+                                    <span class="input-group-addon">Function name : </span>
+                                    <input id="get_function_input" class="form-control"/>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-default" onclick="getFunction()">
+                                Get Function Information
+                            </button>
+                            <br/><br/>
+                            <div class="panel panel-default">
+                                <div class="panel-heading">
+                                    <h3 class="panel-title" id="result_get_function_name"></h3>
+                                </div>
+                                <div class="panel-body" id="result_get_function_body"></div>
+                                <div class="panel-body">
+                                    Params :
+                                </div>
+                                <table class="table table-striped" id="result_get_function_args"></table>
+                            </div>
+                        </div>
+
+                    </div>
+
+
+                    <!-- Add function -->
+                    <div role="tabpanel" class="tab-pane" id="add_function">
+
+                        <br/>
+                        <div class="container-fluid">
+                            <div class="form-group">
+                                <label for="add_function_input_name">Add Function</label>
+                                <div class="input-group">
+                                    <span class="input-group-addon">Function name : </span>
+                                    <input class="form-control" id="add_function_input_name"/>
+                                </div>
+                                <br/>
+                                <div class="input-group">
+                                    <span class="input-group-addon">Function body : </span>
+                                    <textarea class="form-control" id="add_function_input_body"> </textarea>
+                                </div>
+                                <br/>
+                                <div class="input-group">
+                                    <span class="input-group-addon">Function params : </span>
+                                    <input class="form-control" id="add_function_input_params"/>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-default" onclick="addFunction()">
+                                Add Function
+                            </button>
+                            <br/><br/>
+                            <div class="panel panel-default">
+                                <div class="panel-heading">
+                                    <h3 class="panel-title">Result : </h3>
+                                </div>
+                                <div class="panel-body" id="result_add_function"></div>
+                            </div>
+                        </div>
+
+                    </div>
+
+
+                    <!-- Add variable -->
+                    <div role="tabpanel" class="tab-pane" id="add_variable">
+                        <br/>
+                        <div class="container-fluid">
+                            <div class="form-group">
+                                <label for="add_variable_input_name">Add Variable</label>
+                                <div class="input-group">
+                                    <span class="input-group-addon">Variable name : </span>
+                                    <input class="form-control" id="add_variable_input_name"/>
+                                </div>
+                                <br/>
+                                <div class="input-group">
+                                    <span class="input-group-addon">Variable value : </span>
+                                    <input class="form-control" id="add_variable_input_body"/>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-default" onclick="addVariable()">
+                                Add Variable
+                            </button>
+                            <br/><br/>
+                            <div class="panel panel-default">
+                                <div class="panel-heading">
+                                    <h3 class="panel-title">Result : </h3>
+                                </div>
+                                <div class="panel-body" id="result_add_variable"></div>
+                            </div>
+                        </div>
+
+                    </div>
+
+
+                    <div role="tabpanel" class="tab-pane" id="delete_function_variable">
+                        <div class="container-fluid">
+
+                            <br/>
+                            <div class="row">
+                                <div class="col-md-5">
+
+                                    <!-- Delete variable -->
+
+                                    <div class="row">
+                                        <div class="form-group">
+                                            <label for="delete_variable_input_name">Delete Variable</label>
+                                            <div class="input-group">
+                                                <span class="input-group-addon">Variable name : </span>
+                                                <input class="form-control" id="delete_variable_input_name"/>
+                                            </div>
+                                        </div>
+                                        <button id="delete_variable" type="button" class="btn btn-default"
+                                                onclick="deleteVariable()">
+                                            Delete Variable
+                                        </button>
+                                        <br/><br/>
+                                        <div class="panel panel-default">
+                                            <div class="panel-heading">
+                                                <h3 class="panel-title">Result : </h3>
+                                            </div>
+                                            <div class="panel-body" id="result_delete_variable"></div>
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                                <div class="col-md-2"></div>
+
+                                <div class="col-md-5">
+
+                                    <!-- Delete function -->
+
+                                    <div class="row">
+                                        <div class="form-group">
+                                            <label for="delete_function_input_name">Delete Function</label>
+                                            <div class="input-group">
+                                                <span class="input-group-addon">Function name : </span>
+                                                <input class="form-control" id="delete_function_input_name"/>
+                                            </div>
+                                        </div>
+                                        <button id="delete_function" type="button" class="btn btn-default"
+                                                onclick="deleteFunction()">
+                                            Delete Function
+                                        </button>
+                                        <br/><br/>
+                                        <div class="panel panel-default">
+                                            <div class="panel-heading">
+                                                <h3 class="panel-title">Result : </h3>
+                                            </div>
+                                            <div class="panel-body" id="result_delete_function"></div>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+
+        </div>
+
+
+        <!-- Second and third cells -->
+
+        <div class="col-md-2">
+            <label>Таблица функций</label>
+            <table class="table table-striped" id="functionsList"></table>
+        </div>
+
+        <div class="col-md-2">
+            <label>Таблица переменных</label>
+            <table class="table table-striped" id="variablesList"></table>
+        </div>
+    </div>
+</div>
+</body>
+</html>
