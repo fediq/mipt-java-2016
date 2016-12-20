@@ -25,7 +25,8 @@ import org.springframework.stereotype.Repository;
 public class BillingDao {
     private static final Logger LOG = LoggerFactory.getLogger(BillingDao.class);
 
-    @Autowired private DataSource dataSource;
+    @Autowired
+    private DataSource dataSource;
 
     private JdbcTemplate jdbcTemplate;
 
@@ -37,24 +38,29 @@ public class BillingDao {
 
     public void initSchema() {
         LOG.trace("Initializing schema");
-        jdbcTemplate.execute("CREATE SCHEMA IF NOT  EXISTS billing");
-        jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS billing.users"
-                + "(username VARCHAR PRIMARY KEY, password VARCHAR, " + "enabled BOOLEAN)");
-        jdbcTemplate.update("DELETE FROM billing.users  WHERE username = 'username'");
-        jdbcTemplate.update("INSERT  INTO billing.users VALUES ('username', 'password', TRUE)");
+        jdbcTemplate.execute("CREATE SCHEMA IF NOT EXISTS billing");
+        jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS billing.users " +
+                "(username VARCHAR PRIMARY KEY, password VARCHAR, enabled BOOLEAN)");
+        jdbcTemplate.update("INSERT INTO billing.users VALUES ('username', 'password', TRUE)");
     }
+
 
     public BillingUser loadUser(String username) throws EmptyResultDataAccessException {
         LOG.trace("Querying for user " + username);
         return jdbcTemplate.queryForObject(
                 "SELECT username, password, enabled FROM billing.users WHERE username = ?",
-                new Object[] {username}, new RowMapper<BillingUser>() {
+                new Object[]{username},
+                new RowMapper<BillingUser>() {
                     @Override
-                    public BillingUser mapRow(ResultSet resultSet, int i) throws SQLException {
-                        return new BillingUser(resultSet.getString("username"),
-                                resultSet.getString("password"), resultSet.getBoolean("enabled"));
+                    public BillingUser mapRow(ResultSet rs, int rowNum) throws SQLException {
+                        return new BillingUser(
+                                rs.getString("username"),
+                                rs.getString("password"),
+                                rs.getBoolean("enabled")
+                        );
                     }
-                });
+                }
+        );
     }
 
     public boolean addUser(String username, String password) {
@@ -74,11 +80,14 @@ public class BillingDao {
     public BillingVariable loadVariable(String username, String varname) {
         return jdbcTemplate.queryForObject(
                 "SELECT name, value, expression FROM " + username + ".variables WHERE name = '"
-                        + varname + "'", new RowMapper<BillingVariable>() {
+                        + varname + "'",
+                new RowMapper<BillingVariable>() {
                     @Override
                     public BillingVariable mapRow(ResultSet resultSet, int i) throws SQLException {
-                        return new BillingVariable(resultSet.getString("name"),
-                                resultSet.getDouble("value"), resultSet.getString("expression"));
+                        return new BillingVariable(
+                                resultSet.getString("name"),
+                                resultSet.getDouble("value"),
+                                resultSet.getString("expression"));
                     }
                 });
     }
@@ -111,8 +120,10 @@ public class BillingDao {
                     @Override
                     public BillingVariable mapRow(ResultSet resultSet, int rowNum)
                             throws SQLException {
-                        return new BillingVariable(resultSet.getString("name"),
-                                resultSet.getDouble("value"), resultSet.getString("expression"));
+                        return new BillingVariable(
+                                resultSet.getString("name"),
+                                resultSet.getDouble("value"),
+                                resultSet.getString("expression"));
                     }
                 });
     }
@@ -130,12 +141,12 @@ public class BillingDao {
                 });
     }
 
-    public void putFunction(String username, String function, Integer arity, String body) {
+    public void putFunction(String username, String function, Integer num, String body) {
         LOG.trace("Putting function " + function + " of user " + username);
         deleteFunction(username, function);
         jdbcTemplate.execute(
                 "INSERT INTO billing.functions VALUES ('" + username + "', '" + function + "', "
-                        + arity.toString() + ", '" + body + "')");
+                        + num.toString() + ", '" + body + "')");
     }
 
     public void deleteFunction(String username, String function) {
