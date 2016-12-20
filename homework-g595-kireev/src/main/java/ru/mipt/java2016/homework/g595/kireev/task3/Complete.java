@@ -9,7 +9,8 @@ public class Complete {
 
     public static void main(String[] args) throws IOException {
 
-        MyKeyValueStorage64<String, String> store = new MyKeyValueStorage64<String, String>("String", "String", "~/java");
+        MyKeyValueStorage64<String, String> store =
+                new MyKeyValueStorage64<String, String>("String", "String", "~/java");
   //      store.write("Karim", "Kireev");
         System.out.println(store.read("Karim"));
         store.close();

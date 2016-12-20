@@ -1,6 +1,5 @@
 package ru.mipt.java2016.homework.g595.kireev.task3;
 
-import java.util.ArrayDeque;
 import java.util.HashMap;
 
 /**
