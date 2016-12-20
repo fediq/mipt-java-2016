@@ -29,7 +29,8 @@ public class TokenOperator extends Token {
         final String ops = "()+-*/";
         int index = ops.indexOf(data);
         if (index == -1) {
-            throw new ParsingException("unknown operator " + data);
+            return 4;
+//            throw new ParsingException("unknown operator " + data);
         }
         if (isSubtruct() && isUnary()) {
             return 3;

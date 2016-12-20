@@ -5,7 +5,8 @@ import ru.mipt.java2016.homework.base.task1.ParsingException;
 import java.util.ArrayList;
 
 /**
- * Created by ulyanin on 11.10.16.
+ * @author ulyanin
+ * @since 11.10.16.
  */
 public class Tokenizer {
     private int currentPosition;
@@ -36,6 +37,10 @@ public class Tokenizer {
                 currentToken = new Token(String.valueOf(c), Token.TokenType.BRACE_CLOSE);
             } else if (isOperator(c)) {
                 currentToken = new Token(String.valueOf(c), Token.TokenType.OPERATOR);
+            } else if (isFunctionArgumentSeparator(c)) {
+                currentToken = new Token(String.valueOf(c), Token.TokenType.ARGS_SEPARATOR);
+            } else if (isFunctionName(c)) {
+                currentToken = new Token(readFunctionName(), Token.TokenType.FUNCTION);
             } else {
                 throw new ParsingException("unknown symbol '" + c + "'");
             }
@@ -43,6 +48,8 @@ public class Tokenizer {
         }
         return result;
     }
+
+
 
     private char getCurrentChar() {
         return expression.charAt(currentPosition);
@@ -72,13 +79,33 @@ public class Tokenizer {
         return c == ')';
     }
 
+    public static boolean isFunctionArgumentSeparator(char c) {
+        return c == ',';
+    }
+
     public static boolean isOperator(char c) {
         return c == '+' || c == '*' || c == '-' || c == '/';
     }
 
-    private String readNumberToken() {
+    private boolean isFunctionName(char c) {
+        return Character.isLetter(c) || Character.isDigit(c) || c == '_';
+    }
+
+    private String readNumberToken() throws ParsingException {
         StringBuilder token = new StringBuilder();
         while (characterExist() && isNumberCharacter(getCurrentChar())) {
+            token.append(getCurrentChar());
+            readNextCharacter();
+        }
+        if (characterExist()) {
+            unreadCharacter();
+        }
+        return token.toString();
+    }
+
+    private String readFunctionName() throws ParsingException {
+        StringBuilder token = new StringBuilder();
+        while (characterExist() && isFunctionName(getCurrentChar())) {
             token.append(getCurrentChar());
             readNextCharacter();
         }
