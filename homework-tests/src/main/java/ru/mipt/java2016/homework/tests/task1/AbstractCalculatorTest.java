@@ -33,6 +33,7 @@ public abstract class AbstractCalculatorTest {
     
     @Test
     public void testBasicOps() throws ParsingException {
+        test("1", 1.0);
         test("3 + 4", 7.0);
         test("8 - 13.2", -5.2);
         test("1 - 1", 0.0);
