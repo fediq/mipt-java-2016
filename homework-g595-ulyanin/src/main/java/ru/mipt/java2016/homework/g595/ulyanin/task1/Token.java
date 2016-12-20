@@ -9,7 +9,7 @@ import ru.mipt.java2016.homework.base.task1.ParsingException;
 
 public class Token {
 
-    public enum TokenType { OPERATOR, NUMBER, BRACE_OPEN, BRACE_CLOSE }
+    public enum TokenType { OPERATOR, NUMBER, BRACE_OPEN, BRACE_CLOSE, FUNCTION, ARGS_SEPARATOR }
 
     protected String data;
     protected TokenType type;
@@ -37,6 +37,14 @@ public class Token {
 
     public boolean isCloseBraceToken() {
         return type == TokenType.BRACE_CLOSE;
+    }
+
+    public boolean isArgumentSeparatorToken() {
+        return type == TokenType.ARGS_SEPARATOR;
+    }
+
+    public boolean isFunctionToken() {
+        return type == TokenType.FUNCTION;
     }
 
     public double getValue() throws ParsingException {
