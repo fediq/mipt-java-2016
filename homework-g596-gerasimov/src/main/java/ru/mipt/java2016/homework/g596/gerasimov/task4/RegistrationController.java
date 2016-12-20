@@ -22,7 +22,7 @@ public class RegistrationController {
     @RequestMapping(path = "/registration/{username}", method = RequestMethod.POST)
     public String registration(@PathVariable String username,
             @RequestParam(value = "password") String password) {
-        LOG.debug("Adding user: " + username);
+        LOG.debug("Adding request for user: " + username);
         if (!billingDao.addUser(username, password)) {
             LOG.trace("Error");
             return "User already exists\n";

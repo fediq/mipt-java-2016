@@ -56,12 +56,15 @@ public class BillingDao {
     }
 
     public boolean addUser(String username, String password) {
+        LOG.trace("Adding user " + username);
         try {
             jdbcTemplate.update("INSERT INTO billing.users VALUES ('" + username + "', '" + password
                     + "', TRUE)");
         } catch (DuplicateKeyException exception) {
+            LOG.debug(exception.getMessage());
             return false;
         }
+        LOG.trace("User " + username + " was successfully added");
         return true;
     }
 
@@ -71,6 +74,7 @@ public class BillingDao {
                     + "', '" + variable.getName() + "', " + variable.getValue() + ", '" + variable
                     .getExpression() + "')");
         } catch (DuplicateKeyException exception) {
+            LOG.debug(exception.getMessage());
             return false;
         }
         return true;
@@ -110,8 +114,10 @@ public class BillingDao {
             jdbcTemplate.update("DELETE FROM billing.variables WHERE " + "username = '" + username
                     + "' AND name = '" + name + "'");
         } catch (Exception exception) {
+            LOG.debug(exception.getMessage());
             return false;
         }
+        LOG.trace("Variable " + username + ":" + name + " was successfully deleted");
         return true;
     }
 
@@ -121,8 +127,10 @@ public class BillingDao {
             jdbcTemplate.update("DELETE FROM billing.variables WHERE " + "username = '" + username
                     + "'");
         } catch (Exception exception) {
+            LOG.debug(exception.getMessage());
             return false;
         }
+        LOG.trace("Variables of " + username + " were successfully deleted");
         return true;
     }
 }
