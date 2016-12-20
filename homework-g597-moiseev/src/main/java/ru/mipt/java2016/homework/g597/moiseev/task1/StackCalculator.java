@@ -164,7 +164,7 @@ public class StackCalculator implements Calculator {
                     } else {
                         throw new ParsingException("Invalid expression");
                     }
-                } else if (Pattern.matches("[-+]?[0-9]*\\.?[0-9]", s)) {
+                } else if (Pattern.matches("[-+]?[0-9]*\\.?[0-9]*", s)) {
                     double current = Double.parseDouble(s); // Иначе это число
                     stack.push(current); // Кладем его в  стек
                 } else {
