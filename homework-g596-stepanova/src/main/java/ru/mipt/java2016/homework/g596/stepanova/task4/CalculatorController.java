@@ -75,7 +75,8 @@ public class CalculatorController {
         }
     }
 
-    @RequestMapping(path = "/add", method = RequestMethod.POST, consumes = "text/plain", produces = "text/plain")
+    @RequestMapping(path = "/add", method = RequestMethod.POST,
+            consumes = "text/plain", produces = "text/plain")
     public String add(@RequestBody String argument) throws ParsingException {
         LOG.debug("Add request: [" + argument + "]");
         String delim = "[;]";
@@ -84,21 +85,24 @@ public class CalculatorController {
         return "OK\n";
     }
 
-    @RequestMapping(path = "/delete", method = RequestMethod.DELETE, consumes = "text/plain", produces = "text/plain")
+    @RequestMapping(path = "/delete", method = RequestMethod.DELETE,
+            consumes = "text/plain", produces = "text/plain")
     public String delete(@RequestBody String argument) throws IOException {
         LOG.debug("Delete argument: [" + argument + "]");
         database.deleteArgument(argument);
         return "OK\n";
     }
 
-    @RequestMapping(path = "/check", method = RequestMethod.GET, consumes = "text/plain", produces = "text/plain")
+    @RequestMapping(path = "/check", method = RequestMethod.GET,
+            consumes = "text/plain", produces = "text/plain")
     public String check(@RequestBody String argument) throws IOException {
         LOG.debug("Check for existence of [" + argument + "] element");
         Double answer = database.loadMeaning(argument);
         return answer.toString();
     }
 
-    @RequestMapping(path = "/addUser/{variableName}", method = RequestMethod.POST, consumes = "text/plain", produces = "text/plain")
+    @RequestMapping(path = "/addUser/{variableName}", method = RequestMethod.POST,
+            consumes = "text/plain", produces = "text/plain")
     public String addUser(Authentication authentication, @RequestBody String data) {
         LOG.debug("Add new user [" + data + "]");
         String author = authentication.getName();
@@ -110,7 +114,8 @@ public class CalculatorController {
         return "OK\n";
     }
 
-    @RequestMapping(path = "/deleteUser/{variableName}", method = RequestMethod.DELETE, consumes = "text/plain", produces = "text/plain")
+    @RequestMapping(path = "/deleteUser/{variableName}", method = RequestMethod.DELETE,
+            consumes = "text/plain", produces = "text/plain")
     public String deleteUser(Authentication authentication, @RequestBody String data) {
         LOG.debug("Delete user [" + data + "]");
         String author = authentication.getName();
