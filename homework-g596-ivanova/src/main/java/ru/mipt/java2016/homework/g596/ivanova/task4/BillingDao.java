@@ -33,10 +33,6 @@ public class BillingDao {
         jdbcTemplate.execute("CREATE SCHEMA IF NOT EXISTS billing");
         jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS billing.users " +
                 "(username VARCHAR PRIMARY KEY, password VARCHAR, enabled BOOLEAN)");
-        jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS billing.variables " +
-                "(username VARCHAR, name VARCHAR, value DOUBLE)");
-        jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS billing.functions " +
-                "(username VARCHAR, name VARCHAR, arguments VARCHAR, expression VARCHAR)");
         addUserIfNotExists("username", "password", true);
     }
 

@@ -8,7 +8,6 @@ import org.springframework.boot.context.embedded.EmbeddedServletContainerCustomi
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.g596.ivanova.task1.BestCalculatorEver;
 
 @EnableAutoConfiguration
@@ -16,7 +15,7 @@ import ru.mipt.java2016.homework.g596.ivanova.task1.BestCalculatorEver;
 @ComponentScan(basePackageClasses = RestCalculatorApplication.class)
 public class RestCalculatorApplication {
     @Bean
-    public Calculator calculator() {
+    public BestCalculatorEver calculator() {
         return new BestCalculatorEver();
     }
 
@@ -32,3 +31,12 @@ public class RestCalculatorApplication {
         application.run(args);
     }
 }
+
+/**
+ * Query template.
+ curl http://localhost:9001/calculate \
+ -X POST \
+ -H "Content-Type: text/plain" \
+ -H "Authorization: Basic $(echo -n "username:password" | base64)" \
+ --data-raw ""
+ */
