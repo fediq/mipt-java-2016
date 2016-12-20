@@ -104,17 +104,18 @@ public class RestCalculatorController {
         return calculator.calculate(expression, variables, functions) + "\n";
     }
 
-    @RequestMapping(path = "/register/{userName}", method = RequestMethod.PUT,
+    @RequestMapping(path = "/register/{username}", method = RequestMethod.PUT,
             consumes = "text/plain", produces = "text/plain")
-    public String register(@PathVariable String userName, @RequestBody String pswd)
+    public String register(@PathVariable String username, @RequestBody String pswd)
             throws ParsingException {
-        LOG.debug("New user: [" + userName + ' ' + pswd + "]");
-        boolean success = calculationDao.addUserIfNotExists(userName, pswd, true);
+        LOG.debug("New user: [" + username + ' ' + pswd + "]");
+        boolean success = calculationDao.addUserIfNotExists(username, pswd, true);
         if (success) {
             LOG.trace("Success");
             return "You have been successfully registered\n";
+        } else {
+            LOG.trace("Fail");
+            return "This user already exists\n";
         }
-        LOG.trace("Fail");
-        return "This user already exists\n";
     }
 }
