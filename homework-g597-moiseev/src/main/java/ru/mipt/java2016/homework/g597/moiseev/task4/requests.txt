@@ -1,0 +1,58 @@
+Calculate expression:
+curl http://localhost:9001/calculate \
+             -X POST \
+             -H "Content-Type: text/plain" \
+             -H "Authorization: Basic $(echo -n "username:password" | base64)" \
+             --data-raw "1+1"
+
+Add variable:
+curl http://localhost:9001/variable/t \
+        -X PUT \
+        -H "Content-Type: text/plain" \
+        -H "Authorization: Basic $(echo -n "username:password" | base64)" \
+        --data-raw "3"
+
+Get variable:
+curl http://localhost:9001/variable/t \
+        -X GET  \
+        -H "Content-Type: text/plain" \
+        -H "Authorization: Basic $(echo -n "username:password" | base64)"
+
+Get variables:
+curl http://localhost:9001/variable  \
+         -X GET  \
+         -H "Content-Type: text/plain" \
+        -H "Authorization: Basic $(echo -n "username:password" | base64)"
+
+Calculate another expression:
+curl http://localhost:9001/calculate \
+             -X POST \
+             -H "Content-Type: text/plain" \
+             -H "Authorization: Basic $(echo -n "username:password" | base64)" \
+             --data-raw "1+t*t"
+
+Add function:
+curl http://localhost:9001/function/f?args=x \
+        -X PUT \
+        -H "Content-Type: text/plain" \
+        -H "Authorization: Basic $(echo -n "username:password" | base64)" \
+        --data-raw "x*x"
+
+Get function:
+curl http://localhost:9001/function/f \
+        -X GET  \
+        -H "Content-Type: text/plain" \
+        -H "Authorization: Basic $(echo -n "username:password" | base64)"
+
+Get functions:
+curl http://localhost:9001/function  \
+         -X GET  \
+         -H "Content-Type: text/plain" \
+        -H "Authorization: Basic $(echo -n "username:password" | base64)"
+
+Calculate fantastic expression:
+curl http://localhost:9001/calculate \
+             -X POST \
+             -H "Content-Type: text/plain" \
+             -H "Authorization: Basic $(echo -n "username:password" | base64)" \
+             --data-raw "t+f(t) + sqrt(f(9))"
