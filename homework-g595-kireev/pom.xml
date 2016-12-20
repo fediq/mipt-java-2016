@@ -10,6 +10,11 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>homework-g595-kireev</artifactId>
+
+    <properties>
+        <spring.boot.version>1.4.2.RELEASE</spring.boot.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>ru.mipt.java2016</groupId>
@@ -27,6 +32,7 @@
             <artifactId>homework-tests</artifactId>
             <version>1.0.0</version>
         </dependency>
+
     </dependencies>
 
 

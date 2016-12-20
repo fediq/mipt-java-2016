@@ -10,7 +10,7 @@ import java.io.IOException;
 public class MyBinaryHandler<T> {
     private MySerializator<T> tSerializator;
 
-    MyBinaryHandler(String type) {
+    public MyBinaryHandler(String type) {
         tSerializator = new MySerializator<T>(type);
     }
 
