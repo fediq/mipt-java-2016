@@ -1,243 +1,132 @@
 package ru.mipt.java2016.homework.g596.proskurina.task2;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
+import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.ExecutionException;
+import java.io.FileNotFoundException;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * Created by Lenovo on 31.10.2016.
  */
-public class ImplementationKeyValueStorage<K, V> implements ru.mipt.java2016.homework.base.task2.KeyValueStorage<K, V> {
+public class ImplementationKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
-    private final Map<K, Long> keyPositionMap;
+    private final HashMap<K, V> map = new HashMap<>();
+
+    private final String keyName;
+    private final String valueName;
 
     private final SerialiserInterface<K> keySerialiser;
     private final SerialiserInterface<V> valueSerialiser;
 
-    private final Set<K> deleteKeySet = new HashSet<>();
-
-    private final FileWorker keyPositionFile;
-    private final FileWorker valuesFile;
-    private final FileWorker deleteKeyFile;
-    private final FileWorker lockFile;
-
-    private final String directoryPath;
-
-    private Long currentPositionInValuesFile = new Long(0);
-    private final Integer lock = 42;
-
-    private boolean writing = true;
-    private boolean needRebuild = false;
+    private final FileWorker file;
+    private final String fileName;
+    private static final String VALIDATION_STRING = "EtotFileZapisanMoeiProgoi";
     private boolean openFlag = true;
 
-    private LoadingCache<K, V> cacheValues = CacheBuilder.newBuilder()
-            .maximumSize(42)
-            .build(
-                    new CacheLoader<K, V>() {
-                        @Override
-                        public V load(K k) throws RuntimeException {
-                            V result = readKey(keyPositionMap.get(k));
-                            if (result == null) {
-                                throw new RuntimeException("no such key");
-                            }
-                            return result;
-                        }
-                    });
 
-    public ImplementationKeyValueStorage(SerialiserInterface<K> keySerialiser, SerialiserInterface<V> valueSerialiser,
+    public ImplementationKeyValueStorage(String keyName, String valueName,
+                                         SerialiserInterface<K> keySerialiser, SerialiserInterface<V> valueSerialiser,
                                          String directoryPath) {
+
+        this.keyName = keyName;
+        this.valueName = valueName;
 
         this.keySerialiser = keySerialiser;
         this.valueSerialiser = valueSerialiser;
 
-        keyPositionMap = new HashMap<>();
+        file = new FileWorker();
+        fileName = directoryPath + "/myFile.db";
 
-        if (directoryPath == null || directoryPath.equals("")) {
-            this.directoryPath = "";
-        } else {
-            this.directoryPath = directoryPath + File.separator;
+        try {
+            String inputData = file.read(fileName);
+
+            String[] tokens = inputData.split("\n");
+            if (!tokens[0].equals(VALIDATION_STRING)) {
+                throw new RuntimeException("Not my file");
+            }
+            if (!tokens[1].equals(keyName)) {
+                throw new RuntimeException("Wrong key type");
+            }
+            if (!tokens[2].equals(valueName)) {
+                throw new RuntimeException("Wrong value type");
+            }
+
+            Integer objectsNumber = Integer.parseInt(tokens[3]);
+            for (int i = 0; i < objectsNumber; ++i) {
+                K key = keySerialiser.deserialise(tokens[2 * i + 4]);
+                V value = valueSerialiser.deserialise(tokens[2 * i + 5]);
+                map.put(key, value);
+            }
+
+        } catch (FileNotFoundException e) {
+            writeData();
         }
-        keyPositionFile = new FileWorker(this.directoryPath + "keyPositionFile.db");
-        valuesFile = new FileWorker(this.directoryPath + "valuesFile.db");
-        deleteKeyFile = new FileWorker(this.directoryPath + "deleteKeyFile.db");
-        lockFile = new FileWorker(this.directoryPath + "lockFile.db");
-        if (lockFile.exist()) {
-            throw new RuntimeException("we already have working storage");
-        } else {
-            lockFile.createFile();
-        }
-        if (!keyPositionFile.exist()) {
-            keyPositionFile.createFile();
-            valuesFile.createFile();
-            deleteKeyFile.createFile();
-        } else {
-            currentPositionInValuesFile =  valuesFile.fileLength();
-            initStorage();
-        }
-        valuesFile.appendMode();
+
+
     }
 
-    private void initStorage() {
-        keyPositionFile.close();
-        int cnt = 0;
-        String nextKey = keyPositionFile.read();
-        while (nextKey != null) {
-            Long position = Long.parseLong(keyPositionFile.read());
-            keyPositionMap.put(keySerialiser.deserialise(nextKey), position);
-            nextKey = keyPositionFile.read();
-            cnt++;
-        }
-        nextKey = deleteKeyFile.read();
-        while (nextKey != null) {
-            K key = keySerialiser.deserialise(nextKey);
-            deleteKeySet.add(key);
-            keyPositionMap.remove(key);
-            nextKey = deleteKeyFile.read();
-            cnt++;
-        }
-        keyPositionFile.appendMode();
-        deleteKeyFile.close();
-        if (cnt > 2 * keyPositionMap.size()) {
-            needRebuild = true;
-        }
-    }
-
-    private void checkIfStorageIsOpen() {
-        if (!openFlag) {
+    @Override
+    public V read(K key) {
+        if (openFlag) {
+            return map.get(key);
+        } else {
             throw new RuntimeException("Storage is closed");
         }
     }
 
     @Override
-    public V read(K key) {
-        synchronized (lock) {
-            checkIfStorageIsOpen();
-            Long position = keyPositionMap.get(key);
-            if (position != null) {
-                try {
-                    return cacheValues.get(key);
-                } catch (ExecutionException e) {
-                    throw new RuntimeException(e);
-                }
-            } else {
-                return null;
-            }
-        }
-    }
-
-    @Override
     public boolean exists(K key) {
-        synchronized (lock) {
-            checkIfStorageIsOpen();
-            return keyPositionMap.containsKey(key);
-        }
+        return map.containsKey(key);
     }
 
     @Override
     public void write(K key, V value) {
-        synchronized (lock) {
-            checkIfStorageIsOpen();
-            deleteKeySet.remove(key);
-            keyPositionMap.put(key, currentPositionInValuesFile);
-            writeToFile(key, value);
+        if (openFlag) {
+            map.put(key, value);
+        } else {
+            throw new RuntimeException("Storage is closed");
         }
     }
 
     @Override
     public void delete(K key) {
-        synchronized (lock) {
-            checkIfStorageIsOpen();
-            deleteKeySet.add(key);
-            keyPositionMap.remove(key);
-        }
+        map.remove(key);
     }
 
     @Override
     public Iterator<K> readKeys() {
-        synchronized (lock) {
-            checkIfStorageIsOpen();
-            return keyPositionMap.keySet().iterator();
+        if (openFlag) {
+            return map.keySet().iterator();
+        } else {
+            throw new RuntimeException("Storage is closed");
         }
     }
 
     @Override
     public int size() {
-        synchronized (lock) {
-            checkIfStorageIsOpen();
-            return keyPositionMap.size();
-        }
+        return map.size();
     }
 
     @Override
-    public void close()  throws IOException {
-        synchronized (lock) {
-            if (openFlag) {
-                openFlag = false;
-                if (needRebuild) {
-                    rebuild();
-                } else {
-                    writeToFileDeleteKeySet();
-                    deleteKeyFile.close();
-                    keyPositionFile.close();
-                    valuesFile.close();
-                }
-                lockFile.delete();
-            }
-        }
+    public void close() {
+        openFlag = false;
+        writeData();
     }
 
-    private void rebuild() {
-        FileWorker newValuesFile = new FileWorker(directoryPath + "newValuesFile.db");
-        newValuesFile.createFile();
-        deleteKeyFile.close();
-        keyPositionFile.close();
-        currentPositionInValuesFile = 0L;
-        for (Map.Entry<K, Long> entry: keyPositionMap.entrySet()) {
-            keyPositionFile.write(keySerialiser.serialise(entry.getKey()));
-            keyPositionFile.write(currentPositionInValuesFile.toString());
-            currentPositionInValuesFile += newValuesFile.write(valueSerialiser.serialise(readKey(entry.getValue())));
+    public void writeData() {
+        StringBuffer text = new StringBuffer(VALIDATION_STRING + "\n");
+        text.append(keyName).append('\n').append(valueName).append('\n');
+        text.append(map.size()).append('\n');
+        for (Map.Entry<K, V> entry : map.entrySet()) {
+            text.append(keySerialiser.serialise(entry.getKey()))
+                    .append('\n')
+                    .append(valueSerialiser.serialise(entry.getValue()))
+                    .append('\n');
         }
-        keyPositionFile.flushSubmit();
-        newValuesFile.flushSubmit();
-        valuesFile.close();
-        valuesFile.delete();
-        newValuesFile.rename(directoryPath + "valuesFile.db");
-        newValuesFile.close();
+        file.write(fileName, text.toString());
+
     }
 
-    private V readKey(long position) {
-        if (writing) {
-            valuesFile.close();
-            writing = false;
-        }
-        valuesFile.goToPosition(position);
-        return valueSerialiser.deserialise(valuesFile.read());
-    }
-
-    private void writeToFile(K key, V value) {
-        if (!writing) {
-            valuesFile.close();
-            valuesFile.appendMode();
-            writing = true;
-        }
-        keyPositionFile.write(keySerialiser.serialise(key));
-        keyPositionFile.write(currentPositionInValuesFile.toString());
-        currentPositionInValuesFile +=  valuesFile.write(valueSerialiser.serialise(value));
-    }
-
-    private void writeToFileDeleteKeySet() {
-        if (!deleteKeyFile.exist()) {
-            deleteKeyFile.createFile();
-        }
-        for (K entry : deleteKeySet) {
-            deleteKeyFile.write(keySerialiser.serialise(entry));
-        }
-        deleteKeyFile.flushSubmit();
-        deleteKeySet.clear();
-    }
 }

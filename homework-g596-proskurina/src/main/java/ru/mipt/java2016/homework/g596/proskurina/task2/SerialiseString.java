@@ -16,8 +16,4 @@ public class SerialiseString implements SerialiserInterface<String> {
         return inString;
     }
 
-    @Override
-    public String getType() {
-        return "String";
-    }
 }

@@ -7,19 +7,22 @@ public class ImplementationKeyValueStorageTest extends AbstractSingleFileStorage
 
         @Override
         protected KeyValueStorage buildStringsStorage(String path) {
-            return new ImplementationKeyValueStorage<>(new SerialiseString(), new SerialiseString(),
+            return new ImplementationKeyValueStorage<>("String", "Sering",
+                    new SerialiseString(), new SerialiseString(),
                                     path) ;
         }
 
         @Override
         protected KeyValueStorage buildNumbersStorage(String path) {
-            return new ImplementationKeyValueStorage<>(new SerialiseInteger(), new SerialiseDouble(),
+            return new ImplementationKeyValueStorage<>("Integer", "Double",
+                    new SerialiseInteger(), new SerialiseDouble(),
                     path) ;
         }
 
         @Override
         protected KeyValueStorage buildPojoStorage(String path) {
-            return new ImplementationKeyValueStorage<>(new SerialiseStudentKey(), new SerialiseStudent(),
+            return new ImplementationKeyValueStorage<>("StudentKey", "Student",
+                    new SerialiseStudentKey(), new SerialiseStudent(),
                     path) ;
         }
 

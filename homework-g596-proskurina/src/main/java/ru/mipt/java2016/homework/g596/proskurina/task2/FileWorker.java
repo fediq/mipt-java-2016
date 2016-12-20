@@ -1,165 +1,57 @@
 package ru.mipt.java2016.homework.g596.proskurina.task2;
 
 import java.io.*;
-import java.nio.ByteBuffer;
 
 /**
  * Created by Lenovo on 31.10.2016.
  */
-public class FileWorker implements Closeable {
+public class FileWorker {
 
-    private final File file;
-    private final String fileName;
-
-    private InputStream readBuffer = null;
-    private OutputStream writeBuffer = null;
-
-    private long currentPositionInStream = 0;
-
-    public FileWorker(String fileName) {
-        this.file = new File(fileName);
-        this.fileName = fileName;
+    private static void exists(String fileName) throws FileNotFoundException {
+        File file = new File(fileName);
+        if (!file.exists()) {
+            throw new FileNotFoundException(file.getName());
+        }
     }
 
-    public void createFile() {
+    public FileWorker() {
+    }
+
+    public static String read(String fileName) throws FileNotFoundException {
+
+        StringBuffer inputData = new StringBuffer();
+        exists(fileName);
+        File file = new File(fileName);
+
         try {
-            file.createNewFile();
-        } catch (IOException e) {
-            System.out.println("file didn't created");
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void rename(String newName) {
-        File newFile = new File(newName);
-        file.renameTo(newFile);
-    }
-
-    public void appendMode() {  
-        try {
-            close();
-            writeBuffer = new FileOutputStream(file.getAbsoluteFile(), true);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public boolean exist() {
-        return file.exists();
-    }
-
-    private boolean innerExist() throws FileNotFoundException {
-        if (!exist()) {
-            throw new FileNotFoundException(fileName);
-        }
-        return true;
-    }
-
-    public void flushSubmit() {
-        if (writeBuffer != null) {
+            BufferedReader in = new BufferedReader(new FileReader(file.getAbsoluteFile()));
             try {
-                writeBuffer.flush();
-                writeBuffer.close();
-                writeBuffer = null;
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
-    public long write(String str) {
-        try {
-            innerExist();
-            if (writeBuffer == null) {
-                writeBuffer = new BufferedOutputStream(new FileOutputStream(file.getAbsoluteFile()));
-            }
-            byte[] bytes = str.getBytes();
-            byte[] bytesNumber = ByteBuffer.allocate(4).putInt(bytes.length).array();
-            writeBuffer.write(bytesNumber);
-            writeBuffer.write(bytes);
-            return 4 + bytes.length;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public String read() {
-        try {
-            innerExist();
-            if (readBuffer == null) {
-                readBuffer = new BufferedInputStream(new FileInputStream(file.getAbsoluteFile()));
-                currentPositionInStream = 0;
-            }
-            if (readBuffer.available() < 4) {
-                readBuffer.close();
-                readBuffer = null;
-                return null;
-            }
-            byte[] bytesNumberArray = new byte[4];
-            int bytesNumberArraySize = readBuffer.read(bytesNumberArray, 0, 4);
-            //addToCalc(bytes);
-            if (bytesNumberArraySize < 4) {
-                readBuffer.close();
-                throw new RuntimeException("Error in reading bytes number");
-            }
-            currentPositionInStream += bytesNumberArraySize;
-            int bytesNumber = ByteBuffer.wrap(bytesNumberArray).getInt();
-            byte[] bytesArray = new byte[bytesNumber];
-            int bytesArraySize = readBuffer.read(bytesArray, 0, bytesNumber);
-            //addToCalc(bytes);
-            if (bytesArraySize < bytesNumber) {
-                readBuffer.close();
-                throw new RuntimeException("Error in reading bytes");
-            }
-            currentPositionInStream += bytesArraySize;
-            return new String(bytesArray);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public long fileLength() {
-        try (FileInputStream inputStream = new FileInputStream(file.getAbsoluteFile())) {
-            return inputStream.available();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void goToPosition(long position) {
-        try {
-            innerExist();
-            if (readBuffer == null || currentPositionInStream > position) {
-                if (readBuffer != null) {
-                    readBuffer.close();
+                String s;
+                while ((s = in.readLine()) != null) {
+                    inputData.append(s);
+                    inputData.append("\n");
                 }
-                readBuffer = new BufferedInputStream(new FileInputStream(file.getAbsoluteFile()));
-                currentPositionInStream = 0;
-            }
-            while (currentPositionInStream < position) {
-                currentPositionInStream += readBuffer.skip(position - currentPositionInStream);
+            } finally {
+                in.close();
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        return inputData.toString();
     }
 
-    public void delete() {
-        file.delete();
-    }
+    public static void write(String fileName, String text) {
 
-    @Override
-    public void close() {
+        File file = new File(fileName);
         try {
-            if (readBuffer != null) {
-                readBuffer.close();
-                currentPositionInStream = 0;
-                readBuffer = null;
+            if (!file.exists()) {
+                file.createNewFile();
             }
-            if (writeBuffer != null) {
-                writeBuffer.flush();
-                writeBuffer.close();
-                writeBuffer = null;
+            PrintWriter out = new PrintWriter(file.getAbsoluteFile());
+            try {
+                out.print(text);
+            } finally {
+                out.close();
             }
         } catch (IOException e) {
             throw new RuntimeException(e);

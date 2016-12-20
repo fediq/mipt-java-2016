@@ -42,8 +42,4 @@ public class SerialiseStudent implements SerialiserInterface<Student> {
         return new Student(groupId, name, hometown, birthDate, hasDormitory, averageScore);
     }
 
-    @Override
-    public String getType() {
-        return "Student";
-    }
 }

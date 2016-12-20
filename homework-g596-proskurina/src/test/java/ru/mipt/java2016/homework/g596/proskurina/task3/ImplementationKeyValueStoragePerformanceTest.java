@@ -1,7 +1,7 @@
 package ru.mipt.java2016.homework.g596.proskurina.task3;
 
-import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.g596.proskurina.task2.*;
+import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.tests.task3.KeyValueStoragePerformanceTest;
 
 /**

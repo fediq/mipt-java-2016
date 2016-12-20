@@ -9,5 +9,4 @@ public interface SerialiserInterface<T> {
 
     T deserialise(String inString);
 
-    String getType();
 }
