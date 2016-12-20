@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import javax.sql.DataSource;
 
 @Configuration
-public class BillingDatabaseConfiguration {
+public class CalculationDatabaseConfiguration {
     @Bean
     public DataSource billingDataSource(
             @Value("${ru.mipt.java2016.homework.g597.moiseev.task4.jdbcUrl}") String jdbcUrl,

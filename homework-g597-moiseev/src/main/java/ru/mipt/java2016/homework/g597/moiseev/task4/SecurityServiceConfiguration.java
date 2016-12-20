@@ -20,7 +20,7 @@ public class SecurityServiceConfiguration extends WebSecurityConfigurerAdapter {
     private static final Logger LOG = LoggerFactory.getLogger(SecurityServiceConfiguration.class);
 
     @Autowired
-    private BillingDao billingDao;
+    private CalculationDao calculationDao;
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
@@ -42,7 +42,7 @@ public class SecurityServiceConfiguration extends WebSecurityConfigurerAdapter {
         LOG.info("Registering global user details service");
         auth.userDetailsService(username -> {
             try {
-                BillingUser user = billingDao.loadUser(username);
+                CalculationUser user = calculationDao.loadUser(username);
                 return new User(
                         user.getUsername(),
                         user.getPassword(),

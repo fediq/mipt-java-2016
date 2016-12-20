@@ -16,8 +16,8 @@ import java.sql.SQLException;
 import java.util.*;
 
 @Repository
-public class BillingDao {
-    private static final Logger LOG = LoggerFactory.getLogger(BillingDao.class);
+public class CalculationDao {
+    private static final Logger LOG = LoggerFactory.getLogger(CalculationDao.class);
 
     @Autowired
     private DataSource dataSource;
@@ -185,15 +185,15 @@ public class BillingDao {
         }
     }
 
-    public BillingUser loadUser(String username) throws EmptyResultDataAccessException {
+    public CalculationUser loadUser(String username) throws EmptyResultDataAccessException {
         LOG.trace("Querying for user " + username);
         return jdbcTemplate.queryForObject(
                 "SELECT username, password, enabled FROM billing.users WHERE username = ?",
                 new Object[]{username},
-                new RowMapper<BillingUser>() {
+                new RowMapper<CalculationUser>() {
                     @Override
-                    public BillingUser mapRow(ResultSet rs, int rowNum) throws SQLException {
-                        return new BillingUser(
+                    public CalculationUser mapRow(ResultSet rs, int rowNum) throws SQLException {
+                        return new CalculationUser(
                                 rs.getString("username"),
                                 rs.getString("password"),
                                 rs.getBoolean("enabled")

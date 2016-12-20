@@ -17,25 +17,23 @@ import java.util.Map;
 public class RestCalculatorController {
     private static final Logger LOG = LoggerFactory.getLogger(RestCalculatorController.class);
 
-
-
     @Autowired
     private PowerfulCalculator calculator;
 
     @Autowired
-    private BillingDao billingDao;
+    private CalculationDao calculationDao;
 
     @RequestMapping(path = "/variable/{name}", method = RequestMethod.GET, produces = "text/plain")
     public String getVariable(Authentication authentication, @PathVariable String name) throws ParsingException {
         String ourName = authentication.getName();
-        Double result = billingDao.getVariable(ourName, name);
+        Double result = calculationDao.getVariable(ourName, name);
         return name + " = " + result + "\n";
     }
 
     @RequestMapping(path = "/variable/{name}", method = RequestMethod.DELETE, produces = "text/plain")
     public String deleteVariable(Authentication authentication, @PathVariable String name) throws ParsingException {
         String username = authentication.getName();
-        boolean success = billingDao.deleteVariable(username, name);
+        boolean success = calculationDao.deleteVariable(username, name);
         if (success) {
             return name + " deleted\n";
         } else {
@@ -48,14 +46,14 @@ public class RestCalculatorController {
     public String addVariable(Authentication authentication, @PathVariable String name, @RequestBody String value)
             throws ParsingException {
         String username = authentication.getName();
-        billingDao.addVariable(username, name, Double.parseDouble(value));
+        calculationDao.addVariable(username, name, Double.parseDouble(value));
         return "Variable added\n";
     }
 
     @RequestMapping(path = "/variable", method = RequestMethod.GET, produces = "text/plain")
     public String getVariables(Authentication authentication) throws ParsingException {
         String username = authentication.getName();
-        Map<String, Double> result = billingDao.getVariables(username);
+        Map<String, Double> result = calculationDao.getVariables(username);
         return String.join(", ", result.keySet()) + "\n" +
                 "";
     }
@@ -63,14 +61,14 @@ public class RestCalculatorController {
     @RequestMapping(path = "/function/{name}", method = RequestMethod.GET, produces = "text/plain")
     public String getFunction(Authentication authentication, @PathVariable String name) throws ParsingException {
         String ourName = authentication.getName();
-        Function result = billingDao.getFunction(ourName, name);
+        Function result = calculationDao.getFunction(ourName, name);
         return name + "(" + String.join(", ", result.getArguments()) + ")" + " = " + result.getExpression() + "\n";
     }
 
     @RequestMapping(path = "/function/{name}", method = RequestMethod.DELETE, produces = "text/plain")
     public String deleteFunction(Authentication authentication, @PathVariable String name) throws ParsingException {
         String username = authentication.getName();
-        boolean success = billingDao.deleteFunction(username, name);
+        boolean success = calculationDao.deleteFunction(username, name);
         if (success) {
             return name + " deleted\n";
         } else {
@@ -86,14 +84,14 @@ public class RestCalculatorController {
             throws ParsingException {
         String username = authentication.getName();
         List<String> arguments = Arrays.asList(args.split(","));
-        billingDao.addFunction(username, name, arguments, expression);
+        calculationDao.addFunction(username, name, arguments, expression);
         return "Function added\n";
     }
 
     @RequestMapping(path = "/function", method = RequestMethod.GET, produces = "text/plain")
     public String getFunctions(Authentication authentication) throws ParsingException {
         String username = authentication.getName();
-        Map<String, Function> result = billingDao.getFunctions(username);
+        Map<String, Function> result = calculationDao.getFunctions(username);
         return String.join(", ", result.keySet()) + "\n";
     }
 
@@ -101,8 +99,8 @@ public class RestCalculatorController {
     public String calculate(Authentication authentication, @RequestBody String expression) throws ParsingException {
         LOG.debug("Calculation request: [" + expression + "]");
         String username = authentication.getName();
-        Map<String, Double> variables = billingDao.getVariables(username);
-        Map<String, Function> functions = billingDao.getFunctions(username);
+        Map<String, Double> variables = calculationDao.getVariables(username);
+        Map<String, Function> functions = calculationDao.getFunctions(username);
         return calculator.calculate(expression, variables, functions) + "\n";
     }
 
@@ -111,7 +109,7 @@ public class RestCalculatorController {
     public String register(@PathVariable String userName, @RequestBody String pswd)
             throws ParsingException {
         LOG.debug("New user: [" + userName + ' ' + pswd + "]");
-        boolean success = billingDao.addUserIfNotExists(userName, pswd, true);
+        boolean success = calculationDao.addUserIfNotExists(userName, pswd, true);
         if (success) {
             LOG.trace("Success");
             return "You have been successfully registered\n";

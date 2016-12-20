@@ -1,11 +1,11 @@
 package ru.mipt.java2016.homework.g597.moiseev.task4;
 
-public class BillingUser {
+public class CalculationUser {
     private final String username;
     private final String password;
     private final boolean enabled;
 
-    public BillingUser(String username, String password, boolean enabled) {
+    public CalculationUser(String username, String password, boolean enabled) {
         if (username == null) {
             throw new IllegalArgumentException("Null username is not allowed");
         }
@@ -31,7 +31,7 @@ public class BillingUser {
 
     @Override
     public String toString() {
-        return "BillingUser{" +
+        return "CalculationUser{" +
                 "username='" + username + '\'' +
                 ", password='" + password + '\'' +
                 ", enabled=" + enabled +
@@ -47,7 +47,7 @@ public class BillingUser {
             return false;
         }
 
-        BillingUser that = (BillingUser) o;
+        CalculationUser that = (CalculationUser) o;
 
         if (enabled != that.enabled) {
             return false;
