@@ -3,6 +3,7 @@ package ru.mipt.java2016.homework.g596.gerasimov.task4;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Vector;
 import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -30,13 +31,16 @@ public class BillingDao {
 
     public void initSchema() {
         LOG.trace("Initializing schema");
-        //        jdbcTemplate.execute("DROP SCHEMA IF EXISTS billing");
+//        jdbcTemplate.execute("DROP SCHEMA IF EXISTS billing");
         jdbcTemplate.execute("CREATE SCHEMA IF NOT EXISTS billing");
         jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS billing.users "
                 + "(username VARCHAR PRIMARY KEY, password VARCHAR, enabled BOOLEAN)");
         jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS billing.variables "
                 + "(username VARCHAR, name VARCHAR, value DOUBLE, expression VARCHAR,"
                 + " CONSTRAINT PK_variable PRIMARY KEY (username, name))");
+        jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS billing.functions "
+                + "(username VARCHAR, name VARCHAR, args VARCHAR, expression VARCHAR,"
+                + " CONSTRAINT PK_function PRIMARY KEY (username, name))");
         jdbcTemplate.execute("DELETE FROM billing.users WHERE username = 'username'");
         jdbcTemplate.update("INSERT INTO billing.users VALUES ('username', 'password', TRUE)");
     }
@@ -132,5 +136,88 @@ public class BillingDao {
         }
         LOG.trace("Variables of " + username + " were successfully deleted");
         return true;
+    }
+
+    public BillingFunction getFunction(String username, String name) {
+        LOG.trace("Querying for function " + username + ":" + name);
+        return jdbcTemplate.queryForObject(
+                "SELECT username, name, args, expression FROM billing.functions WHERE "
+                        + "username = '" + username + "' AND name = '" + name + "'",
+                new RowMapper<BillingFunction>() {
+                    @Override
+                    public BillingFunction mapRow(ResultSet rs, int rowNum) throws SQLException {
+                        return new BillingFunction(rs.getString("username"), rs.getString("name"),
+                                decodeArgs(rs.getString("args")), rs.getNString("expression"));
+                    }
+                });
+    }
+
+
+    public boolean addFunction(BillingFunction function) {
+        try {
+            jdbcTemplate.update("Insert INTO billing.functions VALUES ('" + function.getUsername()
+                    + "', '" + function.getName() + "', '" + encodeArgs(function.getArgsName()) +
+                    "', '" + function.getExpression() + "')");
+        } catch (DuplicateKeyException exception) {
+            LOG.debug(exception.getMessage());
+            return false;
+        }
+        return true;
+    }
+
+    public List<BillingFunction> getAllFunctions(String username) {
+        LOG.trace("Querying for all functions for " + username);
+        return jdbcTemplate
+                .query("SELECT username, name, args, expression FROM billing.functions WHERE "
+                        + "username = '" + username + "'",
+                        new RowMapper<BillingFunction>() {
+                            @Override
+                            public BillingFunction mapRow(ResultSet rs, int rowNum) throws SQLException {
+                                return new BillingFunction(rs.getString("username"), rs.getString("name"),
+                                        decodeArgs(rs.getString("args")), rs.getNString("expression"));
+                            }
+                        });
+    }
+
+    public boolean deleteFunction(String username, String name) {
+        LOG.trace("Deleting variable " + username + ":" + name);
+        try {
+            jdbcTemplate.update("DELETE FROM billing.functions WHERE " + "username = '" + username
+                    + "' AND name = '" + name + "'");
+        } catch (Exception exception) {
+            LOG.debug(exception.getMessage());
+            return false;
+        }
+        LOG.trace("Function " + username + ":" + name + " was successfully deleted");
+        return true;
+    }
+
+
+    private Vector<String> decodeArgs(String code) {
+        List<String> argsName = new Vector<>();
+        StringBuilder stringBuilder = new StringBuilder();
+
+        for (char currentChar : code.toCharArray()) {
+            if (currentChar == ',') {
+                argsName.add(stringBuilder.toString());
+                stringBuilder.setLength(0);
+            } else {
+                stringBuilder.append(currentChar);
+            }
+        }
+        argsName.add(stringBuilder.toString());
+
+        return new Vector(argsName);
+    }
+
+    private String encodeArgs(List<String> argsName) {
+        StringBuilder stringBuilder = new StringBuilder();
+
+        for (String arg : argsName) {
+            stringBuilder.append(arg + ",");
+        }
+        stringBuilder.deleteCharAt(stringBuilder.length() - 1);
+
+        return stringBuilder.toString();
     }
 }

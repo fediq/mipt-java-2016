@@ -1,30 +1,30 @@
 package ru.mipt.java2016.homework.g596.gerasimov.task4.NewCalculator;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Stack;
 import java.util.Vector;
-import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
+import ru.mipt.java2016.homework.g596.gerasimov.task4.BillingFunction;
 
 /**
  * Created by geras-artem on 12.10.16.
  */
 
-public class NewCalculator implements Calculator {
-    @Override
-    public double calculate(String expression) throws ParsingException {
+public class NewCalculator {
+    public double calculate(String expression, List<BillingFunction> funcs) throws ParsingException {
         if (expression == null) {
             throw new ParsingException("Wrong expression");
         }
         expression = expression.replaceAll("[\\s]", "");
-        ArrayList<Token> iExpr = tokenize(expression);
+        ArrayList<Token> iExpr = tokenize(expression, funcs);
         if (iExpr.size() == 0) {
             throw new ParsingException("Wrong expression");
         }
         return calculation(iExpr);
     }
 
-    private ArrayList<Token> tokenize(String expression) throws ParsingException {
+    private ArrayList<Token> tokenize(String expression, List<BillingFunction> funcs) throws ParsingException {
         ArrayList<Token> res = new ArrayList<>();
         char currentChar;
         boolean gotNum = false;
@@ -102,7 +102,7 @@ public class NewCalculator implements Calculator {
                 for (; i < expression.length() && tempBracketBalance > 0; ++i) {
                     currentChar = expression.charAt(i);
                     if (currentChar == ',' && tempBracketBalance == 1) {
-                        arguments.addElement(calculate(argument.toString()));
+                        arguments.addElement(calculate(argument.toString(), funcs));
                         argument.setLength(0);
                         continue;
                     }
@@ -112,7 +112,7 @@ public class NewCalculator implements Calculator {
                     if (currentChar == ')') {
                         --tempBracketBalance;
                         if (tempBracketBalance == 0) {
-                            arguments.addElement(calculate(argument.toString()));
+                            arguments.addElement(calculate(argument.toString(), funcs));
                             break;
                         }
                     }
@@ -125,7 +125,7 @@ public class NewCalculator implements Calculator {
 
                 gotNum = true;
                 gotUOp = false;
-                res.add(new FunctionToken(functionName.toString(), arguments));
+                res.add(new FunctionToken(functionName.toString(), arguments, funcs, this));
             }
         }
 

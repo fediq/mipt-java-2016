@@ -1,8 +1,10 @@
 package ru.mipt.java2016.homework.g596.gerasimov.task4.NewCalculator;
 
+import java.util.List;
 import java.util.Random;
 import java.util.Vector;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
+import ru.mipt.java2016.homework.g596.gerasimov.task4.BillingFunction;
 
 /**
  * Created by geras-artem on 19.12.16.
@@ -14,13 +16,14 @@ public class FunctionToken extends Token {
 
     private final double value;
 
-    public FunctionToken(String functionName, Vector<Double> arguments) throws ParsingException {
+    public FunctionToken(String functionName, Vector<Double> arguments, List<BillingFunction> funcs,
+            NewCalculator calculator) throws ParsingException {
         this.functionName = functionName;
         this.arguments = arguments;
-        this.value = calculateValue();
+        this.value = calculateValue(funcs, calculator);
     }
 
-    private double calculateValue() throws ParsingException {
+    private double calculateValue(List<BillingFunction> funcs, NewCalculator calculator) throws ParsingException {
         Double[] args = arguments.toArray(new Double[arguments.size()]);
 
         switch (functionName) {
@@ -85,7 +88,19 @@ public class FunctionToken extends Token {
                 }
                 return Math.min(args[0], args[1]);
             default:
-                throw new ParsingException("Wrong function name: " + functionName);
+                BillingFunction function = null;
+                for (BillingFunction temp : funcs) {
+                    if (temp.getName().equals(functionName)) {
+                        function = temp;
+                        break;
+                    }
+                }
+
+                if (function == null) {
+                    throw new ParsingException("Wrong function name: " + functionName);
+                }
+
+                return function.calculate(arguments, funcs, calculator);
         }
     }
 

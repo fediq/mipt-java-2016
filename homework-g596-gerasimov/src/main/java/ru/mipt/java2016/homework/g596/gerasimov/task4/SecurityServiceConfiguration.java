@@ -24,7 +24,8 @@ public class SecurityServiceConfiguration extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
         LOG.info("Configuring security");
         http.httpBasic().realmName("Calculator").and().formLogin().disable().logout().disable()
-                .csrf().disable().authorizeRequests().antMatchers("/eval/**", "/variable/**").authenticated()
+                .csrf().disable().authorizeRequests().antMatchers("/eval/**", "/variable/**",
+                "/function/**").authenticated()
                 .anyRequest().permitAll();
     }
 
