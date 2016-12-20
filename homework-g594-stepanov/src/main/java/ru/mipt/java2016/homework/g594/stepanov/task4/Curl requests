@@ -1,0 +1,21 @@
+curl http://localhost:9001/eval -X POST -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "username:password" | base64)" --data "44*3+2"
+
+curl http://localhost:9001/register?args="ilia,pwd" -X POST -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "username:password" | base64)"
+
+curl http://localhost:9001/variable/a?value="5" -X PUT -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "username:password" | base64)"
+curl http://localhost:9001/variable/a -X GET -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "username:password" | base64)"
+
+curl http://localhost:9001/eval -X POST -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "ilia:pwd" | base64)" --data "44*3+2"
+
+
+
+curl http://localhost:9001/function/sum?valency="2" -X PUT -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "username:password" | base64)" --data "a+b"
+curl http://localhost:9001/function/sum -X GET -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "username:password" | base64)"
+curl http://localhost:9001/eval -X POST -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "username:password" | base64)" --data "sum(4, 5)"
+
+
+запросы для счёта
+2+5-4 (3)
+cos(0) (~1)
+sqrt(2)+4*3 (13.41)
+cos(5+9) * sin(3 + sqrt(2)) + 3

@@ -14,12 +14,14 @@ public class IntegerDoubleSerializator extends ObjectSerializator<Integer, Doubl
     public void write(Integer key, Double value) throws IOException {
         Pair p = new Pair(key, value);
         currentHash += p.hashCode();
-        outputStream.print(start);
-        outputStream.print(key);
-        outputStream.print(separator);
-        outputStream.print(value);
-        outputStream.print(finish);
-        outputStream.print("\n");
+        StringBuilder sb = new StringBuilder("");
+        sb.append(start);
+        sb.append(key);
+        sb.append(separator);
+        sb.append(value);
+        sb.append(finish);
+        sb.append("\n");
+        outputStream.print(sb.toString());
     }
 
     @Override

@@ -5,7 +5,7 @@ import ru.mipt.java2016.homework.tests.task2.AbstractSingleFileStorageTest;
 import ru.mipt.java2016.homework.tests.task2.Student;
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
 
-public class KeyValueStorageTestImplementation extends AbstractSingleFileStorageTest{
+public class KeyValueStorageTest extends AbstractSingleFileStorageTest{
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String path) {
         return new KeyValueStorageImplementation(path, "String", "String");

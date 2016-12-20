@@ -10,6 +10,15 @@ public abstract class ObjectSerializator<K, V> {
 
     abstract Pair<K, V> read() throws IOException;
 
+    protected Integer currentHash = 0;
+    protected boolean validState = true;
+    private String path;
+    private String storageName;
+    private String hashName;
+
+    private boolean writing = false;
+    private boolean reading = false;
+
     protected String start = "[";
     protected String numerator = ",";
     protected String separator = ":";
@@ -19,11 +28,6 @@ public abstract class ObjectSerializator<K, V> {
 
     public ObjectSerializator(String directory) throws IOException {
         path = directory;
-        File dir = new File(directory);
-        if (!dir.exists()) {
-            dir.mkdir();
-            dir.createNewFile();
-        }
         StringBuilder builder = new StringBuilder();
         builder.append(path);
         builder.append("/Storage.db");
@@ -32,13 +36,12 @@ public abstract class ObjectSerializator<K, V> {
         builder.append(path);
         builder.append("/HashCode.txt");
         hashName = builder.toString();
-        if ((new File(storageName).exists())) {
-            if (!validate()) {
-                validState = false;
-            }
-        } else {
-            File tmp = new File(storageName);
-            tmp.createNewFile();
+        File storageFile = new File(storageName);
+        storageFile.createNewFile();
+        File hashFile = new File(hashName);
+        hashFile.createNewFile();
+        if (!validate()) {
+            validState = false;
         }
     }
 
@@ -61,7 +64,11 @@ public abstract class ObjectSerializator<K, V> {
         }
         BufferedReader hashReader = new BufferedReader(new FileReader(hashName));
         String writtenHash = hashReader.readLine();
-        if (Integer.parseInt(writtenHash) != currentHash) {
+        if (writtenHash == null) {
+            if (currentHash != 0) {
+                validState = false;
+            }
+        } else if (Integer.parseInt(writtenHash) != currentHash) {
             validState = false;
         }
         hashReader.close();
@@ -110,15 +117,6 @@ public abstract class ObjectSerializator<K, V> {
         outputStream.print(currentHash);
         outputStream.close();
     }
-
-    protected Integer currentHash = 0;
-    protected boolean validState = true;
-    private String path;
-    private String storageName;
-    private String hashName;
-
-    private boolean writing = false;
-    private boolean reading = false;
 
     public void setCurrentHashToNull() {
         currentHash = 0;
