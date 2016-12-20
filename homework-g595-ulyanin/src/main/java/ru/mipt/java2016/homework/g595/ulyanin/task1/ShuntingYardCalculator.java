@@ -32,14 +32,14 @@ public class ShuntingYardCalculator implements Calculator {
             this.postfix = infixToPostfix(splitExpressionToTokens(expression));
         }
 
-        public Double apply(ArrayList<Double> arguments) throws ParsingException {
-            ArrayList<Token> newPostfix = replaceWithArguments(postfix, arguments);
+        public Double apply(ArrayList<Double> argumentValues) throws ParsingException {
+            ArrayList<Token> newPostfix = replaceWithArguments(postfix, argumentValues);
             return calculatePostfix(newPostfix);
         }
 
-        private ArrayList<Token> replaceWithArguments(ArrayList<Token> postfix, ArrayList<Double> argValues) {
+        private ArrayList<Token> replaceWithArguments(ArrayList<Token> postfixToReplace, ArrayList<Double> argValues) {
             ArrayList<Token> newPostfix = new ArrayList<>();
-            for (Token token : postfix) {
+            for (Token token : postfixToReplace) {
                 int argN = arguments.indexOf(token.data);
                 if (argN == -1) {
                     newPostfix.add(token);

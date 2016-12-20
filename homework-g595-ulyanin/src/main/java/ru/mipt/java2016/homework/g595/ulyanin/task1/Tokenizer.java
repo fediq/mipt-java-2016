@@ -102,6 +102,7 @@ public class Tokenizer {
         }
         return token.toString();
     }
+
     private String readFunctionName() throws ParsingException {
         StringBuilder token = new StringBuilder();
         while (characterExist() && isFunctionName(getCurrentChar())) {
