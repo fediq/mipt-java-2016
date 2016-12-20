@@ -1,15 +1,13 @@
 package ru.mipt.java2016.homework.g595.popovkin.task2;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 
 /**
  * Created by Howl on 30.10.2016.
  */
-interface ItemParser<T> {
+public interface ItemParser<T> {
 
-    void serialize(T arg, FileOutputStream out) throws IOException;
+    void serialize(T arg, OutputStream out) throws IOException;
 
-    T deserialize(FileInputStream in) throws IOException;
+    T deserialize(InputStream in) throws IOException;
 }

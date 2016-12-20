@@ -31,7 +31,9 @@ public final class IntegerSerialisation implements Serialisation<Integer> {
     }
 
     @Override
-    public void write(final DataOutput file, final Integer object) throws IOException {
+    public long write(final DataOutput file, final Integer object) throws IOException {
+        long intSize = 4;
         file.writeInt(object);
+        return intSize;
     }
 }

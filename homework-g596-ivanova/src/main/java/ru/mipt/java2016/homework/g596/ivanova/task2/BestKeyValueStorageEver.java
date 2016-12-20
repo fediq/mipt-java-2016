@@ -17,7 +17,7 @@ import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
  * @param <K> - type of key.
  * @param <V> - type of value.
  */
-public final class BestKeyValueStorageEver<K, V> implements KeyValueStorage<K, V> {
+public class BestKeyValueStorageEver<K, V> implements KeyValueStorage<K, V> {
     /**
      * Serialisation instance for serialising keys.
      */
@@ -29,14 +29,9 @@ public final class BestKeyValueStorageEver<K, V> implements KeyValueStorage<K, V
     private Serialisation<V> valueSerialisation;
 
     /**
-     * File where all the data stored.
-     */
-    private RandomAccessFile file;
-
-    /**
      * Name of our file.
      */
-    private String fileName;
+    private String filePath;
 
     /**
      * We'll use map from standard library to work with elements.
@@ -46,10 +41,15 @@ public final class BestKeyValueStorageEver<K, V> implements KeyValueStorage<K, V
     private Map<K, V> map;
 
     /**
+     * File where all the data stored.
+     */
+    private RandomAccessFile file;
+
+    /**
      * @throws IOException - if I/O troubles occure.
      * @throws RuntimeException - if file containes two equal keys or key without value.
      */
-    private void getDataFromFile() throws IOException {
+    private void initStorage() throws IOException {
         file.seek(0); // go to the start
         map.clear();
 
@@ -85,53 +85,49 @@ public final class BestKeyValueStorageEver<K, V> implements KeyValueStorage<K, V
             throw new FileNotFoundException("No such directory.");
         }
 
-        map = new HashMap<K, V>();
-        fileName = name;
+        map = new HashMap<>();
+        filePath = path + File.separator + name;
         keySerialisation = kSerialisation;
         valueSerialisation = vSerialisation;
 
-        String storagePath  = path + File.separator + name;
-
-        file = new RandomAccessFile(storagePath, "rw");
+        file = new RandomAccessFile(filePath, "rw");
         if (file.length() != 0) {
-            getDataFromFile();
+            initStorage();
         }
     }
 
-
-
     @Override
-    public V read(final K key) {
+    public final V read(final K key) {
         return map.get(key);
     }
 
     @Override
-    public boolean exists(final K key) {
+    public final boolean exists(final K key) {
         return map.containsKey(key);
     }
 
     @Override
-    public void write(final K key, final V value) {
+    public final void write(final K key, final V value) {
         map.put(key, value);
     }
 
     @Override
-    public void delete(final K key) {
+    public final void delete(final K key) {
         map.remove(key);
     }
 
     @Override
-    public Iterator<K> readKeys() {
+    public final Iterator<K> readKeys() {
         return map.keySet().iterator();
     }
 
     @Override
-    public int size() {
+    public final int size() {
         return map.size();
     }
 
     @Override
-    public void close() throws IOException {
+    public final void close() throws IOException {
         file.setLength(0); // clear file
         file.seek(0); // go to the beginning
 
