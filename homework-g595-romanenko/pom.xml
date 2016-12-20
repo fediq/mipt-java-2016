@@ -8,7 +8,6 @@
         <version>1.0.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-
     <artifactId>homework-g595-romanenko</artifactId>
     <dependencies>
         <dependency>
@@ -21,8 +20,17 @@
             <groupId>ru.mipt.java2016</groupId>
             <artifactId>homework-tests</artifactId>
             <version>1.0.0</version>
+            <scope>test</scope>
         </dependency>
-        
+
+
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>20.0</version>
+        </dependency>
+
+
     </dependencies>
 
 </project>

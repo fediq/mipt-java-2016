@@ -11,7 +11,6 @@ import java.util.Iterator;
 import java.util.Map;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 
-
 public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private Map<K, V> database = new HashMap<>();

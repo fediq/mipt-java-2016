@@ -31,7 +31,9 @@ public final class BooleanSerialisation implements Serialisation<Boolean> {
     }
 
     @Override
-    public void write(final DataOutput file, final Boolean object) throws IOException {
+    public long write(final DataOutput file, final Boolean object) throws IOException {
+        long booleanSize = 1;
         file.writeBoolean(object);
+        return booleanSize;
     }
 }

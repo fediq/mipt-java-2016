@@ -8,13 +8,16 @@ package ru.mipt.java2016.homework.g595.topilskiy.task2.JoinArrays;
  * @see "https://www.mkyong.com/java/java-how-to-join-arrays/"
  */
 public class JoinArraysPrimitiveByte /* implements IJoinArrays<byte> */ {
+    /* FORBID: direct instantiation of this class */
+    private JoinArraysPrimitiveByte() { }
+
     /**
      * Method to join arraysToJoin into a single continuous joinedArrays
      *
      * @param  arraysToJoin - arrays to join into a single one
      * @return a single Array, containing all the arraysToJoin in order
      */
-    public byte[] joinArrays(byte[]... arraysToJoin) {
+    public static byte[] joinArrays(byte[]... arraysToJoin) {
         final byte[] joinedArrays;
 
         if (arraysToJoin == null) {
