@@ -2,15 +2,13 @@ package ru.mipt.java2016.homework.g595.kireev.task3;
 
 import ru.mipt.java2016.homework.g595.kireev.task2.MySerializator;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
 /**
  * Created by sun on 17.11.16.
  */
-public class MyBufferedBinaryHandler <T> {
+public class MyBufferedBinaryHandler<T> {
     private MySerializator<T> tSerializator;
 
     public MyBufferedBinaryHandler(String type) {
@@ -29,7 +27,7 @@ public class MyBufferedBinaryHandler <T> {
 
     public int putToOutput(RandomAccessFile out, T obj) throws IOException {
         byte[] serT = tSerializator.serialize(obj);
-        byte[] serTLen = MySerializator.toByteArray(serT.length + 0l);
+        byte[] serTLen = MySerializator.toByteArray(serT.length + 0L);
         out.write(serTLen);
         out.write(serT);
         return serT.length + serTLen.length;

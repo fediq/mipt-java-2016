@@ -6,6 +6,12 @@ import java.io.*;
 import java.util.*;
 import java.util.zip.Adler32;
 import java.util.zip.CheckedInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * Created by sun on 17.11.16.
@@ -38,7 +44,6 @@ public class MyKeyValueStorage64<K, V> implements KeyValueStorage<K, V> {
             dir.mkdir();
         }
         dataFile = new RandomAccessFile(path + dataName, "rw");
-        //  dataFile.close();
         takeCacheFromFile();
     }
 
@@ -57,7 +62,7 @@ private void takeCacheFromFile() throws IOException {
             cache.clear();
         }
         Integer n;
-        if (in.length() == 0) { //TODO уточнить точно ли при пустом файле legth выдаст 0
+        if (in.length() == 0) {
             n = 0;
             generalOffset = 0;
         } else {
@@ -115,9 +120,6 @@ private void takeCacheFromFile() throws IOException {
         }
     }
 
-
-
-
     @Override
     public void write(K key, V value)  {
         synchronized (sync) {
@@ -127,8 +129,9 @@ private void takeCacheFromFile() throws IOException {
             }
             cache.put(key, generalOffset); //TODO по идее заменяет предыдущий оффсет на новый
             fastCache.put(key, value);
+            cache.put(key, generalOffset);
             try {
-                dataFile.seek(generalOffset); //TODO нужно посмотреть насколько полезно это
+                dataFile.seek(generalOffset);
                 generalOffset += valueHandler.putToOutput(dataFile, value);
             } catch (IOException e) {
                 throw new RuntimeException("IO error during writting");
@@ -141,7 +144,6 @@ private void takeCacheFromFile() throws IOException {
         synchronized (sync) {
             checkClose();
             cache.remove(key);
-            ++uselessData;
         }
     }
 
@@ -177,20 +179,15 @@ private void takeCacheFromFile() throws IOException {
         }
     }
 
-
-
-
-
-
-    private void writeToFile () throws IOException {
+    public void writeToFile() throws IOException {
         RandomAccessFile headerOut = new RandomAccessFile(path + headerName, "rw");
-
         lengthHandler.putToOutput(headerOut, cache.size());
         lengthHandler.putToOutput(headerOut, generalOffset);
         for (Map.Entry entry : cache.entrySet()) {
             keyHandler.putToOutput(headerOut, (K) entry.getKey());
             lengthHandler.putToOutput(headerOut, (Integer) entry.getValue());
         }
+
         headerOut.close();
         dataFile.close();
         try (RandomAccessFile checksumTempFile = new RandomAccessFile(new File(path + checkSumName), "rw")) {
@@ -198,9 +195,6 @@ private void takeCacheFromFile() throws IOException {
         } catch (IOException e) {
             throw new RuntimeException("Can not read from file");
         }
-        //время магии
-        //TODO посортим мап по оффсетам и сиками пройдемся по данным в сторадже
-
     }
 
     private Long getChecksums() throws IOException {
