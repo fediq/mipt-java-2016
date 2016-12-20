@@ -3,6 +3,7 @@ package ru.mipt.java2016.homework.g597.spirin.task4;
 /**
  * Created by whoami on 12/13/16.
  */
+
 public class BillingUser {
     private final String username;
     private final String password;

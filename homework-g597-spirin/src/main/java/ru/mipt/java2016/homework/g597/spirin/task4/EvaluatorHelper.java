@@ -1,11 +1,11 @@
 package ru.mipt.java2016.homework.g597.spirin.task4;
 
+import ru.mipt.java2016.homework.base.task1.ParsingException;
+import java.util.Stack;
+
 /**
  * Created by whoami on 12/13/16.
  */
-import ru.mipt.java2016.homework.base.task1.ParsingException;
-
-import java.util.Stack;
 
 // Algorithm based on grammar expressions
 

@@ -1,8 +1,5 @@
 package ru.mipt.java2016.homework.g597.spirin.task4;
 
-/**
- * Created by whoami on 12/13/16.
- */
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +7,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
+
+/**
+ * Created by whoami on 12/13/16.
+ */
 
 @RestController
 public class CalculatorController {
@@ -30,7 +31,7 @@ public class CalculatorController {
             name = "world";
         }
         return "<html>" +
-                "<head><title>FediqApp</title></head>" +
+                "<head><title>mountain-viewer App</title></head>" +
                 "<body><h1>Hello, " + name + "!</h1></body>" +
                 "</html>";
     }

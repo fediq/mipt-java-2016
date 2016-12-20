@@ -1,8 +1,5 @@
 package ru.mipt.java2016.homework.g597.spirin.task4;
 
-/**
- * Created by whoami on 12/13/16.
- */
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.Banner;
 import org.springframework.boot.SpringApplication;
@@ -11,15 +8,13 @@ import org.springframework.boot.context.embedded.EmbeddedServletContainerCustomi
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+
 import ru.mipt.java2016.homework.base.task1.Calculator;
 
 /**
- * curl http://localhost:9001/eval \
- *     -X POST \
- *     -H "Content-Type: text/plain" \
- *     -H "Authorization: Basic $(echo -n "username:password" | base64)" \
- *     --data-raw "44*3+2"
+ * Created by whoami on 12/13/16.
  */
+
 @EnableAutoConfiguration
 @Configuration
 @ComponentScan(basePackageClasses = Application.class)

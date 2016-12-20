@@ -1,8 +1,5 @@
 package ru.mipt.java2016.homework.g597.spirin.task4;
 
-/**
- * Created by whoami on 12/13/16.
- */
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +13,10 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import java.util.Collections;
+
+/**
+ * Created by whoami on 12/13/16.
+ */
 
 @Configuration
 @EnableWebSecurity

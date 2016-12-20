@@ -1,8 +1,5 @@
 package ru.mipt.java2016.homework.g597.spirin.task4;
 
-/**
- * Created by whoami on 12/13/16.
- */
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +13,10 @@ import javax.sql.DataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+
+/**
+ * Created by whoami on 12/13/16.
+ */
 
 @Repository
 public class BillingDao {
