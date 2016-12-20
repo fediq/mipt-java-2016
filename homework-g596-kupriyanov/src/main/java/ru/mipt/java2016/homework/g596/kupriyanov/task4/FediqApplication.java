@@ -22,6 +22,8 @@ import ru.mipt.java2016.homework.g596.kupriyanov.task1.MyCalculator;
 //      -H "Content-Type: text/plain" \
 //      -H "Authorization: Basic $(echo -n "username:password" | base64)" \
 //          --data-raw "44*3+2"
+
+
 @EnableAutoConfiguration
 @Configuration
 @ComponentScan(basePackageClasses = FediqApplication.class)
