@@ -4,9 +4,7 @@ package ru.mipt.java2016.homework.g595.ulyanin.task1;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Stack;
+import java.util.*;
 
 /**
  * Implementation of Calculator using Shunting Yard algorithm
@@ -16,8 +14,9 @@ import java.util.Stack;
 
 public class ShuntingYardCalculator implements Calculator {
 
-    private HashMap<String, Double> variablesValues;
-    private HashMap<String, Function> functions;
+    private HashMap<String, Double> variablesValues = new HashMap<>();
+    private HashMap<String, Function> functions = new HashMap<>();
+    private HashSet<String> defaultFunctions;
 
     private class Function {
         private String name;
@@ -38,14 +37,14 @@ public class ShuntingYardCalculator implements Calculator {
             return calculatePostfix(newPostfix);
         }
 
-        private ArrayList<Token> replaceWithArguments(ArrayList<Token> postfix, ArrayList<Double> arguments) {
+        private ArrayList<Token> replaceWithArguments(ArrayList<Token> postfix, ArrayList<Double> argValues) {
             ArrayList<Token> newPostfix = new ArrayList<>();
             for (Token token : postfix) {
                 int argN = arguments.indexOf(token.data);
                 if (argN == -1) {
                     newPostfix.add(token);
                 } else {
-                    newPostfix.add(new Token(Double.toString(arguments.get(argN)), Token.TokenType.NUMBER));
+                    newPostfix.add(new Token(Double.toString(argValues.get(argN)), Token.TokenType.NUMBER));
                 }
             }
             return newPostfix;
@@ -55,6 +54,30 @@ public class ShuntingYardCalculator implements Calculator {
             return arguments.size();
         }
 
+    }
+
+
+
+    public ShuntingYardCalculator() {
+        try {
+            functions.put("sin",
+                    new Function("sin", new ArrayList<>(Arrays.asList("x")), "sin(x)")
+            );
+            functions.put("abs",
+                    new Function("abs", new ArrayList<>(Arrays.asList("x")), "abs(x)")
+            );
+            functions.put("max",
+                    new Function("max", new ArrayList<>(Arrays.asList("x,y")), "max(x,y)")
+            );
+        } catch (ParsingException e) {
+            e.printStackTrace();
+        }
+        this.defaultFunctions = new HashSet<>(functions.keySet());
+    }
+
+
+    public boolean isLocalVariable(Token token) {
+        return variablesValues.containsKey(token.data);
     }
 
     public double calculate(String expression) throws ParsingException {
@@ -71,17 +94,22 @@ public class ShuntingYardCalculator implements Calculator {
         return tokenizer.getTokens(expression);
     }
 
-    private static ArrayList<Token> infixToPostfix(ArrayList<Token> tokens) throws ParsingException {
+    private ArrayList<Token> infixToPostfix(ArrayList<Token> tokens) throws ParsingException {
 
         ArrayList<Token> postfix = new ArrayList<>();
         Stack<TokenOperator> operatorStack = new Stack<>();
         boolean mayBeUnaryOperator = true;
         Token lastToken = null;
         for (Token token : tokens) {
+            // variables:
+//            if (lastToken != null && !token.isOpenBraceToken() && lastToken.isFunctionToken()) {
+//                postfix.add(operatorStack.pop());
+//            }
+
             if (token.isNumberToken()) {
                 postfix.add(token);
                 mayBeUnaryOperator = false;
-            } else if (token.isFunctionToken()) {
+            }  else if (token.isFunctionToken()) {
                 operatorStack.add(new TokenOperator(token.getData(), Token.TokenType.FUNCTION));
                 mayBeUnaryOperator = false;
             } else if (token.isArgumentSeparatorToken()) {
@@ -145,7 +173,37 @@ public class ShuntingYardCalculator implements Calculator {
         Stack<Double> operands = new Stack<>();
         for (Token token : postfix) {
             if (token instanceof TokenOperator) {
-                if (!((TokenOperator) token).isUnary()) {
+                if (token.isFunctionToken()) {
+                    Double var;
+                    if (variablesValues.containsKey(token.data)) {
+                        var = variablesValues.get(token.data);
+                    } else if (defaultFunctions.contains(token.data)) {
+                        double var1 = operands.pop();
+                        if (token.data.equals("sin")) {
+                            var = Math.sin(var1);
+                        } else if (token.data.equals("abs")) {
+                            var = Math.abs(var1);
+                        } else if (token.data.equals("max")) {
+                            double var2 = operands.pop();
+                            var = Math.max(var1, var2);
+                        } else {
+                            throw new ParsingException("unmapped function " + token.data);
+                        }
+                    } else {
+                        Function f = functions.get(token.data);
+                        if (f == null) {
+                            throw  new ParsingException("unknown function name " + token.data);
+                        }
+                        int arity = f.getArity();
+                        ArrayList<Double> arguments = new ArrayList<>();
+                        for (int i = 0; i < arity; ++i) {
+                            arguments.add(operands.pop());
+                        }
+                        Collections.reverse(arguments);
+                        var = f.apply(arguments);
+                    }
+                    operands.push(var);
+                } else if (!((TokenOperator) token).isUnary()) {
                     if (operands.size() < 2) {
                         throw new ParsingException("there are no two operands to binary operator " + token.getData());
                     }
@@ -158,20 +216,6 @@ public class ShuntingYardCalculator implements Calculator {
                     }
                     Double var = operands.pop();
                     operands.push(((TokenOperator) token).apply(var));
-                } else if (token.isFunctionToken()) {
-                    Double var;
-                    if (variablesValues.containsKey(token.data)) {
-                        var = variablesValues.get(token.data);
-                    } else {
-                        Function f = functions.get(token.data);
-                        int arity = f.getArity();
-                        ArrayList<Double> arguments = new ArrayList<>();
-                        for (int i = 0; i < arity; ++i) {
-                            arguments.add(operands.pop());
-                        }
-                        var = f.apply(arguments);
-                    }
-                    operands.push(var);
                 } else {
                     throw new ParsingException("unexpected tokenOperatorType");
                 }
@@ -187,7 +231,7 @@ public class ShuntingYardCalculator implements Calculator {
     }
 
     public String getVariableValue(String variableName) throws ParsingException {
-        if (variablesValues.containsKey(variableName)) {
+        if (!variablesValues.containsKey(variableName)) {
             throw new ParsingException("invalid variable name");
         }
         return Double.toString(variablesValues.get(variableName));
@@ -206,6 +250,9 @@ public class ShuntingYardCalculator implements Calculator {
     }
 
     public void addFunction(String functionName, ArrayList<String> params, String expression) throws ParsingException {
+        if (defaultFunctions.contains(functionName)) {
+            throw new ParsingException("trying to redefine default function " + functionName);
+        }
         Function f = new Function(functionName, params, expression);
         functions.put(functionName, f);
     }
@@ -213,6 +260,9 @@ public class ShuntingYardCalculator implements Calculator {
     public void deleteFunction(String functionName) throws ParsingException {
         if (!functions.containsKey(functionName)) {
             throw new ParsingException("function " + functionName + " does not exist");
+        }
+        if (defaultFunctions.contains(functionName)) {
+            throw new ParsingException("trying to delete default function");
         }
         functions.remove(functionName);
     }
@@ -235,6 +285,7 @@ public class ShuntingYardCalculator implements Calculator {
             }
             function.append(f.arguments.get(i));
         }
+        function.append(')');
         function.append(" -> " + f.expression);
         return function.toString();
     }

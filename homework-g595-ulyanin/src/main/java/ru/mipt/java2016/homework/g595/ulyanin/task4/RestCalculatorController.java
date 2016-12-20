@@ -27,6 +27,8 @@ public class RestCalculatorController {
     @RequestMapping(path = "/variable/{variableName}", method = RequestMethod.PUT)
     public String putValueOfVariable(@PathVariable String variableName,
                                      @RequestBody String valueExpression) throws ParsingException {
+        System.out.println(variableName);
+        System.out.println(valueExpression);
         return calculator.addVariable(variableName, valueExpression);
     }
 
