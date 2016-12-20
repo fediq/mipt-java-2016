@@ -12,6 +12,7 @@ import ru.mipt.java2016.homework.g595.topilskiy.task3.OptimisedByteKeyValueStora
 import ru.mipt.java2016.homework.g595.topilskiy.task2.Serializer.*;
 
 import org.junit.Test;
+import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -38,6 +39,27 @@ public class OptimisedByteKeyValueStoragePerformanceTest extends KeyValueStorage
                 TEST_FILE_PATH, Adler32Verification.calculateAdler32Checksum(TEST_FILE_PATH))) {
             throw new IOException("Bad Adler32 Checker");
         }
+    }
+
+    @Test
+    public void testLockingStorageFile() throws IOException {
+        final String TEST_DIR_PATH = "/tmp/java_test";
+
+        File test_directory = new File(TEST_DIR_PATH);
+        test_directory.mkdir();
+
+        Runnable task = () -> {
+            OptimisedByteKeyValueStorage<Integer, Integer> storage =
+                new OptimisedByteKeyValueStorage<>(
+                        TEST_DIR_PATH,
+                        IntegerSerializerSingleton.getInstance(),
+                        IntegerSerializerSingleton.getInstance());
+        };
+
+        new Thread(task).start();
+        new Thread(task).start();
+
+        FileUtils.deleteDirectory(test_directory);
     }
 
     @Override
