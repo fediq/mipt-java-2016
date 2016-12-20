@@ -6,11 +6,6 @@ package ru.mipt.java2016.homework.g597.spirin.task4;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
-
-/**
- * Created by whoami on 10/12/16.
- */
-
 public class Evaluator implements Calculator {
     @Override
     public double calculate(String expression) throws ParsingException {
