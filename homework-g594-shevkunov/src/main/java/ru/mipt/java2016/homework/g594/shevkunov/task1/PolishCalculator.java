@@ -11,7 +11,7 @@ import ru.mipt.java2016.homework.base.task1.ParsingException;
  * Evaluates a value from expressing
  * Created by shevkunov on 04.10.16.
  */
-class PolishCalculator implements Calculator {
+public class PolishCalculator implements Calculator {
     private Stack<Double> valStack = new Stack<>();
     private Stack<Operation> operStack = new Stack<>();
     private StringBuilder buffer = new StringBuilder();
