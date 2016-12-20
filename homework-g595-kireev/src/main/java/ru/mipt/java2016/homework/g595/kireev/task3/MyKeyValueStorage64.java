@@ -90,6 +90,8 @@ public class MyKeyValueStorage64<K, V> implements KeyValueStorage<K, V> {
             if (fastCache.containsKey(key)) {
                 return (V) fastCache.get(key);
             }
+            if (fastCache.containsKey(key))
+                return (V) fastCache.get(key);
             try {
                 V value = get(key);
                 fastCache.put(key, value);
@@ -171,6 +173,11 @@ public class MyKeyValueStorage64<K, V> implements KeyValueStorage<K, V> {
             fastCache.clear();
             writeToFile();
         }
+        if (isClosed)
+            return;
+        isClosed = true;
+        fastCache.clear();
+        writeToFile();
     }
 
     private void checkClose() {
