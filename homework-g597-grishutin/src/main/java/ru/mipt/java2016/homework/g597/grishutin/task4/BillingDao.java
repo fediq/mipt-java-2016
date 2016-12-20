@@ -5,13 +5,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 
 @Repository
 public class BillingDao {
@@ -42,16 +39,11 @@ public class BillingDao {
         return jdbcTemplate.queryForObject(
                 "SELECT username, password, enabled FROM billing.users WHERE username = ?",
                 new Object[]{username},
-                new RowMapper<BillingUser>() {
-                    @Override
-                    public BillingUser mapRow(ResultSet rs, int rowNum) throws SQLException {
-                        return new BillingUser(
-                                rs.getString("username"),
-                                rs.getString("password"),
-                                rs.getBoolean("enabled")
-                        );
-                    }
-                }
+                (rs, rowNum) -> new BillingUser(
+                        rs.getString("username"),
+                        rs.getString("password"),
+                        rs.getBoolean("enabled")
+                )
         );
     }
 }
