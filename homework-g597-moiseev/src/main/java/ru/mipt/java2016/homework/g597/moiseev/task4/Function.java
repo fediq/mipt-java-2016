@@ -66,7 +66,7 @@ public class Function {
                                          PowerfulCalculator powerfulCalculator) throws ParsingException {
         StringBuilder name =  new StringBuilder();
 
-        while (Character.isLetterOrDigit(expression.charAt(index[0]))) {
+        while (Character.isLetterOrDigit(expression.charAt(index[0])) || expression.charAt(index[0]) == '_') {
             name.append(expression.charAt(index[0]));
             index[0]++;
         }
