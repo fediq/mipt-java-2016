@@ -39,7 +39,7 @@ public class KeyValueStorageImpl<K, V> implements KeyValueStorage<K, V> {
         data = new File(this.path);
 
         if (data.exists()) {
-            try (DataInputStream input = new DataInputStream(new FileInputStream(data))) {
+            try (DataInputStream input = new DataInputStream(new BufferedInputStream(new FileInputStream(data)))) {
                 if (!input.readUTF().equals(validateString)) {
                     throw new IllegalStateException("Invalid file");
                 }
