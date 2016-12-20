@@ -10,7 +10,7 @@ import java.util.*;
 
 public class MyCalculator implements ru.mipt.java2016.homework.base.task1.Calculator {
     //private Map<Character, Integer> priority;
-    private static final Character[] SET_VALUES = new Character[]{'(', ')', '*', '/', '+', '-' };
+    private static final Character[] SET_VALUES = new Character[]{'(', ')', '*', '/', '+', '-', ',' };
     private static final Set<Character> ALONE_SYMBOL_LEXEMS = new HashSet<Character>(Arrays.asList(SET_VALUES));
     private List<LexicalUnit> lexicalUnits;
     private static final String UNARY_MINUS = "M";
@@ -29,6 +29,7 @@ public class MyCalculator implements ru.mipt.java2016.homework.base.task1.Calcul
                     && sign.equals(lexicalUnits.get(i).getValue())) {
                 return i;
             }
+            //System.out.println(balance);
             if (balance < 0) {
                 throw new ParsingException("wrong number of bracers");
             }
@@ -50,6 +51,7 @@ public class MyCalculator implements ru.mipt.java2016.homework.base.task1.Calcul
             throw new ParsingException("stops on parsing not double one token expression");
         }
         int id = -1;
+        // staying "err" means, what something has broken
         String operation = "err";
         if (id == -1) {
             id = getOpenedMathSign("+", leftId, rightId);
@@ -73,6 +75,36 @@ public class MyCalculator implements ru.mipt.java2016.homework.base.task1.Calcul
             id = getOpenedMathSign("/", leftId, rightId);
             if (id != -1) {
                 operation = "/";
+            }
+        }
+        if (id == -1) {
+            //System.out.println("!");
+            LexicalUnit unit = lexicalUnits.get(leftId);
+            LexicalUnit open = lexicalUnits.get(leftId + 1);
+            LexicalUnit close = lexicalUnits.get(rightId - 1);
+            if (unit.isFunc() && open.isOpenBracer() && close.isCloseBracer()) {
+                //int argc = 0;
+                List<Double> argv = new ArrayList<>();
+                int commaScaner = leftId + 2;
+                int lastPoint = leftId + 2;
+                int balance = 0;
+                while (commaScaner < rightId - 1) {
+                    if (lexicalUnits.get(commaScaner).isOpenBracer()) {
+                        ++balance;
+                    } else if (lexicalUnits.get(commaScaner).isCloseBracer()) {
+                        --balance;
+                    } else if (lexicalUnits.get(commaScaner).isComma() && balance == 0) {
+                        //System.out.print(lastPoint);
+                        //System.out.println(commaScaner);
+                        argv.add(parceAndCalc(lastPoint, commaScaner));
+                        lastPoint = commaScaner + 1;
+                    }
+                    ++commaScaner;
+                }
+                if (lastPoint != commaScaner) {
+                    argv.add(parceAndCalc(lastPoint, commaScaner));
+                }
+                return unit.eval(argv);
             }
         }
         if (id != -1) {
@@ -118,6 +150,7 @@ public class MyCalculator implements ru.mipt.java2016.homework.base.task1.Calcul
     }
 
     public double calculate(String expression) throws ParsingException {
+        //System.out.println(expression);
         if (expression == null) {
             throw new ParsingException("Null expression");
         }
