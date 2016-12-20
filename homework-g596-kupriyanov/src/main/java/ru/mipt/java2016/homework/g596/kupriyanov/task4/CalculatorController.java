@@ -58,7 +58,7 @@ public class CalculatorController {
         String goodExpression = expression;
         try {
             Parser parser = new Parser(expression, username);
-            for (String function : parser.functions) {
+            for (String function : parser.getFunction()) {
                 if (expression.indexOf(function) != -1) {
                     String subExpression = parser.expressionInFunction(expression, function);
                     String functionAndOperand = function + subExpression;

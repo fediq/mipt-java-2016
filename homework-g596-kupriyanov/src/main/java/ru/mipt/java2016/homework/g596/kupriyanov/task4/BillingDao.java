@@ -132,14 +132,14 @@ public class BillingDao {
     public List<String> getAllVariables(String username) throws EmptyResultDataAccessException {
         LOG.trace("List with all functions for user: " + username);
 //        try {
-                List<Map<String, Object>> queryResult = jdbcTemplate.queryForList(
-                    " SELECT variable FROM billing.variables WHERE username = \'" + username + "\'"
-            );
-            List<String> variables = new ArrayList<String>();
-            for (Object aQueryResult : queryResult) {
-                variables.add(aQueryResult.toString());
-            }
-            return variables;
+        List<Map<String, Object>> queryResult = jdbcTemplate.queryForList(
+            " SELECT variable FROM billing.variables WHERE username = \'" + username + "\'"
+        );
+        List<String> variables = new ArrayList<String>();
+        for (Object aQueryResult : queryResult) {
+            variables.add(aQueryResult.toString());
+        }
+        return variables;
 //        } catch (Exception e) {
 //            return new ArrayList<String>();
 //        }

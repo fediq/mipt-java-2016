@@ -10,12 +10,12 @@ import java.util.List;
 
 
 public class Parser extends BillingDao {
-    public String expression;
-    public String username;
-    public List<String> variables;
-    public List<String> functions;
+    private String expression;
+    private String username;
+    private List<String> variables;
+    private List<String> functions;
 
-    Parser (String exp, String usern) {
+    Parser(String exp, String usern) {
         expression = exp;
         username = usern;
         variables = getAllVariables(username);
@@ -39,18 +39,18 @@ public class Parser extends BillingDao {
         }
     }
 
-    public String expressionInFunction(String expression, String function) {
-        int start = expression.indexOf(function) + function.length();
+    public String expressionInFunction(String express, String function) {
+        int start = express.indexOf(function) + function.length();
         int bracketBalance = 0;
-        if (expression.charAt(start) != '(') {
+        if (express.charAt(start) != '(') {
             return null;
         }
         int end = start;
-        while (end != expression.length()){
-            if (expression.charAt(end) == '(') {
+        while (end != express.length()) {
+            if (express.charAt(end) == '(') {
                 bracketBalance++;
             }
-            if (expression.charAt(end) == ')') {
+            if (express.charAt(end) == ')') {
                 bracketBalance--;
             }
             if (bracketBalance == 0) {
@@ -58,11 +58,15 @@ public class Parser extends BillingDao {
             }
             end++;
         }
-        return expression.substring(start, end);
+        return express.substring(start, end);
     }
 
     public String work() {
         substituteVariable();
         return expression;
+    }
+
+    public List<String> getFunction() {
+        return functions;
     }
 }
