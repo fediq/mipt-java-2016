@@ -56,7 +56,6 @@ public class BillingUser {
             return false;
         }
         return password.equals(that.password);
-
     }
 
     @Override
