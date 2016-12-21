@@ -35,7 +35,6 @@ public class StringCalculator implements Calculator {
 
     private TreeMap<String, Function> AllFunctions = new TreeMap<>();
 
-
     @Override
     public double calculate(String expression)
             throws ParsingException {
@@ -103,7 +102,7 @@ public class StringCalculator implements Calculator {
             StringBuilder functionName = new StringBuilder();
 
             // Если пробельный символ, то игнориурем.
-            if ((currentSymbol.charAt(0) == ' ') || currentSymbol.equals("\t") || currentSymbol.equals("\n")) {
+            if ((currentSymbol.charAt(0) == ' ') || currentSymbol.charAt(0) == ',' ||currentSymbol.equals("\t") || currentSymbol.equals("\n")) {
                 postfixLine.append(' ');
                 continue;
             }
@@ -246,14 +245,11 @@ public class StringCalculator implements Calculator {
     // Вычисление выражения в постфиксной записи.
     private double calculateReversedPolish(String postfixLine) throws ParsingException {
         Stack<Double> stack = new Stack<>(); // Стек операторов.
+        final Random RANDOM = new Random();
         List<String> tokens = Arrays.asList(postfixLine.split(" "));
-        //StringBuilder oneNumber = new StringBuilder(""); // Для считывания числа из постфиксной строки.
-        //for (int i = 0; i < tokens;)
 
         for (int i = 0; i < tokens.size(); i++) {
-            //String currentSymbol =  postfixLine.charAt(i);
-            //StringBuilder currentSymbol = new StringBuilder()
-            // Здесь мы, собственно, парсим входную строку
+
             String currentString = tokens.get(i);
             if (currentString.isEmpty()) {
                 continue;
@@ -263,11 +259,65 @@ public class StringCalculator implements Calculator {
                 continue;
             }
             if (BaseFunctions.containsKey(currentString)) {
-                switch (currentString) {
-                    case "sin":
 
+                switch (currentString) {
+                    case "sin": {
+                        stack.push(Math.sin(stack.pop()));
+                        break;
+                    }
+                    case "cos": {
+                        stack.push(Math.cos(stack.pop()));
+                        break;
+                    }
+                    case "tg": {
+                        stack.push(Math.tan(stack.pop()));
+                        break;
+                    }
+                    case "sqrt": {
+                        stack.push(Math.sqrt(stack.pop()));
+                        break;
+                    }
+                    case "abs": {
+                        stack.push(Math.abs(stack.pop()));
+                        break;
+                    }
+                    case "sign": {
+                        stack.push(Math.signum(stack.pop()));
+                        break;
+                    }
+                    case "log": {
+                        // log(x)/log(y) = log_y(x)
+                        Double x = stack.pop();
+                        Double y = stack.pop();
+                        stack.push(Math.log(x) / Math.log(y));
+                        break;
+                    }
+                    case "pow": {
+                        Double x = stack.pop();
+                        Double y = stack.pop();
+                        stack.push(Math.pow(x, y));
+                    }
+                    case "log2": {
+                        stack.push(Math.log(stack.pop()) / Math.log(2));
+                        break;
+                    }
+                    case "rnd": {
+                        stack.push(RANDOM.nextDouble());
+                        break;
+                    }
+                    case "max": {
+                        Double x = stack.pop();
+                        Double y = stack.pop();
+                        stack.push(Math.max(x, y));
+                        break;
+                    }
+                    case "min": {
+                        Double x = stack.pop();
+                        Double y = stack.pop();
+                        stack.push(Math.min(x, y));
+                        break;
+                    }
                 }
-                // тут куча if'ов и вызов математический функций из библиотеки
                 continue;
             }
 
