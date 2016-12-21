@@ -406,8 +406,7 @@ public class RESTCalc implements Calculator {
 
             //while it's necessary, pop operation and execute it
             while ((getPriority(t.getSymbol()) < getPriority(tmp.getSymbol())) && isRightAssociative(t.getSymbol()) ||
-                    (getPriority(t.getSymbol()) <= getPriority(tmp.getSymbol())) && !isRightAssociative(t.getSymbol()))
-            {
+                  (getPriority(t.getSymbol()) <= getPriority(tmp.getSymbol())) && !isRightAssociative(t.getSymbol())) {
 
                 operations.pop();
                 calculateOperation(tmp);
@@ -434,5 +433,5 @@ public class RESTCalc implements Calculator {
         CBRACKET, VARIABLE, FUNCTION, SPACE, NONE
     }
 
-    public enum SymbolType {OPERATOR, NUMBER, BRACKET, SPACE, VARIABLE, FUNCTION, NONE}
+    public enum SymbolType { OPERATOR, NUMBER, BRACKET, SPACE, VARIABLE, FUNCTION, NONE }
 }
