@@ -8,7 +8,7 @@ import java.util.*;
  * Created by mizabrik on 08.10.16.
  * Implementation using Dijkstra shunting algorithm with two stacks.
  */
-class ShuntingYardCalculator implements ExtendableCalculator {
+public class ShuntingYardCalculator implements ExtendableCalculator {
     private static final Map<Character, Operator> OPERATORS = new HashMap<>();
     private static final Map<String, BuiltinCommand> BUILTINS = new HashMap<>();
 
@@ -28,9 +28,9 @@ class ShuntingYardCalculator implements ExtendableCalculator {
         BUILTINS.put("log", new BuiltinCommand((Double[] args) -> Math.log(args[1]) / Math.log(args[0]), 2));
         BUILTINS.put("log2", new BuiltinCommand((Double[] args) -> Math.log(args[0]) / Math.log(2), 1));
         BUILTINS.put("log2", new BuiltinCommand((Double[] args) -> Math.log(args[0]) / Math.log(2), 1));
-        BUILTINS.put("rnd", new BuiltinCommand((Double[] args) -> Math.log(args[0]) / Math.log(2), 1));
         BUILTINS.put("max", new BuiltinCommand((Double[] args) -> Math.max(args[0], args[1]), 2));
         BUILTINS.put("min", new BuiltinCommand((Double[] args) -> Math.min(args[0], args[1]), 2));
+        BUILTINS.put("rnd", new BuiltinCommand((Double[] args) -> Math.random(), 0));
     }
 
     public static void main(String[] args) {
@@ -97,7 +97,7 @@ class ShuntingYardCalculator implements ExtendableCalculator {
 
 
     // Tokenize expression
-    public ArrayList<Command> parse(String expression, Scope scope) throws ParsingException {
+    private ArrayList<Command> parse(String expression, Scope scope) throws ParsingException {
         ArrayList<Command> result = new ArrayList<>();
         Stack<Command> commandStack = new Stack<>();
         ExpressionTokenizer tokenizer = new ExpressionTokenizer(expression, OPERATORS);
@@ -154,8 +154,6 @@ class ShuntingYardCalculator implements ExtendableCalculator {
                 case CLOSING_BRACKET:
                     if (bracketBalance == 0) {
                         throw new ParsingException("Bad bracket balance");
-                    } else if (!gotOperand) {
-                        throw new ParsingException("Empty brackets");
                     }
                     --bracketBalance;
                     tokenizer.nextBracket();
