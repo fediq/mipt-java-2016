@@ -144,18 +144,18 @@ public class BillingDao {
             return jdbcTemplate.queryForObject(
                     "SELECT username, name, arguments, expression FROM billing.functions WHERE username = ?",
                     new Object[]{username}, (rs, rowNum) -> {
-                        HashMap<String, Function> result = new HashMap<>();
-                        while (true) {
-                            String name = rs.getString("name");
-                            List<String> arguments = Arrays.asList(rs.getString("arguments").split(" "));
-                            String expression = rs.getString("expression");
-                            result.put(name, new Function(name, arguments, expression));
-                            if (!rs.next()) {
-                                break;
-                            }
+                    HashMap<String, Function> result = new HashMap<>();
+                    while (true) {
+                        String name = rs.getString("name");
+                        List<String> arguments = Arrays.asList(rs.getString("arguments").split(" "));
+                        String expression = rs.getString("expression");
+                        result.put(name, new Function(name, arguments, expression));
+                        if (!rs.next()) {
+                            break;
                         }
-                        return result;
-                    });
+                    }
+                    return result;
+                });
         } catch (EmptyResultDataAccessException e) {
             HashMap<String, Function> result = new HashMap<>();
             return result;
