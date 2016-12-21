@@ -1,34 +1,30 @@
 package ru.mipt.java2016.homework.g595.manucharyan.task4;
 
-import sun.print.SunMinMaxPage;
-
-import jdk.nashorn.internal.ir.Symbol;
-
 /**
  * Created by op on 17.12.2016.
  */
 public class Token {
 
-    public Token(RESTCalc.Symbol symbol_) {
-        symbol = symbol_;
-        valency = getValencyForOperator(symbol_);
+    public Token(RESTCalc.Symbol symbol) {
+        this.symbol = symbol;
+        valency = getValencyForOperator(symbol);
     }
 
-    public Token(RESTCalc.Symbol symbol_, double value_) {
-        this(symbol_);
-        value = value_;
+    public Token(RESTCalc.Symbol symbol, double value) {
+        this(symbol);
+        this.value = value;
     }
 
-    public Token(RESTCalc.Symbol symbol_, String name_, int valency_) {
-        this(symbol_);
-        name = name_;
-        valency = valency_;
+    public Token(RESTCalc.Symbol symbol, String name, int valency) {
+        this(symbol);
+        this.name = name;
+        this.valency = valency;
     }
 
-    public double value; // for numbers
-    public String name; // for functions and variables
-    public int valency = 0; // for functions
-    public RESTCalc.Symbol symbol = RESTCalc.Symbol.NONE;
+    private double value; // for numbers
+    private String name; // for functions and variables
+    private int valency = 0; // for functions
+    private RESTCalc.Symbol symbol = RESTCalc.Symbol.NONE;
 
     private int getValencyForOperator(RESTCalc.Symbol s) {
         switch (s) {
@@ -48,4 +44,10 @@ public class Token {
                 return 0;
         }
     }
+
+    //get functions
+    public double getValue() {return value;}
+    public String getName() {return name;}
+    public int getValency() {return valency;}
+    public RESTCalc.Symbol getSymbol() {return symbol;}
 }

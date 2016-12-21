@@ -67,7 +67,7 @@ public class RESTCalc implements Calculator {
     }
 
     private static SymbolType getTokenType(Token t) {
-        switch (t.symbol) {
+        switch (t.getSymbol()) {
             case NUMBER:
                 return SymbolType.NUMBER;
             case ADD:
@@ -121,7 +121,7 @@ public class RESTCalc implements Calculator {
 
                 switch (getTokenType(t)) {
                     case NUMBER:
-                        stack.push(t.value);
+                        stack.push(t.getValue());
                         break;
                     case OPERATOR:
                         pushOperationInStack(t);
@@ -130,30 +130,30 @@ public class RESTCalc implements Calculator {
                         operations.push(t);
                         break;
                     case BRACKET:
-                        if (t.symbol == Symbol.OBRACKET) { //open bracket
+                        if (t.getSymbol() == Symbol.OBRACKET) { //open bracket
                             operations.push(t);
-                        } else if (t.symbol == Symbol.CBRACKET) { //close bracket
+                        } else if (t.getSymbol() == Symbol.CBRACKET) { //close bracket
                             Token tmp = operations.pop();
-                            while (!operations.isEmpty() && tmp.symbol != Symbol.OBRACKET ||
-                                    tmp.symbol == Symbol.FUNCTION) {
+                            while (!operations.isEmpty() && tmp.getSymbol() != Symbol.OBRACKET ||
+                                    tmp.getSymbol() == Symbol.FUNCTION) {
                                 calculateOperation(tmp);
-                                if (tmp.symbol == Symbol.FUNCTION) {
+                                if (tmp.getSymbol() == Symbol.FUNCTION) {
                                     break;
                                 }
                                 tmp = operations.pop();
                             }
 
-                            if (tmp.symbol != Symbol.OBRACKET && tmp.symbol != Symbol.FUNCTION) {
+                            if (tmp.getSymbol() != Symbol.OBRACKET && tmp.getSymbol() != Symbol.FUNCTION) {
                                 throw new ParsingException("wrong");
                             }
                         }
 
                         break;
                     case VARIABLE:
-                        if (!variables.containsKey(t.name)) {
+                        if (!variables.containsKey(t.getName())) {
                             throw new ParsingException("no such variable");
                         }
-                        stack.push(variables.get(t.name));
+                        stack.push(variables.get(t.getName()));
                         break;
                     case SPACE:
                         break;
@@ -279,20 +279,20 @@ public class RESTCalc implements Calculator {
 
     //execute operation
     private void calculateOperation(Token t) throws ParsingException {
-        if (stack.size() < t.valency) {
+        if (stack.size() < t.getValency()) {
             freeResource();
             throw new ParsingException("wrong");
         }
 
         //get all operands
-        double[] operands = new double[t.valency];
+        double[] operands = new double[t.getValency()];
 
-        for (int i = 0; i < t.valency; ++i) {
-            operands[t.valency - i - 1] = stack.pop();
+        for (int i = 0; i < t.getValency(); ++i) {
+            operands[t.getValency() - i - 1] = stack.pop();
         }
 
         //calculate operation
-        switch (t.symbol) {
+        switch (t.getSymbol()) {
             case ADD:
                 stack.push(operands[0] + operands[1]);
                 break;
@@ -312,7 +312,7 @@ public class RESTCalc implements Calculator {
                 stack.push(operands[0] / operands[1]);
                 break;
             case FUNCTION:
-                stack.push(calculateFunction(t.name, operands));
+                stack.push(calculateFunction(t.getName(), operands));
                 break;
             default:
                 freeResource();
@@ -405,8 +405,8 @@ public class RESTCalc implements Calculator {
             Token tmp = operations.lastElement();
 
             //while it's necessary, pop operation and execute it
-            while ((getPriority(t.symbol) < getPriority(tmp.symbol)) && isRightAssociative(t.symbol) ||
-                    (getPriority(t.symbol) <= getPriority(tmp.symbol)) && !isRightAssociative(t.symbol)) {
+            while ((getPriority(t.getSymbol()) < getPriority(tmp.getSymbol())) && isRightAssociative(t.getSymbol()) ||
+                    (getPriority(t.getSymbol()) <= getPriority(tmp.getSymbol())) && !isRightAssociative(t.getSymbol())) {
 
                 operations.pop();
                 calculateOperation(tmp);
@@ -433,5 +433,5 @@ public class RESTCalc implements Calculator {
         CBRACKET, VARIABLE, FUNCTION, SPACE, NONE
     }
 
-    public enum SymbolType {OPERATOR, NUMBER, BRACKET, SPACE, VARIABLE, FUNCTION, NONE}
+    public enum SymbolType { OPERATOR, NUMBER, BRACKET, SPACE, VARIABLE, FUNCTION, NONE }
 }
