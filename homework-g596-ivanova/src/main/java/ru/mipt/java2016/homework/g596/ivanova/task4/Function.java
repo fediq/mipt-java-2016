@@ -13,15 +13,6 @@ public class Function {
         this.expression = expression;
     }
 
-    private Function(String name, int valency) {
-        this.name = name;
-        this.arguments = new ArrayList<>();
-        for (int i = 0; i < valency; i++) {
-            arguments.add("x" + Integer.toString(i));
-        }
-        this.expression = null;
-    }
-
     public List<String> getArguments() {
         return arguments;
     }

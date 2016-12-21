@@ -97,8 +97,9 @@ public class RestCalculatorController {
         }
     }
 
-    @RequestMapping(path = "/calculate", method = RequestMethod.POST, consumes = "text/plain", produces = "text/plain")
-    public String calculate(Authentication authentication, @RequestBody String expression)
+    @RequestMapping(path = "/calculate", method = RequestMethod.POST,
+                    consumes = "text/plain", produces = "text/plain")
+    public String calculate(@RequestBody String expression)
             throws ParsingException {
         return calculator.calculate(expression) + "\n";
     }
