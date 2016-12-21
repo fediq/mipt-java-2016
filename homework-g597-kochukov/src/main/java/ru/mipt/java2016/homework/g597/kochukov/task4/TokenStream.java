@@ -1,6 +1,13 @@
-package ru.mipt.java2016.homework.g597.kochukov.task1;
+package ru.mipt.java2016.homework.g597.kochukov.task4;
 
 import ru.mipt.java2016.homework.base.task1.ParsingException;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.regex.Pattern;
 
 /**
  * Created by tna0y on 18/10/16.
@@ -45,6 +52,7 @@ public class TokenStream {
         char c = getChar(stringPosition);
         stringPosition++;
 
+        Pattern functionPattern = Pattern.compile("[a-z]+\\(.*");
         Token token;
         if ("()".indexOf(c) >= 0) {
             token = new Brace(c);
@@ -52,6 +60,10 @@ public class TokenStream {
             token = new Operator(c);
         } else if ("0123456789~".indexOf(c) >= 0) {
             token = new Number(getNumber(c));
+        } else if (functionPattern.matcher(expression.substring(stringPosition - 1, expression.length())).matches()) {
+            token = new FunctionRef(getFunctionRef(c));
+        } else if ("abcdefghijklmnopqrstuvwxyz".indexOf(c) >= 0) {
+            token = new Variable(getVariable(c));
         } else {
             throw new ParsingException("Unexpected symbol " + c);
         }
@@ -102,6 +114,34 @@ public class TokenStream {
         return Double.parseDouble(numberString);
     }
 
+    private String getVariable(char c) throws ParsingException {
+        String ret = Character.toString(c);
+        char cur = getChar(stringPosition);
+        while ("abcdefghijklmnopqrstuvwxyz".indexOf(cur) >= 0) {
+            ret += Character.toString(cur);
+            stringPosition++;
+            cur = getChar(stringPosition);
+        }
+        return ret;
+    }
+
+    private String getFunctionRef(char c) throws ParsingException {
+        String ret = Character.toString(c);
+        int balance = 0;
+        int newbalance = 0;
+        while (!(newbalance == 0 && balance > 0)) {
+            char cur = getChar(stringPosition);
+            ret += Character.toString(cur);
+            stringPosition++;
+            balance = newbalance;
+            if (cur == '(') {
+                newbalance++;
+            } else if (cur == ')') {
+                newbalance--;
+            }
+        }
+        return ret;
+    }
 
     abstract static class Token {
         public abstract String getVisualRepresentation();
@@ -197,6 +237,10 @@ public class TokenStream {
             }
         }
 
+        Brace(final byte[] rep) throws ParsingException {
+            this((char) rep[0]);
+        }
+
         public boolean getType() {
             return type;
         }
@@ -211,5 +255,100 @@ public class TokenStream {
             }
         }
 
+
     }
+
+    static class Variable extends Token {
+
+        private String name;
+
+        Variable(final String name) {
+            this.name = name;
+        }
+
+        public Number resolve(LinkedHashMap<String, Double> scope) throws SQLException {
+            return new Number(scope.get(name));
+        }
+
+        @Override
+        public String getVisualRepresentation() {
+            return name;
+        }
+    }
+
+    static class FunctionRef extends Token {
+
+        private String signature;
+        private Integer argc;
+        private ArrayList<String> argv;
+
+        FunctionRef(String fullString) {
+            System.out.println(fullString);
+            ArrayList<String> internals = new ArrayList<>();
+            int opening = fullString.indexOf("(") + 1;
+            String filling = "";
+            int balance = 0;
+            for (int pos = opening; pos < fullString.length() - 1; pos++) {
+                if (fullString.charAt(pos) != ',' || balance > 0) {
+                    filling += Character.toString(fullString.charAt(pos));
+                }
+
+                if (fullString.charAt(pos) == '(') {
+                    balance++;
+                } else if (fullString.charAt(pos) == ')') {
+                    balance--;
+                } else if (balance == 0 && fullString.charAt(pos) == ',') {
+                    internals.add(filling);
+                    filling = "";
+                }
+            }
+            if (filling != "") {
+                internals.add(filling);
+            }
+            argc = internals.size();
+            argv = internals;
+            signature = fullString.substring(0, opening - 1);
+        }
+
+        public Number resolve(LinkedHashMap<String, Double> vars, Integer userid)
+            throws ParsingException, SQLException {
+
+            MegaCalculator calculator = new MegaCalculator(userid);
+            ArrayList<Double> arguments = new ArrayList<>();
+            for (String arg : argv) {
+                arguments.add(calculator.calculate(new Expression(arg, vars)));
+            }
+            if (Arrays.asList(DefaultCalculator.DEFAULTS).contains(signature)) {
+                return new Number(DefaultCalculator.calculate(signature, arguments));
+            }
+
+
+            DBWorker db = DBWorker.getInstance();
+            DBWorker.DBQuerryResult<Expression> functionRes;
+
+            functionRes = db.getFunctionWithArguments(signature, argc, arguments, userid);
+
+            if (functionRes.getResponseCode() != 200) {
+                throw new ParsingException("Unknown function called!");
+            }
+            Expression function = functionRes.getResult();
+
+            Iterator<String> it = vars.keySet().iterator();
+            while (it.hasNext()) {
+                String key = it.next();
+                if (!function.getScopeVars().containsKey(key)) {
+                    function.getScopeVars().put(key, vars.get(key));
+                }
+            }
+
+            return new Number(calculator.calculate(function));
+        }
+
+        @Override
+        public String getVisualRepresentation() {
+            return signature;
+        }
+    }
+
+
 }
