@@ -1,223 +1,227 @@
 package ru.mipt.java2016.homework.g597.vasilyev.task1;
 
-import java.util.ArrayList;
-import java.util.Stack;
-import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
+
+import java.util.*;
 
 /**
  * Created by mizabrik on 08.10.16.
  * Implementation using Dijkstra shunting algorithm with two stacks.
  */
-class ShuntingYardCalculator implements Calculator {
+public class ShuntingYardCalculator implements ExtendableCalculator {
+    private static final Map<Character, Operator> OPERATORS = new HashMap<>();
+    private static final Map<String, BuiltinCommand> BUILTINS = new HashMap<>();
+
+    static {
+        OPERATORS.put('+', Operator.ADD);
+        OPERATORS.put('-', Operator.SUBTRACT);
+        OPERATORS.put('*', Operator.MULTIPLY);
+        OPERATORS.put('/', Operator.DIVIDE);
+
+        BUILTINS.put("sin", new BuiltinCommand((Double[] args) -> Math.sin(args[0]), 1));
+        BUILTINS.put("cos", new BuiltinCommand((Double[] args) -> Math.cos(args[0]), 1));
+        BUILTINS.put("tg", new BuiltinCommand((Double[] args) -> Math.tan(args[0]), 1));
+        BUILTINS.put("sqrt", new BuiltinCommand((Double[] args) -> Math.sqrt(args[0]), 1));
+        BUILTINS.put("pow", new BuiltinCommand((Double[] args) -> Math.pow(args[0], args[1]), 2));
+        BUILTINS.put("abs", new BuiltinCommand((Double[] args) -> Math.abs(args[0]), 1));
+        BUILTINS.put("sign", new BuiltinCommand((Double[] args) -> Math.signum(args[0]), 1));
+        BUILTINS.put("log", new BuiltinCommand((Double[] args) -> Math.log(args[1]) / Math.log(args[0]), 2));
+        BUILTINS.put("log2", new BuiltinCommand((Double[] args) -> Math.log(args[0]) / Math.log(2), 1));
+        BUILTINS.put("log2", new BuiltinCommand((Double[] args) -> Math.log(args[0]) / Math.log(2), 1));
+        BUILTINS.put("max", new BuiltinCommand((Double[] args) -> Math.max(args[0], args[1]), 2));
+        BUILTINS.put("min", new BuiltinCommand((Double[] args) -> Math.min(args[0], args[1]), 2));
+        BUILTINS.put("rnd", new BuiltinCommand((Double[] args) -> Math.random(), 0));
+    }
+
+    public static void main(String[] args) {
+        try {
+            ExtendableCalculator calc = new ShuntingYardCalculator();
+            Scanner s = new Scanner(System.in);
+            s.useLocale(Locale.US); // use dots for fractions
+            s.useDelimiter("[,() \n]+");
+            Map<String, Command> definitions = new HashMap<>();
+            Scope scope = new MapScope(definitions);
+
+            while (s.hasNext()) {
+                String command = s.next();
+
+                if (command.equals("var")) {
+                    String variable = s.next();
+                    s.next("=");
+                    Double value = s.nextDouble();
+                    definitions.put(variable, new PushNumberCommand(value));
+                } else if (command.equals("def")) {
+                    String function = s.next();
+                    ArrayList<String> functionArgs = new ArrayList<>();
+                    while (!s.hasNext("=")) {
+                        functionArgs.add(s.next());
+                    }
+                    s.next("=");
+                    definitions.put(function, new UserCommand(s.nextLine(), functionArgs.toArray(new String[0]),
+                            calc, scope));
+                } else if (command.equals("eval")) {
+                    System.out.println(calc.calculate(s.nextLine(), scope));
+                } else {
+                    System.out.println(command + ": no such command");
+                    s.nextLine();
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     // Calculate expression.
     public double calculate(String expression) throws ParsingException {
+        return calculate(expression, new MapScope(new HashMap<>()));
+    }
+
+    @Override
+    public boolean supportsFunction(String name) {
+        return BUILTINS.containsKey(name);
+    }
+
+    // Calculate expression with custom scope
+    public double calculate(String expression, Scope scope) throws ParsingException {
         if (expression == null) {
             throw new ParsingException("Null expression");
         }
 
-        ArrayList<Token> parsed = parse(expression);
-        if (parsed.size() == 0) {
+        ArrayList<Command> commands = parse(expression, scope);
+        if (commands.size() == 0) {
             throw new ParsingException("Empty expression");
         }
 
-        return evaluate(parsed);
+        return evaluate(commands);
     }
+
 
     // Tokenize expression
-    private ArrayList<Token> parse(String expr) throws ParsingException {
-        ArrayList<Token> result = new ArrayList<>();
+    private ArrayList<Command> parse(String expression, Scope scope) throws ParsingException {
+        ArrayList<Command> result = new ArrayList<>();
+        Stack<Command> commandStack = new Stack<>();
+        ExpressionTokenizer tokenizer = new ExpressionTokenizer(expression, OPERATORS);
 
-        char c;
-        for (int i = 0; i < expr.length(); ++i) {
-            c = expr.charAt(i);
-            if (Character.isDigit(c)) {
-                double number = Character.getNumericValue(c);
-                double fraction = 1;
-                ++i;
-                while (i < expr.length() && Character.isDigit(expr.charAt(i))) {
-                    c = expr.charAt(i);
-                    number *= 10;
-                    number += Character.getNumericValue(c);
-                    ++i;
-                }
-                if (i < expr.length() && expr.charAt(i) == '.') {
-                    ++i;
-                    while (i < expr.length() && Character.isDigit(expr.charAt(i))) {
-                        fraction /= 10;
-                        number += Character.getNumericValue(expr.charAt(i)) * fraction;
-                        ++i;
-                    }
-                }
-                --i; // increased by loop expression
-                result.add(new NumberToken(number));
-            } else if (Character.isWhitespace(c)) {
-                continue;
-            } else if (isOperatorSymbol(c)) {
-                result.add(new OperatorToken(c));
-            } else if (c == '(' || c == ')') {
-                if (c == ')' && result.size() > 0 && result.get(result.size() - 1) instanceof BracketToken
-                        && ((BracketToken) result.get(result.size() - 1)).getType()
-                        == Bracket.OPENING) {
-                    throw new ParsingException("Empty brackets");
-                }
-                result.add(new BracketToken(c));
-            } else {
-                throw new ParsingException("Illegal character");
-            }
-        }
-
-        return result;
-    }
-
-    // Get result of expression coded by consequence of tokens.
-    private double evaluate(ArrayList<Token> infix) throws ParsingException {
-        Stack<Token> operators = new Stack<>();
-        Stack<Double> numbers = new Stack<>();
-        operators.push(new BracketToken('('));
-        infix.add(new BracketToken(')'));
-        int bracketBalance = 1;
+        int bracketBalance = 0;
         boolean gotOperand = false;
+        ExpressionTokenizer.TokenType type;
+        for (type = tokenizer.peekNextType(); type != null; type = tokenizer.peekNextType()) {
+            switch (type) {
+                case NUMBER:
+                    result.add(new PushNumberCommand(tokenizer.nextNumber()));
+                    popFunctions(result, commandStack);
 
-        for (Token token : infix) {
-            if (token instanceof NumberToken) {
-                numbers.push(((NumberToken) token).getNumber());
-                gotOperand = true;
-            } else if (token instanceof OperatorToken) {
-                Operator operator = ((OperatorToken) token).getOperator();
-                if (!gotOperand) {
-                    switch (operator) {
-                        case ADD:
-                            operator = Operator.UNARY_PLUS;
-                            break;
-                        case SUBTRACT:
-                            operator = Operator.UNARY_MINUS;
-                            break;
-                        default:
-                            throw new ParsingException("Illegal expression");
-                    }
-                    token = new OperatorToken(operator);
-                }
-                gotOperand = false;
-                while (operators.size() > 0 && operators.peek() instanceof OperatorToken) {
-                    Operator previousOperator = ((OperatorToken) operators.peek()).getOperator();
-                    if (previousOperator.priority < operator.priority
-                            || (operator.hasLeftAssociativity && previousOperator.priority == operator.priority)) {
-                        previousOperator.apply(numbers);
-                        operators.pop();
+                    gotOperand = true;
+                    break;
+                case OPERATOR:
+                    Operator operator = tokenizer.nextOperator();
+                    if (!gotOperand) {
+                        switch (operator) {
+                            case ADD:
+                                operator = Operator.UNARY_PLUS;
+                                break;
+                            case SUBTRACT:
+                                operator = Operator.UNARY_MINUS;
+                                break;
+                            default:
+                                throw new ParsingException("No operand for operator");
+                        }
                     } else {
-                        break;
+                        popFunctions(result, commandStack);
                     }
-                }
-                operators.push(token);
-            } else {
-                Bracket bracket = ((BracketToken) token).getType();
-                switch (bracket) {
-                    case OPENING:
-                        operators.push(token);
-                        gotOperand = false;
-                        ++bracketBalance;
-                        break;
-                    case CLOSING:
-                        if (bracketBalance == 0) {
-                            throw new ParsingException("Bad bracket balance");
+
+                    while (!commandStack.empty() && commandStack.peek() instanceof Operator) {
+                        Operator previousOperator = (Operator) commandStack.peek();
+                        if (previousOperator.priority < operator.priority
+                                || (operator.hasLeftAssociativity && previousOperator.priority == operator.priority)) {
+                            result.add(previousOperator);
+                            commandStack.pop();
+                        } else {
+                            break;
                         }
-                        while (operators.peek() instanceof OperatorToken) {
-                            ((OperatorToken) operators.pop()).getOperator().apply(numbers);
-                        }
-                        operators.pop();
-                        --bracketBalance;
-                        gotOperand = true;
-                        break;
-                    default:
-                        throw new IllegalStateException();
-                }
+                    }
+                    commandStack.push(operator);
+
+                    gotOperand = false;
+                    break;
+                case OPENING_BRACKET:
+                    ++bracketBalance;
+                    tokenizer.nextBracket();
+                    commandStack.push(null);
+
+                    gotOperand = false;
+                    break;
+                case CLOSING_BRACKET:
+                    if (bracketBalance == 0) {
+                        throw new ParsingException("Bad bracket balance");
+                    }
+                    --bracketBalance;
+                    tokenizer.nextBracket();
+
+                    while (commandStack.peek() != null) {
+                        result.add(commandStack.pop());
+                    }
+                    commandStack.pop();
+                    popFunctions(result, commandStack);
+
+                    gotOperand = true;
+                    break;
+                case IDENTIFIER:
+                    String identifier = tokenizer.nextIdentifier();
+                    if (BUILTINS.containsKey(identifier)) {
+                        commandStack.push(new FunctionCommand(BUILTINS.get(identifier)));
+                    } else if (scope.hasCommand(identifier)) {
+                        commandStack.push(new FunctionCommand(scope.getCommand(identifier)));
+                    } else {
+                        throw new ParsingException("Unknown identifier " + identifier);
+                    }
+
+                    gotOperand = true; // well, possibly
+                    break;
+                case COMMA:
+                    tokenizer.nextComma();
+                    while (!commandStack.empty() && commandStack.peek() != null) {
+                        result.add(commandStack.pop());
+                    }
+                    if (commandStack.empty()) {
+                        throw new ParsingException("Misplaced comma");
+                    }
+
+                    gotOperand = false;
+                    break;
+                default:
+                    throw new ParsingException("Illegal character");
             }
         }
         if (bracketBalance != 0) {
             throw new ParsingException("Bad bracket balance");
         }
-        if (numbers.size() != 1) {
+
+        while (!commandStack.empty()) {
+            result.add(commandStack.pop());
+        }
+
+        return result;
+    }
+
+    private void popFunctions(ArrayList<Command> result, Stack<Command> stack) {
+        while (!stack.empty() && stack.peek() instanceof FunctionCommand) {
+            result.add(stack.pop());
+        }
+    }
+
+    // Get result of expression coded by consequence of tokens.
+    private double evaluate(ArrayList<Command> commands) throws ParsingException {
+        Stack<Double> stack = new Stack<>();
+
+        for (Command command : commands) {
+            command.apply(stack);
+        }
+
+        if (stack.size() != 1) {
             throw new ParsingException("Illegal expression");
         }
-        infix.remove(infix.size() - 1);
 
-        return numbers.pop();
-    }
-
-    // Apply operation according to operator to stack of numbers
-    private boolean isOperatorSymbol(char c) {
-        return c == '+' || c == '-' || c == '*' || c == '/';
-    }
-
-    private enum Bracket {
-        OPENING, CLOSING
-    }
-
-    private class Token {
-    }
-
-    private class NumberToken extends Token {
-        private double number;
-
-        private NumberToken(double number) {
-            this.number = number;
-        }
-
-        private double getNumber() {
-            return number;
-        }
-    }
-
-    private class BracketToken extends Token {
-        private Bracket type;
-
-        private BracketToken(char bracket) {
-            switch (bracket) {
-                case '(':
-                    type = Bracket.OPENING;
-                    break;
-                case ')':
-                    type = Bracket.CLOSING;
-                    break;
-                default:
-                    throw new IllegalArgumentException();
-            }
-        }
-
-        private Bracket getType() {
-            return type;
-        }
-    }
-
-    private class OperatorToken extends Token {
-        private Operator operator;
-
-        private OperatorToken(Operator operator) {
-            this.operator = operator;
-        }
-
-        private OperatorToken(char operatorChar) {
-            switch (operatorChar) {
-                case '+':
-                    operator = Operator.ADD;
-                    break;
-                case '-':
-                    operator = Operator.SUBTRACT;
-                    break;
-                case '*':
-                    operator = Operator.MULTIPLY;
-                    break;
-                case '/':
-                    operator = Operator.DIVIDE;
-                    break;
-                default:
-                    throw new IllegalArgumentException();
-            }
-        }
-
-        private Operator getOperator() {
-            return operator;
-        }
+        return stack.pop();
     }
 }
