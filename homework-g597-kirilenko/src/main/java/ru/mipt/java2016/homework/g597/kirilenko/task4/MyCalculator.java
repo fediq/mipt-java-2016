@@ -17,14 +17,8 @@ public class MyCalculator implements Calculator {
     private Stack<Double> numbers;
     private Stack<Character> operations;
 
-    private Map<String, String> variablesExpressions = new HashMap();
-    private Map<String, Pair<ArrayList<String>, String>> functions = new HashMap();
-
-    private void loadDataFromDao(String username) {
-        Pair<Map<String, String>, Map<String, javafx.util.Pair<ArrayList<String>, String>>> res = BillingDao.getInstance().loadData(username);
-        variablesExpressions = res.getKey();
-        functions = res.getValue();
-    }
+    private final Map<String, String> variablesExpressions = new HashMap();
+    private final Map<String, Pair<ArrayList<String>, String>> functions = new HashMap();
 
     private double calculateStandardExpression(String functionName, ArrayList<Double> arguments)
         throws ParsingException {
@@ -119,36 +113,30 @@ public class MyCalculator implements Calculator {
 
     }
 
-    public String getVariableExpression(String username, String variable) {
-        loadDataFromDao(String username)
+    public String getVariableExpression(String variable) {
         if (!variablesExpressions.keySet().contains(variable)) {
             return null;
         }
         return variablesExpressions.get(variable);
     }
 
-    public void setVariableExpression(String username, String variable, String expression) {
-        loadDataFromDao(String username)
+    public void setVariableExpression(String variable, String expression) {
         variablesExpressions.put(variable, expression);
     }
 
-    public void deleteVariable(String username, String variable) {
-        loadDataFromDao(String username)
+    public void deleteVariable(String variable) {
         variablesExpressions.remove(variable);
     }
 
-    public ArrayList<String> getAllVariables(String username) {
-        loadDataFromDao(String username)
+    public ArrayList<String> getAllVariables() {
         return new ArrayList<>(variablesExpressions.keySet());
     }
 
-    public Pair<ArrayList<String>, String> getFunctionInfo(String username, String functionName) {
-        loadDataFromDao(String username)
+    public Pair<ArrayList<String>, String> getFunctionInfo(String functionName) {
         return functions.get(functionName);
     }
 
-    public boolean setFunction(String username, String functionName, ArrayList<String> arguments, String expression) {
-        loadDataFromDao(String username)
+    public boolean setFunction(String functionName, ArrayList<String> arguments, String expression) {
         if (isStandardFunction(functionName)) {
             return false;
         }
@@ -156,8 +144,7 @@ public class MyCalculator implements Calculator {
         return true;
     }
 
-    public boolean deleteFunction(String username, String functionName) {
-        loadDataFromDao(String username)
+    public boolean deleteFunction(String functionName) {
         if (isStandardFunction(functionName)) {
             return false;
         }
@@ -165,8 +152,7 @@ public class MyCalculator implements Calculator {
         return true;
     }
 
-    public ArrayList<String> getAllFunctions(String username) {
-        loadDataFromDao(String username)
+    public ArrayList<String> getAllFunctions() {
         return new ArrayList<>(functions.keySet());
     }
 
@@ -286,8 +272,7 @@ public class MyCalculator implements Calculator {
 
 
 
-    public double evaluateExpression(String username, String expression) throws ParsingException {
-        loadDataFromDao(String username)
+    public double evaluateExpression(String expression) throws ParsingException {
         expression = deleteSpaces(expression);
 
 

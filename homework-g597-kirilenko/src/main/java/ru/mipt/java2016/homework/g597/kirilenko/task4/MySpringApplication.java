@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
-import ru.mipt.java2016.homework.g597.kirilenko.task1.MyCalculator;
+import ru.mipt.java2016.homework.g597.kirilenko.task4.MyCalculator;
 
 /**
  * curl http://localhost:9001/eval \

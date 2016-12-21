@@ -12,12 +12,12 @@ import javax.sql.DataSource;
 public class BillingDatabaseConfiguration {
     @Bean
     public DataSource billingDataSource(
-            @Value("${ru.mipt.java2016.homework.g597.kirilenko.task4.jdbcUrl}") String jdbcUrl,
             @Value("${ru.mipt.java2016.homework.g597.kirilenko.task4.username:}") String username,
             @Value("${ru.mipt.java2016.homework.g597.kirilenko.task4.password:}") String password
     ) {
         HikariConfig config = new HikariConfig();
         config.setDriverClassName(org.h2.Driver.class.getName());
+        String jdbcUrl = "jdbc:h2:~/task4.db";
         config.setJdbcUrl(jdbcUrl);
         config.setUsername(username);
         config.setPassword(password);

@@ -1,6 +1,5 @@
 package ru.mipt.java2016.homework.g597.kirilenko.task4;
 
-import javafx.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,8 +12,6 @@ import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Map;
 
 @Repository
 public class BillingDao {
@@ -24,19 +21,6 @@ public class BillingDao {
     private DataSource dataSource;
 
     private JdbcTemplate jdbcTemplate;
-
-    // Будет синглтоном
-    public static final BillingDao INSTANCE = new BillingDao();
-
-    private BillingDao() {}
-    public static BillingDao getInstance() {
-        return INSTANCE;
-    }
-
-    public Pair<Map<String, String>, Map<String, javafx.util.Pair<ArrayList<String>, String>>> loadData(String username) {
-        return null;
-        // Здесь надо написать возврат
-    }
 
     @PostConstruct
     public void postConstruct() {
@@ -49,16 +33,7 @@ public class BillingDao {
         jdbcTemplate.execute("CREATE SCHEMA IF NOT EXISTS billing");
         jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS billing.users " +
                 "(username VARCHAR PRIMARY KEY, password VARCHAR, enabled BOOLEAN)");
-        jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS billing.variables " +
-                "(username VARCHAR, name VARCHAR, value DOUBLE)");
-        jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS billing.functions " +
-                "(username VARCHAR, name VARCHAR, arguments VARCHAR, expression VARCHAR)");
-        try {
-            loadUser("username");
-        } catch (EmptyResultDataAccessException e) {
-            jdbcTemplate.update("INSERT INTO billing.users VALUES (?, ?, ?)",
-                    new Object[]{"username", "password", true});
-        }
+        jdbcTemplate.update("INSERT INTO billing.users VALUES ('username', 'password', TRUE)");
     }
 
 
