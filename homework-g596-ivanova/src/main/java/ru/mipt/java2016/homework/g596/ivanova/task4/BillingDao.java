@@ -72,17 +72,17 @@ public class BillingDao {
     Map<String, Double> getVariables(String username) {
         try {
             return jdbcTemplate.queryForObject(
-                    "SELECT username, name, value FROM billing.variables WHERE username = ?",
-                    new Object[]{username}, (rs, rowNum) -> {
-                        HashMap<String, Double> result = new HashMap<>();
-                        while (true) {
-                            result.put(rs.getString("name"), rs.getDouble("value"));
-                            if (!rs.next()) {
-                                break;
-                            }
+                "SELECT username, name, value FROM billing.variables WHERE username = ?",
+                new Object[] {username}, (rs, rowNum) -> {
+                    HashMap<String, Double> result = new HashMap<>();
+                    while (true) {
+                        result.put(rs.getString("name"), rs.getDouble("value"));
+                        if (!rs.next()) {
+                            break;
                         }
-                        return result;
-                    });
+                    }
+                    return result;
+                });
         } catch (EmptyResultDataAccessException e) {
             HashMap<String, Double> result = new HashMap<>();
             return result;
@@ -117,11 +117,11 @@ public class BillingDao {
         return jdbcTemplate.queryForObject(
                 "SELECT username, name, arguments, expression FROM billing.functions WHERE username = ? AND name = ?",
                 new Object[]{username, function}, (rs, rowNum) -> {
-                    String name = rs.getString("name");
-                    List<String> arguments = Arrays.asList(rs.getString("arguments").split(" "));
-                    String expression = rs.getString("expression");
-                    return new Function(name, arguments, expression);
-                });
+                String name = rs.getString("name");
+                List<String> arguments = Arrays.asList(rs.getString("arguments").split(" "));
+                String expression = rs.getString("expression");
+                return new Function(name, arguments, expression);
+            });
     }
 
     void addFunction(String username, String name, List<String> arguments, String expression) throws ParsingException {
