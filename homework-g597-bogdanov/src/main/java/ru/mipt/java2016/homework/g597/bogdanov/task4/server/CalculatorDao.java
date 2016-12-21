@@ -143,7 +143,8 @@ public class CalculatorDao {
                     new Object[]{username},
                     new RowMapper<HashMap<String, CalculatorFunctionObject>>() {
                         @Override
-                        public HashMap<String, CalculatorFunctionObject> mapRow(ResultSet rs, int rowNum) throws SQLException {
+                        public HashMap<String, CalculatorFunctionObject> mapRow(ResultSet rs,
+                                                                                int rowNum) throws SQLException {
                             HashMap<String, CalculatorFunctionObject> result = new HashMap<>();
                             while (true) {
                                 String name = rs.getString("name");
@@ -175,7 +176,8 @@ public class CalculatorDao {
         }
     }
 
-    void addFunction(String username, String function, List<String> arguments, String expression) throws ParsingException {
+    void addFunction(String username, String function, List<String> arguments,
+                     String expression) throws ParsingException {
         try {
             getFunction(username, function);
             jdbcTemplate.update("DELETE FROM billing.functions WHERE username = ? AND name = ?",
