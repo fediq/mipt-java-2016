@@ -1,0 +1,18 @@
+
+curl http://localhost:9001/function/myfunc1?args=x,y -X PUT -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "username:password" | base64)" --data-raw "log2(x) + y"
+curl http://localhost:9001/function/sum2?args=x,y -X PUT -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "username:password" | base64)" --data-raw "x+2*   y"
+
+curl http://localhost:9001/variable/xy -X PUT -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "username:password" | base64)" --data-raw "sqrt(9)+sign(2)"
+curl http://localhost:9001/variable/_2xy -X PUT -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "username:password" | base64)" --data-raw "log2(xy*sign(xy)) *2"
+
+curl http://localhost:9001/function/myfunc1 -X GET -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "username:password" | base64)"
+curl http://localhost:9001/function/sum2 -X GET -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "username:password" | base64)"
+
+curl http://localhost:9001/function -X GET -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "username:password" | base64)"
+curl http://localhost:9001/variable -X GET -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "username:password" | base64)"
+
+// Маленький
+curl http://localhost:9001/eval -X POST -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "username:password" | base64)" --data-raw "sqrt(_2xy*sqrt(16)) -    sin(0)"
+
+// Большой тест
+curl http://localhost:9001/eval -X POST -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "username:password" | base64)" --data-raw "(sum2(myfunc1(xy,   _2xy), sum2(4, sqrt(16)))*cos(0)"
