@@ -46,8 +46,19 @@ public class Token {
     }
 
     //get functions
-    public double getValue() {return value;}
-    public String getName() {return name;}
-    public int getValency() {return valency;}
-    public RESTCalc.Symbol getSymbol() {return symbol;}
+    public double getValue() {
+        return value;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public int getValency() {
+        return valency;
+    }
+
+    public RESTCalc.Symbol getSymbol() {
+        return symbol;
+    }
 }
