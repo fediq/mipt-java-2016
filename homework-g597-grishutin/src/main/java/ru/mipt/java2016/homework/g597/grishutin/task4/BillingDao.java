@@ -37,13 +37,13 @@ public class BillingDao {
     public BillingUser loadUser(String username) throws EmptyResultDataAccessException {
         LOG.trace("Querying for user " + username);
         return jdbcTemplate.queryForObject(
-                "SELECT username, password, enabled FROM billing.users WHERE username = ?",
-                new Object[]{username},
-                (rs, rowNum) -> new BillingUser(
-                    rs.getString("username"),
-                    rs.getString("password"),
-                    rs.getBoolean("enabled")
-                )
+            "SELECT username, password, enabled FROM billing.users WHERE username = ?",
+            new Object[]{username},
+            (rs, rowNum) -> new BillingUser(
+                rs.getString("username"),
+                rs.getString("password"),
+                rs.getBoolean("enabled")
+            )
         );
     }
 }
