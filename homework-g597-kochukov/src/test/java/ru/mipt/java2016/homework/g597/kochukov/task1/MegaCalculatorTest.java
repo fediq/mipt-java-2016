@@ -1,4 +1,4 @@
-package ru.mipt.java2016.homework.g597.kochukov.task1;
+/*package ru.mipt.java2016.homework.g597.kochukov.task1;
 
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.g597.kochukov.task1.MegaCalculator;
@@ -9,4 +9,4 @@ public class MegaCalculatorTest extends AbstractCalculatorTest {
         return new MegaCalculator();
     }
 
-}
+}*/

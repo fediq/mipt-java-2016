@@ -1,31 +1,35 @@
-package ru.mipt.java2016.homework.g597.kochukov.task1;
+package ru.mipt.java2016.homework.g597.kochukov.task4;
 
-import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
+import ru.mipt.java2016.homework.g597.kochukov.task4.TokenStream.Number;
 
-
-import ru.mipt.java2016.homework.g597.kochukov.task1.TokenStream.Operator;
-import ru.mipt.java2016.homework.g597.kochukov.task1.TokenStream.Brace;
-import ru.mipt.java2016.homework.g597.kochukov.task1.TokenStream.Number;
-
+import java.sql.SQLException;
 import java.util.*;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
-
+import java.util.regex.Pattern;
 
 
 /**
  * Created by Maxim Kochukov on 13/10/16.
  */
 
-public class MegaCalculator implements Calculator {
+public class MegaCalculator {
 
+    private Integer userid;
 
+    public MegaCalculator(Integer userid) {
+        this.userid = userid;
+    }
 
+    public void setUserid(Integer userid) {
+        this.userid = userid;
+    }
 
-    @Override
+    public final double calculate(Expression function) throws ParsingException, SQLException {
+        String expression = function.getExpression();
+        // System.err.println("Calculator started with expression: "+expression);
+        LinkedHashMap<String, Double> variables = function.getScopeVars();
 
-    public final double calculate(String expression) throws ParsingException {
         if (expression == null) {
             throw new ParsingException("Expression cannot be null");
         }
@@ -39,14 +43,28 @@ public class MegaCalculator implements Calculator {
         TokenStream ts = new TokenStream(expression);
         List<TokenStream.Token> tokenList = new ArrayList<>();
         TokenStream.Token token = ts.getToken();
-        while (token != null) {
 
+        while (token != null) {
             tokenList.add(token);
             token = ts.getToken();
-
-
         }
+        tokenList = resolveRecursive(tokenList, variables, userid);
+
         return calculateTokenizedRPN(convertToRPN(tokenList));
+    }
+
+    private static List<TokenStream.Token> resolveRecursive(List<TokenStream.Token> tokenList,
+                                                            LinkedHashMap<String, Double> variables,
+                                                            Integer userid) throws SQLException, ParsingException {
+        for (int i = 0; i < tokenList.size(); i++) {
+            TokenStream.Token token = tokenList.get(i);
+            if (token instanceof TokenStream.Variable) {
+                tokenList.set(i, ((TokenStream.Variable) token).resolve(variables));
+            } else if (token instanceof TokenStream.FunctionRef) {
+                tokenList.set(i, ((TokenStream.FunctionRef) token).resolve(variables, userid));
+            }
+        }
+        return tokenList;
     }
 
     private static ArrayList<TokenStream.Token> convertToRPN(List<TokenStream.Token> input) {
@@ -55,22 +73,24 @@ public class MegaCalculator implements Calculator {
         Deque<TokenStream.Token> stack = new LinkedList<>();
 
         for (TokenStream.Token token : input) {
-            if (token instanceof Operator) { // If operator
-                Operator operator = (Operator) token;
+            if (token instanceof TokenStream.Operator) { // If operator
+                TokenStream.Operator operator = (TokenStream.Operator) token;
 
                 while (!stack.isEmpty()
-                        && stack.peek() instanceof Operator
-                        && (((Operator) stack.peek()).getType().getPriority() >= operator.getType().getPriority())) {
+                        && stack.peek() instanceof TokenStream.Operator
+                        && (((TokenStream.Operator) stack.peek()).getType().getPriority()
+                            >= operator.getType().getPriority())) {
+
                     output.add(stack.pop());
                 }
                 stack.push(operator);
 
-            } else if (token instanceof Brace) { // if brace
-                Brace brace = (Brace) token;
+            } else if (token instanceof TokenStream.Brace) { // if brace
+                TokenStream.Brace brace = (TokenStream.Brace) token;
                 if (!brace.getType()) { // opening
                     stack.push(token);
                 } else { // closing
-                    while (!stack.isEmpty() && !(stack.peek() instanceof Brace)) { // while not '('
+                    while (!stack.isEmpty() && !(stack.peek() instanceof TokenStream.Brace)) { // while not '('
                         output.add(stack.pop());
 
                     }
@@ -134,7 +154,6 @@ public class MegaCalculator implements Calculator {
             expression = '~' + expression.substring(1);
         }
 
-        Pattern unacceptablePairs = Pattern.compile("([+\\-*/]{2})|([(][+\\-*/])|\\(\\)");
         int balance = 0;
         char last = '!';
         char cur;
@@ -145,7 +164,7 @@ public class MegaCalculator implements Calculator {
                 String finish = (i == expression.length() - 1) ? "" : expression.substring(i + 1);
                 expression = expression.substring(0, i) + '~' + finish;
                 cur = '~';
-            } else if ("+-;/".indexOf(last) >= 0 && cur == '-') {
+            } else if ("+-*/".indexOf(last) >= 0 && cur == '-') {
                 String finish = (i == expression.length() - 1) ? "" : expression.substring(i + 1);
                 expression = expression.substring(0, i) + '~' + finish;
                 cur = '~';
@@ -155,20 +174,11 @@ public class MegaCalculator implements Calculator {
             } else if (cur == ')') {
                 balance--;
             }
-
-            if (unacceptablePairs.matcher(Character.toString(last) + cur).matches()) {
-                throw new ParsingException("Invalid characters position");
-            }
-
             last = cur;
         }
 
         if (balance != 0) {
             throw new ParsingException("Unbalanced parentheses");
-        }
-        Pattern invalidCharCheck = Pattern.compile("[~\\d\\(\\)\\+\\-\\*\\/\\.]+");
-        if (!invalidCharCheck.matcher(expression).matches()) {
-            throw new ParsingException("Invalid characters");
         }
         return expression;
     }
