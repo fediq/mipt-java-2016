@@ -21,7 +21,7 @@ public class RestCalculatorApplication {
 
     @Bean
     public EmbeddedServletContainerCustomizer customizer(
-            @Value("${ru.mipt.java2016.homework.g596.ivanova.task4.httpPort:9001}") int port) {
+            @Value("${ru.mipt.java2016.homework.g596.ivanova.task4.httpPort:8080}") int port) {
         return container -> container.setPort(port);
     }
 
@@ -34,8 +34,15 @@ public class RestCalculatorApplication {
 
 /**
  * Query template.
- curl http://localhost:9001/calculate \
+ curl http://localhost:8080/calculate \
  -X POST \
+ -H "Content-Type: text/plain" \
+ -H "Authorization: Basic $(echo -n "username:password" | base64)" \
+ --data-raw ""
+
+
+ curl http://localhost:8080/variable/x \
+ -X GET \
  -H "Content-Type: text/plain" \
  -H "Authorization: Basic $(echo -n "username:password" | base64)" \
  --data-raw ""

@@ -1,5 +1,9 @@
 package ru.mipt.java2016.homework.g596.ivanova.task4;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +16,7 @@ import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import ru.mipt.java2016.homework.base.task1.ParsingException;
 
 @Repository
 public class BillingDao {
@@ -33,6 +38,10 @@ public class BillingDao {
         jdbcTemplate.execute("CREATE SCHEMA IF NOT EXISTS billing");
         jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS billing.users " +
                 "(username VARCHAR PRIMARY KEY, password VARCHAR, enabled BOOLEAN)");
+        jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS billing.variables " +
+                "(username VARCHAR, name VARCHAR, value DOUBLE)");
+        jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS billing.functions " +
+                "(username VARCHAR, name VARCHAR, arguments VARCHAR, expression VARCHAR)");
         addUserIfNotExists("username", "password", true);
     }
 
@@ -44,6 +53,123 @@ public class BillingDao {
             jdbcTemplate.update("INSERT INTO billing.users VALUES (?, ?, ?)",
                     new Object[]{username, password, enabled});
             return true;
+        }
+    }
+
+    public Double getVariable(String username, String variable) {
+        return jdbcTemplate.queryForObject(
+                "SELECT username, name, value FROM billing.variables WHERE username = ? AND name = ?",
+                new Object[]{username, variable},
+                new RowMapper<Double>() {
+                    @Override
+                    public Double mapRow(ResultSet rs, int rowNum) throws SQLException {
+                        return rs.getDouble("value");
+                    }
+                }
+        );
+    }
+
+    Map<String, Double> getVariables(String username) {
+        try {
+            return jdbcTemplate.queryForObject(
+                    "SELECT username, name, value FROM billing.variables WHERE username = ?",
+                    new Object[]{username}, (rs, rowNum) -> {
+                        HashMap<String, Double> result = new HashMap<>();
+                        while (true) {
+                            result.put(rs.getString("name"), rs.getDouble("value"));
+                            if (!rs.next()) {
+                                break;
+                            }
+                        }
+                        return result;
+                    });
+        } catch (EmptyResultDataAccessException e) {
+            HashMap<String, Double> result = new HashMap<>();
+            return result;
+        }
+    }
+
+    boolean deleteVariable(String username, String name) throws ParsingException {
+        try {
+            getVariable(username, name);
+            jdbcTemplate.update("DELETE FROM billing.variables WHERE username = ? AND name = ?",
+                    new Object[]{username, name});
+            return true;
+        } catch (EmptyResultDataAccessException e) {
+            return false;
+        }
+    }
+
+    void addVariable(String username, String name, Double value) throws ParsingException {
+        try {
+            getVariable(username, name);
+            jdbcTemplate.update("DELETE FROM billing.variables WHERE username = ? AND name = ?",
+                    new Object[]{username, name});
+            jdbcTemplate.update("INSERT INTO billing.variables VALUES (?, ?, ?)",
+                    new Object[]{username, name, value});
+        } catch (EmptyResultDataAccessException e) {
+            jdbcTemplate.update("INSERT INTO billing.variables VALUES (?, ?, ?)",
+                    new Object[]{username, name, value});
+        }
+    }
+
+    public Function getFunction(String username, String function) {
+        return jdbcTemplate.queryForObject(
+                "SELECT username, name, arguments, expression FROM billing.functions WHERE username = ? AND name = ?",
+                new Object[]{username, function}, (rs, rowNum) -> {
+                    String name = rs.getString("name");
+                    List<String> arguments = Arrays.asList(rs.getString("arguments").split(" "));
+                    String expression = rs.getString("expression");
+                    return new Function(name, arguments, expression);
+                });
+    }
+
+    void addFunction(String username, String name, List<String> arguments, String expression) throws ParsingException {
+        try {
+            getFunction(username, name);
+            jdbcTemplate.update("DELETE FROM billing.functions WHERE username = ? AND name = ?",
+                    new Object[]{username, name});
+            String stringArguments = String.join(" ", arguments);
+            jdbcTemplate.update("INSERT INTO billing.functions VALUES (?, ?, ?, ?)",
+                    new Object[]{username, name, stringArguments, expression});
+        } catch (EmptyResultDataAccessException e) {
+            String stringArguments = String.join(" ", arguments);
+            jdbcTemplate.update("INSERT INTO billing.functions VALUES (?, ?, ?, ?)",
+                    new Object[]{username, name, stringArguments, expression});
+        }
+    }
+
+    Map<String, Function> getFunctions(String username) {
+        try {
+            return jdbcTemplate.queryForObject(
+                    "SELECT username, name, arguments, expression FROM billing.functions WHERE username = ?",
+                    new Object[]{username}, (rs, rowNum) -> {
+                        HashMap<String, Function> result = new HashMap<>();
+                        while (true) {
+                            String name = rs.getString("name");
+                            List<String> arguments = Arrays.asList(rs.getString("arguments").split(" "));
+                            String expression = rs.getString("expression");
+                            result.put(name, new Function(name, arguments, expression));
+                            if (!rs.next()) {
+                                break;
+                            }
+                        }
+                        return result;
+                    });
+        } catch (EmptyResultDataAccessException e) {
+            HashMap<String, Function> result = new HashMap<>();
+            return result;
+        }
+    }
+
+    boolean deleteFunction(String username, String name) throws ParsingException {
+        try {
+            getFunction(username, name);
+            jdbcTemplate.update("DELETE FROM billing.variables WHERE username = ? AND name = ?",
+                    new Object[]{username, name});
+            return true;
+        } catch (EmptyResultDataAccessException e) {
+            return false;
         }
     }
 
