@@ -11,7 +11,7 @@ import ru.mipt.java2016.homework.base.task1.ParsingException;
 public class CalculatorController {
     private static final Logger LOG = LoggerFactory.getLogger(CalculatorController.class);
     @Autowired
-    private calculator calculator;
+    private Calculator calculator;
 
     @RequestMapping(path = "/ping", method = RequestMethod.GET, produces = "text/plain")
     public String echo() {
