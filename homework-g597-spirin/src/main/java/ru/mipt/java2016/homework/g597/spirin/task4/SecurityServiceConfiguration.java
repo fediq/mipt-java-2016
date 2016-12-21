@@ -14,9 +14,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import java.util.Collections;
 
-/**
- * Created by whoami on 12/13/16.
- */
+
 
 @Configuration
 @EnableWebSecurity

@@ -31,19 +31,19 @@ public class CalculatorController {
             name = "world";
         }
         return "<html>" +
-                "<head><title>mountain-viewer App</title></head>" +
+                "<head><title>mountain-viewer app</title></head>" +
                 "<body><h1>Hello, " + name + "!</h1></body>" +
                 "</html>";
     }
 
     @RequestMapping(path = "/eval", method = RequestMethod.POST, consumes = "text/plain", produces = "text/plain")
     public String eval(Authentication authentication, @RequestBody String expression) throws ParsingException {
-        LOG.trace("Evaluation request: [" + expression + "]");
+        LOG.info("Evaluation request: [" + expression + "]");
 
         String username = authentication.getName();
         double result = calculator.calculate(expression);
 
-        LOG.trace("Result: " + result);
+        LOG.info("Result: " + result);
 
         return Double.toString(result) + "\n";
     }
@@ -53,8 +53,8 @@ public class CalculatorController {
         String username = arguments[0];
         String password = arguments[1];
 
-        LOG.trace(username);
-        LOG.trace(password);
+        LOG.info(username);
+        LOG.info(password);
 
         billingDao.putUser(username, password);
     }

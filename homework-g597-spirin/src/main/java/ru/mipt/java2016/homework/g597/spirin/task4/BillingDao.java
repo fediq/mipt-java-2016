@@ -34,7 +34,7 @@ public class BillingDao {
     }
 
     public void initSchema() {
-        LOG.trace("Initializing schema");
+        LOG.info("Initializing schema");
         jdbcTemplate.execute("CREATE SCHEMA IF NOT EXISTS billing");
 
         // User table
@@ -56,7 +56,7 @@ public class BillingDao {
 
     // Load user from user table
     public BillingUser loadUser(String username) throws EmptyResultDataAccessException {
-        LOG.trace("Querying for user " + username);
+        LOG.info("Querying for user " + username);
         return jdbcTemplate.queryForObject(
                 "SELECT username, password FROM billing.users WHERE username = ?",
                 new Object[]{username},
@@ -74,14 +74,14 @@ public class BillingDao {
 
     // Put user into user table
     public void putUser(String username, String password) {
-        LOG.trace("Putting user (username, password) into table");
+        LOG.info("Putting user (username, password) into table");
         jdbcTemplate.execute("INSERT INTO billing.users VALUES ('"
                 + username + "', '" + password + "')");
     }
 
     // Get value of variable of particular user
     public Double getVariable(String username, String variable) throws EmptyResultDataAccessException {
-        LOG.trace("Querying for variable " + variable + " of user " + username);
+        LOG.info("Querying for variable " + variable + " of user " + username);
         return jdbcTemplate.queryForObject(
                 "SELECT value FROM billing.variables WHERE username = '" + username +
                         "' AND variable = '" + variable + "'",
@@ -99,7 +99,7 @@ public class BillingDao {
 
     // Put variable of particular user
     public void putVariable(String username, String variable, Double value) {
-        LOG.trace("Putting variable " + variable + " of user " + username);
+        LOG.info("Putting variable " + variable + " of user " + username);
         deleteVariable(username, variable);
         jdbcTemplate.execute("INSERT INTO billing.variables VALUES ('"
                 + username + "', '" + variable + "', " + value.toString() + ")");
@@ -107,14 +107,14 @@ public class BillingDao {
 
     // Delete variable of particular user
     public void deleteVariable(String username, String variable) {
-        LOG.trace("Deleting variable " + variable + " of user " + username);
+        LOG.info("Deleting variable " + variable + " of user " + username);
         jdbcTemplate.execute("DELETE FROM billing.variables WHERE username = '"
                 + username + "' AND variable = '" + variable + "'");
     }
 
     // Get all variables from the service of particular user
     public String[] getAllVariables(String username) {
-        LOG.trace("Querying for all variables of user " + username);
+        LOG.info("Querying for all variables of user " + username);
 
         List queryResult = jdbcTemplate.queryForList(
                 "SELECT variable FROM billing.variables WHERE username = '" +
@@ -131,7 +131,7 @@ public class BillingDao {
 
     // Get function of particular user
     public String getFunction(String username, String function) {
-        LOG.trace("Querying for function " + function + " of user " + username);
+        LOG.info("Querying for function " + function + " of user " + username);
         return jdbcTemplate.queryForObject(
                 "SELECT body FROM billing.functions WHERE username = '" + username +
                         "' AND function = '" + function + "'",
@@ -147,7 +147,7 @@ public class BillingDao {
 
     // Put function of particular user
     public void putFunction(String username, String function, Integer arity, String body) {
-        LOG.trace("Putting function " + function + " of user " + username);
+        LOG.info("Putting function " + function + " of user " + username);
         deleteFunction(username, function);
         jdbcTemplate.execute("INSERT INTO billing.functions VALUES ('"
                 + username + "', '" + function + "', " + arity.toString() + ", '"
