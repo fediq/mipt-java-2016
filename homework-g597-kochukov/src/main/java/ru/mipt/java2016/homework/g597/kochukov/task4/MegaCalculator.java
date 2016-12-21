@@ -26,6 +26,7 @@ public class MegaCalculator {
     }
 
     public final double calculate(Expression function) throws ParsingException, SQLException {
+
         String expression = function.getExpression();
         // System.err.println("Calculator started with expression: "+expression);
         LinkedHashMap<String, Double> variables = function.getScopeVars();

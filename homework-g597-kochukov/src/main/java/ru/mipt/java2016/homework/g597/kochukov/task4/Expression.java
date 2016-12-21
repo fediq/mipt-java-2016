@@ -24,7 +24,7 @@ public class Expression {
     }
 
     public String getExpression() {
-        return name;
+        return expression;
     }
 
     public void setExpression(String expression) {
