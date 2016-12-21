@@ -8,9 +8,6 @@ import java.util.*;
  * Created by Semyo_000 on 20.12.2016.
  */
 public class PredefinedFunction implements IEvaluateableFunction {
-    /**
-     * PUBLIC STATIC DATA
-     */
     public enum PredefinedFunctionType {
         SIN, COS, TG, SQRT, POW, ABS, SIGN, LOG, LOG2, RND, MAX, MIN
     }
@@ -35,22 +32,11 @@ public class PredefinedFunction implements IEvaluateableFunction {
                 Collections.unmodifiableMap(predefinedFunctionTypeNumArguments);
     }
 
-    /**
-     * PRIVATE STATIC DATA
-     */
     private static final Random RANDOM_NUMBER_GENERATOR = new Random(1337);
 
-
-    /**
-     * DATA
-     */
     private final PredefinedFunctionType functionType;
     private final List<Double> arguments = new ArrayList<>();
 
-
-    /**
-     * CONSTRUCTOR
-     */
     public PredefinedFunction(PredefinedFunctionType functionType) {
         this.functionType = functionType;
         for (int numArgumentsCounter = 0;
@@ -60,10 +46,6 @@ public class PredefinedFunction implements IEvaluateableFunction {
         }
     }
 
-
-    /**
-     * INTERFACE: IEvaluateableFunction
-     */
     @Override
     public Double evaluate() throws ParsingException {
         Double result = 0.0;

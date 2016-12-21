@@ -100,7 +100,7 @@ public class CalculatorController {
         return String.join(", ", result.keySet()) + "\n";
     }
 
-    @RequestMapping(path = "/calculate", method = RequestMethod.POST, consumes = "text/plain", produces = "text/plain")
+    @RequestMapping(path = "/eval", method = RequestMethod.POST, consumes = "text/plain", produces = "text/plain")
     public String calculate(Authentication authentication, @RequestBody String expression) throws ParsingException {
         LOG.debug("Calculation request: [" + expression + "]");
         String username = authentication.getName();
