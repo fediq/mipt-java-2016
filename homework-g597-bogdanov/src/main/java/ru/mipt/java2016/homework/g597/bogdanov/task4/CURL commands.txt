@@ -1,0 +1,27 @@
+curl http://localhost:9001/user/add/supersanic99?password=gottagofast -X PUT -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "supersanic:gottagofast" | base64)"
+
+curl http://localhost:9001/eval -X POST -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "supersanic:gottagofast" | base64)" --data-raw "44*3+2"
+
+curl http://localhost:9001/user/add/krusher99?password=mlgpro -X PUT -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "supersanic:gottagofast" | base64)"
+
+curl http://localhost:9001/eval -X POST -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "krusher99:mlgpro" | base64)" --data-raw "44*3+2"
+
+curl http://localhost:9001/variable/mlgrank -X PUT -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "krusher99:mlgpro" | base64)" --data-raw "1"
+
+curl http://localhost:9001/variable/mlgrank -X PUT -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "supersanic:gottagofast" | base64)" --data-raw "99999"
+
+curl http://localhost:9001/variable/mlgrank -X GET -H "Authorization: Basic $(echo -n "krusher99:mlgpro" | base64)"
+
+curl http://localhost:9001/variable/mlgrank -X GET -H "Authorization: Basic $(echo -n "supersanic:gottagofast" | base64)"
+
+curl http://localhost:9001/variable/ml -X PUT -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "supersanic:gottagofast" | base64)" --data-raw "max(1.010, 1.009)"
+
+curl http://localhost:9001/function/myfunc?args=x&args=y -X PUT -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "krusher99:mlgpro" | base64)" --data-raw "pow(2, x)"
+
+curl http://localhost:9001/function/myfunc1?args=x,y -X PUT -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "krusher99:mlgpro" | base64)" --data-raw "log2(x) + y"
+
+curl http://localhost:9001/eval -X POST -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "krusher99:mlgpro" | base64)" --data-raw "15 + myfunc1(64, 4)"
+
+curl http://localhost:9001/eval -X POST -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "supersanic:gottagofast" | base64)" --data-raw "15 + myfunc1(64, 4)"
+
+curl http://localhost:9001/function/myfunc1 -X GET -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "supersanic:gottagofast" | base64)"

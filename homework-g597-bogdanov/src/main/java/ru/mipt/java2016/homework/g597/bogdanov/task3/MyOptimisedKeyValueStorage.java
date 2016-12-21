@@ -221,8 +221,8 @@ public class MyOptimisedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     }
 
     private void clearDeletedElements() {
-        dumpMemtable();
         readWriteLock.writeLock().lock();
+        dumpMemtable();
         try {
             HashMap<K, Long> updatedOffsets = new HashMap<>();
             File tmpFileForValues = new File(path + File.separator + this.fileName + "_values");
