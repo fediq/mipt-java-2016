@@ -4,12 +4,17 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 <parent>
     <artifactId>mipt-java-2016</artifactId>
-    <groupId>ru.mipt.java2016</groupId>
+    <groupId>
+        ru.mipt.java2016</groupId>
     <version>1.0.0</version>
 </parent>
 <modelVersion>4.0.0</modelVersion>
 
 <artifactId>homework-g596-ivanova</artifactId>
+
+    <properties>
+        <spring.boot.version>1.4.2.RELEASE</spring.boot.version>
+    </properties>
 <dependencies>
     <dependency>
         <groupId>ru.mipt.java2016</groupId>
@@ -35,7 +40,65 @@
         <version>3.21.0-GA</version>
         <type>jar</type>
     </dependency>
+    <dependency>
+        <groupId>com.zaxxer</groupId>
+        <artifactId>HikariCP</artifactId>
+        <version>RELEASE</version>
+    </dependency>
+    <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-annotations</artifactId>
+        <version>RELEASE</version>
+    </dependency>
+    <dependency>
+        <groupId>net.sourceforge.jeval</groupId>
+        <artifactId>jeval</artifactId>
+        <version>0.9.4</version>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+        <version>${spring.boot.version}</version>
+    </dependency>
+
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-jdbc</artifactId>
+        <version>${spring.boot.version}</version>
+    </dependency>
+
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-security</artifactId>
+        <version>${spring.boot.version}</version>
+    </dependency>
+
+    <dependency>
+        <groupId>com.zaxxer</groupId>
+        <artifactId>HikariCP</artifactId>
+        <version>2.5.1</version>
+    </dependency>
+
+    <dependency>
+        <groupId>com.h2database</groupId>
+        <artifactId>h2</artifactId>
+        <version>1.4.193</version>
+    </dependency>
 </dependencies>
+
+    <repositories>
+        <repository>
+            <id>spring-releases</id>
+            <url>https://repo.spring.io/libs-release</url>
+        </repository>
+    </repositories>
+
+    <pluginRepositories>
+        <pluginRepository>
+            <id>spring-releases</id>
+            <url>https://repo.spring.io/libs-release</url>
+        </pluginRepository>
+    </pluginRepositories>
 
 <build>
     <plugins>
