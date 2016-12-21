@@ -53,7 +53,9 @@ class MyKVStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public synchronized void write(K key, V value) {
         checker();
-        if(!exists(key)) ++length;
+        if (!exists(key)) {
+            ++length;
+        }
          data.put(key, value);
 
     }
@@ -81,8 +83,9 @@ class MyKVStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public synchronized void close() throws IOException {
-        if (!isClosed)
+        if (!isClosed) {
             render();
+        }
 
     }
 
