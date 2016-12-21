@@ -3,16 +3,16 @@ package ru.mipt.java2016.homework.g595.manucharyan.task4;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.ExceptionDepthComparator;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
-import javax.annotation.PostConstruct;
-import javax.sql.DataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+
+import javax.annotation.PostConstruct;
+import javax.sql.DataSource;
 
 
 @Repository
@@ -35,10 +35,10 @@ public class BillingDao {
         jdbcTemplate.execute("CREATE SCHEMA IF NOT EXISTS billing");
         jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS billing.users " +
                 "(username VARCHAR PRIMARY KEY, password VARCHAR, enabled BOOLEAN)");
-        try{
+        try {
             jdbcTemplate.update("INSERT INTO billing.users VALUES ('username', 'password', TRUE)");
-        } catch(Exception e) {
-
+        } catch (Exception e) {
+            System.out.print("");
         }
     }
 

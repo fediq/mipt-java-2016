@@ -1,8 +1,6 @@
 package ru.mipt.java2016.homework.g595.manucharyan.task4;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Stack;
@@ -136,9 +134,10 @@ public class RESTCalc implements Calculator {
                             operations.push(t);
                         } else if (t.symbol == Symbol.CBRACKET) { //close bracket
                             Token tmp = operations.pop();
-                            while (!operations.isEmpty() && tmp.symbol != Symbol.OBRACKET || tmp.symbol == Symbol.FUNCTION) {
+                            while (!operations.isEmpty() && tmp.symbol != Symbol.OBRACKET ||
+                                    tmp.symbol == Symbol.FUNCTION) {
                                 calculateOperation(tmp);
-                                if(tmp.symbol == Symbol.FUNCTION) {
+                                if (tmp.symbol == Symbol.FUNCTION) {
                                     break;
                                 }
                                 tmp = operations.pop();
@@ -151,7 +150,7 @@ public class RESTCalc implements Calculator {
 
                         break;
                     case VARIABLE:
-                        if(!variables.containsKey(t.name)) {
+                        if (!variables.containsKey(t.name)) {
                             throw new ParsingException("no such variable");
                         }
                         stack.push(variables.get(t.name));
@@ -228,7 +227,7 @@ public class RESTCalc implements Calculator {
     }
 
     private double calculateFunction(String name, double[] operands) {
-        assert(predefinedFunctions.containsKey(name));
+        assert (predefinedFunctions.containsKey(name));
         switch (name) {
             case "sin":
                 return Math.sin(operands[0]);
@@ -265,9 +264,9 @@ public class RESTCalc implements Calculator {
         String name = "";
         char c = expression.charAt(pos);
 
-        assert(!Character.isDigit(c));
+        assert (!Character.isDigit(c));
 
-        while(Character.isLetter(c) || c == '_' || Character.isDigit(c)) {
+        while (Character.isLetter(c) || c == '_' || Character.isDigit(c)) {
             name += c;
             if (pos == expression.length() - 1) {
                 return name;
@@ -288,7 +287,7 @@ public class RESTCalc implements Calculator {
         //get all operands
         double[] operands = new double[t.valency];
 
-        for (int i=0; i < t.valency; ++i) {
+        for (int i = 0; i < t.valency; ++i) {
             operands[t.valency - i - 1] = stack.pop();
         }
 
@@ -374,15 +373,15 @@ public class RESTCalc implements Calculator {
         if (c == ')') {
             return new Token(Symbol.CBRACKET);
         }
-        if(c == '_' || Character.isLetter(c)) {
+        if (c == '_' || Character.isLetter(c)) {
             String name = getName(expression);
-            if(pos < expression.length() - 1 && expression.charAt(++pos) == '(') {
-                if(!predefinedFunctions.containsKey(name)) {
+            if (pos < expression.length() - 1 && expression.charAt(++pos) == '(') {
+                if (!predefinedFunctions.containsKey(name)) {
                     throw new ParsingException("no such a function");
                 }
                 return new Token(Symbol.FUNCTION, name, predefinedFunctions.get(name));
-            }else {
-                if(!variables.containsKey(name)) {
+            } else {
+                if (!variables.containsKey(name)) {
                     throw new ParsingException("no such a variable");
                 }
                 pos--;
@@ -429,8 +428,10 @@ public class RESTCalc implements Calculator {
 
     }
 
-    public enum Symbol { NUMBER, ADD, UNOADD, SUB, UNOSUB, MUL, DIV, OBRACKET,
-                        CBRACKET, VARIABLE, FUNCTION, SPACE, NONE }
+    public enum Symbol {
+        NUMBER, ADD, UNOADD, SUB, UNOSUB, MUL, DIV, OBRACKET,
+        CBRACKET, VARIABLE, FUNCTION, SPACE, NONE
+    }
 
-    public enum SymbolType { OPERATOR, NUMBER, BRACKET, SPACE, VARIABLE, FUNCTION, NONE }
+    public enum SymbolType {OPERATOR, NUMBER, BRACKET, SPACE, VARIABLE, FUNCTION, NONE}
 }
