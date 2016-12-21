@@ -1,4 +1,4 @@
-curl http://localhost:9001/user/add/supersanic99?password=gottagofast -X PUT -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "supersanic:gottagofast" | base64)"
+curl http://localhost:9001/user/add/supersanic99?password=gottagofast -X PUT -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "username:password" | base64)"
 
 curl http://localhost:9001/eval -X POST -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "supersanic:gottagofast" | base64)" --data-raw "44*3+2"
 
