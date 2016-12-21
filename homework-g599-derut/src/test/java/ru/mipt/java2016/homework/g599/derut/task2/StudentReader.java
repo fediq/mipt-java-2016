@@ -1,5 +1,7 @@
 package ru.mipt.java2016.homework.g599.derut.task2;
 
+import ru.mipt.java2016.homework.tests.task2.Student;
+
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Date;

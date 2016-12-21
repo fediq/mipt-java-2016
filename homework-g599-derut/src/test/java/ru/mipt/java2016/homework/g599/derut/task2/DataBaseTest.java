@@ -5,19 +5,34 @@ import ru.mipt.java2016.homework.tests.task2.AbstractSingleFileStorageTest;
 import ru.mipt.java2016.homework.tests.task2.Student;
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
 
-public class DataBaseTest extends AbstractSingleFileTest {
+import java.io.IOException;
+
+public class DataBaseTest extends AbstractSingleFileStorageTest {
     @Override
     protected KeyValueStorage<String, String> buildStringsStorage(String path) {
-        return new MyKVStorage(path, new StringReader(), new StringReader());
+        try {
+            return new MyKVStorage(path, new StringReader(), new StringReader());
+        } catch (IOException e) {
+            return null;
+        }
     }
 
     @Override
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) {
-        return new MyKVStorage(path, new StringReader(), new DoubleReader());
+        try {
+
+            return new MyKVStorage(path, new IntegerRead(), new DoubleRead());
+        } catch (IOException e) {
+            return null;
+        }
     }
 
     @Override
     protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) {
-        return new MyKVStorage(path, new StudentKReader(), new StudentVReader());
+        try {
+            return new MyKVStorage(path, new StudentKReader(), new StudentReader());
+        } catch (IOException e) {
+            return null;
+        }
     }
 }
