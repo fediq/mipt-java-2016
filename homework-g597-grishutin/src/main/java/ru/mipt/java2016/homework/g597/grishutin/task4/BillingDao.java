@@ -30,7 +30,7 @@ public class BillingDao {
         jdbcTemplate.execute("CREATE SCHEMA IF NOT EXISTS billing");
         jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS billing.users " +
                 "(username VARCHAR PRIMARY KEY, password VARCHAR, enabled BOOLEAN)");
-        jdbcTemplate.update("MERGE INTO billing.users VALUES ('username', 'password', TRUE)");
+        jdbcTemplate.update("MERGE INTO billing.users VALUES ('sashka', 'sashka', TRUE)");
     }
 
 

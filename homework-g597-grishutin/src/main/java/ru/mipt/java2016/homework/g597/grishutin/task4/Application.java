@@ -15,8 +15,10 @@ import ru.mipt.java2016.homework.g597.grishutin.task1.MyCalculator;
  * curl http://localhost:8080/eval \
  *     -X POST \
  *     -H "Content-Type: text/plain" \
+ *     -H "Authorization: Basic $(echo -n "sashka:sashka" | base64)" \
  *     --data-raw "44*3+2"
  */
+
 @EnableAutoConfiguration
 @Configuration
 @ComponentScan(basePackageClasses = Application.class)
