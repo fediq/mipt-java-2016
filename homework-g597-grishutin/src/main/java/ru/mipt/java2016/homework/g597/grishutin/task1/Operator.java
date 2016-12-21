@@ -85,6 +85,7 @@ public class Operator extends Token {
     public boolean isLeftAssociative() {
         return !isRightAssociative();
     }
+
     public boolean isSubstruction() {
         return data.equals("-");
     }

@@ -70,11 +70,11 @@ public class MyCalculator implements Calculator {
             }
         }
         while (!operatorStack.isEmpty()) {
-            Token cur_operator = operatorStack.pop();
-            if (cur_operator.isCloseBraceToken() || cur_operator.isOpenBraceToken()) {
+            Token curOperator = operatorStack.pop();
+            if (curOperator.isCloseBraceToken() || curOperator.isOpenBraceToken()) {
                 throw new ParsingException("Invalid brace balance");
             }
-            postfix.add(cur_operator);
+            postfix.add(curOperator);
         }
         if (postfix.size() == 0) {
             throw new ParsingException("Empty input");
@@ -103,14 +103,16 @@ public class MyCalculator implements Calculator {
                 } else if (token.type.equals(Token.TokenType.OPERATOR)) {
                     if (((Operator) token).isUnary()) {
                         if (operands.size() < 1) {
-                            throw new ParsingException("Incorrect expression: not enough arguments for unary " + token.data);
+                            throw new ParsingException("Incorrect expression: not enough arguments for unary " +
+                                    token.data);
                         }
 
                         double arg = operands.pop();
                         operands.push(((Operator) token).apply(arg));
                     } else {
                         if (operands.size() < 2) {
-                            throw new ParsingException("Incorrect expression: not enough arguments for unary " + token.data);
+                            throw new ParsingException("Incorrect expression: not enough arguments for unary " +
+                                    token.data);
                         }
                         double arg1 = operands.pop();
                         double arg2 = operands.pop();

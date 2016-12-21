@@ -74,14 +74,14 @@ public class Tokenizer {
 
     private String readNumberToken() throws ParsingException {
         StringBuilder token = new StringBuilder();
-        boolean had_dot = false;
+        boolean hadDot = false;
         while (currentPosition < expression.length() && isNumericCharacter(getCurrentChar())) {
             token.append(getCurrentChar());
             if (getCurrentChar() == '.') {
-                if (had_dot) {
+                if (hadDot) {
                     throw new  ParsingException("multiple dots in number are not allowed");
                 } else {
-                    had_dot = true;
+                    hadDot = true;
                 }
             }
             currentPosition++;

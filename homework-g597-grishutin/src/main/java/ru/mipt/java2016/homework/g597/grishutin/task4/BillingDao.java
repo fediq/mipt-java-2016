@@ -40,9 +40,9 @@ public class BillingDao {
                 "SELECT username, password, enabled FROM billing.users WHERE username = ?",
                 new Object[]{username},
                 (rs, rowNum) -> new BillingUser(
-                        rs.getString("username"),
-                        rs.getString("password"),
-                        rs.getBoolean("enabled")
+                    rs.getString("username"),
+                    rs.getString("password"),
+                    rs.getBoolean("enabled")
                 )
         );
     }
