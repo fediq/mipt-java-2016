@@ -1,13 +1,14 @@
 package ru.mipt.java2016.homework.g597.vasilyev.task1;
 
-import java.util.Stack;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
+
+import java.util.Stack;
 
 /**
  * Created by mizabrik on 10.10.16.
  * Arithmetic operator class.
  */
-enum Operator {
+enum Operator implements Command {
     ADD(2, 2, true),
     SUBTRACT(2, 2, true),
     MULTIPLY(1, 2, true),
@@ -25,7 +26,8 @@ enum Operator {
     }
 
     // Apply operator to stack
-    void apply(Stack<Double> numbers) throws ParsingException {
+    @Override
+    public void apply(Stack<Double> numbers) throws ParsingException {
         // Too few arguments
         if (numbers.size() < valency) {
             throw new ParsingException("Too few operands");
