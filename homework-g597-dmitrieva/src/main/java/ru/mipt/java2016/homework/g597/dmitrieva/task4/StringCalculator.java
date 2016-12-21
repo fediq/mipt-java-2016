@@ -3,7 +3,6 @@ package ru.mipt.java2016.homework.g597.dmitrieva.task4;
 
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
-import ru.mipt.java2016.homework.g597.dmitrieva.task4.Function;
 
 import java.util.*;
 
@@ -13,29 +12,28 @@ import java.util.*;
 
 public class StringCalculator implements Calculator {
 
-
-    private final Set<Character> SYMBOLS =
+    private final static Set<Character> SYMBOLS =
             new TreeSet<>(Arrays.asList('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.'));
     private final static Set<String> OPERATORS = new TreeSet<>(Arrays.asList("+", "-", "*", "/"));
-    private static Map<String, Integer> PREDEFINED_FUNCTIONS;
+    private static Map<String, Integer> BaseFunctions;
 
     static {
-        PREDEFINED_FUNCTIONS = new HashMap<>();
-        PREDEFINED_FUNCTIONS.put("sin", 1);
-        PREDEFINED_FUNCTIONS.put("cos", 1);
-        PREDEFINED_FUNCTIONS.put("tg", 1);
-        PREDEFINED_FUNCTIONS.put("sqrt", 1);
-        PREDEFINED_FUNCTIONS.put("pow", 2);
-        PREDEFINED_FUNCTIONS.put("abs", 1);
-        PREDEFINED_FUNCTIONS.put("sign", 1);
-        PREDEFINED_FUNCTIONS.put("log", 1);
-        PREDEFINED_FUNCTIONS.put("log2", 1);
-        PREDEFINED_FUNCTIONS.put("rnd", 0);
-        PREDEFINED_FUNCTIONS.put("max", 2);
-        PREDEFINED_FUNCTIONS.put("min", 2);
+        BaseFunctions = new HashMap<>();
+        BaseFunctions.put("sin", 1);
+        BaseFunctions.put("cos", 1);
+        BaseFunctions.put("tg", 1);
+        BaseFunctions.put("sqrt", 1);
+        BaseFunctions.put("pow", 2);
+        BaseFunctions.put("abs", 1);
+        BaseFunctions.put("sign", 1);
+        BaseFunctions.put("log", 1);
+        BaseFunctions.put("log2", 1);
+        BaseFunctions.put("rnd", 0);
+        BaseFunctions.put("max", 2);
+        BaseFunctions.put("min", 2);
     }
 
-    public TreeMap<String, Function> ALLFUNCTIONS = new TreeMap<>();
+    private TreeMap<String, Function> AllFunctions = new TreeMap<>();
 
 
     @Override
@@ -52,7 +50,7 @@ public class StringCalculator implements Calculator {
         if (expression == null) {
             throw new ParsingException("The string doesn't exist");
         }
-        ALLFUNCTIONS = functions;
+        AllFunctions = functions;
         return calculateReversedPolish(toReversedPolish(expression));
     }
 
@@ -64,13 +62,13 @@ public class StringCalculator implements Calculator {
         if (operator.equals("+") || operator.equals("-")) {
             return 1;
         }
-        if (operator.equals("*")|| operator.equals("/")) {
+        if (operator.equals("*") || operator.equals("/")) {
             return 2;
         }
         if (operator.equals("&")) {
             return 3;
         }
-        if (ALLFUNCTIONS.containsKey(operator)) {
+        if (AllFunctions.containsKey(operator)) {
             return 3;
         }
         throw new ParsingException("Invalid symbol");
@@ -78,13 +76,12 @@ public class StringCalculator implements Calculator {
 
     // Возвращает ассоциативность операции
     String getAssociativity(String operator) throws ParsingException {
-        if(OPERATORS.contains(operator)) {
+        if (OPERATORS.contains(operator)) {
             return "left";
         }
-        if (ALLFUNCTIONS.keySet().contains(operator)) {
+        if (AllFunctions.keySet().contains(operator)) {
             return "right";
-        }
-        else {
+        } else {
             throw new ParsingException("Do not know such function or operator");
         }
     }
@@ -106,7 +103,7 @@ public class StringCalculator implements Calculator {
             StringBuilder functionName = new StringBuilder();
 
             // Если пробельный символ, то игнориурем.
-            if ((currentSymbol.charAt(0) == ' ') || currentSymbol.equals("\t")|| currentSymbol.equals("\n")) {
+            if ((currentSymbol.charAt(0) == ' ') || currentSymbol.equals("\t") || currentSymbol.equals("\n")) {
                 postfixLine.append(' ');
                 continue;
             }
@@ -169,7 +166,8 @@ public class StringCalculator implements Calculator {
                     if (i >= expression.length()) {
                         throw new ParsingException("Out of range of expression");
                     }
-                    // следующим за именем функции символом должна быть открывающая скобка, иначе -- некорретное выражение
+                    // следующим за именем функции символом должна быть открывающая скобка,
+                    // иначе -- некорретное выражение
                     if (currentSymbol.charAt(0) == '(') {
                         stack.push(currentSymbol.toString());
                         postfixLine.append(' ').append(' ');
@@ -178,7 +176,7 @@ public class StringCalculator implements Calculator {
                         throw new ParsingException("Invalid expression, couldn't find its arguments");
                     }
 
-                    if (!ALLFUNCTIONS.containsKey(functionName.toString())) {
+                    if (!AllFunctions.containsKey(functionName.toString())) {
                         throw new ParsingException("Do not have such function");
                     }
                     //пока приоритет этого оператора меньше приоритета оператора,
@@ -264,13 +262,17 @@ public class StringCalculator implements Calculator {
                 stack.push(Double.parseDouble(currentString));
                 continue;
             }
-            if (PREDEFINED_FUNCTIONS.containsKey(currentString)) {
+            if (BaseFunctions.containsKey(currentString)) {
+                switch (currentString) {
+                    case "sin":
+
+                }
                 // тут куча if'ов и вызов математический функций из библиотеки
                 continue;
             }
 
-            if (ALLFUNCTIONS.containsKey(currentString)) {
-                Function currentFunction = ALLFUNCTIONS.get(currentString);
+            if (AllFunctions.containsKey(currentString)) {
+                Function currentFunction = AllFunctions.get(currentString);
                 String expressionForFunction = currentFunction.getExpression();
                 List<String> argumentOfFunction = currentFunction.getArguments();
                 int amountOfArguments = argumentOfFunction.size();
@@ -297,33 +299,6 @@ public class StringCalculator implements Calculator {
                 b = stack.pop();
                 stack.push(countAtomicOperation(currentString.charAt(0), a, b));
             }
-
-            /*
-            if (SYMBOLS.contains(currentSymbol)) {
-                oneNumber.append(currentSymbol);
-            } else {
-                if (i > 0 && currentSymbol.charAt(0) == ' ' && SYMBOLS.contains(postfixLine.charAt(i - 1))) {
-                    try {
-                        stack.push(Double.parseDouble(oneNumber.toString()));
-                    } catch (NumberFormatException e) {
-                        throw new ParsingException("Bad number");
-                    }
-                    oneNumber.delete(0, oneNumber.length());
-                } else {
-                    if (currentSymbol.charAt(0) == '&') {
-                        Double a;
-                        a = stack.pop();
-                        stack.push(-1 * a);
-                    }
-                    if (OPERATORS.contains(currentSymbol)) {
-                        Double a;
-                        Double b;
-                        a = stack.pop();
-                        b = stack.pop();
-                        stack.push(countAtomicOperation(currentSymbol.charAt(0), a, b));
-                    }
-                }
-            } */
         }
         // В конце в стеке должен был остаться один элемент, который является ответом.
         if (stack.size() == 1) {

@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.security.access.method.P;
 import org.springframework.stereotype.Repository;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
@@ -39,22 +38,24 @@ public class BillingDao {
         //jdbcTemplate.update("INSERT INTO billing.users VALUES ('username', 'password', TRUE)");
 
         jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS billing.functions" +
-                "(username VARCHAR, nameOfFunction VARCHAR, arguments VARCHAR, expression VARCHAR, PRIMARY KEY (username, nameOfFunction))");
+                "(username VARCHAR, nameOfFunction VARCHAR, arguments VARCHAR, " +
+                "expression VARCHAR, PRIMARY KEY (username, nameOfFunction))");
         //jdbcTemplate.update("INSERT INTO billing.functions VALUES ('username','sin', 'a', 'sin(a)')");
         //jdbcTemplate.update("INSERT INTO billing.functions VALUES ('username','cos', 'a', 'cos(a)')");
-        jdbcTemplate.update("INSERT INTO billing.functions VALUES ('username','tg', 'a', 'tg(a)')");
-        jdbcTemplate.update("INSERT INTO billing.functions VALUES ('username','sqrt', 'a', 'sqrt(a)')");
-        jdbcTemplate.update("INSERT INTO billing.functions VALUES ('username','pow', 'm, e', 'pow(m, e)')");
-        jdbcTemplate.update("INSERT INTO billing.functions VALUES ('username','abs', 'a', 'abs(a)')");
-        jdbcTemplate.update("INSERT INTO billing.functions VALUES ('username','sign', 'a', 'sigh(a)')");
-        jdbcTemplate.update("INSERT INTO billing.functions VALUES ('username','log', 'a, n', 'log(a, n)')");
-        jdbcTemplate.update("INSERT INTO billing.functions VALUES ('username', 'log2', 'a', 'log2(a)')");
-        jdbcTemplate.update("INSERT INTO billing.functions VALUES ('username', 'rnd', '', 'rnd()')");
-        jdbcTemplate.update("INSERT INTO billing.functions VALUES ('username','max', 'a, b', 'max(a, b)')");
-        jdbcTemplate.update("INSERT INTO billing.functions VALUES ('username','min', 'a, b', 'min(a,b)')");
+        //jdbcTemplate.update("INSERT INTO billing.functions VALUES ('username','tg', 'a', 'tg(a)')");
+        //jdbcTemplate.update("INSERT INTO billing.functions VALUES ('username','sqrt', 'a', 'sqrt(a)')");
+        //jdbcTemplate.update("INSERT INTO billing.functions VALUES ('username','pow', 'm, e', 'pow(m, e)')");
+        //jdbcTemplate.update("INSERT INTO billing.functions VALUES ('username','abs', 'a', 'abs(a)')");
+        //jdbcTemplate.update("INSERT INTO billing.functions VALUES ('username','sign', 'a', 'sigh(a)')");
+        //jdbcTemplate.update("INSERT INTO billing.functions VALUES ('username','log', 'a, n', 'log(a, n)')");
+        //jdbcTemplate.update("INSERT INTO billing.functions VALUES ('username', 'log2', 'a', 'log2(a)')");
+        //jdbcTemplate.update("INSERT INTO billing.functions VALUES ('username', 'rnd', '', 'rnd()')");
+        //jdbcTemplate.update("INSERT INTO billing.functions VALUES ('username','max', 'a, b', 'max(a, b)')");
+        //jdbcTemplate.update("INSERT INTO billing.functions VALUES ('username','min', 'a, b', 'min(a,b)')");
 
         jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS billing.variables " +
-                "(username VARCHAR, nameOfVariable VARCHAR, valueOfVariable DOUBLE NOT NULL, PRIMARY KEY (username, nameOfVariable))");
+                "(username VARCHAR, nameOfVariable VARCHAR, valueOfVariable DOUBLE NOT NULL, " +
+                " PRIMARY KEY (username, nameOfVariable))");
 
     }
 
@@ -62,7 +63,7 @@ public class BillingDao {
         LOG.trace("Querying for user " + username);
         return jdbcTemplate.queryForObject(
                 "SELECT username, password, enabled FROM billing.users WHERE username = ?",
-                new Object[]{username} ,
+                new Object[]{username},
                 new RowMapper<BillingUser>() {
                     @Override
                     public BillingUser mapRow(ResultSet rs, int rowNum) throws SQLException {
@@ -82,7 +83,8 @@ public class BillingDao {
     }
 
     public Double getVariable(String username, String variableName) {
-        return jdbcTemplate.queryForObject("SELECT username, nameOfVariable, valueOfVariable FROM billing.variables WHERE username = ? AND nameOfVariable = ?",
+        return jdbcTemplate.queryForObject("SELECT username, nameOfVariable, valueOfVariable " +
+                        "FROM billing.variables WHERE username = ? AND nameOfVariable = ?",
                 new Object[]{username, variableName},
                 new RowMapper<Double>() {
                     @Override
@@ -93,7 +95,7 @@ public class BillingDao {
         );
     }
 
-    Map<String, Double> getVariables (String username) {
+    Map<String, Double> getVariables(String username) {
         try {
             return jdbcTemplate.queryForObject(
                     "SELECT username, nameOfVariable, valueOfVariable FROM billing.variables WHERE username = ?",
@@ -144,23 +146,26 @@ public class BillingDao {
 
     public Function getFunction(String username, String nameOfFunction) {
         return jdbcTemplate.queryForObject(
-                "SELECT username, nameOfFunction, arguments, expression FROM billing.functions WHERE username = ? AND nameOfFunction = ?",
+                "SELECT username, nameOfFunction, arguments, expression " +
+                        "FROM billing.functions WHERE username = ? AND nameOfFunction = ?",
                 new Object[]{username, nameOfFunction},
                 new RowMapper<Function>() {
-            @Override
-            public Function mapRow(ResultSet resultSet, int rowNum) throws SQLException {
-                String nameOfFunction = resultSet.getString("nameOfFunction");
-                List<String> arguments = Arrays.asList(resultSet.getString("arguments").split(" "));
-                String expression = resultSet.getString("expression");
-                return new Function(nameOfFunction, arguments, expression);
-            }
-        });
+                    @Override
+                    public Function mapRow(ResultSet resultSet, int rowNum) throws SQLException {
+                        String nameOfFunction = resultSet.getString("nameOfFunction");
+                        List<String> arguments = Arrays.asList(resultSet.getString("arguments").split(" "));
+                        String expression = resultSet.getString("expression");
+                        return new Function(nameOfFunction, arguments, expression);
+                    }
+                }
+        );
     }
 
 
     TreeMap<String, Function> getFunctions(String username) {
         try {
-            return jdbcTemplate.queryForObject("SELECT username, nameOfFunction, arguments, expression FROM billing.functions WHERE username = ?",
+            return jdbcTemplate.queryForObject("SELECT username, nameOfFunction, arguments, expression" +
+                            " FROM billing.functions WHERE username = ?",
                     new Object[]{username},
                     new RowMapper<TreeMap<String, Function>>() {
                         @Override
@@ -211,7 +216,8 @@ public class BillingDao {
                 endIndexOfVariable = i;
                 continue;
             }
-            if (!(Character.isLetterOrDigit(expression.charAt(i)) || expression.charAt(i) == '_') && isReadingVariable) {
+            if (!(Character.isLetterOrDigit(expression.charAt(i)) || expression.charAt(i) == '_')
+                    && isReadingVariable) {
                 isReadingVariable = false;
                 String variable = expression.substring(beginIndexOfVariable, endIndexOfVariable + 1);
                 // Если мы нашли не переменную, а какую-то функцию, то ничего с ней делать не хотим

@@ -8,11 +8,6 @@ import org.springframework.boot.context.embedded.EmbeddedServletContainerCustomi
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import ru.mipt.java2016.homework.base.task1.Calculator;
-import ru.mipt.java2016.homework.g597.dmitrieva.task1.StackCalculator;
-//import ru.mipt.java2016.homework.g597.dmitrieva.task1.StringCalculator;
-
-import java.util.Stack;
 
 /**
  * curl http://localhost:9001/eval \
@@ -22,8 +17,6 @@ import java.util.Stack;
  *     --data-raw "44*3+2"
  */
 
-/* curl http://localhost:9001/variable/azaz -X PUT -H "Content-Type: text/plain" -H "Authorization: Basic $(echo -n "username:password" | base64)" --data-raw "1488"
-*/
 @EnableAutoConfiguration
 @Configuration
 @ComponentScan(basePackageClasses = IrinaPsinaApplication.class)

@@ -19,7 +19,7 @@ public class CalculatorController {
     private StringCalculator calculator;
 
     @Autowired
-    public BillingDao billingDao;
+    private BillingDao billingDao;
 
     @RequestMapping(path = "/ping", method = RequestMethod.GET, produces = "text/plain")
     public String echo() {
@@ -31,7 +31,8 @@ public class CalculatorController {
         if (name == null) {
             name = "world";
         }
-        return "<html>" + "<head><title>IrinaPsinaApp</title></head>" + "<body><h1>Hello, " + name + "!</h1></body>" + "</html>";
+        return "<html>" + "<head><title>IrinaPsinaApp</title></head>" +
+                "<body><h1>Hello, " + name + "!</h1></body>" + "</html>";
     }
 
     /*
@@ -48,7 +49,7 @@ public class CalculatorController {
     * Получить список имен всех переменных в сервисе.
     */
     @RequestMapping(path = "/variable", method = RequestMethod.GET, produces = "text/plain")
-    public String getVariables(Authentication authentication) throws ParsingException {
+    public String getVariables(Authentication authentication) {
         String username = authentication.getName();
         Map<String, Double> result = billingDao.getVariables(username);
         return String.join(", ", result.keySet()) + "\n" + "";
@@ -72,8 +73,10 @@ public class CalculatorController {
      * Присвоить переменной новое выражение.
      */
 
-    @RequestMapping(path = "/variable/{varName}", method = RequestMethod.PUT, consumes = "*/*;charset=UTF-8", produces = "text/plain")
-    public String addVariable(Authentication authentication, @PathVariable String varName, @RequestBody String valueOfVariable) throws ParsingException {
+    @RequestMapping(path = "/variable/{varName}", method = RequestMethod.PUT,
+            consumes = "*/*;charset=UTF-8", produces = "text/plain")
+    public String addVariable(Authentication authentication, @PathVariable String varName,
+                              @RequestBody String valueOfVariable) throws ParsingException {
         String username = authentication.getName();
         billingDao.addVariable(username, varName, Double.parseDouble(valueOfVariable));
         return "Variable " + varName + " has been added\n";
@@ -87,9 +90,10 @@ public class CalculatorController {
 
     @RequestMapping(path = "/function/{nameOfFunction}", method = RequestMethod.GET, produces = "text/plain")
     public String getFunction(Authentication authentication, @PathVariable String nameOfFunction) {
-         String username = authentication.getName();
+        String username = authentication.getName();
         Function result = billingDao.getFunction(username, nameOfFunction);
-        return nameOfFunction + "(" + String.join(", ", result.getArguments()) + ")" + " = " + result.getExpression() + "\n";
+        return nameOfFunction + "(" + String.join(", ", result.getArguments()) + ")"
+                + " = " + result.getExpression() + "\n";
     }
 
      /*
@@ -110,18 +114,6 @@ public class CalculatorController {
     * Присвоить функции с заданным именем следующее выражение и список аргументов.
     * Предопределенные функции нельзя изменить.
     */
-
-    //@RequestMapping(path = "/function/{nameOfFunction}", method = RequestMethod.PUT, consumes = "*/*;charset=UTF-8", produces = "text/plain")
-    /*public String addFunction(Authentication authentication, @PathVariable String nameOfFunction,
-                              @RequestParam(value = "args") String args,
-                              @RequestBody String expression) {
-        System.out.println("HELLO!!!!!!!!");
-        String username = authentication.getName();
-        List<String> arguments = Arrays.asList(args.split(","));
-        billingDao.addFunction(username, nameOfFunction, arguments, expression);
-        return "Function" + nameOfFunction + " has been added\n";
-    } */
-
     @RequestMapping(path = "/function/{name}", method = RequestMethod.PUT,
             consumes = "text/plain", produces = "text/plain")
     public String addFunction(Authentication authentication, @PathVariable String name,
@@ -138,7 +130,7 @@ public class CalculatorController {
      * Получить список имен всех пользовательских функций в сервисе.
      */
     @RequestMapping(path = "/function", method = RequestMethod.GET, produces = "text/plain")
-    public String getFunctions(Authentication authentication) throws ParsingException {
+    public String getFunctions(Authentication authentication) {
         String username = authentication.getName();
         TreeMap<String, Function> map1 = billingDao.getFunctions("username");
         TreeMap<String, Function> map2 = billingDao.getFunctions(username);
@@ -152,11 +144,12 @@ public class CalculatorController {
     /*
      * Рассчитать значение выражения.
      */
-    @RequestMapping(path = "/eval", method = RequestMethod.POST, consumes = "*/*;charset=UTF-8", produces = "text/plain")
+    @RequestMapping(path = "/eval", method = RequestMethod.POST,
+            consumes = "*/*;charset=UTF-8", produces = "text/plain")
     public String eval(Authentication authentication, @RequestBody String expression) throws ParsingException {
         try {
             LOG.debug("Evaluation request: [" + expression + "]");
-            TreeMap<String, Function> AllFunctionsMap = billingDao.getFunctions(authentication.getName());
+            TreeMap<String, Function> allFunctionsMap = billingDao.getFunctions(authentication.getName());
             int beginIndexOfVariable = 0;
             int endIndexOfVariable = 0;
             boolean isReadingVariable = false;
@@ -168,15 +161,17 @@ public class CalculatorController {
                     continue;
                 }
                 // находимся в процессе чтения переменной (если это она)
-                if ((Character.isLetterOrDigit(expression.charAt(i)) || expression.charAt(i) == '_') && isReadingVariable) {
+                if ((Character.isLetterOrDigit(expression.charAt(i)) || expression.charAt(i) == '_')
+                        && isReadingVariable) {
                     endIndexOfVariable = i;
                     continue;
                 }
-                if (!(Character.isLetterOrDigit(expression.charAt(i)) || expression.charAt(i) == '_') && isReadingVariable) {
+                if (!(Character.isLetterOrDigit(expression.charAt(i)) || expression.charAt(i) == '_')
+                        && isReadingVariable) {
                     isReadingVariable = false;
                     String variable = expression.substring(beginIndexOfVariable, endIndexOfVariable + 1);
                     // Если мы нашли не переменную, а какую-то функцию, то ничего с ней делать не хотим
-                    if (AllFunctionsMap.containsKey(variable)) {
+                    if (allFunctionsMap.containsKey(variable)) {
                         continue;
                     }
                     // Получаем значение переменной
@@ -187,7 +182,7 @@ public class CalculatorController {
                     i = 0;
                 }
             }
-            double result = calculator.calculateWithFunctions(expression, AllFunctionsMap);
+            double result = calculator.calculateWithFunctions(expression, allFunctionsMap);
             //double result = calculator.calculate(expression);
             LOG.trace("Result: " + result);
             return Double.toString(result) + "\n";
