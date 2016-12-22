@@ -208,6 +208,7 @@ public class BillingDao {
             // Нашли что-то, что начинается с буквы -- возможно, это переменная
             if (Character.isLetter(expression.charAt(i)) && !isReadingVariable) {
                 beginIndexOfVariable = i;
+                endIndexOfVariable = i; // ???
                 isReadingVariable = true;
                 continue;
             }
@@ -224,7 +225,13 @@ public class BillingDao {
                 if (getFunctions(username).containsKey(variable)) {
                     continue;
                 }
-                // Получаем значение переменной
+                // Если какую-то переменную мы нашли, но в списке переменных это пользователя ее нет,
+                // значит, это просто аргумент функции и можно расслабиться
+                if (!getVariables(username).containsKey(variable)) {
+                    continue;
+                }
+                // Если же это действительно переменная, добавленная пользователем,
+                // то получаем ее значение
                 String value = getVariable(username, variable).toString();
                 // Заменяем ее первое вхождение на значение
                 expression.replaceFirst(variable, value);

@@ -295,7 +295,8 @@ public class StringCalculator implements Calculator {
                     case "pow": {
                         Double x = stack.pop();
                         Double y = stack.pop();
-                        stack.push(Math.pow(x, y));
+                        stack.push(Math.pow(y, x));
+                        break;
                     }
                     case "log2": {
                         stack.push(Math.log(stack.pop()) / Math.log(2));

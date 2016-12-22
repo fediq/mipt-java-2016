@@ -123,7 +123,7 @@ public class CalculatorController {
         String username = authentication.getName();
         List<String> arguments = Arrays.asList(args.split(","));
         billingDao.addFunction(username, name, arguments, expression);
-        return "Function" + name + "has been added\n";
+        return "Function " + name + " has been added\n";
     }
 
     /*
@@ -157,6 +157,7 @@ public class CalculatorController {
                 // Нашли что-то, что начинается с буквы -- возможно, это переменная
                 if (Character.isLetter(expression.charAt(i)) && !isReadingVariable) {
                     beginIndexOfVariable = i;
+                    endIndexOfVariable = i;
                     isReadingVariable = true;
                     continue;
                 }
@@ -185,7 +186,7 @@ public class CalculatorController {
             double result = calculator.calculateWithFunctions(expression, allFunctionsMap);
             //double result = calculator.calculate(expression);
             LOG.trace("Result: " + result);
-            return Double.toString(result) + "\n";
+            return "The result of expression: " + expression + " has been calculated\n" + "Result: " + Double.toString(result) + "\n";
         } catch (ParsingException e) {
             throw new IllegalArgumentException("OSTANOVIS', POKA OSTANOVKA NE BUDET POSLEDNEY\n");
         }
