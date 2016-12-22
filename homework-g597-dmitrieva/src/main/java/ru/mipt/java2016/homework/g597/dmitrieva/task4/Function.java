@@ -22,16 +22,6 @@ public class Function {
         numberOfArguments = arguments.size();
     }
 
-    private Function(String name, int numberOfArguments) {
-        this.name = name;
-        this.numberOfArguments = numberOfArguments;
-        this.arguments = new ArrayList<>();
-        for (int i = 0; i < numberOfArguments; i++) {
-            arguments.add("x" + Integer.toString(i));
-        }
-        this.expression = null;
-    }
-
     public List<String> getArguments() {
         return arguments;
     }
