@@ -1,11 +1,10 @@
 package ru.mipt.java2016.homework.g594.ishkhanyan.task2;
 
+import java.io.IOException;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.tests.task2.AbstractSingleFileStorageTest;
 import ru.mipt.java2016.homework.tests.task2.Student;
 import ru.mipt.java2016.homework.tests.task2.StudentKey;
-
-import java.io.IOException;
 
 public class MyKeyValueStorageTests extends AbstractSingleFileStorageTest {
     @Override
@@ -23,7 +22,7 @@ public class MyKeyValueStorageTests extends AbstractSingleFileStorageTest {
     @Override
     protected KeyValueStorage<Integer, Double> buildNumbersStorage(String path) {
         try {
-            return new MyKeyValueStorage<>(path,"Integer", "Double");
+            return new MyKeyValueStorage<>(path, "Integer", "Double");
         } catch (IOException e) {
             e.printStackTrace();
         } catch (Exception e) {
@@ -35,7 +34,8 @@ public class MyKeyValueStorageTests extends AbstractSingleFileStorageTest {
     @Override
     protected KeyValueStorage<StudentKey, Student> buildPojoStorage(String path) {
         try {
-            return new MyKeyValueStorage<>(path, new MyStudentKeySerialization(), new MyStudentSerialization());
+            return new MyKeyValueStorage<>(path, new MyStudentKeySerialization(),
+                    new MyStudentSerialization());
         } catch (IOException e) {
             e.printStackTrace();
         } catch (Exception e) {

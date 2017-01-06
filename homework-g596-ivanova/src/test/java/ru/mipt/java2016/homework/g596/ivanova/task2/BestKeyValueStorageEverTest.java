@@ -1,7 +1,5 @@
 package ru.mipt.java2016.homework.g596.ivanova.task2;
 
-import static org.junit.Assert.*;
-
 import java.io.IOException;
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 import ru.mipt.java2016.homework.tests.task2.AbstractSingleFileStorageTest;

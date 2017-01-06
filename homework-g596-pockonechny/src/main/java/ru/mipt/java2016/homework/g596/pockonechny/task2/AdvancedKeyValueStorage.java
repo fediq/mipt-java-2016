@@ -61,7 +61,7 @@ public class AdvancedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
         return file;
     }
 
-    private void checkStorageAviability() {
+    private void checkStorageAvailability() {
         if (!isStreamingNow) {
             throw new IllegalStateException("Error: operation refer to closed storage");
         }
@@ -120,7 +120,7 @@ public class AdvancedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public void close() {
-        checkStorageAviability();
+        checkStorageAvailability();
         try (DataOutputStream writingDevice = new DataOutputStream(new FileOutputStream(filename))) {
 
             writeDataToDevice(writingDevice);
@@ -135,37 +135,37 @@ public class AdvancedKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     @Override
     public int size() {
-        checkStorageAviability();
+        checkStorageAvailability();
         return hashmap.size();
     }
 
     @Override
     public V read(K key) {
-        checkStorageAviability();
+        checkStorageAvailability();
         return hashmap.get(key);
     }
 
     @Override
     public void write(K key, V value) {
-        checkStorageAviability();
+        checkStorageAvailability();
         hashmap.put(key, value);
     }
 
     @Override
     public void delete(K key) {
-        checkStorageAviability();
+        checkStorageAvailability();
         hashmap.remove(key);
     }
 
     @Override
     public boolean exists(K key) {
-        checkStorageAviability();
+        checkStorageAvailability();
         return hashmap.keySet().contains(key);
     }
 
     @Override
     public Iterator readKeys() {
-        checkStorageAviability();
+        checkStorageAvailability();
         return hashmap.keySet().iterator();
     }
 }

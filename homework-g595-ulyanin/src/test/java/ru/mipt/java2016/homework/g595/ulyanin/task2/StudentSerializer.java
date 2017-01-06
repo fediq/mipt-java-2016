@@ -2,8 +2,8 @@ package ru.mipt.java2016.homework.g595.ulyanin.task2;
 
 import ru.mipt.java2016.homework.tests.task2.Student;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Date;
 
@@ -21,7 +21,7 @@ public class StudentSerializer implements Serializer<Student> {
     private StudentSerializer() { }
 
     @Override
-    public void serialize(Student data, DataOutputStream dataOutputStream) throws IOException {
+    public void serialize(Student data, DataOutput dataOutputStream) throws IOException {
         IntegerSerializer.getInstance().serialize(data.getGroupId(), dataOutputStream);
         StringSerializer.getInstance().serialize(data.getName(), dataOutputStream);
         StringSerializer.getInstance().serialize(data.getHometown(), dataOutputStream);
@@ -31,7 +31,7 @@ public class StudentSerializer implements Serializer<Student> {
     }
 
     @Override
-    public Student deserialize(DataInputStream dataInputStream) throws IOException {
+    public Student deserialize(DataInput dataInputStream) throws IOException {
         Integer groupId = IntegerSerializer.getInstance().deserialize(dataInputStream);
         String name = StringSerializer.getInstance().deserialize(dataInputStream);
         String homeTown = StringSerializer.getInstance().deserialize(dataInputStream);

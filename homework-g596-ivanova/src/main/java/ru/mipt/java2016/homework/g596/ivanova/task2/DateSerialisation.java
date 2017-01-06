@@ -32,7 +32,9 @@ public final class DateSerialisation implements Serialisation<Date> {
     }
 
     @Override
-    public void write(final DataOutput file, final Date object) throws IOException {
+    public long write(final DataOutput file, final Date object) throws IOException {
+        long longSize = 8;
         file.writeLong(object.getTime());
+        return longSize;
     }
 }

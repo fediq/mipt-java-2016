@@ -1,7 +1,7 @@
 package ru.mipt.java2016.homework.g595.ulyanin.task2;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 
 /**
@@ -18,12 +18,12 @@ public class DoubleSerializer implements Serializer<Double> {
     private DoubleSerializer() { }
 
     @Override
-    public void serialize(Double data, DataOutputStream dataOutputStream) throws IOException {
+    public void serialize(Double data, DataOutput dataOutputStream) throws IOException {
         dataOutputStream.writeDouble(data);
     }
 
     @Override
-    public Double deserialize(DataInputStream dataInputStream) throws IOException {
+    public Double deserialize(DataInput dataInputStream) throws IOException {
         return dataInputStream.readDouble();
     }
 }
