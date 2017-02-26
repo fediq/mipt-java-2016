@@ -2,67 +2,62 @@ package ru.mipt.java2016.homework.g595.novikov.task2;
 
 import ru.mipt.java2016.homework.base.task2.KeyValueStorage;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
 public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     private static final String DB_NAME = "storage.db";
-    private RandomAccessFile file;
+    private File file;
     private boolean isClosed = false;
     private MySerialization<K> keySerialization;
     private MySerialization<V> valueSerialization;
     private MySerialization<Integer> intSerialization;
     private Map<K, V> objects = new HashMap<K, V>();
 
-    private void update() throws IOException, ParseException {
-        file.seek(0);
+    private void update() throws IOException {
+        DataInputStream stream = new DataInputStream(new FileInputStream(file));
         objects.clear();
         int cntValues;
         try {
-            cntValues = intSerialization.deserialize(file);
+            cntValues = intSerialization.deserialize(stream);
         } catch (IOException error) {
-            throw new ParseException("Invalid database", (int) file.getFilePointer());
+            throw new IOException("Invalid database");
         }
         if (cntValues < 0) {
-            throw new ParseException("Invalid database", (int) file.getFilePointer());
+            throw new IOException("Invalid database");
         }
         for (int q = 0; q < cntValues; ++q) {
             try {
-                K key = keySerialization.deserialize(file);
-                V value = valueSerialization.deserialize(file);
+                K key = keySerialization.deserialize(stream);
+                V value = valueSerialization.deserialize(stream);
                 objects.putIfAbsent(key, value);
             } catch (IOException error) {
-                throw new ParseException("Invalid database", (int) file.getFilePointer());
+                throw new IOException("Invalid database");
             }
         }
+        stream.close();
     }
 
     public MyKeyValueStorage(String directoryName,
                              MySerialization<K> keySerializationInp,
                              MySerialization<V> valueSerializationInp) {
-        try {
-            keySerialization = keySerializationInp;
-            valueSerialization = valueSerializationInp;
-            intSerialization = new IntSerialization();
+        keySerialization = keySerializationInp;
+        valueSerialization = valueSerializationInp;
+        intSerialization = new IntSerialization();
 
+        try {
             if (Files.notExists(Paths.get(directoryName))) {
                 throw new FileNotFoundException("directory not found");
             }
-            File dbFile = new File(directoryName + "/" + DB_NAME);
-            boolean isNewFile = dbFile.createNewFile();
-            file = new RandomAccessFile(dbFile, "rw");
-            if (!isNewFile) {
+            file = new File(directoryName + File.separator + DB_NAME);
+            if (!file.createNewFile()) {
                 update();
             }
-        } catch (IOException | ParseException e) {
+        } catch (IOException e) {
             e.printStackTrace();
             throw new IllegalStateException("Error during opening database");
         }
@@ -100,22 +95,20 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
 
     private class KVSIterator implements Iterator<K> {
         private Iterator<K> iterator;
-        private MyKeyValueStorage kvs;
 
-        KVSIterator(Iterator<K> iter, MyKeyValueStorage myKvs) {
-            kvs = myKvs;
+        KVSIterator(Iterator<K> iter) {
             iterator = iter;
         }
 
         @Override
         public boolean hasNext() {
-            kvs.checkIsNotClosed();
+            checkIsNotClosed();
             return iterator.hasNext();
         }
 
         @Override
         public K next() {
-            kvs.checkIsNotClosed();
+            checkIsNotClosed();
             return iterator.next();
         }
     }
@@ -123,7 +116,7 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public Iterator<K> readKeys() {
         checkIsNotClosed();
-        return new KVSIterator(objects.keySet().iterator(), this);
+        return new KVSIterator(objects.keySet().iterator());
     }
 
     @Override
@@ -135,15 +128,14 @@ public class MyKeyValueStorage<K, V> implements KeyValueStorage<K, V> {
     @Override
     public void close() throws IOException {
         checkIsNotClosed();
-        file.setLength(0);
-        file.seek(0);
-        intSerialization.serialize(file, objects.size());
+        DataOutputStream stream = new DataOutputStream(new FileOutputStream(file));
+        intSerialization.serialize(stream, objects.size());
         for (Map.Entry<K, V> entry : objects.entrySet()) {
-            keySerialization.serialize(file, entry.getKey());
-            valueSerialization.serialize(file, entry.getValue());
+            keySerialization.serialize(stream, entry.getKey());
+            valueSerialization.serialize(stream, entry.getValue());
         }
 
         isClosed = true;
-        file.close();
+        stream.close();
     }
 }
