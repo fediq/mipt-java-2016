@@ -2,13 +2,14 @@ package ru.mipt.java2016.homework.g596.narsia.task1;
 
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
+
 import java.util.*;
 
 
-public class MyCalculator implements Calculator{
+public class MyCalculator implements Calculator {
 
-    private String whatIsIt(Character Symbol) {
-        switch (Symbol) {
+    private String whatIsIt(Character symbol) {
+        switch (symbol) {
             case '0':
             case '1':
             case '2':
@@ -18,7 +19,8 @@ public class MyCalculator implements Calculator{
             case '6':
             case '7':
             case '8':
-            case '9': {
+            case '9':
+            {
                 return "Digit";
             }
             case '.': {
@@ -26,7 +28,8 @@ public class MyCalculator implements Calculator{
             }
             case '+':
             case '*':
-            case '/': {
+            case '/':
+            {
                 return "Usual operator";
             }
             case '-': {
@@ -40,18 +43,18 @@ public class MyCalculator implements Calculator{
             }
             case ' ':
             case '\t':
-            case '\n': {
+            case '\n':
+            {
                 return "Space";
             }
             case '~': {
                 return "First";
             }
             default: {
-                return "Ochen` ploxo";
+                return "So bad";
             }
         }
     }
-
 
 
     private Integer getCode(Character first, Character second) {
@@ -62,7 +65,8 @@ public class MyCalculator implements Calculator{
                     case '-':
                     case '*':
                     case '/':
-                    case '(': {
+                    case '(':
+                    {
                         return 1;
                     }
                     case '~': {
@@ -71,6 +75,10 @@ public class MyCalculator implements Calculator{
                     case ')': {
                         return 5;
                     }
+                    default:
+                    {
+                        return -1;
+                    }
                 }
             }
             case '+':
@@ -78,14 +86,19 @@ public class MyCalculator implements Calculator{
                 switch (second) {
                     case '*':
                     case '/':
-                    case '(': {
+                    case '(':
+                    {
                         return 1;
                     }
                     case '~':
                     case ')':
                     case '+':
-                    case '-': {
+                    case '-':
+                    {
                         return 2;
+                    }
+                    default: {
+                        return -1;
                     }
                 }
             }
@@ -100,8 +113,12 @@ public class MyCalculator implements Calculator{
                     case '+':
                     case '-':
                     case '*':
-                    case '/': {
+                    case '/':
+                    {
                         return 2;
+                    }
+                    default: {
+                        return -1;
                     }
                 }
             }
@@ -111,7 +128,8 @@ public class MyCalculator implements Calculator{
                     case '+':
                     case '-':
                     case '*':
-                    case '/': {
+                    case '/':
+                    {
                         return 1;
                     }
                     case ')': {
@@ -120,243 +138,193 @@ public class MyCalculator implements Calculator{
                     case '~': {
                         return 5;
                     }
+                    default: {
+                        return -1;
+                    }
                 }
             }
+            default: {
+                return -1;
+            }
         }
-        return 0;
     }
-
-
 
 
     private void isAlmostValid(String expression) throws ParsingException {
         if (expression == null) {
-            throw new ParsingException("Null");
+            throw new ParsingException("Invalid expression");
         }
-        Character PrevSymbol = '~';
-        Character CurSymbol;
-        Character ImportantPrevSymbol = '~';
-        int WasThereAPoint = 0;
-        Boolean flagForSpaces = false;
+        Character prevSymbol = '~';
+        Character curSymbol;
+        Character importantPrevSymbol = '~';
+        Boolean pointFlag = false;
+        Boolean spaceFlag = false;
 
-        for (int i = 0; i < expression.length(); ++i) {
-            CurSymbol = expression.charAt(i);
-            switch (whatIsIt(CurSymbol)) {
+        for (int cnt = 0; cnt < expression.length(); ++cnt) {
+            curSymbol = expression.charAt(cnt);
+            switch (whatIsIt(curSymbol)) {
                 case "Digit": {
-                    flagForSpaces = true;
-                    switch (whatIsIt(PrevSymbol)) {
+                    switch (whatIsIt(prevSymbol)) {
                         case "Space": {
-                            switch (whatIsIt(ImportantPrevSymbol)) {
-                                case "Digit": {
-                                    throw new ParsingException("Space between digits");
-                                }
-                                case "Closing bracket": {
-                                    throw new ParsingException("Closing bracket before digit");
+                            switch (whatIsIt(importantPrevSymbol)) {
+                                case "Digit":
+                                case "Closing bracket":
+                                {
+                                    throw new ParsingException("Invalid expression");
                                 }
                             }
                             break;
                         }
                         case "Closing bracket": {
-                            throw new ParsingException("Closing bracket before digit");
+                            throw new ParsingException("Invalid expression");
                         }
                     }
-                    ImportantPrevSymbol = CurSymbol;
-                    PrevSymbol = CurSymbol;
                     break;
                 }
-
 
                 case "Point": {
-                    flagForSpaces = true;
-                    switch (whatIsIt(PrevSymbol)) {
-                        case "Space": {
-                            throw new ParsingException("Space before point");
-                        }
+                    switch (whatIsIt(prevSymbol)) {
+                        case "Space":
                         case "Opening bracket":
-                        case "Closing bracket": {
-                            throw new ParsingException("Bracket before point");
-                        }
+                        case "Closing bracket":
                         case "Usual operator":
-                        case "Minus": {
-                            throw new ParsingException("Operator before point");
-                        }
-                        case "First": {
-                            throw new ParsingException("Nothing before point");
-                        }
-                        case "Point": {
-                            throw new ParsingException("Double point");
+                        case "Minus":
+                        case "First":
+                        case "Point":
+                        {
+                            throw new ParsingException("Invalid expression");
                         }
                         case "Digit": {
-                            switch (WasThereAPoint) {
-                                case 0: {
-                                    WasThereAPoint = 1;
-                                    break;
-                                }
-                                case 1: {
-                                    throw new ParsingException("2 points in one number");
-                                }
+                            if (!pointFlag) {
+                                pointFlag = true;
+                            } else {
+                                throw new ParsingException("2 points in one number");
                             }
                             break;
                         }
                     }
-                    ImportantPrevSymbol = CurSymbol;
-                    PrevSymbol = CurSymbol;
                     break;
                 }
-
 
                 case "Usual operator": {
-                    flagForSpaces = true;
-                    switch (whatIsIt(ImportantPrevSymbol)) {
-                        case "Usual operator": {
-                            throw new ParsingException("Too many operators");
-                        }
-                        case "Opening bracket": {
-                            throw new ParsingException("Operator after opening bracket");
-                        }
-                        case "First": {
-                            throw new ParsingException("Nothing before operator");
-                        }
-                        case "Point": {
-                            throw new ParsingException("Operator after point");
+                    switch (whatIsIt(importantPrevSymbol)) {
+                        case "Usual operator":
+                        case "Opening bracket":
+                        case "First":
+                        case "Point":
+                        {
+                            throw new ParsingException("Invalid expression");
                         }
                         case "Digit": {
-                            WasThereAPoint = 0;
+                            pointFlag = false;
                             break;
                         }
                     }
-                    ImportantPrevSymbol = CurSymbol;
-                    PrevSymbol = CurSymbol;
                     break;
                 }
-
 
                 case "Minus": {
-                    flagForSpaces = true;
-                    switch (whatIsIt(ImportantPrevSymbol)) {
+                    switch (whatIsIt(importantPrevSymbol)) {
                         case "Point": {
-                            throw new ParsingException("Operator after point");
-                        }
-                        case "CLosing bracket": {
-                            break;
-                        }
-                        case "First":
-                        case "Opening bracket": {
-                            break;
+                            throw new ParsingException("Invalid expression");
                         }
                         case "Digit": {
-                            WasThereAPoint = 0;
+                            pointFlag = false;
                             break;
                         }
                     }
-                    ImportantPrevSymbol = CurSymbol;
-                    PrevSymbol = CurSymbol;
                     break;
                 }
-
 
                 case "Space": {
-                    switch (whatIsIt(PrevSymbol)) {
+                    switch (whatIsIt(prevSymbol)) {
                         case "Point": {
-                            throw new ParsingException("Space after point");
+                            throw new ParsingException("Invalid expression");
                         }
                         case "Digit": {
-                            WasThereAPoint = 0;
+                            pointFlag = false;
                             break;
                         }
                     }
-                    PrevSymbol = CurSymbol;
                     break;
                 }
-
 
                 case "Opening bracket": {
-                    flagForSpaces = true;
-                    switch (whatIsIt(ImportantPrevSymbol)) {
-                        case "Point": {
-                            throw new ParsingException("Point before opening bracket");
-                        }
-                        case "Digit": {
-                            throw new ParsingException("Digit before opening bracket");
-                        }
-                        case "Closing bracket": {
-                            throw new ParsingException("Nothing in brackets");
+                    switch (whatIsIt(importantPrevSymbol)) {
+                        case "Point":
+                        case "Digit":
+                        case "Closing bracket":
+                        {
+                            throw new ParsingException("Invalid expression");
                         }
                     }
-                    ImportantPrevSymbol = CurSymbol;
-                    PrevSymbol = CurSymbol;
                     break;
                 }
-
 
                 case "Closing bracket": {
-                    flagForSpaces = true;
-                    switch (whatIsIt(ImportantPrevSymbol)) {
-                        case "Point": {
-                            throw new ParsingException("Point before closing bracket");
+                    switch (whatIsIt(importantPrevSymbol)) {
+                        case "Point":
+                        case "Opening bracket":
+                        case "First":
+                        case "Usual operator":
+                        case "Minus":
+                        {
+                            throw new ParsingException("Invalid expression");
                         }
                         case "Digit": {
-                            WasThereAPoint = 0;
+                            pointFlag = false;
                             break;
                         }
-                        case "Opening bracket": {
-                            throw new ParsingException("Nothing between brackets");
-                        }
-                        case "First": {
-                            throw new ParsingException("Closing bracket is first");
-                        }
-                        case "Usual operator":
-                        case "Minus": {
-                            throw new ParsingException("Operator before closing bracket");
-                        }
                     }
-                    ImportantPrevSymbol = CurSymbol;
-                    PrevSymbol = CurSymbol;
                     break;
                 }
 
-
-                case "Ochen` ploxo":
-                case "First": {
-                    throw new ParsingException("Invalid symbol");
+                case "So bad":
+                case "First":
+                {
+                    throw new ParsingException("Invalid expression");
                 }
             }
+            prevSymbol = curSymbol;
+            if (!whatIsIt(curSymbol).equals("Space")) {
+                importantPrevSymbol = curSymbol;
+                spaceFlag = true;
+            }
         }
-        if (!flagForSpaces) {
-            throw new ParsingException("Only spaces");
+        if (!spaceFlag) {
+            throw new ParsingException("Invalid expression");
         }
     }
 
 
-    private String removeSpaces(String expression) {
-        String result = "";
+    private StringBuilder removeSpaces(String expression) {
+        StringBuilder result = new StringBuilder(expression.length());
         for (int cnt = 0; cnt < expression.length(); ++cnt) {
             if (!whatIsIt(expression.charAt(cnt)).equals("Space")) {
-                result += expression.charAt(cnt);
+                result.append(expression.charAt(cnt));
             }
         }
         return result;
     }
 
 
-    private String removeUnaryMinuses(String expressionWithoutSpaces) {
-        expressionWithoutSpaces += '~';
-        String result = "";
+    private StringBuilder removeUnaryMinuses(StringBuilder expressionWithoutSpaces) {
+        expressionWithoutSpaces.append('~');
+        StringBuilder result = new StringBuilder(expressionWithoutSpaces.length());
         Boolean flag = false;
         for (int cnt = 0; cnt < expressionWithoutSpaces.length(); ++cnt) {
             if (expressionWithoutSpaces.charAt(cnt) == '-') {
                 if (cnt == 0) {
-                    result += '0';
-                }
-                else {
+                    result.append('0');
+                } else {
                     switch (whatIsIt(expressionWithoutSpaces.charAt(cnt - 1))) {
                         case "Opening bracket": {
-                            result += "0-";
+                            result.append("0-");
                             continue;
                         }
                         case "Usual operator":
                         case "Minus": {
-                            result += "(0-";
+                            result.append("(0-");
                             flag = true;
                             continue;
                         }
@@ -366,23 +334,23 @@ public class MyCalculator implements Calculator{
             if ((!whatIsIt(expressionWithoutSpaces.charAt(cnt)).equals("Digit")) &&
                     (!whatIsIt(expressionWithoutSpaces.charAt(cnt)).equals("Point")) &&
                     (cnt > 0) && (flag)) {
-                result += ")";
+                result.append(")");
                 flag = false;
             }
             if (expressionWithoutSpaces.charAt(cnt) != '~') {
-                result += expressionWithoutSpaces.charAt(cnt);
+                result.append(expressionWithoutSpaces.charAt(cnt));
             }
         }
         return result;
     }
 
 
-    private String getRPN(String expression) throws ParsingException {
-        expression += '~';
+    private StringBuilder getRPN(StringBuilder expression) throws ParsingException {
+        expression.append('~');
         Character curSymbol;
         Character prevSymbol = '~';
         Stack<Character> Texas = new Stack<>();
-        String California = "";
+        StringBuilder California = new StringBuilder(expression.length());
         Texas.push('~');
 
         Integer cnt = 0;
@@ -398,13 +366,13 @@ public class MyCalculator implements Calculator{
                         case "Digit":
                         case "Point":
                         case "First": {
-                            California += curSymbol;
+                            California.append(curSymbol);
                             ++cnt;
                             break;
                         }
                         default: {
-                            California += " ";
-                            California += curSymbol;
+                            California.append(" ");
+                            California.append(curSymbol);
                             ++cnt;
                             break;
                         }
@@ -420,8 +388,8 @@ public class MyCalculator implements Calculator{
                     break;
                 }
                 case 2: {
-                    California += " ";
-                    California += Texas.peek();
+                    California.append(" ");
+                    California.append(Texas.peek());
                     Texas.pop();
                     break;
                 }
@@ -439,7 +407,6 @@ public class MyCalculator implements Calculator{
             }
         }
     }
-
 
 
     private Double doOperation(Double first, Double second, Character operator) {
@@ -465,25 +432,24 @@ public class MyCalculator implements Calculator{
     }
 
 
-
     @Override
     public double calculate(String expression) throws ParsingException {
         isAlmostValid(expression);
-        String withoutSpaces = removeSpaces(expression);
-        String withoutSpacesAndUnaryMinuses = removeUnaryMinuses(withoutSpaces);
-        String RPN = getRPN(withoutSpacesAndUnaryMinuses);
+        StringBuilder withoutSpaces = removeSpaces(expression);
+        StringBuilder withoutSpacesAndUnaryMinuses = removeUnaryMinuses(withoutSpaces);
+        StringBuilder rpn = getRPN(withoutSpacesAndUnaryMinuses);
         Stack<Double> Numbers = new Stack<>();
         Double first, second;
-        String curNumber = "";
+        StringBuilder curNumber = new StringBuilder();
         Character curChar = '~';
         Character prevChar;
-        for (int cnt = 0; cnt < RPN.length(); ++cnt) {
+        for (int cnt = 0; cnt < rpn.length(); ++cnt) {
             prevChar = curChar;
-            curChar = RPN.charAt(cnt);
+            curChar = rpn.charAt(cnt);
             switch (whatIsIt(curChar)) {
                 case "Digit":
                 case "Point": {
-                    curNumber += curChar;
+                    curNumber.append(curChar);
                     break;
                 }
                 case "Usual operator":
@@ -498,8 +464,8 @@ public class MyCalculator implements Calculator{
                 case "Space": {
                     switch (whatIsIt(prevChar)) {
                         case "Digit": {
-                            Numbers.push(Double.parseDouble(curNumber));
-                            curNumber = "";
+                            Numbers.push(Double.parseDouble(curNumber.toString()));
+                            curNumber.delete(0, curNumber.length());
                         }
                     }
                 }
