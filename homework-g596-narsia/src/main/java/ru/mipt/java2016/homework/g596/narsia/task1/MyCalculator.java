@@ -10,36 +10,36 @@ import java.util.*;
 
 
 public class MyCalculator implements Calculator {
-    private enum symbolType {DIGIT, POINT, USUAL_OPERATOR, MINUS, SPACE,
-                            OPENING_BRACKET, CLOSING_BRACKET, FIRST, INVALID}
+    private enum SymbolType { DIGIT, POINT, USUAL_OPERATOR, MINUS, SPACE,
+                            OPENING_BRACKET, CLOSING_BRACKET, FIRST, INVALID }
 
 
-    private symbolType whatIsIt(Character symbol) {
+    private SymbolType whatIsIt(Character symbol) {
         if (Character.isDigit(symbol)) {
-            return symbolType.DIGIT;
+            return SymbolType.DIGIT;
         }
         if (symbol.equals('.')) {
-            return symbolType.POINT;
+            return SymbolType.POINT;
         }
         if ((symbol.equals('+')) || (symbol.equals('*')) || (symbol.equals('/'))) {
-            return symbolType.USUAL_OPERATOR;
+            return SymbolType.USUAL_OPERATOR;
         }
         if (symbol.equals('-')) {
-            return symbolType.MINUS;
+            return SymbolType.MINUS;
         }
         if (Character.isWhitespace(symbol)) {
-            return symbolType.SPACE;
+            return SymbolType.SPACE;
         }
         if (symbol.equals('(')) {
-            return symbolType.OPENING_BRACKET;
+            return SymbolType.OPENING_BRACKET;
         }
         if (symbol.equals(')')) {
-            return symbolType.CLOSING_BRACKET;
+            return SymbolType.CLOSING_BRACKET;
         }
         if (symbol.equals('~')) {
-            return symbolType.FIRST;
+            return SymbolType.FIRST;
         }
-        return symbolType.INVALID;
+        return SymbolType.INVALID;
     }
 
 
@@ -56,21 +56,20 @@ public class MyCalculator implements Calculator {
         for (int index = 0; index < expression.length(); ++index) {
             curSymbol = expression.charAt(index);
             switch (whatIsIt(curSymbol)) {
-                case DIGIT: {
-                    if (whatIsIt(prevSymbol) == symbolType.SPACE) {
-                        if ((whatIsIt(importantPrevSymbol) == symbolType.DIGIT) ||
-                                (whatIsIt(importantPrevSymbol) == symbolType.CLOSING_BRACKET)) {
-                                throw new ParsingException("Invalid expression");
+                case DIGIT:
+                    if (whatIsIt(prevSymbol) == SymbolType.SPACE) {
+                        if ((whatIsIt(importantPrevSymbol) == SymbolType.DIGIT) ||
+                                (whatIsIt(importantPrevSymbol) == SymbolType.CLOSING_BRACKET)) {
+                            throw new ParsingException("Invalid expression");
                         }
                     }
-                    if (whatIsIt(prevSymbol) == symbolType.CLOSING_BRACKET) {
-                            throw new ParsingException("Invalid expression");
+                    if (whatIsIt(prevSymbol) == SymbolType.CLOSING_BRACKET) {
+                        throw new ParsingException("Invalid expression");
                     }
                     break;
-                }
 
-                case POINT: {
-                    if (whatIsIt(prevSymbol) == symbolType.DIGIT) {
+                case POINT:
+                    if (whatIsIt(prevSymbol) == SymbolType.DIGIT) {
                         if (!pointFlag) {
                             pointFlag = true;
                         } else {
@@ -80,67 +79,60 @@ public class MyCalculator implements Calculator {
                         throw new ParsingException("Invalid expression");
                     }
                     break;
-                }
 
-                case USUAL_OPERATOR: {
-                    if ((whatIsIt(importantPrevSymbol) == symbolType.USUAL_OPERATOR) ||
+                case USUAL_OPERATOR:
+                    if ((whatIsIt(importantPrevSymbol) == SymbolType.USUAL_OPERATOR) ||
                             (importantPrevSymbol == '(') || (importantPrevSymbol == '~') ||
                             (importantPrevSymbol == '.')) {
                         throw new ParsingException("Invalid expression");
                     }
-                    if (whatIsIt(importantPrevSymbol) == symbolType.DIGIT) {
+                    if (whatIsIt(importantPrevSymbol) == SymbolType.DIGIT) {
                         pointFlag = false;
                     }
                     break;
-                }
 
-                case MINUS: {
+                case MINUS:
                     if (importantPrevSymbol == '.') {
                         throw new ParsingException("Invalid expression");
                     }
-                    if (whatIsIt(importantPrevSymbol) == symbolType.DIGIT) {
+                    if (whatIsIt(importantPrevSymbol) == SymbolType.DIGIT) {
                         pointFlag = false;
                     }
                     break;
-                }
 
-                case SPACE: {
+                case SPACE:
                     if (prevSymbol == '.') {
                         throw new ParsingException("Invalid expression");
                     }
-                    if (whatIsIt(prevSymbol) == symbolType.DIGIT) {
+                    if (whatIsIt(prevSymbol) == SymbolType.DIGIT) {
                         pointFlag = false;
                     }
                     break;
-                }
 
-                case OPENING_BRACKET: {
-                    if ((whatIsIt(importantPrevSymbol) == symbolType.DIGIT) ||
+                case OPENING_BRACKET:
+                    if ((whatIsIt(importantPrevSymbol) == SymbolType.DIGIT) ||
                             (importantPrevSymbol == '.') || (importantPrevSymbol == ')')) {
                         throw new ParsingException("Invalid expression");
                     }
                     break;
-                }
 
-                case CLOSING_BRACKET: {
-                    if (whatIsIt(importantPrevSymbol) == symbolType.DIGIT) {
+                case CLOSING_BRACKET:
+                    if (whatIsIt(importantPrevSymbol) == SymbolType.DIGIT) {
                         pointFlag = false;
                     }
                     if ((importantPrevSymbol == '.') || (importantPrevSymbol == '(') ||
                             (importantPrevSymbol == '~') ||
-                            (whatIsIt(importantPrevSymbol) == symbolType.USUAL_OPERATOR) ||
+                            (whatIsIt(importantPrevSymbol) == SymbolType.USUAL_OPERATOR) ||
                             (importantPrevSymbol == '-')) {
-                            throw new ParsingException("Invalid expression");
+                        throw new ParsingException("Invalid expression");
                     }
                     break;
-                }
 
-                default: {
+                default:
                     throw new ParsingException("Invalid expression");
-                }
             }
             prevSymbol = curSymbol;
-            if (whatIsIt(curSymbol) != symbolType.SPACE) {
+            if (whatIsIt(curSymbol) != SymbolType.SPACE) {
                 importantPrevSymbol = curSymbol;
                 spaceFlag = true;
             }
@@ -172,19 +164,16 @@ public class MyCalculator implements Calculator {
                     result.append('0');
                 } else {
                     switch (whatIsIt(expressionWithoutSpaces.charAt(index - 1))) {
-                        case OPENING_BRACKET: {
+                        case OPENING_BRACKET:
                             result.append("0-");
                             continue;
-                        }
                         case USUAL_OPERATOR:
-                        case MINUS: {
+                        case MINUS:
                             result.append("(0-");
                             bracketFlag = true;
                             continue;
-                        }
-                        default: {
+                        default:
                             break;
-                        }
                     }
                 }
             }
@@ -204,9 +193,8 @@ public class MyCalculator implements Calculator {
     private int getCode(char first, char second) {
         switch (first) {
             case '~': {
-                if ((whatIsIt(second) == symbolType.USUAL_OPERATOR) ||
-                        (whatIsIt(second) == symbolType.MINUS) ||
-                        (whatIsIt(second)) == symbolType.OPENING_BRACKET) {
+                if ((whatIsIt(second) == SymbolType.USUAL_OPERATOR) ||
+                        (second == '-') || (second == '(')) {
                     return 1;
                 }
                 if (second == '~') {
@@ -232,13 +220,13 @@ public class MyCalculator implements Calculator {
                     return 1;
                 }
                 if ((second == '~') || (second == ')') ||
-                        (whatIsIt(second) == symbolType.USUAL_OPERATOR) ||
+                        (whatIsIt(second) == SymbolType.USUAL_OPERATOR) ||
                         (second == '-')) {
                     return 2;
                 }
             }
             case '(': {
-                if ((second == '(') || (whatIsIt(second) == symbolType.USUAL_OPERATOR) ||
+                if ((second == '(') || (whatIsIt(second) == SymbolType.USUAL_OPERATOR) ||
                         second == '-') {
                     return 1;
                 }
@@ -272,7 +260,7 @@ public class MyCalculator implements Calculator {
             }
             switch (whatIsIt(curSymbol)) {
                 case DIGIT:
-                case POINT: {
+                case POINT:
                     if ((Character.isDigit(prevSymbol)) || (prevSymbol == '.') ||
                             (prevSymbol == '~')) {
                         california.append(curSymbol);
@@ -284,35 +272,31 @@ public class MyCalculator implements Calculator {
                         break;
                     }
                     continue;
-                }
-                default: {
+
+                default:
                     break;
-                }
             }
 
             switch (getCode(texas.peek(), curSymbol)) {
-                case 1: {
+                case 1:
                     texas.push(curSymbol);
                     ++index;
                     break;
-                }
-                case 2: {
+                case 2:
                     california.append(" ");
                     california.append(texas.peek());
                     texas.pop();
                     break;
-                }
-                case 3: {
+                case 3:
                     texas.pop();
                     ++index;
                     break;
-                }
-                case 4: {
+                case 4:
                     return california.toString();
-                }
-                case 5: {
+                case 5:
                     throw new ParsingException("Invalid bracket balance");
-                }
+                default:
+                    break;
             }
         }
     }
@@ -320,25 +304,20 @@ public class MyCalculator implements Calculator {
 
     private double doOperation(double first, double second, char operator) {
         switch (operator) {
-            case '+': {
+            case '+':
                 return first + second;
-            }
-            case '-': {
+            case '-':
                 //сейчас будет костыль
                 if ((first == 0) && (second == 0)) {
                     return -0.0;
                 }
                 return first - second;
-            }
-            case '*': {
+            case '*':
                 return first * second;
-            }
-            case '/': {
+            case '/':
                 return first / second;
-            }
-            default: {
+            default:
                 return -1.0;
-            }
         }
     }
 
@@ -360,30 +339,24 @@ public class MyCalculator implements Calculator {
             curChar = rpn.charAt(cnt);
             switch (whatIsIt(curChar)) {
                 case DIGIT:
-                case POINT: {
+                case POINT:
                     curNumber.append(curChar);
                     break;
-                }
                 case USUAL_OPERATOR:
-                case MINUS: {
+                case MINUS:
                     second = numbers.peek();
                     numbers.pop();
                     first = numbers.peek();
                     numbers.pop();
                     numbers.push(doOperation(first, second, curChar));
                     break;
-                }
-                case SPACE: {
-                    switch (whatIsIt(prevChar)) {
-                        case DIGIT: {
-                            numbers.push(Double.parseDouble(curNumber.toString()));
-                            curNumber.delete(0, curNumber.length());
-                        }
+                case SPACE:
+                    if (Character.isDigit(prevChar)) {
+                        numbers.push(Double.parseDouble(curNumber.toString()));
+                        curNumber.delete(0, curNumber.length());
                     }
-                }
-                default: {
+                default:
                     break;
-                }
             }
         }
         return numbers.peek();
