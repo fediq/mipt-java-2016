@@ -192,7 +192,7 @@ public class MyCalculator implements Calculator {
 
     private int getCode(char first, char second) {
         switch (first) {
-            case '~': {
+            case '~':
                 if ((whatIsIt(second) == SymbolType.USUAL_OPERATOR) ||
                         (second == '-') || (second == '(')) {
                     return 1;
@@ -203,9 +203,8 @@ public class MyCalculator implements Calculator {
                 if (second == ')') {
                     return 5;
                 }
-            }
             case '+':
-            case '-': {
+            case '-':
                 if ((second == '*') || (second == '/') || (second == '(')) {
                     return 1;
                 }
@@ -213,9 +212,8 @@ public class MyCalculator implements Calculator {
                         (second == '+') || (second == '-')) {
                     return 2;
                 }
-            }
             case '*':
-            case '/': {
+            case '/':
                 if (second == '(') {
                     return 1;
                 }
@@ -224,8 +222,7 @@ public class MyCalculator implements Calculator {
                         (second == '-')) {
                     return 2;
                 }
-            }
-            case '(': {
+            case '(':
                 if ((second == '(') || (whatIsIt(second) == SymbolType.USUAL_OPERATOR) ||
                         second == '-') {
                     return 1;
@@ -236,10 +233,8 @@ public class MyCalculator implements Calculator {
                 if (second == '~') {
                     return 5;
                 }
-            }
-            default: {
+            default:
                 return -1;
-            }
         }
     }
 
