@@ -181,8 +181,7 @@ public class MyCalculator implements Calculator {
                             default:
                                 break;
                         }
-                    }
-                    catch(Exception ParsingException) {
+                    } catch (Exception ParsingException) {
                         throw new ParsingException("Invalid symbol");
                     }
                 }
@@ -200,7 +199,7 @@ public class MyCalculator implements Calculator {
     }
 
     private enum Situations { PUSH, PUSH_LAST, REMOVE,
-                            RESULT, EXCEPTION}
+                            RESULT, EXCEPTION }
 
     //Таблица зависимости действий, производимых
     //со строкой, от двух символов. Первый из них —
@@ -214,8 +213,7 @@ public class MyCalculator implements Calculator {
                         (second == '-') || (second == '(')) {
                         return Situations.PUSH;
                     }
-                }
-                catch (Exception ParsingException) {
+                } catch (Exception ParsingException) {
                     throw new ParsingException("Invalid symbol");
                 }
 
