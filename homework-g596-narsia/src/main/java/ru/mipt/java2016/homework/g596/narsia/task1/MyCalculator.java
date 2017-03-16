@@ -3,46 +3,46 @@ package ru.mipt.java2016.homework.g596.narsia.task1;
 import ru.mipt.java2016.homework.base.task1.Calculator;
 import ru.mipt.java2016.homework.base.task1.ParsingException;
 
-import java.util.*;
-
-// подробное описание работы кода
-// можно найти в файле description
+import java.util.Stack;
 
 
 public class MyCalculator implements Calculator {
     private enum SymbolType { DIGIT, POINT, USUAL_OPERATOR, MINUS, SPACE,
-                            OPENING_BRACKET, CLOSING_BRACKET, FIRST, INVALID }
+                            OPENING_BRACKET, CLOSING_BRACKET, FIRST }
 
-
-    private SymbolType whatIsIt(Character symbol) {
+    //Получает на вход символ, передает его
+    //характеристику (цифра, точка, пробел...)
+    //Можно было бы и char передать, просто
+    //использую метод equals
+    private SymbolType symbolType(Character symbol) throws ParsingException {
         if (Character.isDigit(symbol)) {
             return SymbolType.DIGIT;
-        }
-        if (symbol.equals('.')) {
-            return SymbolType.POINT;
-        }
-        if ((symbol.equals('+')) || (symbol.equals('*')) || (symbol.equals('/'))) {
-            return SymbolType.USUAL_OPERATOR;
-        }
-        if (symbol.equals('-')) {
-            return SymbolType.MINUS;
         }
         if (Character.isWhitespace(symbol)) {
             return SymbolType.SPACE;
         }
-        if (symbol.equals('(')) {
-            return SymbolType.OPENING_BRACKET;
+        switch (symbol) {
+            case '.':
+                return SymbolType.POINT;
+            case '+':
+            case '*':
+            case '/':
+                return SymbolType.USUAL_OPERATOR;
+            case '-':
+                return SymbolType.MINUS;
+            case '(':
+                return SymbolType.OPENING_BRACKET;
+            case ')':
+                return SymbolType.CLOSING_BRACKET;
+            case '~':
+                return SymbolType.FIRST;
+            default:
+                throw new ParsingException("Invalid symbol");
         }
-        if (symbol.equals(')')) {
-            return SymbolType.CLOSING_BRACKET;
-        }
-        if (symbol.equals('~')) {
-            return SymbolType.FIRST;
-        }
-        return SymbolType.INVALID;
     }
 
-
+    //Проверка корректности выражения , за
+    //исключением неправильного баланса скобок
     private void isAlmostValid(String expression) throws ParsingException {
         if (expression == null) {
             throw new ParsingException("Invalid expression");
@@ -55,21 +55,21 @@ public class MyCalculator implements Calculator {
 
         for (int index = 0; index < expression.length(); ++index) {
             curSymbol = expression.charAt(index);
-            switch (whatIsIt(curSymbol)) {
+            switch (symbolType(curSymbol)) {
                 case DIGIT:
-                    if (whatIsIt(prevSymbol) == SymbolType.SPACE) {
-                        if ((whatIsIt(importantPrevSymbol) == SymbolType.DIGIT) ||
-                                (whatIsIt(importantPrevSymbol) == SymbolType.CLOSING_BRACKET)) {
+                    if (symbolType(prevSymbol) == SymbolType.SPACE) {
+                        if ((symbolType(importantPrevSymbol) == SymbolType.DIGIT) ||
+                                (symbolType(importantPrevSymbol) == SymbolType.CLOSING_BRACKET)) {
                             throw new ParsingException("Invalid expression");
                         }
                     }
-                    if (whatIsIt(prevSymbol) == SymbolType.CLOSING_BRACKET) {
+                    if (symbolType(prevSymbol) == SymbolType.CLOSING_BRACKET) {
                         throw new ParsingException("Invalid expression");
                     }
                     break;
 
                 case POINT:
-                    if (whatIsIt(prevSymbol) == SymbolType.DIGIT) {
+                    if (symbolType(prevSymbol) == SymbolType.DIGIT) {
                         if (!pointFlag) {
                             pointFlag = true;
                         } else {
@@ -81,12 +81,12 @@ public class MyCalculator implements Calculator {
                     break;
 
                 case USUAL_OPERATOR:
-                    if ((whatIsIt(importantPrevSymbol) == SymbolType.USUAL_OPERATOR) ||
+                    if ((symbolType(importantPrevSymbol) == SymbolType.USUAL_OPERATOR) ||
                             (importantPrevSymbol == '(') || (importantPrevSymbol == '~') ||
                             (importantPrevSymbol == '.')) {
                         throw new ParsingException("Invalid expression");
                     }
-                    if (whatIsIt(importantPrevSymbol) == SymbolType.DIGIT) {
+                    if (symbolType(importantPrevSymbol) == SymbolType.DIGIT) {
                         pointFlag = false;
                     }
                     break;
@@ -95,7 +95,7 @@ public class MyCalculator implements Calculator {
                     if (importantPrevSymbol == '.') {
                         throw new ParsingException("Invalid expression");
                     }
-                    if (whatIsIt(importantPrevSymbol) == SymbolType.DIGIT) {
+                    if (symbolType(importantPrevSymbol) == SymbolType.DIGIT) {
                         pointFlag = false;
                     }
                     break;
@@ -104,25 +104,25 @@ public class MyCalculator implements Calculator {
                     if (prevSymbol == '.') {
                         throw new ParsingException("Invalid expression");
                     }
-                    if (whatIsIt(prevSymbol) == SymbolType.DIGIT) {
+                    if (symbolType(prevSymbol) == SymbolType.DIGIT) {
                         pointFlag = false;
                     }
                     break;
 
                 case OPENING_BRACKET:
-                    if ((whatIsIt(importantPrevSymbol) == SymbolType.DIGIT) ||
+                    if ((symbolType(importantPrevSymbol) == SymbolType.DIGIT) ||
                             (importantPrevSymbol == '.') || (importantPrevSymbol == ')')) {
                         throw new ParsingException("Invalid expression");
                     }
                     break;
 
                 case CLOSING_BRACKET:
-                    if (whatIsIt(importantPrevSymbol) == SymbolType.DIGIT) {
+                    if (symbolType(importantPrevSymbol) == SymbolType.DIGIT) {
                         pointFlag = false;
                     }
                     if ((importantPrevSymbol == '.') || (importantPrevSymbol == '(') ||
                             (importantPrevSymbol == '~') ||
-                            (whatIsIt(importantPrevSymbol) == SymbolType.USUAL_OPERATOR) ||
+                            (symbolType(importantPrevSymbol) == SymbolType.USUAL_OPERATOR) ||
                             (importantPrevSymbol == '-')) {
                         throw new ParsingException("Invalid expression");
                     }
@@ -132,7 +132,7 @@ public class MyCalculator implements Calculator {
                     throw new ParsingException("Invalid expression");
             }
             prevSymbol = curSymbol;
-            if (whatIsIt(curSymbol) != SymbolType.SPACE) {
+            if (symbolType(curSymbol) != SymbolType.SPACE) {
                 importantPrevSymbol = curSymbol;
                 spaceFlag = true;
             }
@@ -142,7 +142,11 @@ public class MyCalculator implements Calculator {
         }
     }
 
-
+    //Удаляет из корректного выражения все
+    //пробельные символы (важно суачала запустить
+    //метод isAlmostValid, т. к. при удалении
+    //пробелов можно потерять недопустимый случай
+    //« цифра - пробел - цифра »)
     private String removeSpaces(String expression) {
         StringBuilder result = new StringBuilder(expression.length());
         for (int index = 0; index < expression.length(); ++index) {
@@ -153,8 +157,9 @@ public class MyCalculator implements Calculator {
         return result.toString();
     }
 
-
-    private String removeUnaryMinuses(String expressionWithoutSpaces) {
+    //Заменяет в корректной строке без пробельных
+    //символов все унарные минусы на бинарные
+    private String removeUnaryMinuses(String expressionWithoutSpaces) throws ParsingException {
         expressionWithoutSpaces = expressionWithoutSpaces.concat("~");
         StringBuilder result = new StringBuilder(expressionWithoutSpaces.length());
         boolean bracketFlag = false;
@@ -163,17 +168,22 @@ public class MyCalculator implements Calculator {
                 if (index == 0) {
                     result.append('0');
                 } else {
-                    switch (whatIsIt(expressionWithoutSpaces.charAt(index - 1))) {
-                        case OPENING_BRACKET:
-                            result.append("0-");
-                            continue;
-                        case USUAL_OPERATOR:
-                        case MINUS:
-                            result.append("(0-");
-                            bracketFlag = true;
-                            continue;
-                        default:
-                            break;
+                    try {
+                        switch (symbolType(expressionWithoutSpaces.charAt(index - 1))) {
+                            case OPENING_BRACKET:
+                                result.append("0-");
+                                continue;
+                            case USUAL_OPERATOR:
+                            case MINUS:
+                                result.append("(0-");
+                                bracketFlag = true;
+                                continue;
+                            default:
+                                break;
+                        }
+                    }
+                    catch(Exception ParsingException) {
+                        throw new ParsingException("Invalid symbol");
                     }
                 }
             }
@@ -189,63 +199,78 @@ public class MyCalculator implements Calculator {
         return result.toString();
     }
 
+    private enum Situations { PUSH, PUSH_LAST, REMOVE,
+                            RESULT, EXCEPTION}
 
-    private int getCode(char first, char second) {
+    //Таблица зависимости действий, производимых
+    //со строкой, от двух символов. Первый из них —
+    //текущий считанный, второй — тот, что лежит в
+    //вершине стека
+    private Situations getNumOfSituation(char first, char second) throws ParsingException {
         switch (first) {
             case '~':
-                if ((whatIsIt(second) == SymbolType.USUAL_OPERATOR) ||
+                try {
+                    if ((symbolType(second) == SymbolType.USUAL_OPERATOR) ||
                         (second == '-') || (second == '(')) {
-                    return 1;
+                        return Situations.PUSH;
+                    }
                 }
+                catch (Exception ParsingException) {
+                    throw new ParsingException("Invalid symbol");
+                }
+
                 if (second == '~') {
-                    return 4;
+                    return Situations.RESULT;
                 }
                 if (second == ')') {
-                    return 5;
+                    return Situations.EXCEPTION;
                 }
             case '+':
             case '-':
                 if ((second == '*') || (second == '/') || (second == '(')) {
-                    return 1;
+                    return Situations.PUSH;
                 }
                 if ((second == '~') || (second == ')') ||
                         (second == '+') || (second == '-')) {
-                    return 2;
+                    return Situations.PUSH_LAST;
                 }
             case '*':
             case '/':
                 if (second == '(') {
-                    return 1;
+                    return Situations.PUSH;
                 }
                 if ((second == '~') || (second == ')') ||
-                        (whatIsIt(second) == SymbolType.USUAL_OPERATOR) ||
+                        (symbolType(second) == SymbolType.USUAL_OPERATOR) ||
                         (second == '-')) {
-                    return 2;
+                    return Situations.PUSH_LAST;
                 }
             case '(':
-                if ((second == '(') || (whatIsIt(second) == SymbolType.USUAL_OPERATOR) ||
+                if ((second == '(') || (symbolType(second) == SymbolType.USUAL_OPERATOR) ||
                         second == '-') {
-                    return 1;
+                    return Situations.PUSH;
                 }
                 if (second == ')') {
-                    return 3;
+                    return Situations.REMOVE;
                 }
                 if (second == '~') {
-                    return 5;
+                    return Situations.EXCEPTION;
                 }
             default:
-                return -1;
+                return Situations.EXCEPTION;
         }
     }
 
-
+    //Принимает корректную строку без пробелов и
+    //унарных операторов, возвращает ее обратную
+    //польскую запись (с пробелами в качестве
+    //разделителей)
     private String getRPN(String expression) throws ParsingException {
         expression = expression.concat("~");
         Character curSymbol;
         Character prevSymbol = '~';
-        Stack<Character> texas = new Stack<>();
-        StringBuilder california = new StringBuilder(expression.length());
-        texas.push('~');
+        Stack<Character> operators = new Stack<>();
+        StringBuilder rpn = new StringBuilder(expression.length());
+        operators.push('~');
 
         int index = 0;
         while (true) {
@@ -253,18 +278,17 @@ public class MyCalculator implements Calculator {
             if (index > 0) {
                 prevSymbol = expression.charAt(index - 1);
             }
-            switch (whatIsIt(curSymbol)) {
+            switch (symbolType(curSymbol)) {
                 case DIGIT:
                 case POINT:
                     if ((Character.isDigit(prevSymbol)) || (prevSymbol == '.') ||
                             (prevSymbol == '~')) {
-                        california.append(curSymbol);
+                        rpn.append(curSymbol);
                         ++index;
                     } else {
-                        california.append(" ");
-                        california.append(curSymbol);
+                        rpn.append(" ");
+                        rpn.append(curSymbol);
                         ++index;
-                        break;
                     }
                     continue;
 
@@ -272,23 +296,23 @@ public class MyCalculator implements Calculator {
                     break;
             }
 
-            switch (getCode(texas.peek(), curSymbol)) {
-                case 1:
-                    texas.push(curSymbol);
+            switch (getNumOfSituation(operators.peek(), curSymbol)) {
+                case PUSH:
+                    operators.push(curSymbol);
                     ++index;
                     break;
-                case 2:
-                    california.append(" ");
-                    california.append(texas.peek());
-                    texas.pop();
+                case PUSH_LAST:
+                    rpn.append(" ");
+                    rpn.append(operators.peek());
+                    operators.pop();
                     break;
-                case 3:
-                    texas.pop();
+                case REMOVE:
+                    operators.pop();
                     ++index;
                     break;
-                case 4:
-                    return california.toString();
-                case 5:
+                case RESULT:
+                    return rpn.toString();
+                case EXCEPTION:
                     throw new ParsingException("Invalid bracket balance");
                 default:
                     break;
@@ -296,7 +320,8 @@ public class MyCalculator implements Calculator {
         }
     }
 
-
+    //Возвращает результат применения оператора к
+    //операндам
     private double doOperation(double first, double second, char operator) {
         switch (operator) {
             case '+':
@@ -316,7 +341,14 @@ public class MyCalculator implements Calculator {
         }
     }
 
-
+    //По обратной польской записи выражения
+    //вычисляет его значение. При считывании оператора
+    //из стека удаляем 2 верхних числа и кладем в стек
+    //результат операции, примененной к этим двум
+    //числам. При считывании числа просто кладем его в
+    //стек. Для корректных выражений к концу работы в
+    //стеке останется всего одно число — его и
+    //возвращаем
     @Override
     public double calculate(String expression) throws ParsingException {
         isAlmostValid(expression);
@@ -332,7 +364,7 @@ public class MyCalculator implements Calculator {
         for (int cnt = 0; cnt < rpn.length(); ++cnt) {
             prevChar = curChar;
             curChar = rpn.charAt(cnt);
-            switch (whatIsIt(curChar)) {
+            switch (symbolType(curChar)) {
                 case DIGIT:
                 case POINT:
                     curNumber.append(curChar);
