@@ -20,11 +20,11 @@ public class Calculator3000  implements Calculator {
         return makeOperations(posfixNotation);
     }
 
-    private static Set<Character> NUMBERS = Collections.unmodifiableSet(
-            new TreeSet<Character>(Arrays.asList('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.')));
+    private static Set<Character> numbers = Collections.unmodifiableSet(
+            new TreeSet<>(Arrays.asList('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.')));
 
-    private static Set<Character> OPERATORS = Collections.unmodifiableSet(
-            new TreeSet<Character>(Arrays.asList('+', '-', '*', '/')));
+    private static Set<Character> operators = Collections.unmodifiableSet(
+            new TreeSet<>(Arrays.asList('+', '-', '*', '/')));
 
     private String transformToPosfixNotation(String expression) throws ParsingException {
         if (expression.length() == 0) {
@@ -37,7 +37,7 @@ public class Calculator3000  implements Calculator {
         char curr;
 
         StringBuilder postfix = new StringBuilder();
-        Stack<Character> stack = new Stack<Character>();
+        Stack<Character> stack = new Stack<>();
 
         for (int i = 0; i < expression.length(); ++i) {
             curr = expression.charAt(i);
@@ -45,7 +45,7 @@ public class Calculator3000  implements Calculator {
                 continue;
             }
 
-            if (NUMBERS.contains(curr)) {
+            if (numbers.contains(curr)) {
                 postfix.append(curr);
                 if (previos != 0) {
                     numbersCounter++;
@@ -58,8 +58,8 @@ public class Calculator3000  implements Calculator {
                 stack.push(curr);
                 postfix.append(' ');
                 previos = 2;
-            } else if (OPERATORS.contains(curr)) {
-                operatorsCounter++;;
+            } else if (operators.contains(curr)) {
+                operatorsCounter++;
                 if (previos == 1 && curr == '-') {
                     postfix.append(' ').append(' ');
                     stack.push('&');
@@ -136,24 +136,23 @@ public class Calculator3000  implements Calculator {
     }
 
     private double makeOperations(String expression) throws ParsingException {
-        Stack<Double> stack = new Stack<Double>();
+        Stack<Double> stack = new Stack<>();
         StringBuilder number = new StringBuilder();
 
         for (int i = 0; i < expression.length(); ++i) {
             Character curr = expression.charAt(i);
 
-            if (NUMBERS.contains(curr)) {
+            if (numbers.contains(curr)) {
                 number.append(curr);
             } else {
-                if (i > 0 && curr.equals(' ') && NUMBERS.contains(expression.charAt(i - 1))) {
+                if (i > 0 && curr.equals(' ') && numbers.contains(expression.charAt(i - 1))) {
                     try {
                         stack.push(Double.parseDouble(number.toString()));
-                    }
-                    catch (NumberFormatException e) {
+                    } catch (NumberFormatException e) {
                         throw new ParsingException("wrong number");
                     }
                     number.delete(0, number.length());
-                } else if (OPERATORS.contains(curr)) {
+                } else if (operators.contains(curr)) {
                     if (stack.size() == 0) {
                         throw new ParsingException("wrong operator");
                     } else if (stack.size() == 1) {
